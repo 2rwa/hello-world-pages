@@ -69,8 +69,8 @@ jobs:
             --disable-dawn-features=use_dxc
             --use-gpu-in-tests
             --enable-unsafe-swiftshader
-            --virtual-time-budget=8000
-            --dump-dom
+            --remote-debugging-port=9222
+            --remote-allow-origins=*
             http://127.0.0.1:8765/tests/webgpu-eye-clock/
           )
 
@@ -78,24 +78,82 @@ jobs:
           printf ' %q' "${chrome_args[@]}"
           printf '\n'
 
-          set +e
-          timeout 30s "$CHROME" "${chrome_args[@]}" > /tmp/dom.txt 2>/tmp/chrome.log
-          chrome_status=$?
-          set -e
+          "$CHROME" "${chrome_args[@]}" >/tmp/chrome-stdout.log 2>/tmp/chrome.log &
+          chrome_pid=$!
+          trap 'kill $chrome_pid 2>/dev/null || true' EXIT
+
+          for i in $(seq 1 15); do
+            if curl -fsS http://127.0.0.1:9222/json/list >/tmp/cdp-targets.json; then
+              break
+            fi
+            sleep 1
+          done
+
+          python3 -m pip install --quiet websocket-client
+
+          python3 - <<'PY'
+          import json
+          import time
+          import urllib.request
+          import websocket
+
+          def get_targets():
+              with urllib.request.urlopen("http://127.0.0.1:9222/json/list", timeout=2) as r:
+                  return json.load(r)
+
+          targets = get_targets()
+          page = next(
+              (t for t in targets if t.get("type") == "page" and "webgpu-eye-clock" in t.get("url", "")),
+              None,
+          )
+          if page is None:
+              raise SystemExit("No WebGPU test page target found")
+
+          ws = websocket.create_connection(page["webSocketDebuggerUrl"], timeout=5)
+          next_id = 1
+
+          def evaluate(expression):
+              global next_id
+              msg_id = next_id
+              next_id += 1
+              ws.send(json.dumps({
+                  "id": msg_id,
+                  "method": "Runtime.evaluate",
+                  "params": {
+                      "expression": expression,
+                      "returnByValue": True,
+                  },
+              }))
+              while True:
+                  response = json.loads(ws.recv())
+                  if response.get("id") == msg_id:
+                      return response["result"]["result"].get("value")
+
+          last_state = None
+          deadline = time.time() + 25
+          while time.time() < deadline:
+              state = evaluate("""JSON.stringify({
+                status: document.documentElement.dataset.webgpuStatus || null,
+                stage: document.documentElement.dataset.webgpuStage || null,
+                error: document.documentElement.dataset.webgpuError || null,
+                text: document.querySelector('#state')?.textContent || null
+              })""")
+              if state != last_state:
+                  print("WebGPU page state:", state, flush=True)
+                  last_state = state
+              parsed = json.loads(state)
+              if parsed.get("status") == "ok":
+                  print("WebGPU smoke test: ok")
+                  ws.close()
+                  raise SystemExit(0)
+              if parsed.get("status") == "fail":
+                  ws.close()
+                  raise SystemExit("WebGPU page reported fail: " + str(parsed))
+              time.sleep(0.5)
+
+          ws.close()
+          raise SystemExit("Timed out waiting for WebGPU page: " + str(last_state))
+          PY
 
           echo "--- chrome stderr ---"
           cat /tmp/chrome.log || true
-          echo "--- dumped DOM ---"
-          cat /tmp/dom.txt || true
-
-          if grep -q 'data-webgpu-status="ok"' /tmp/dom.txt; then
-            echo "WebGPU smoke test: ok"
-            exit 0
-          fi
-
-          if grep -q 'data-webgpu-status="fail"' /tmp/dom.txt; then
-            echo "WebGPU page reported fail"
-          fi
-
-          echo "WebGPU smoke test did not reach ok (chrome exit=$chrome_status)"
-          exit 1
