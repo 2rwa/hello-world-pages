@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="en" data-webgpu-status="starting">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>WebGPU Eye Clock Test</title>
+<style>
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#05070b;color:#eef;font-family:ui-monospace,monospace}
+canvas{width:100vw;height:100vh;display:block}
+#hud{position:fixed;inset:0;pointer-events:none;padding:16px;display:flex;justify-content:space-between;align-items:flex-start;text-shadow:0 1px 10px #000}
+#time{font-size:clamp(18px,3vw,38px);font-weight:700;letter-spacing:.14em}
+#state{font-size:12px;opacity:.8}
+</style>
+</head>
+<body>
+<canvas id="gpuCanvas"></canvas>
+<div id="hud"><div id="time">--:--:--</div><div id="state">STARTING</div></div>
+<script type="module">
+const rootElement=document.documentElement;
+const canvasElement=document.querySelector("#gpuCanvas");
+const timeElement=document.querySelector("#time");
+const stateElement=document.querySelector("#state");
+
+function failPage(errorValue){
+  rootElement.dataset.webgpuStatus="fail";
+  stateElement.textContent="FAIL: "+String(errorValue && (errorValue.message||errorValue));
+}
+
+async function startDemo(){
+  if(!navigator.gpu) throw new Error("navigator.gpu unavailable");
+
+  const gpuAdapter=await navigator.gpu.requestAdapter({powerPreference:"high-performance"});
+  if(!gpuAdapter) throw new Error("requestAdapter returned null");
+
+  const gpuDevice=await gpuAdapter.requestDevice();
+  const gpuContext=canvasElement.getContext("webgpu");
+  if(!gpuContext) throw new Error("webgpu canvas context unavailable");
+
+  const canvasFormat=navigator.gpu.getPreferredCanvasFormat();
+  gpuContext.configure({device:gpuDevice,format:canvasFormat,alphaMode:"opaque"});
+
+  const shaderSource=/* wgsl */ `
+struct EyeVertexInput {
+  @location(0) quadPosition: vec2<f32>,
+  @location(1) eyeCenter: vec2<f32>,
+  @location(2) eyeRadius: f32,
+  @location(3) irisHue: f32,
+  @location(4) gazeDirection: vec2<f32>,
+  @location(5) eyeKindCode: f32,
+  @location(6) eyeSeed: f32,
+};
+
+struct EyeVertexOutput {
+  @builtin(position) clipPosition: vec4<f32>,
+  @location(0) localUv: vec2<f32>,
+  @location(1) irisHue: f32,
+  @location(2) gazeDirection: vec2<f32>,
+  @location(3) eyeKindCode: f32,
+  @location(4) eyeSeed: f32,
+};
+
+@group(0) @binding(0)
+var<uniform> sceneParameters: vec4<f32>;
+
+@vertex
+fn eyeVertexMain(inputData: EyeVertexInput) -> EyeVertexOutput {
+  var outputData: EyeVertexOutput;
+  let viewportAspect = max(sceneParameters.x, 0.001);
+  let worldPosition = inputData.eyeCenter + inputData.quadPosition * inputData.eyeRadius;
+  outputData.clipPosition = vec4<f32>(worldPosition.x / viewportAspect, worldPosition.y, 0.0, 1.0);
+  outputData.localUv = inputData.quadPosition * 0.5 + vec2<f32>(0.5);
+  outputData.irisHue = inputData.irisHue;
+  outputData.gazeDirection = inputData.gazeDirection;
+  outputData.eyeKindCode = inputData.eyeKindCode;
+  outputData.eyeSeed = inputData.eyeSeed;
+  return outputData;
+}
+
+fn irisColorFromHue(hueValue: f32) -> vec3<f32> {
+  let hueRadians = hueValue * 6.28318530718;
+  let redPart = 0.46 + 0.34 * sin(hueRadians);
+  let greenPart = 0.46 + 0.34 * sin(hueRadians + 2.09439510239);
+  let bluePart = 0.46 + 0.34 * sin(hueRadians + 4.18879020479);
+  return clamp(vec3<f32>(redPart, greenPart, bluePart), vec3<f32>(0.08), vec3<f32>(0.92));
+}
+
+@fragment
+fn eyeFragmentMain(inputData: EyeVertexOutput) -> @location(0) vec4<f32> {
+  let localPosition = inputData.localUv * 2.0 - vec2<f32>(1.0);
+  let radialSquared = dot(localPosition, localPosition);
+  let derivativeWidth = max(fwidth(radialSquared) * 1.5, 0.002);
+  let eyeAlpha = 1.0 - smoothstep(1.0 - derivativeWidth, 1.0, radialSquared);
+
+  if (eyeAlpha <= 0.001) {
+    discard;
+  }
+
+  let surfaceZ = sqrt(max(0.0, 1.0 - radialSquared));
+  let surfaceNormal = normalize(vec3<f32>(localPosition, surfaceZ));
+  let lightVector = normalize(vec3<f32>(-0.42, 0.62, 1.25));
+  let lightAmount = 0.44 + 0.56 * max(dot(surfaceNormal, lightVector), 0.0);
+
+  let gazeLimited = clamp(inputData.gazeDirection, vec2<f32>(-0.72), vec2<f32>(0.72));
+  let irisCenter = gazeLimited * (0.17 + 0.05 * surfaceZ);
+  let irisOffset = localPosition - irisCenter;
+  let irisDistance = length(irisOffset);
+
+  let markerFactor = clamp(inputData.eyeKindCode, 0.0, 1.0);
+  let irisOuterRadius = 0.34 + markerFactor * 0.035;
+  let irisAmount = 1.0 - smoothstep(irisOuterRadius * 0.82, irisOuterRadius, irisDistance);
+  let pupilRadius = 0.135 + 0.018 * sin(sceneParameters.y * 0.9 + inputData.eyeSeed * 13.0);
+  let pupilAmount = 1.0 - smoothstep(pupilRadius * 0.72, pupilRadius, irisDistance);
+
+  var finalColor = vec3<f32>(0.94, 0.925, 0.89) * lightAmount;
+  let rimAmount = smoothstep(0.48, 1.0, sqrt(radialSquared));
+  finalColor = finalColor * (1.0 - rimAmount * 0.18);
+
+  let polarAngle = atan2(localPosition.y, localPosition.x);
+  let veinWaveA = sin(polarAngle * 19.0 + radialSquared * 42.0 + inputData.eyeSeed * 37.0);
+  let veinWaveB = sin(polarAngle * 31.0 - radialSquared * 27.0 + inputData.eyeSeed * 71.0);
+  let veinSignal = max(0.0, veinWaveA * veinWaveB);
+  let veinAmount = pow(veinSignal, 16.0) * smoothstep(0.35, 0.96, sqrt(radialSquared)) * (1.0 - irisAmount);
+  finalColor += vec3<f32>(0.26, -0.10, -0.10) * veinAmount * 0.72;
+
+  let baseIrisColor = irisColorFromHue(inputData.irisHue);
+  let irisRingFactor = 0.68 + 0.32 * sin(irisDistance * 105.0 + inputData.eyeSeed * 11.0);
+  let detailedIrisColor = baseIrisColor * irisRingFactor * (0.55 + 0.45 * lightAmount);
+  finalColor = finalColor * (1.0 - irisAmount) + detailedIrisColor * irisAmount;
+  finalColor = finalColor * (1.0 - pupilAmount) + vec3<f32>(0.012, 0.014, 0.018) * pupilAmount;
+
+  let highlightOffsetA = localPosition - vec2<f32>(-0.30, 0.36);
+  let highlightOffsetB = localPosition - vec2<f32>(-0.12, 0.14);
+  let highlightAmountA = 1.0 - smoothstep(0.065, 0.13, length(highlightOffsetA));
+  let highlightAmountB = 1.0 - smoothstep(0.025, 0.055, length(highlightOffsetB));
+  finalColor += vec3<f32>(1.0, 0.97, 0.92) * (highlightAmountA * 0.92 + highlightAmountB * 0.62);
+
+  let handAccentAmount = clamp((inputData.eyeKindCode - 1.0) * 0.22, 0.0, 0.55);
+  let outerBandAmount = smoothstep(0.70, 0.90, sqrt(radialSquared)) *
+                        (1.0 - smoothstep(0.90, 0.99, sqrt(radialSquared)));
+  finalColor += baseIrisColor * handAccentAmount * outerBandAmount;
+
+  return vec4<f32>(max(finalColor, vec3<f32>(0.0)), eyeAlpha);
+}
+`;
+
+  const shaderModule=gpuDevice.createShaderModule({code:shaderSource});
+  const shaderInfo=await shaderModule.getCompilationInfo();
+  const shaderErrors=shaderInfo.messages.filter((messageData)=>messageData.type==="error");
+  if(shaderErrors.length){
+    throw new Error(shaderErrors.map((messageData)=>messageData.message).join(" | "));
+  }
+
+  const quadArray=new Float32Array([-1,-1,1,-1,-1,1,-1,1,1,-1,1,1]);
+  const quadBuffer=gpuDevice.createBuffer({
+    size:quadArray.byteLength,
+    usage:GPUBufferUsage.VERTEX|GPUBufferUsage.COPY_DST
+  });
+  gpuDevice.queue.writeBuffer(quadBuffer,0,quadArray);
+
+  const maximumEyeCount=1024;
+  const floatsPerEye=8;
+  const eyeInstanceArray=new Float32Array(maximumEyeCount*floatsPerEye);
+  const eyeInstanceBuffer=gpuDevice.createBuffer({
+    size:eyeInstanceArray.byteLength,
+    usage:GPUBufferUsage.VERTEX|GPUBufferUsage.COPY_DST
+  });
+
+  const sceneArray=new Float32Array(4);
+  const sceneBuffer=gpuDevice.createBuffer({
+    size:sceneArray.byteLength,
+    usage:GPUBufferUsage.UNIFORM|GPUBufferUsage.COPY_DST
+  });
+
+  const sceneBindGroupLayout=gpuDevice.createBindGroupLayout({
+    entries:[{
+      binding:0,
+      visibility:GPUShaderStage.VERTEX|GPUShaderStage.FRAGMENT,
+      buffer:{type:"uniform"}
+    }]
+  });
+
+  const renderPipeline=gpuDevice.createRenderPipeline({
+    layout:gpuDevice.createPipelineLayout({bindGroupLayouts:[sceneBindGroupLayout]}),
+    vertex:{
+      module:shaderModule,
+      entryPoint:"eyeVertexMain",
+      buffers:[
+        {
+          arrayStride:8,
+          stepMode:"vertex",
+          attributes:[{shaderLocation:0,offset:0,format:"float32x2"}]
+        },
+        {
+          arrayStride:floatsPerEye*4,
+          stepMode:"instance",
+          attributes:[
+            {shaderLocation:1,offset:0,format:"float32x2"},
+            {shaderLocation:2,offset:8,format:"float32"},
+            {shaderLocation:3,offset:12,format:"float32"},
+            {shaderLocation:4,offset:16,format:"float32x2"},
+            {shaderLocation:5,offset:24,format:"float32"},
+            {shaderLocation:6,offset:28,format:"float32"}
+          ]
+        }
+      ]
+    },
+    fragment:{
+      module:shaderModule,
+      entryPoint:"eyeFragmentMain",
+      targets:[{
+        format:canvasFormat,
+        blend:{
+          color:{srcFactor:"src-alpha",dstFactor:"one-minus-src-alpha",operation:"add"},
+          alpha:{srcFactor:"one",dstFactor:"one-minus-src-alpha",operation:"add"}
+        }
+      }]
+    },
+    primitive:{topology:"triangle-list"}
+  });
+
+  const sceneBindGroup=gpuDevice.createBindGroup({
+    layout:sceneBindGroupLayout,
+    entries:[{binding:0,resource:{buffer:sceneBuffer}}]
+  });
+
+  let randomState=0x51f15e;
+  function nextRandom(){
+    randomState=(Math.imul(randomState,1664525)+1013904223)>>>0;
+    return randomState/4294967296;
+  }
+
+  const staticEyeList=[];
+  function appendStaticEye(xPosition,yPosition,eyeRadius,irisHue,eyeKindCode,eyeSeed){
+    staticEyeList.push({xPosition,yPosition,eyeRadius,irisHue,eyeKindCode,eyeSeed});
+  }
+
+  for(let ringIndex=0;ringIndex<120;ringIndex+=1){
+    const ringAngle=ringIndex/120*Math.PI*2;
+    const ringRadius=0.87+(nextRandom()-0.5)*0.06;
+    appendStaticEye(Math.cos(ringAngle)*ringRadius,Math.sin(ringAngle)*ringRadius,
+      0.027+nextRandom()*0.025,nextRandom(),0,nextRandom());
+  }
+
+  const goldenAngle=Math.PI*(3-Math.sqrt(5));
+  for(let interiorIndex=0;interiorIndex<320;interiorIndex+=1){
+    const radialFraction=Math.sqrt((interiorIndex+0.5)/320);
+    const radialDistance=0.12+radialFraction*0.50;
+    const interiorAngle=interiorIndex*goldenAngle+(nextRandom()-0.5)*0.16;
+    appendStaticEye(Math.cos(interiorAngle)*radialDistance,Math.sin(interiorAngle)*radialDistance,
+      0.012+nextRandom()*0.017,nextRandom(),0.15,nextRandom());
+  }
+
+  for(let hourIndex=0;hourIndex<12;hourIndex+=1){
+    const hourMarkerAngle=Math.PI/2-hourIndex*Math.PI*2/12;
+    appendStaticEye(Math.cos(hourMarkerAngle)*0.72,Math.sin(hourMarkerAngle)*0.72,
+      hourIndex%3===0?0.082:0.064,hourIndex/12,1,nextRandom());
+  }
+
+  const pointerPosition={xPosition:0,yPosition:0};
+  canvasElement.addEventListener("pointermove",(pointerEvent)=>{
+    const bounds=canvasElement.getBoundingClientRect();
+    const normalizedX=(pointerEvent.clientX-bounds.left)/Math.max(bounds.width,1);
+    const normalizedY=(pointerEvent.clientY-bounds.top)/Math.max(bounds.height,1);
+    const viewportAspect=bounds.width/Math.max(bounds.height,1);
+    pointerPosition.xPosition=(normalizedX*2-1)*viewportAspect;
+    pointerPosition.yPosition=1-normalizedY*2;
+  });
+
+  function resizeCanvas(){
+    const pixelRatio=Math.min(window.devicePixelRatio||1,2);
+    const pixelWidth=Math.max(1,Math.floor(canvasElement.clientWidth*pixelRatio));
+    const pixelHeight=Math.max(1,Math.floor(canvasElement.clientHeight*pixelRatio));
+    if(canvasElement.width!==pixelWidth||canvasElement.height!==pixelHeight){
+      canvasElement.width=pixelWidth;
+      canvasElement.height=pixelHeight;
+    }
+  }
+
+  function writeEye(eyeIndex,eyeData,elapsedSeconds){
+    const baseIndex=eyeIndex*floatsPerEye;
+    const gazeDeltaX=pointerPosition.xPosition-eyeData.xPosition;
+    const gazeDeltaY=pointerPosition.yPosition-eyeData.yPosition;
+    const gazeDistance=Math.max(0.0001,Math.hypot(gazeDeltaX,gazeDeltaY));
+    const driftAngle=elapsedSeconds*(0.18+eyeData.eyeSeed*0.13)+eyeData.eyeSeed*30;
+    const driftScale=eyeData.eyeKindCode>=2?0.018:0.045;
+    eyeInstanceArray[baseIndex+0]=eyeData.xPosition;
+    eyeInstanceArray[baseIndex+1]=eyeData.yPosition;
+    eyeInstanceArray[baseIndex+2]=eyeData.eyeRadius;
+    eyeInstanceArray[baseIndex+3]=eyeData.irisHue;
+    eyeInstanceArray[baseIndex+4]=gazeDeltaX/gazeDistance*0.56+Math.cos(driftAngle)*driftScale;
+    eyeInstanceArray[baseIndex+5]=gazeDeltaY/gazeDistance*0.56+Math.sin(driftAngle)*driftScale;
+    eyeInstanceArray[baseIndex+6]=eyeData.eyeKindCode;
+    eyeInstanceArray[baseIndex+7]=eyeData.eyeSeed;
+  }
+
+  function appendHandEyeList(outputList,handAngle,handLength,eyeCount,startRadius,endRadius,irisHue,eyeKindCode,seedOffset){
+    for(let handIndex=0;handIndex<eyeCount;handIndex+=1){
+      const handFraction=(handIndex+1)/eyeCount;
+      const radialDistance=0.075+handLength*handFraction;
+      outputList.push({
+        xPosition:Math.cos(handAngle)*radialDistance,
+        yPosition:Math.sin(handAngle)*radialDistance,
+        eyeRadius:startRadius+(endRadius-startRadius)*handFraction,
+        irisHue,
+        eyeKindCode,
+        eyeSeed:(handIndex*0.173+seedOffset)%1
+      });
+    }
+  }
+
+  function renderFrame(frameTimeMs){
+    resizeCanvas();
+    const elapsedSeconds=frameTimeMs*0.001;
+    const currentDate=new Date();
+    const currentHours=currentDate.getHours();
+    const currentMinutes=currentDate.getMinutes();
+    const currentSeconds=currentDate.getSeconds();
+    const currentMilliseconds=currentDate.getMilliseconds();
+
+    const hourHandAngle=Math.PI/2-((currentHours%12)+currentMinutes/60+currentSeconds/3600)*Math.PI*2/12;
+    const minuteHandAngle=Math.PI/2-(currentMinutes+currentSeconds/60+currentMilliseconds/60000)*Math.PI*2/60;
+    const secondHandAngle=Math.PI/2-(currentSeconds+currentMilliseconds/1000)*Math.PI*2/60;
+
+    const dynamicEyeList=[];
+    appendHandEyeList(dynamicEyeList,hourHandAngle,0.36,13,0.047,0.028,0.11,2,0.21);
+    appendHandEyeList(dynamicEyeList,minuteHandAngle,0.54,19,0.038,0.022,0.56,3,0.47);
+    appendHandEyeList(dynamicEyeList,secondHandAngle,0.64,28,0.025,0.012,0.99,4,0.73);
+    dynamicEyeList.push({xPosition:0,yPosition:0,eyeRadius:0.092,irisHue:0.83,eyeKindCode:5,eyeSeed:0.314});
+
+    let eyeInstanceCount=0;
+    for(const eyeData of staticEyeList){writeEye(eyeInstanceCount++,eyeData,elapsedSeconds);}
+    for(const eyeData of dynamicEyeList){writeEye(eyeInstanceCount++,eyeData,elapsedSeconds);}
+
+    sceneArray[0]=canvasElement.width/Math.max(canvasElement.height,1);
+    sceneArray[1]=elapsedSeconds;
+    sceneArray[2]=0;
+    sceneArray[3]=0;
+    gpuDevice.queue.writeBuffer(sceneBuffer,0,sceneArray);
+    gpuDevice.queue.writeBuffer(eyeInstanceBuffer,0,eyeInstanceArray.buffer,eyeInstanceArray.byteOffset,eyeInstanceCount*floatsPerEye*4);
+
+    const commandEncoder=gpuDevice.createCommandEncoder();
+    const renderPass=commandEncoder.beginRenderPass({
+      colorAttachments:[{
+        view:gpuContext.getCurrentTexture().createView(),
+        clearValue:{r:0.014,g:0.020,b:0.033,a:1},
+        loadOp:"clear",
+        storeOp:"store"
+      }]
+    });
+    renderPass.setPipeline(renderPipeline);
+    renderPass.setBindGroup(0,sceneBindGroup);
+    renderPass.setVertexBuffer(0,quadBuffer);
+    renderPass.setVertexBuffer(1,eyeInstanceBuffer);
+    renderPass.draw(6,eyeInstanceCount,0,0);
+    renderPass.end();
+    gpuDevice.queue.submit([commandEncoder.finish()]);
+
+    const twoDigits=(numberValue)=>String(numberValue).padStart(2,"0");
+    timeElement.textContent=twoDigits(currentHours)+":"+twoDigits(currentMinutes)+":"+twoDigits(currentSeconds);
+    stateElement.textContent=eyeInstanceCount+" EYES / WEBGPU";
+    requestAnimationFrame(renderFrame);
+  }
+
+  resizeCanvas();
+  renderFrame(performance.now());
+  await gpuDevice.queue.onSubmittedWorkDone();
+  rootElement.dataset.webgpuStatus="ok";
+}
+
+startDemo().catch(failPage);
+</script>
+</body>
+</html>
