@@ -45,6 +45,11 @@ async function startDemo(){
 
   setTestStage("request-device");
   const gpuDevice=await gpuAdapter.requestDevice();
+  gpuDevice.lost.then((lostInfo)=>{
+    rootElement.dataset.webgpuDeviceLostReason=String(lostInfo.reason||"unknown");
+    rootElement.dataset.webgpuDeviceLostMessage=String(lostInfo.message||"");
+    console.error("[webgpu-device-lost]",lostInfo.reason,lostInfo.message);
+  });
 
   setTestStage("canvas-context");
   const gpuContext=canvasElement.getContext("webgpu");
@@ -195,6 +200,7 @@ fn eyeFragmentMain(inputData: EyeVertexOutput) -> @location(0) vec4<f32> {
     }]
   });
 
+  gpuDevice.pushErrorScope("validation");
   setTestStage("create-pipeline");
   const renderPipeline=gpuDevice.createRenderPipeline({
     layout:gpuDevice.createPipelineLayout({bindGroupLayouts:[sceneBindGroupLayout]}),
@@ -381,6 +387,13 @@ fn eyeFragmentMain(inputData: EyeVertexOutput) -> @location(0) vec4<f32> {
   setTestStage("first-submit");
   resizeCanvas();
   renderFrame(performance.now());
+
+  setTestStage("validation-scope");
+  const validationError=await gpuDevice.popErrorScope();
+  if(validationError){
+    throw new Error("WebGPU validation: "+validationError.message);
+  }
+
   setTestStage("submitted-work-wait");
   await gpuDevice.queue.onSubmittedWorkDone();
   setTestStage("done");
