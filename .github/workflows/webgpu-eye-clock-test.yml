@@ -60,6 +60,9 @@ jobs:
             --no-sandbox
             --disable-dev-shm-usage
             --enable-unsafe-webgpu
+            --enable-features=Vulkan
+            --use-vulkan=swiftshader
+            --disable-vulkan-fallback-to-gl-for-testing
             --use-webgpu-adapter=swiftshader
             --enable-webgpu-developer-features
             --enable-dawn-features=allow_unsafe_apis
