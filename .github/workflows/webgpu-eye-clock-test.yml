@@ -54,6 +54,7 @@ jobs:
           timeout 25s "$CHROME"             --headless=new             --no-sandbox             --disable-dev-shm-usage             --enable-unsafe-webgpu             --enable-features=Vulkan             --use-angle=swiftshader             --virtual-time-budget=5000             --dump-dom             http://127.0.0.1:8765/tests/webgpu-eye-clock/             > /tmp/dom.txt 2>/tmp/chrome.log
           chrome_status=$?
           set -e
+          echo "Chrome version: $("$CHROME" --version || true)"
           cat /tmp/chrome.log || true
           cat /tmp/dom.txt || true
           if grep -q 'data-webgpu-status="ok"' /tmp/dom.txt; then
