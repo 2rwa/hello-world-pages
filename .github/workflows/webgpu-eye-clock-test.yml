@@ -1,0 +1,64 @@
+name: WebGPU eye clock browser test
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'tests/webgpu-eye-clock/index.html'
+      - '.github/workflows/webgpu-eye-clock-test.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  browser-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Static preflight
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("tests/webgpu-eye-clock/index.html")
+          s = p.read_text()
+          assert "navigator.gpu" in s
+          assert "createRenderPipeline" in s
+          assert "fwidth(" in s
+          assert s.index("fwidth(") < s.index("discard;")
+          assert "var<workgroup>" not in s
+          assert "var<storage" not in s
+          print("static preflight: ok")
+          PY
+
+      - name: Start local server
+        run: |
+          python3 -m http.server 8765 --directory . >/tmp/webgpu-http.log 2>&1 &
+          echo $! > /tmp/webgpu-http.pid
+          sleep 1
+          curl -f http://127.0.0.1:8765/tests/webgpu-eye-clock/ >/dev/null
+
+      - name: WebGPU browser smoke test
+        shell: bash
+        run: |
+          set -euo pipefail
+          CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
+          if [ -z "$CHROME" ]; then
+            echo "No Chrome/Chromium found on runner"
+            exit 1
+          fi
+          echo "Browser: $CHROME"
+          set +e
+          timeout 25s "$CHROME"             --headless=new             --no-sandbox             --disable-dev-shm-usage             --enable-unsafe-webgpu             --enable-features=Vulkan             --use-angle=swiftshader             --virtual-time-budget=5000             --dump-dom             http://127.0.0.1:8765/tests/webgpu-eye-clock/             > /tmp/dom.txt 2>/tmp/chrome.log
+          chrome_status=$?
+          set -e
+          cat /tmp/chrome.log || true
+          cat /tmp/dom.txt || true
+          if grep -q 'data-webgpu-status="ok"' /tmp/dom.txt; then
+            echo "WebGPU smoke test: ok"
+            exit 0
+          fi
+          echo "WebGPU smoke test did not reach ok (chrome exit=$chrome_status)"
+          exit 1
