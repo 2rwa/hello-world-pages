@@ -26,6 +26,8 @@ jobs:
           s = p.read_text()
           assert "navigator.gpu" in s
           assert "createRenderPipeline" in s
+          assert "getCompilationInfo" in s
+          assert "queue.onSubmittedWorkDone" in s
           assert "fwidth(" in s
           assert s.index("fwidth(") < s.index("discard;")
           assert "var<workgroup>" not in s
@@ -49,17 +51,48 @@ jobs:
             echo "No Chrome/Chromium found on runner"
             exit 1
           fi
+
           echo "Browser: $CHROME"
+          echo "Chrome version: $("$CHROME" --version || true)"
+
+          chrome_args=(
+            --headless=new
+            --no-sandbox
+            --disable-dev-shm-usage
+            --enable-unsafe-webgpu
+            --use-webgpu-adapter=swiftshader
+            --enable-webgpu-developer-features
+            --enable-dawn-features=allow_unsafe_apis
+            --disable-dawn-features=use_dxc
+            --use-gpu-in-tests
+            --enable-unsafe-swiftshader
+            --virtual-time-budget=8000
+            --dump-dom
+            http://127.0.0.1:8765/tests/webgpu-eye-clock/
+          )
+
+          printf 'Chrome args:'
+          printf ' %q' "${chrome_args[@]}"
+          printf '\n'
+
           set +e
-          timeout 25s "$CHROME"             --headless=new             --no-sandbox             --disable-dev-shm-usage             --enable-unsafe-webgpu             --enable-features=Vulkan             --use-angle=swiftshader             --virtual-time-budget=5000             --dump-dom             http://127.0.0.1:8765/tests/webgpu-eye-clock/             > /tmp/dom.txt 2>/tmp/chrome.log
+          timeout 30s "$CHROME" "${chrome_args[@]}" > /tmp/dom.txt 2>/tmp/chrome.log
           chrome_status=$?
           set -e
-          echo "Chrome version: $("$CHROME" --version || true)"
+
+          echo "--- chrome stderr ---"
           cat /tmp/chrome.log || true
+          echo "--- dumped DOM ---"
           cat /tmp/dom.txt || true
+
           if grep -q 'data-webgpu-status="ok"' /tmp/dom.txt; then
             echo "WebGPU smoke test: ok"
             exit 0
           fi
+
+          if grep -q 'data-webgpu-status="fail"' /tmp/dom.txt; then
+            echo "WebGPU page reported fail"
+          fi
+
           echo "WebGPU smoke test did not reach ok (chrome exit=$chrome_status)"
           exit 1
