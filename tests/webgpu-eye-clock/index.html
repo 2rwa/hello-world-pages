@@ -21,18 +21,32 @@ const canvasElement=document.querySelector("#gpuCanvas");
 const timeElement=document.querySelector("#time");
 const stateElement=document.querySelector("#state");
 
+function setTestStage(stageName){
+  rootElement.dataset.webgpuStage=stageName;
+  stateElement.textContent=stageName;
+  console.log("[webgpu-stage]",stageName);
+}
+setTestStage("script-start");
+
 function failPage(errorValue){
   rootElement.dataset.webgpuStatus="fail";
+  rootElement.dataset.webgpuError=String(errorValue && (errorValue.message||errorValue));
   stateElement.textContent="FAIL: "+String(errorValue && (errorValue.message||errorValue));
+  console.error("[webgpu-fail]",errorValue);
 }
 
 async function startDemo(){
+  setTestStage("navigator-gpu-check");
   if(!navigator.gpu) throw new Error("navigator.gpu unavailable");
 
+  setTestStage("request-adapter");
   const gpuAdapter=await navigator.gpu.requestAdapter({powerPreference:"high-performance"});
   if(!gpuAdapter) throw new Error("requestAdapter returned null");
 
+  setTestStage("request-device");
   const gpuDevice=await gpuAdapter.requestDevice();
+
+  setTestStage("canvas-context");
   const gpuContext=canvasElement.getContext("webgpu");
   if(!gpuContext) throw new Error("webgpu canvas context unavailable");
 
@@ -143,7 +157,9 @@ fn eyeFragmentMain(inputData: EyeVertexOutput) -> @location(0) vec4<f32> {
 }
 `;
 
+  setTestStage("shader-module");
   const shaderModule=gpuDevice.createShaderModule({code:shaderSource});
+  setTestStage("shader-compilation-info");
   const shaderInfo=await shaderModule.getCompilationInfo();
   const shaderErrors=shaderInfo.messages.filter((messageData)=>messageData.type==="error");
   if(shaderErrors.length){
@@ -179,6 +195,7 @@ fn eyeFragmentMain(inputData: EyeVertexOutput) -> @location(0) vec4<f32> {
     }]
   });
 
+  setTestStage("create-pipeline");
   const renderPipeline=gpuDevice.createRenderPipeline({
     layout:gpuDevice.createPipelineLayout({bindGroupLayouts:[sceneBindGroupLayout]}),
     vertex:{
@@ -361,9 +378,12 @@ fn eyeFragmentMain(inputData: EyeVertexOutput) -> @location(0) vec4<f32> {
     requestAnimationFrame(renderFrame);
   }
 
+  setTestStage("first-submit");
   resizeCanvas();
   renderFrame(performance.now());
+  setTestStage("submitted-work-wait");
   await gpuDevice.queue.onSubmittedWorkDone();
+  setTestStage("done");
   rootElement.dataset.webgpuStatus="ok";
 }
 
