@@ -91,6 +91,7 @@ jobs:
 
           python3 -m pip install --quiet websocket-client
 
+          set +e
           python3 - <<'PY'
           import json
           import time
@@ -136,6 +137,8 @@ jobs:
                 status: document.documentElement.dataset.webgpuStatus || null,
                 stage: document.documentElement.dataset.webgpuStage || null,
                 error: document.documentElement.dataset.webgpuError || null,
+                deviceLostReason: document.documentElement.dataset.webgpuDeviceLostReason || null,
+                deviceLostMessage: document.documentElement.dataset.webgpuDeviceLostMessage || null,
                 text: document.querySelector('#state')?.textContent || null
               })""")
               if state != last_state:
@@ -154,6 +157,11 @@ jobs:
           ws.close()
           raise SystemExit("Timed out waiting for WebGPU page: " + str(last_state))
           PY
+          test_status=$?
+          set -e
 
           echo "--- chrome stderr ---"
           cat /tmp/chrome.log || true
+          echo "--- chrome stdout ---"
+          cat /tmp/chrome-stdout.log || true
+          exit $test_status
