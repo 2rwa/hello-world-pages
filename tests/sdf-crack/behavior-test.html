@@ -171,13 +171,17 @@ fn sdOpeningWarpBody(pointPos : vec3<f32>, openingValue : f32, lengthValue : f32
   let sideDelta = pointPos.y - guideY;
   let sideDirection = select(-1.0, 1.0, sideDelta >= 0.0);
   let tipOpening = sqrt(clamp(1.0 - guideT, 0.0, 1.0));
-  let lateralInfluence = exp(-abs(sideDelta) * 7.5);
-  let surfaceInfluence = clamp((pointPos.z - 0.10) / 0.70, 0.0, 1.0);
-  let openingDisplacement = openingValue * (0.35 + 1.35 * dangerValue) * tipOpening *
+  let lateralInfluence = exp(-abs(sideDelta) * 5.0);
+  let lipInfluence = exp(-abs(sideDelta) * 17.0);
+  let surfaceInfluence = clamp((pointPos.z - 0.08) / 0.72, 0.0, 1.0);
+  let openingDisplacement = openingValue * (0.55 + 2.10 * dangerValue) * tipOpening *
                             lateralInfluence * surfaceInfluence * withinX;
+  let lipLift = openingValue * (0.12 + 0.72 * dangerValue) * tipOpening *
+                lipInfluence * surfaceInfluence * withinX;
 
   var inversePoint = pointPos;
   inversePoint.y = inversePoint.y - sideDirection * openingDisplacement;
+  inversePoint.z = inversePoint.z - lipLift;
   return sdSphere(inversePoint, 0.86);
 }
 
@@ -326,8 +330,8 @@ fn fragmentMain(inputData : VertexOut) -> @location(0) vec4<f32> {
     var crackFalloff = 42.0;
     var crackShadeStrength = 0.72;
     if (params.extra.x < 0.5) {
-      crackFalloff = 15.0;
-      crackShadeStrength = 0.34;
+      crackFalloff = 8.0;
+      crackShadeStrength = 0.22;
     } else if (params.extra.x >= 3.5) {
       crackFalloff = 28.0;
       crackShadeStrength = 0.62;
@@ -430,6 +434,8 @@ async function main(){
     impact:{...base,mode:2},
     network:{...base,mode:3},
     warped:{...base,mode:4},
+    warpLow:{...base,mode:4,opening:0.010,danger:0.30},
+    warpHigh:{...base,mode:4,opening:0.105,danger:1.00},
     cameraRotated:{...base,mode:1,yaw:0.72,pitch:0.28},
     cameraZoomed:{...base,mode:1,distance:1.80}
   };
@@ -448,6 +454,7 @@ async function main(){
     fissureVsImpact:compareImages(images.fissure,images.impact),
     impactVsNetwork:compareImages(images.impact,images.network),
     fissureVsWarped:compareImages(images.fissure,images.warped),
+    warpResponse:compareImages(images.warpLow,images.warpHigh),
     cameraRotation:compareImages(images.fissure,images.cameraRotated),
     cameraZoom:compareImages(images.fissure,images.cameraZoomed)
   };
@@ -461,6 +468,11 @@ async function main(){
   for(const [comparisonName,data] of Object.entries(comparisons)){
     check("render-difference:"+comparisonName,data.changedPixels>=20&&data.meanAbsChannelDelta>=0.01,data);
   }
+  check(
+    "opening-warp-strong-response",
+    comparisons.warpResponse.changedPixels>=300 && comparisons.warpResponse.meanAbsChannelDelta>=0.10,
+    comparisons.warpResponse
+  );
   const validationError=await gpuDevice.popErrorScope();
   check("webgpu-validation",!validationError,{message:validationError?.message||""});
 
