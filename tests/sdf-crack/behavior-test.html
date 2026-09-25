@@ -59,70 +59,74 @@ fn crackHalfOpening(pointPos : vec3<f32>, startX : f32, frontX : f32, baseOpenin
   return max(0.0015, openingModulation * openingScale);
 }
 
+fn sdSlotSegment(pointPos : vec3<f32>, pointA : vec2<f32>, pointB : vec2<f32>, halfOpen : f32, depthBackZ : f32) -> f32 {
+  let segmentDelta = pointB - pointA;
+  let relativePos = pointPos.xy - pointA;
+  let segmentScale = max(dot(segmentDelta, segmentDelta), 0.00001);
+  let segmentT = clamp(dot(relativePos, segmentDelta) / segmentScale, 0.0, 1.0);
+  let nearestPos = pointA + segmentDelta * segmentT;
+  let planarDistance = length(pointPos.xy - nearestPos) - halfOpen;
+  let depthDistance = depthBackZ - pointPos.z;
+  return max(planarDistance, depthDistance);
+}
+
+fn sdPolylineCrack(pointPos : vec3<f32>, openingValue : f32, lengthValue : f32, dangerValue : f32, widthScale : f32, depthBaseZ : f32) -> f32 {
+  let startX = -0.80;
+  let crackExtent = 0.16 + clamp(lengthValue, 0.05, 1.0) * 1.25;
+  let jaggedScale = 0.015 + 0.032 * dangerValue;
+
+  let point0 = vec2<f32>(startX, -0.18 * jaggedScale);
+  let point1 = vec2<f32>(startX + crackExtent * 0.23,  0.72 * jaggedScale);
+  let point2 = vec2<f32>(startX + crackExtent * 0.47, -1.00 * jaggedScale);
+  let point3 = vec2<f32>(startX + crackExtent * 0.72,  0.82 * jaggedScale);
+  let point4 = vec2<f32>(startX + crackExtent,        -0.24 * jaggedScale);
+
+  let baseOpen = max(0.0007, openingValue * widthScale * (0.22 + 0.78 * dangerValue));
+  let depthBackZ = depthBaseZ - 0.24 * dangerValue;
+
+  let segment0 = sdSlotSegment(pointPos, point0, point1, baseOpen * 0.95, depthBackZ);
+  let segment1 = sdSlotSegment(pointPos, point1, point2, baseOpen * 0.76, depthBackZ + 0.02);
+  let segment2 = sdSlotSegment(pointPos, point2, point3, baseOpen * 0.54, depthBackZ + 0.04);
+  let segment3 = sdSlotSegment(pointPos, point3, point4, baseOpen * 0.24, depthBackZ + 0.06);
+
+  return min(min(segment0, segment1), min(segment2, segment3));
+}
+
 fn sdMainCrackVoid(pointPos : vec3<f32>, openingValue : f32, lengthValue : f32, dangerValue : f32) -> f32 {
-  let startX = -0.78;
-  let frontX = startX + clamp(lengthValue, 0.05, 1.0) * 1.30;
-  let halfOpen = crackHalfOpening(pointPos, startX, frontX, openingValue, dangerValue);
-  let depthBackZ = 0.44 - 0.34 * dangerValue;
-
-  let aheadLimit = pointPos.x - frontX;
-  let behindLimit = startX - pointPos.x;
-  let openingLimit = abs(pointPos.y) - halfOpen;
-  let depthLimit = depthBackZ - pointPos.z;
-
-  return max(max(aheadLimit, behindLimit), max(openingLimit, depthLimit));
+  return sdPolylineCrack(pointPos, openingValue, lengthValue, dangerValue, 1.0, 0.58);
 }
 
 fn sdBranchCrackVoid(pointPos : vec3<f32>, openingValue : f32, lengthValue : f32, dangerValue : f32, branchValue : f32, sideSign : f32) -> f32 {
-  let branchWeight = clamp(branchValue * dangerValue, 0.0, 1.0);
-  let startX = -0.78;
-  let mainFrontX = startX + clamp(lengthValue, 0.05, 1.0) * 1.30;
-  let branchOriginX = mainFrontX - (0.07 + 0.08 * dangerValue);
-  let branchAngle = 0.30 + 0.75 * branchWeight;
-  let cosValue = cos(sideSign * branchAngle);
-  let sinValue = sin(sideSign * branchAngle);
+  let branchWeight = clamp(branchValue * (0.30 + 0.70 * dangerValue), 0.0, 1.0);
+  let startX = -0.80;
+  let crackExtent = 0.16 + clamp(lengthValue, 0.05, 1.0) * 1.25;
+  let jaggedScale = 0.015 + 0.032 * dangerValue;
+  let branchStart = vec2<f32>(startX + crackExtent * 0.58, -0.40 * jaggedScale);
+  let branchLength = crackExtent * (0.08 + 0.22 * branchWeight);
+  let branchAngle = sideSign * (0.58 + 0.38 * branchWeight);
+  let branchMid = branchStart + vec2<f32>(cos(branchAngle), sin(branchAngle)) * branchLength * 0.58;
+  let branchTipAngle = branchAngle + sideSign * 0.22;
+  let branchTip = branchMid + vec2<f32>(cos(branchTipAngle), sin(branchTipAngle)) * branchLength * 0.42;
+  let branchOpen = max(0.0006, openingValue * branchWeight * 0.24);
+  let branchDepth = 0.64 - 0.15 * dangerValue;
 
-  let relativeXY = vec2<f32>(pointPos.x - branchOriginX, pointPos.y);
-  let branchU = cosValue * relativeXY.x + sinValue * relativeXY.y;
-  let branchV = -sinValue * relativeXY.x + cosValue * relativeXY.y;
-
-  let branchLength = (0.05 + 0.34 * branchWeight) * clamp(lengthValue, 0.0, 1.0);
-  let behindFront = clamp(1.0 - branchU / max(branchLength, 0.001), 0.0, 1.0);
-  let halfOpen = max(0.0012, openingValue * 0.65 * sqrt(behindFront) * branchWeight);
-  let depthBackZ = 0.48 - 0.32 * dangerValue;
-
-  let beforeStartLimit = -branchU;
-  let afterFrontLimit = branchU - branchLength;
-  let openingLimit = abs(branchV) - halfOpen;
-  let depthLimit = depthBackZ - pointPos.z;
-
-  return max(max(beforeStartLimit, afterFrontLimit), max(openingLimit, depthLimit));
+  let branchSegmentA = sdSlotSegment(pointPos, branchStart, branchMid, branchOpen, branchDepth);
+  let branchSegmentB = sdSlotSegment(pointPos, branchMid, branchTip, branchOpen * 0.52, branchDepth + 0.03);
+  return min(branchSegmentA, branchSegmentB);
 }
 
 fn sdCrackVoid(pointPos : vec3<f32>, openingValue : f32, lengthValue : f32, dangerValue : f32, branchValue : f32) -> f32 {
   var crackDistance = sdMainCrackVoid(pointPos, openingValue, lengthValue, dangerValue);
   if (branchValue > 0.001) {
     let branchA = sdBranchCrackVoid(pointPos, openingValue, lengthValue, dangerValue, branchValue, 1.0);
-    let branchB = sdBranchCrackVoid(pointPos, openingValue, lengthValue, dangerValue, branchValue, -1.0);
+    let branchB = sdBranchCrackVoid(pointPos, openingValue, lengthValue, dangerValue, branchValue * 0.72, -1.0);
     crackDistance = min(crackDistance, min(branchA, branchB));
   }
   return crackDistance;
 }
 
 fn sdHairlineCrack(pointPos : vec3<f32>, openingValue : f32, lengthValue : f32, dangerValue : f32) -> f32 {
-  let startX = -0.78;
-  let frontX = startX + clamp(lengthValue, 0.05, 1.0) * 1.34;
-  let normalizedX = clamp((pointPos.x - startX) / max(frontX - startX, 0.001), 0.0, 1.0);
-  let waviness = 0.018 * sin(pointPos.x * 18.0 + 0.7) + 0.009 * sin(pointPos.x * 43.0 - 0.4);
-  let localCenterY = waviness * (0.35 + 0.65 * dangerValue);
-  let tipFactor = sqrt(clamp((frontX - pointPos.x) / max(frontX - startX, 0.001), 0.0, 1.0));
-  let halfOpen = max(0.0008, openingValue * (0.07 + 0.16 * dangerValue) * tipFactor);
-  let depthBackZ = 0.72 - 0.12 * dangerValue - 0.05 * normalizedX;
-  let aheadLimit = pointPos.x - frontX;
-  let behindLimit = startX - pointPos.x;
-  let openingLimit = abs(pointPos.y - localCenterY) - halfOpen;
-  let depthLimit = depthBackZ - pointPos.z;
-  return max(max(aheadLimit, behindLimit), max(openingLimit, depthLimit));
+  return sdPolylineCrack(pointPos, openingValue, lengthValue, dangerValue, 0.14, 0.76);
 }
 
 fn sdRadialCrack(pointPos : vec3<f32>, originXY : vec2<f32>, angleValue : f32, crackLength : f32, halfOpen : f32, depthBackZ : f32) -> f32 {
@@ -156,7 +160,7 @@ fn sdImpactCrack(pointPos : vec3<f32>, openingValue : f32, lengthValue : f32, da
 }
 
 fn sdNetworkCrack(pointPos : vec3<f32>, openingValue : f32, lengthValue : f32, dangerValue : f32, branchValue : f32) -> f32 {
-  let primaryDistance = sdHairlineCrack(pointPos, openingValue * 0.75, lengthValue, dangerValue);
+  let primaryDistance = sdPolylineCrack(pointPos, openingValue, lengthValue, dangerValue, 0.38, 0.70);
   let secondaryOpen = max(0.0007, openingValue * 0.11);
   let secondaryDepth = 0.67 - 0.12 * dangerValue;
   let networkA = sdRadialCrack(pointPos, vec2<f32>(-0.32, 0.00),  0.78, 0.12 + 0.23 * lengthValue, secondaryOpen, secondaryDepth);
