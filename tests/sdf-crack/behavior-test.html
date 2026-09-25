@@ -65,13 +65,15 @@ fn crackHalfOpening(pointPos : vec3<f32>, startX : f32, frontX : f32, baseOpenin
 fn sdMainCrackVoid(pointPos : vec3<f32>, openingValue : f32, lengthValue : f32, dangerValue : f32) -> f32 {
   let startX = -0.78;
   let frontX = startX + clamp(lengthValue, 0.05, 1.0) * 1.30;
-  let halfSpanZ = 0.11 + 0.05 * dangerValue;
   let halfOpen = crackHalfOpening(pointPos, startX, frontX, openingValue, dangerValue);
+  let depthBackZ = 0.44 - 0.34 * dangerValue;
+
   let aheadLimit = pointPos.x - frontX;
   let behindLimit = startX - pointPos.x;
-  let planeLimit = abs(pointPos.y) - halfOpen;
-  let sideLimit = abs(pointPos.z) - halfSpanZ;
-  return max(max(aheadLimit, behindLimit), max(planeLimit, sideLimit));
+  let openingLimit = abs(pointPos.y) - halfOpen;
+  let depthLimit = depthBackZ - pointPos.z;
+
+  return max(max(aheadLimit, behindLimit), max(openingLimit, depthLimit));
 }
 
 fn sdBranchCrackVoid(pointPos : vec3<f32>, openingValue : f32, lengthValue : f32, dangerValue : f32, branchValue : f32, sideSign : f32) -> f32 {
@@ -79,17 +81,25 @@ fn sdBranchCrackVoid(pointPos : vec3<f32>, openingValue : f32, lengthValue : f32
   let startX = -0.78;
   let mainFrontX = startX + clamp(lengthValue, 0.05, 1.0) * 1.30;
   let branchOriginX = mainFrontX - (0.07 + 0.08 * dangerValue);
-  let branchAngle = 0.25 + 0.90 * branchWeight;
+  let branchAngle = 0.30 + 0.75 * branchWeight;
   let cosValue = cos(sideSign * branchAngle);
   let sinValue = sin(sideSign * branchAngle);
-  let relativeXZ = vec2<f32>(pointPos.x - branchOriginX, pointPos.z);
-  let branchU = cosValue * relativeXZ.x + sinValue * relativeXZ.y;
-  let branchV = -sinValue * relativeXZ.x + cosValue * relativeXZ.y;
-  let branchLength = (0.06 + 0.33 * branchWeight) * clamp(lengthValue, 0.0, 1.0);
+
+  let relativeXY = vec2<f32>(pointPos.x - branchOriginX, pointPos.y);
+  let branchU = cosValue * relativeXY.x + sinValue * relativeXY.y;
+  let branchV = -sinValue * relativeXY.x + cosValue * relativeXY.y;
+
+  let branchLength = (0.05 + 0.34 * branchWeight) * clamp(lengthValue, 0.0, 1.0);
   let behindFront = clamp(1.0 - branchU / max(branchLength, 0.001), 0.0, 1.0);
-  let halfOpen = max(0.0012, openingValue * 0.72 * sqrt(behindFront) * branchWeight);
-  let halfSpanV = 0.020 + 0.020 * branchWeight;
-  return max(max(-branchU, branchU - branchLength), max(abs(pointPos.y) - halfOpen, abs(branchV) - halfSpanV));
+  let halfOpen = max(0.0012, openingValue * 0.65 * sqrt(behindFront) * branchWeight);
+  let depthBackZ = 0.48 - 0.32 * dangerValue;
+
+  let beforeStartLimit = -branchU;
+  let afterFrontLimit = branchU - branchLength;
+  let openingLimit = abs(branchV) - halfOpen;
+  let depthLimit = depthBackZ - pointPos.z;
+
+  return max(max(beforeStartLimit, afterFrontLimit), max(openingLimit, depthLimit));
 }
 
 fn sdCrackVoid(pointPos : vec3<f32>, openingValue : f32, lengthValue : f32, dangerValue : f32, branchValue : f32) -> f32 {
@@ -250,8 +260,8 @@ async function main(){
     uniformArray[5]=crackValues.length;
     uniformArray[6]=crackValues.danger;
     uniformArray[7]=crackValues.branch;
-    uniformArray[8]=0.55;
-    uniformArray[9]=-0.16;
+    uniformArray[8]=0.15;
+    uniformArray[9]=-0.10;
     uniformArray[10]=2.45;
     gpuDevice.queue.writeBuffer(uniformBuffer,0,uniformArray);
 
