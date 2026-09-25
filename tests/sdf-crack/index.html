@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="ja" data-webgpu-status="starting">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SDF Crack WebGPU Test</title>
+<style>
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#08101b;color:#eaf2ff;font-family:system-ui,sans-serif}
+canvas{width:100vw;height:100vh;display:block}
+#state{position:fixed;left:12px;bottom:12px;padding:8px 10px;background:#0009;border-radius:8px;font:12px ui-monospace,monospace;white-space:pre-wrap}
+</style>
+</head>
+<body>
+<canvas id="gpuCanvas"></canvas>
+<div id="state">STARTING</div>
+<script type="module">
+const rootElement=document.documentElement;
+const canvasElement=document.querySelector("#gpuCanvas");
+const stateElement=document.querySelector("#state");
+const ciMode=new URLSearchParams(location.search).get("ci")==="1";
+
+function setStage(stageName){
+  rootElement.dataset.webgpuStage=stageName;
+  stateElement.textContent=stageName;
+  console.log("[webgpu-stage]",stageName);
+}
+function failPage(errorValue){
+  const message=String(errorValue && (errorValue.message||errorValue));
+  rootElement.dataset.webgpuStatus="fail";
+  rootElement.dataset.webgpuError=message;
+  stateElement.textContent="FAIL: "+message;
+  console.error("[webgpu-fail]",errorValue);
+}
+setStage("script-start");
+
+async function startDemo(){
+  if(!navigator.gpu) throw new Error("navigator.gpu unavailable");
+  setStage("request-adapter");
+  const gpuAdapter=await navigator.gpu.requestAdapter({powerPreference:"high-performance"});
+  if(!gpuAdapter) throw new Error("requestAdapter returned null");
+
+  setStage("request-device");
+  const gpuDevice=await gpuAdapter.requestDevice();
+  gpuDevice.lost.then((lostInfo)=>{
+    rootElement.dataset.webgpuDeviceLostReason=String(lostInfo.reason||"unknown");
+    rootElement.dataset.webgpuDeviceLostMessage=String(lostInfo.message||"");
+  });
+
+  let gpuContext=null;
+  const canvasFormat=ciMode?"rgba8unorm":navigator.gpu.getPreferredCanvasFormat();
+  if(!ciMode){
+    gpuContext=canvasElement.getContext("webgpu");
+    if(!gpuContext) throw new Error("webgpu canvas context unavailable");
+    gpuContext.configure({device:gpuDevice,format:canvasFormat,alphaMode:"opaque"});
+  } else {
+    canvasElement.width=256;
+    canvasElement.height=144;
+  }
+
+  const shaderSource=/* wgsl */ `
+struct Params {
+  viewport : vec4<f32>,
+  crack : vec4<f32>,
+  camera : vec4<f32>,
+  extra : vec4<f32>,
+};
+
+@group(0) @binding(0) var<uniform> params : Params;
+
+struct VertexOut {
+  @builtin(position) position : vec4<f32>,
+  @location(0) uv : vec2<f32>,
+};
+
+fn rotateY(pointPos : vec3<f32>, angleValue : f32) -> vec3<f32> {
+  let cosValue = cos(angleValue);
+  let sinValue = sin(angleValue);
+  return vec3<f32>(
+    cosValue * pointPos.x + sinValue * pointPos.z,
+    pointPos.y,
+    -sinValue * pointPos.x + cosValue * pointPos.z
+  );
+}
+
+fn rotateX(pointPos : vec3<f32>, angleValue : f32) -> vec3<f32> {
+  let cosValue = cos(angleValue);
+  let sinValue = sin(angleValue);
+  return vec3<f32>(
+    pointPos.x,
+    cosValue * pointPos.y - sinValue * pointPos.z,
+    sinValue * pointPos.y + cosValue * pointPos.z
+  );
+}
+
+fn sdSphere(pointPos : vec3<f32>, radiusValue : f32) -> f32 {
+  return length(pointPos) - radiusValue;
+}
+
+fn crackHalfOpening(pointPos : vec3<f32>, startX : f32, frontX : f32, baseOpening : f32, dangerValue : f32) -> f32 {
+  let crackExtent = max(frontX - startX, 0.001);
+  let behindFront = clamp((frontX - pointPos.x) / crackExtent, 0.0, 1.0);
+  let openingScale = sqrt(behindFront);
+  let openingModulation = baseOpening * (0.18 + 0.82 * dangerValue);
+  return max(0.0015, openingModulation * openingScale);
+}
+
+fn sdMainCrackVoid(pointPos : vec3<f32>, openingValue : f32, lengthValue : f32, dangerValue : f32) -> f32 {
+  let startX = -0.78;
+  let frontX = startX + clamp(lengthValue, 0.05, 1.0) * 1.30;
+  let halfSpanZ = 0.11 + 0.05 * dangerValue;
+  let halfOpen = crackHalfOpening(pointPos, startX, frontX, openingValue, dangerValue);
+  let aheadLimit = pointPos.x - frontX;
+  let behindLimit = startX - pointPos.x;
+  let planeLimit = abs(pointPos.y) - halfOpen;
+  let sideLimit = abs(pointPos.z) - halfSpanZ;
+  return max(max(aheadLimit, behindLimit), max(planeLimit, sideLimit));
+}
+
+fn sdBranchCrackVoid(pointPos : vec3<f32>, openingValue : f32, lengthValue : f32, dangerValue : f32, branchValue : f32, sideSign : f32) -> f32 {
+  let branchWeight = clamp(branchValue * dangerValue, 0.0, 1.0);
+  let startX = -0.78;
+  let mainFrontX = startX + clamp(lengthValue, 0.05, 1.0) * 1.30;
+  let branchOriginX = mainFrontX - (0.07 + 0.08 * dangerValue);
+  let branchAngle = 0.25 + 0.90 * branchWeight;
+  let cosValue = cos(sideSign * branchAngle);
+  let sinValue = sin(sideSign * branchAngle);
+  let relativeXZ = vec2<f32>(pointPos.x - branchOriginX, pointPos.z);
+  let branchU = cosValue * relativeXZ.x + sinValue * relativeXZ.y;
+  let branchV = -sinValue * relativeXZ.x + cosValue * relativeXZ.y;
+  let branchLength = (0.06 + 0.33 * branchWeight) * clamp(lengthValue, 0.0, 1.0);
+  let behindFront = clamp(1.0 - branchU / max(branchLength, 0.001), 0.0, 1.0);
+  let halfOpen = max(0.0012, openingValue * 0.72 * sqrt(behindFront) * branchWeight);
+  let halfSpanV = 0.020 + 0.020 * branchWeight;
+  return max(max(-branchU, branchU - branchLength), max(abs(pointPos.y) - halfOpen, abs(branchV) - halfSpanV));
+}
+
+fn sdCrackVoid(pointPos : vec3<f32>, openingValue : f32, lengthValue : f32, dangerValue : f32, branchValue : f32) -> f32 {
+  var crackDistance = sdMainCrackVoid(pointPos, openingValue, lengthValue, dangerValue);
+  if (branchValue > 0.001) {
+    let branchA = sdBranchCrackVoid(pointPos, openingValue, lengthValue, dangerValue, branchValue, 1.0);
+    let branchB = sdBranchCrackVoid(pointPos, openingValue, lengthValue, dangerValue, branchValue, -1.0);
+    crackDistance = min(crackDistance, min(branchA, branchB));
+  }
+  return crackDistance;
+}
+
+fn sceneDistance(pointPos : vec3<f32>) -> f32 {
+  let dBody = sdSphere(pointPos, 0.86);
+  let dVoid = sdCrackVoid(pointPos, params.crack.x, params.crack.y, params.crack.z, params.crack.w);
+  return max(dBody, -dVoid);
+}
+
+fn estimateNormal(pointPos : vec3<f32>) -> vec3<f32> {
+  let epsilonValue = 0.0022;
+  let axisX = vec3<f32>(epsilonValue,0.0,0.0);
+  let axisY = vec3<f32>(0.0,epsilonValue,0.0);
+  let axisZ = vec3<f32>(0.0,0.0,epsilonValue);
+  return normalize(vec3<f32>(
+    sceneDistance(pointPos+axisX)-sceneDistance(pointPos-axisX),
+    sceneDistance(pointPos+axisY)-sceneDistance(pointPos-axisY),
+    sceneDistance(pointPos+axisZ)-sceneDistance(pointPos-axisZ)
+  ));
+}
+
+struct MarchResult {
+  hitFlag : bool,
+  travelValue : f32,
+};
+
+fn marchScene(rayOrigin : vec3<f32>, rayDirection : vec3<f32>) -> MarchResult {
+  var travelValue = 0.0;
+  var iterationIndex : i32 = 0;
+  loop {
+    if (iterationIndex >= 140 || travelValue > 8.0) { break; }
+    let pointPos = rayOrigin + rayDirection * travelValue;
+    let distanceValue = sceneDistance(pointPos);
+    if (abs(distanceValue) < 0.0015) {
+      return MarchResult(true, travelValue);
+    }
+    travelValue = travelValue + max(distanceValue * 0.70, 0.0025);
+    iterationIndex = iterationIndex + 1;
+  }
+  return MarchResult(false, travelValue);
+}
+
+@vertex
+fn vertexMain(@builtin(vertex_index) vertexIndex : u32) -> VertexOut {
+  var positions = array<vec2<f32>,3>(
+    vec2<f32>(-1.0,-3.0),
+    vec2<f32>(3.0,1.0),
+    vec2<f32>(-1.0,1.0)
+  );
+  let positionXY = positions[vertexIndex];
+  var outputData : VertexOut;
+  outputData.position = vec4<f32>(positionXY,0.0,1.0);
+  outputData.uv = 0.5 * (positionXY + vec2<f32>(1.0,1.0));
+  return outputData;
+}
+
+@fragment
+fn fragmentMain(inputData : VertexOut) -> @location(0) vec4<f32> {
+  let aspectValue = params.viewport.w;
+  let ndcPos = vec2<f32>(
+    (inputData.uv.x * 2.0 - 1.0) * aspectValue,
+    -(inputData.uv.y * 2.0 - 1.0)
+  );
+
+  let yawValue = params.camera.x;
+  let pitchValue = params.camera.y;
+  let cameraDistance = params.camera.z;
+  let rayOriginBase = vec3<f32>(0.0,0.0,cameraDistance);
+  let rayOrigin = rotateY(rotateX(rayOriginBase,pitchValue),yawValue);
+  let target = vec3<f32>(0.0,0.0,0.0);
+  let forwardDir = normalize(target - rayOrigin);
+  let worldUp = vec3<f32>(0.0,1.0,0.0);
+  let rightDir = normalize(cross(forwardDir,worldUp));
+  let upDir = normalize(cross(rightDir,forwardDir));
+  let rayDirection = normalize(forwardDir*1.65 + rightDir*ndcPos.x + upDir*ndcPos.y);
+
+  var colorValue = vec3<f32>(0.02,0.04,0.08);
+  let marchResult = marchScene(rayOrigin,rayDirection);
+  if (marchResult.hitFlag) {
+    let pointPos = rayOrigin + rayDirection * marchResult.travelValue;
+    let normalValue = estimateNormal(pointPos);
+    let lightDir = normalize(vec3<f32>(0.8,1.2,0.6));
+    let diffuseValue = max(dot(normalValue,lightDir),0.0);
+    colorValue = vec3<f32>(0.30,0.56,0.88) * (0.18 + 0.82 * diffuseValue);
+  }
+  return vec4<f32>(colorValue,1.0);
+}
+`;
+
+  setStage("shader-module");
+  const shaderModule=gpuDevice.createShaderModule({code:shaderSource});
+  setStage("shader-compilation-info");
+  const compilationInfo=await shaderModule.getCompilationInfo();
+  const shaderErrors=compilationInfo.messages.filter((entry)=>entry.type==="error");
+  if(shaderErrors.length) throw new Error(shaderErrors.map((entry)=>entry.message).join(" | "));
+
+  const uniformArray=new Float32Array(16);
+  const uniformBuffer=gpuDevice.createBuffer({
+    size:uniformArray.byteLength,
+    usage:GPUBufferUsage.UNIFORM|GPUBufferUsage.COPY_DST
+  });
+  const bindLayout=gpuDevice.createBindGroupLayout({
+    entries:[{binding:0,visibility:GPUShaderStage.FRAGMENT,buffer:{type:"uniform"}}]
+  });
+  const bindGroup=gpuDevice.createBindGroup({
+    layout:bindLayout,
+    entries:[{binding:0,resource:{buffer:uniformBuffer}}]
+  });
+
+  gpuDevice.pushErrorScope("validation");
+  setStage("create-pipeline");
+  const renderPipeline=gpuDevice.createRenderPipeline({
+    layout:gpuDevice.createPipelineLayout({bindGroupLayouts:[bindLayout]}),
+    vertex:{module:shaderModule,entryPoint:"vertexMain"},
+    fragment:{module:shaderModule,entryPoint:"fragmentMain",targets:[{format:canvasFormat}]},
+    primitive:{topology:"triangle-list"}
+  });
+
+  function resizeCanvas(){
+    const ratio=Math.min(window.devicePixelRatio||1,2);
+    const widthValue=Math.max(1,Math.floor(canvasElement.clientWidth*ratio));
+    const heightValue=Math.max(1,Math.floor(canvasElement.clientHeight*ratio));
+    if(canvasElement.width!==widthValue||canvasElement.height!==heightValue){
+      canvasElement.width=widthValue;
+      canvasElement.height=heightValue;
+    }
+  }
+  if(!ciMode) resizeCanvas();
+
+  const renderTexture=ciMode?gpuDevice.createTexture({
+    size:[canvasElement.width,canvasElement.height,1],
+    format:canvasFormat,
+    usage:GPUTextureUsage.RENDER_ATTACHMENT|GPUTextureUsage.COPY_SRC
+  }):null;
+
+  const bytesPerRow=canvasElement.width*4;
+  const readBuffer=ciMode?gpuDevice.createBuffer({
+    size:bytesPerRow*canvasElement.height,
+    usage:GPUBufferUsage.COPY_DST|GPUBufferUsage.MAP_READ
+  }):null;
+
+  function submitFrame(){
+    uniformArray[0]=canvasElement.width;
+    uniformArray[1]=canvasElement.height;
+    uniformArray[2]=0.0;
+    uniformArray[3]=canvasElement.width/Math.max(canvasElement.height,1);
+    uniformArray[4]=0.045;
+    uniformArray[5]=0.72;
+    uniformArray[6]=0.78;
+    uniformArray[7]=0.35;
+    uniformArray[8]=0.55;
+    uniformArray[9]=-0.16;
+    uniformArray[10]=2.45;
+    gpuDevice.queue.writeBuffer(uniformBuffer,0,uniformArray);
+
+    const commandEncoder=gpuDevice.createCommandEncoder();
+    const renderView=ciMode?renderTexture.createView():gpuContext.getCurrentTexture().createView();
+    const renderPass=commandEncoder.beginRenderPass({
+      colorAttachments:[{
+        view:renderView,
+        clearValue:{r:0.02,g:0.04,b:0.08,a:1},
+        loadOp:"clear",
+        storeOp:"store"
+      }]
+    });
+    renderPass.setPipeline(renderPipeline);
+    renderPass.setBindGroup(0,bindGroup);
+    renderPass.draw(3,1,0,0);
+    renderPass.end();
+
+    if(ciMode){
+      commandEncoder.copyTextureToBuffer(
+        {texture:renderTexture},
+        {buffer:readBuffer,bytesPerRow,rowsPerImage:canvasElement.height},
+        [canvasElement.width,canvasElement.height,1]
+      );
+    }
+    gpuDevice.queue.submit([commandEncoder.finish()]);
+  }
+
+  setStage("first-submit");
+  submitFrame();
+
+  setStage("validation-scope");
+  const validationError=await gpuDevice.popErrorScope();
+  if(validationError) throw new Error("WebGPU validation: "+validationError.message);
+
+  setStage("submitted-work-wait");
+  await gpuDevice.queue.onSubmittedWorkDone();
+
+  if(ciMode){
+    setStage("pixel-readback");
+    await readBuffer.mapAsync(GPUMapMode.READ);
+    const pixelBytes=new Uint8Array(readBuffer.getMappedRange());
+    let visiblePixelCount=0;
+    for(let offset=0;offset<pixelBytes.length;offset+=4){
+      const redValue=pixelBytes[offset];
+      const greenValue=pixelBytes[offset+1];
+      const blueValue=pixelBytes[offset+2];
+      if(redValue>20 || greenValue>25 || blueValue>40) visiblePixelCount+=1;
+    }
+    rootElement.dataset.visiblePixelCount=String(visiblePixelCount);
+    readBuffer.unmap();
+    if(visiblePixelCount<200) throw new Error("render completed but geometry was not visibly different from background; visiblePixelCount="+visiblePixelCount);
+  }
+
+  setStage("done");
+  rootElement.dataset.webgpuStatus="ok";
+  stateElement.textContent="OK / WebGPU SDF crack test";
+}
+
+startDemo().catch(failPage);
+</script>
+</body>
+</html>
