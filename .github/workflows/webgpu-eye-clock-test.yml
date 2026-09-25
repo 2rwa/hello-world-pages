@@ -71,7 +71,7 @@ jobs:
             --enable-unsafe-swiftshader
             --remote-debugging-port=9222
             --remote-allow-origins=*
-            http://127.0.0.1:8765/tests/webgpu-eye-clock/
+            http://127.0.0.1:8765/tests/webgpu-eye-clock/?ci=1
           )
 
           printf 'Chrome args:'
