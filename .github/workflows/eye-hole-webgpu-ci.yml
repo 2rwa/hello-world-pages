@@ -1,0 +1,178 @@
+name: EYE HOLE WebGPU CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'eye-hole/**'
+      - '.github/workflows/eye-hole-webgpu-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  webgpu:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Runtime versions
+        run: |
+          node --version
+          google-chrome --version
+          python3 --version
+
+      - name: Start static server and WebGPU Chrome
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m http.server 8000 --bind 127.0.0.1 > /tmp/eye-hole-http.log 2>&1 &
+          echo $! > /tmp/eye-hole-http.pid
+
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:8000/eye-hole/ >/dev/null; then
+              break
+            fi
+            sleep 0.2
+          done
+          curl -fsS http://127.0.0.1:8000/eye-hole/ >/dev/null
+
+          google-chrome \
+            --headless=new \
+            --no-sandbox \
+            --disable-dev-shm-usage \
+            --remote-debugging-address=127.0.0.1 \
+            --remote-debugging-port=9222 \
+            --user-data-dir=/tmp/eye-hole-chrome-profile \
+            --enable-unsafe-webgpu \
+            --enable-features=Vulkan \
+            --use-vulkan=swiftshader \
+            --disable-vulkan-fallback-to-gl-for-testing \
+            --use-webgpu-adapter=swiftshader \
+            --enable-webgpu-developer-features \
+            --enable-dawn-features=allow_unsafe_apis \
+            --disable-dawn-features=use_dxc \
+            --use-gpu-in-tests \
+            --enable-unsafe-swiftshader \
+            'http://127.0.0.1:8000/eye-hole/?ci=1' \
+            > /tmp/eye-hole-chrome.log 2>&1 &
+          echo $! > /tmp/eye-hole-chrome.pid
+
+          for i in {1..60}; do
+            if curl -fsS http://127.0.0.1:9222/json/version >/dev/null; then
+              exit 0
+            fi
+            if ! kill -0 "$(cat /tmp/eye-hole-chrome.pid)" 2>/dev/null; then
+              echo 'Chrome exited before DevTools became ready'
+              cat /tmp/eye-hole-chrome.log
+              exit 1
+            fi
+            sleep 0.25
+          done
+
+          echo 'DevTools endpoint did not become ready'
+          cat /tmp/eye-hole-chrome.log
+          exit 1
+
+      - name: Poll WebGPU result through DevTools
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > /tmp/poll-webgpu.mjs <<'NODE'
+          import WebSocket from 'ws';
+
+          const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+          const deadline = Date.now() + 30000;
+
+          async function getPage() {
+            const response = await fetch('http://127.0.0.1:9222/json');
+            if (!response.ok) throw new Error(`DevTools list HTTP ${response.status}`);
+            const pages = await response.json();
+            return pages.find(page => page.type === 'page' && page.url.includes('/eye-hole/'));
+          }
+
+          let page;
+          while (Date.now() < deadline && !page) {
+            page = await getPage().catch(() => null);
+            if (!page) await sleep(200);
+          }
+          if (!page) throw new Error('EYE HOLE DevTools page not found');
+
+          const ws = new WebSocket(page.webSocketDebuggerUrl);
+          await new Promise((resolve, reject) => {
+            ws.once('open', resolve);
+            ws.once('error', reject);
+          });
+
+          let nextId = 1;
+          const pending = new Map();
+          ws.on('message', data => {
+            const message = JSON.parse(String(data));
+            if (message.id && pending.has(message.id)) {
+              const {resolve, reject} = pending.get(message.id);
+              pending.delete(message.id);
+              if (message.error) reject(new Error(JSON.stringify(message.error)));
+              else resolve(message.result);
+            }
+          });
+
+          function command(method, params={}) {
+            const id = nextId++;
+            ws.send(JSON.stringify({id, method, params}));
+            return new Promise((resolve, reject) => pending.set(id, {resolve, reject}));
+          }
+
+          await command('Runtime.enable');
+          let lastStage = '';
+          while (Date.now() < deadline) {
+            const result = await command('Runtime.evaluate', {
+              expression: `(() => ({
+                status: document.documentElement.dataset.webgpuStatus || '',
+                stage: document.documentElement.dataset.webgpuStage || '',
+                error: document.documentElement.dataset.webgpuError || '',
+                lost: document.documentElement.dataset.webgpuLost || '',
+                ci: document.getElementById('ciStatus')?.textContent || ''
+              }))()`,
+              returnByValue: true
+            });
+            const value = result.result?.value || {};
+            if (value.stage !== lastStage) {
+              console.log('stage:', value.stage || '(none)', value.error || '');
+              lastStage = value.stage;
+            }
+            if (value.status === 'ok') {
+              console.log('WebGPU CI result:', JSON.stringify(value));
+              ws.close();
+              process.exit(0);
+            }
+            if (value.status === 'error') {
+              console.error('WebGPU page error:', JSON.stringify(value));
+              ws.close();
+              process.exit(2);
+            }
+            await sleep(200);
+          }
+
+          const finalResult = await command('Runtime.evaluate', {
+            expression: 'JSON.stringify(document.documentElement.dataset)',
+            returnByValue: true
+          }).catch(() => null);
+          console.error('Timed out waiting for WebGPU result:', finalResult?.result?.value || 'unknown');
+          ws.close();
+          process.exit(3);
+          NODE
+
+          npm install --no-save --no-package-lock ws@8 >/tmp/eye-hole-npm.log 2>&1
+          node /tmp/poll-webgpu.mjs
+
+      - name: Browser diagnostics
+        if: always()
+        shell: bash
+        run: |
+          echo '--- Chrome stderr/stdout ---'
+          cat /tmp/eye-hole-chrome.log 2>/dev/null || true
+          echo '--- HTTP server ---'
+          cat /tmp/eye-hole-http.log 2>/dev/null || true
