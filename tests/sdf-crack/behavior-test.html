@@ -238,12 +238,15 @@ fn crackVoidDistance(pointPos : vec3<f32>) -> f32 {
   if (modeValue < 3.5) {
     return sdNetworkCrack(pointPos, openingValue, lengthValue, dangerValue, branchValue);
   }
-  return sdCrackVoid(pointPos, openingValue * 0.30, lengthValue, dangerValue, branchValue * 0.65);
+  if (modeValue < 4.5) {
+    return sdCrackVoid(pointPos, openingValue * 0.30, lengthValue, dangerValue, branchValue * 0.65);
+  }
+  return 1000.0;
 }
 
 fn sceneDistance(pointPos : vec3<f32>) -> f32 {
   var bodyDistance = sdSphere(pointPos, 0.86);
-  if (params.extra.x >= 3.5) {
+  if (params.extra.x >= 3.5 && params.extra.x < 4.5) {
     bodyDistance = sdOpeningWarpBody(pointPos, params.crack.x, params.crack.y, params.crack.z);
   }
   let voidDistance = crackVoidDistance(pointPos);
@@ -410,13 +413,34 @@ async function main(){
   }
   function compareImages(firstBytes,secondBytes){
     let changedPixels=0,absoluteDelta=0,maxPixelDelta=0;
+    let minX=width,minY=height,maxX=-1,maxY=-1;
+    const changedColumns=new Set();
+    const changedRows=new Set();
     for(let index=0;index<firstBytes.length;index+=4){
       const pixelDelta=Math.abs(firstBytes[index]-secondBytes[index])+Math.abs(firstBytes[index+1]-secondBytes[index+1])+Math.abs(firstBytes[index+2]-secondBytes[index+2]);
       absoluteDelta+=pixelDelta;
-      if(pixelDelta>=8) changedPixels++;
+      if(pixelDelta>=8){
+        changedPixels++;
+        const pixelIndex=index/4;
+        const pixelX=pixelIndex%width;
+        const pixelY=Math.floor(pixelIndex/width);
+        minX=Math.min(minX,pixelX); maxX=Math.max(maxX,pixelX);
+        minY=Math.min(minY,pixelY); maxY=Math.max(maxY,pixelY);
+        changedColumns.add(pixelX);
+        changedRows.add(pixelY);
+      }
       if(pixelDelta>maxPixelDelta) maxPixelDelta=pixelDelta;
     }
-    return {changedPixels,meanAbsChannelDelta:absoluteDelta/(width*height*3),maxPixelDelta};
+    const boxWidth=maxX>=minX?maxX-minX+1:0;
+    const boxHeight=maxY>=minY?maxY-minY+1:0;
+    return {
+      changedPixels,
+      meanAbsChannelDelta:absoluteDelta/(width*height*3),
+      maxPixelDelta,
+      bbox:{minX,minY,maxX,maxY,width:boxWidth,height:boxHeight},
+      columnCoverage:boxWidth>0?changedColumns.size/boxWidth:0,
+      rowCoverage:boxHeight>0?changedRows.size/boxHeight:0
+    };
   }
 
   const base={opening:0.045,length:0.72,danger:0.78,branch:0.35,yaw:0.15,pitch:-0.10,distance:2.45};
@@ -434,6 +458,7 @@ async function main(){
     impact:{...base,mode:2},
     network:{...base,mode:3},
     warped:{...base,mode:4},
+    intact:{...base,mode:5},
     warpLow:{...base,mode:4,opening:0.010,danger:0.30},
     warpHigh:{...base,mode:4,opening:0.105,danger:1.00},
     cameraRotated:{...base,mode:1,yaw:0.72,pitch:0.28},
@@ -454,6 +479,11 @@ async function main(){
     fissureVsImpact:compareImages(images.fissure,images.impact),
     impactVsNetwork:compareImages(images.impact,images.network),
     fissureVsWarped:compareImages(images.fissure,images.warped),
+    hairlineVsIntact:compareImages(images.hairline,images.intact),
+    fissureVsIntact:compareImages(images.fissure,images.intact),
+    impactVsIntact:compareImages(images.impact,images.intact),
+    networkVsIntact:compareImages(images.network,images.intact),
+    warpedVsIntact:compareImages(images.warped,images.intact),
     warpResponse:compareImages(images.warpLow,images.warpHigh),
     cameraRotation:compareImages(images.fissure,images.cameraRotated),
     cameraZoom:compareImages(images.fissure,images.cameraZoomed)
@@ -472,6 +502,40 @@ async function main(){
     "opening-warp-strong-response",
     comparisons.warpResponse.changedPixels>=300 && comparisons.warpResponse.meanAbsChannelDelta>=0.10,
     comparisons.warpResponse
+  );
+  check(
+    "hairline-spans-surface",
+    comparisons.hairlineVsIntact.changedPixels>=120 &&
+      comparisons.hairlineVsIntact.bbox.width>=25 &&
+      comparisons.hairlineVsIntact.columnCoverage>=0.55,
+    comparisons.hairlineVsIntact
+  );
+  check(
+    "fissure-spans-surface",
+    comparisons.fissureVsIntact.changedPixels>=200 &&
+      comparisons.fissureVsIntact.bbox.width>=25 &&
+      comparisons.fissureVsIntact.columnCoverage>=0.55,
+    comparisons.fissureVsIntact
+  );
+  check(
+    "impact-is-two-dimensional",
+    comparisons.impactVsIntact.changedPixels>=300 &&
+      comparisons.impactVsIntact.bbox.width>=25 &&
+      comparisons.impactVsIntact.bbox.height>=20,
+    comparisons.impactVsIntact
+  );
+  check(
+    "network-is-two-dimensional",
+    comparisons.networkVsIntact.changedPixels>=300 &&
+      comparisons.networkVsIntact.bbox.width>=25 &&
+      comparisons.networkVsIntact.bbox.height>=15,
+    comparisons.networkVsIntact
+  );
+  check(
+    "opening-warp-visible-shape",
+    comparisons.warpedVsIntact.changedPixels>=200 &&
+      comparisons.warpedVsIntact.bbox.width>=25,
+    comparisons.warpedVsIntact
   );
   const validationError=await gpuDevice.popErrorScope();
   check("webgpu-validation",!validationError,{message:validationError?.message||""});

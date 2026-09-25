@@ -34,6 +34,7 @@ canvas{width:100vw;height:100vh;display:block}
       <option value="2">Impact</option>
       <option value="3">Network</option>
       <option value="4">Opening warp</option>
+      <option value="5">Intact reference</option>
     </select>
   </div>
   <div class="control">
@@ -75,7 +76,7 @@ const outputs={
   danger:document.querySelector("#dangerValue"),
   branch:document.querySelector("#branchValue")
 };
-const modeNames=["Hairline","Fissure","Impact","Network","Opening warp"];
+const modeNames=["Hairline","Fissure","Impact","Network","Opening warp","Intact reference"];
 const defaults={mode:1,opening:0.045,length:0.720,danger:0.780,branch:0.350};
 
 function readParameters(){
@@ -359,12 +360,15 @@ fn crackVoidDistance(pointPos : vec3<f32>) -> f32 {
   if (modeValue < 3.5) {
     return sdNetworkCrack(pointPos, openingValue, lengthValue, dangerValue, branchValue);
   }
-  return sdCrackVoid(pointPos, openingValue * 0.30, lengthValue, dangerValue, branchValue * 0.65);
+  if (modeValue < 4.5) {
+    return sdCrackVoid(pointPos, openingValue * 0.30, lengthValue, dangerValue, branchValue * 0.65);
+  }
+  return 1000.0;
 }
 
 fn sceneDistance(pointPos : vec3<f32>) -> f32 {
   var bodyDistance = sdSphere(pointPos, 0.86);
-  if (params.extra.x >= 3.5) {
+  if (params.extra.x >= 3.5 && params.extra.x < 4.5) {
     bodyDistance = sdOpeningWarpBody(pointPos, params.crack.x, params.crack.y, params.crack.z);
   }
   let voidDistance = crackVoidDistance(pointPos);
