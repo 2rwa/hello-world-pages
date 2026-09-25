@@ -1,0 +1,163 @@
+name: WebGPU fog clear test
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'tests/webgpu-fog-clear/index.html'
+      - '.github/workflows/webgpu-fog-clear-test.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  browser-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Static preflight
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("tests/webgpu-fog-clear/index.html")
+          s = p.read_text()
+          required = [
+              "navigator.gpu",
+              "getCompilationInfo",
+              "createRenderPipelineAsync",
+              "createComputePipelineAsync",
+              "texture_storage_3d<rgba8unorm, write>",
+              "copyTextureToBuffer",
+              "queue.onSubmittedWorkDone",
+              "runCiTest",
+              "data-test-state",
+          ]
+          for token in required:
+              assert token in s, token
+          assert "var<workgroup>" not in s
+          print("static preflight: ok")
+          PY
+
+      - name: Start local server
+        run: |
+          python3 -m http.server 8765 --directory . >/tmp/webgpu-http.log 2>&1 &
+          echo $! > /tmp/webgpu-http.pid
+          sleep 1
+          curl -f http://127.0.0.1:8765/tests/webgpu-fog-clear/?ci=1 >/dev/null
+
+      - name: WebGPU compute and render test
+        shell: bash
+        run: |
+          set -euo pipefail
+          CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
+          if [ -z "$CHROME" ]; then
+            echo "No Chrome/Chromium found on runner"
+            exit 1
+          fi
+          echo "Chrome version: $("$CHROME" --version || true)"
+
+          chrome_args=(
+            --headless=new
+            --no-sandbox
+            --disable-dev-shm-usage
+            --enable-unsafe-webgpu
+            --enable-features=Vulkan
+            --use-vulkan=swiftshader
+            --disable-vulkan-fallback-to-gl-for-testing
+            --use-webgpu-adapter=swiftshader
+            --enable-webgpu-developer-features
+            --enable-dawn-features=allow_unsafe_apis
+            --disable-dawn-features=use_dxc
+            --use-gpu-in-tests
+            --enable-unsafe-swiftshader
+            --remote-debugging-port=9222
+            --remote-allow-origins=*
+            http://127.0.0.1:8765/tests/webgpu-fog-clear/?ci=1
+          )
+
+          "$CHROME" "${chrome_args[@]}" >/tmp/chrome-stdout.log 2>/tmp/chrome.log &
+          chrome_pid=$!
+          trap 'kill $chrome_pid 2>/dev/null || true' EXIT
+
+          for i in $(seq 1 15); do
+            if curl -fsS http://127.0.0.1:9222/json/list >/tmp/cdp-targets.json; then
+              break
+            fi
+            sleep 1
+          done
+
+          python3 -m pip install --quiet websocket-client
+
+          set +e
+          python3 - <<'PY'
+          import json
+          import time
+          import urllib.request
+          import websocket
+
+          with urllib.request.urlopen("http://127.0.0.1:9222/json/list", timeout=2) as r:
+              targets = json.load(r)
+          page = next(
+              (t for t in targets if t.get("type") == "page" and "webgpu-fog-clear" in t.get("url", "")),
+              None,
+          )
+          if page is None:
+              raise SystemExit("No fog-clear WebGPU page target found")
+
+          ws = websocket.create_connection(page["webSocketDebuggerUrl"], timeout=5)
+          next_id = 1
+          def evaluate(expression):
+              global next_id
+              msg_id = next_id
+              next_id += 1
+              ws.send(json.dumps({
+                  "id": msg_id,
+                  "method": "Runtime.evaluate",
+                  "params": {"expression": expression, "returnByValue": True},
+              }))
+              while True:
+                  response = json.loads(ws.recv())
+                  if response.get("id") == msg_id:
+                      return response["result"]["result"].get("value")
+
+          last_state = None
+          deadline = time.time() + 25
+          while time.time() < deadline:
+              raw = evaluate("""JSON.stringify({
+                status: document.body?.dataset?.testState || null,
+                test: window.__fogClearTest || null,
+                text: document.querySelector('#status')?.textContent || null
+              })""")
+              if raw != last_state:
+                  print("WebGPU page state:", raw, flush=True)
+                  last_state = raw
+              parsed = json.loads(raw)
+              status = parsed.get("status")
+              if status == "ok":
+                  ci = (parsed.get("test") or {}).get("ci") or {}
+                  if not (ci.get("after", 999) < ci.get("before", 0)):
+                      raise SystemExit("Fog density did not decrease: " + str(parsed))
+                  if not ci.get("checksum"):
+                      raise SystemExit("Render checksum missing/zero: " + str(parsed))
+                  print("WebGPU fog clear test: ok")
+                  ws.close()
+                  raise SystemExit(0)
+              if status == "error":
+                  ws.close()
+                  raise SystemExit("Page reported error: " + str(parsed))
+              time.sleep(0.5)
+
+          ws.close()
+          raise SystemExit("Timed out waiting for WebGPU page: " + str(last_state))
+          PY
+          test_status=$?
+          set -e
+
+          echo "--- chrome stderr ---"
+          tail -n 160 /tmp/chrome.log || true
+          echo "--- chrome stdout ---"
+          cat /tmp/chrome-stdout.log || true
+          exit $test_status
