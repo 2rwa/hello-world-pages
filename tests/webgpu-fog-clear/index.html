@@ -26,7 +26,7 @@ button,select{border:1px solid #ffffff28;background:#ffffff10;color:inherit;bord
 <div id="crosshair"></div><div id="flash"></div><div id="fatal"></div>
 <section id="panel">
 <h1>WebGPU Fog Clear Test v0.1</h1>
-<div class="small">3D密度場をvolume ray marchし、クリック/Spaceで照準方向のcapsule領域をCompute Shaderで削ります。ドラッグで視点、WASD/QEで移動。</div>
+<div class="small">霧の内部から開始します。3D密度場をvolume ray marchし、クリック/Spaceで照準方向のcapsule領域をCompute Shaderで削ります。ドラッグで視点、WASD/QEで霧の中を自由移動、Shiftで高速移動。</div>
 <div class="status" id="status">boot</div>
 <div class="row"><label>Fog density</label><input id="density" type="range" min="0.2" max="2.2" step="0.05" value="1.25"><output id="densityOut"></output></div>
 <div class="row"><label>Extinction</label><input id="extinction" type="range" min="0.2" max="3.0" step="0.05" value="1.15"><output id="extinctionOut"></output></div>
@@ -34,7 +34,7 @@ button,select{border:1px solid #ffffff28;background:#ffffff10;color:inherit;bord
 <div class="row"><label>Shot radius</label><input id="radius" type="range" min="0.2" max="1.8" step="0.05" value="0.72"><output id="radiusOut"></output></div>
 <div class="row"><label>Erase</label><input id="strength" type="range" min="0.1" max="1.0" step="0.05" value="0.92"><output id="strengthOut"></output></div>
 <div class="row"><label>Phase g</label><input id="phase" type="range" min="-0.6" max="0.8" step="0.05" value="0.35"><output id="phaseOut"></output></div>
-<div class="buttons"><button id="shootBtn">Shoot</button><button id="resetBtn">Reset fog</button><button id="modeBtn">Mode: Final</button><button id="panelBtn">Hide</button></div>
+<div class="buttons"><button id="shootBtn">Shoot</button><button id="enterFogBtn">Enter fog</button><button id="resetBtn">Reset fog</button><button id="modeBtn">Mode: Final</button><button id="panelBtn">Hide</button></div>
 </section>
 
 <script type="text/plain" id="renderShader">
@@ -254,23 +254,40 @@ const outputs = {
 };
 const VOL_W = 64, VOL_H = 40, VOL_D = 80;
 const VOLUME_MIN = [-5.8, -3.0, 0.0], VOLUME_MAX = [5.8, 3.0, 14.0];
+const FOG_ENTRY_POSITION = [0.0, 0.15, 1.2];
 const state = { stage:"boot", detail:"", shots:0, fps:0, currentTexture:0, mode:0, ci:null };
 window.__fogClearTest = state;
 let device, context, renderPipeline, computePipeline, renderUniformBuffer, shotUniformBuffer, fogSampler;
 let fogTextures = [], renderBindGroups = [], computeBindGroups = [], outputFormat, offscreenTarget = null;
 let initialFogBytes = null;
-let cameraPosition = [0, 0.1, -4.2], cameraYaw = 0, cameraPitch = 0;
+let cameraPosition = FOG_ENTRY_POSITION.slice(), cameraYaw = 0, cameraPitch = 0;
 let pointerDown = false, pointerMoved = false, pointerStart = null, lastPointer = null;
 const pressedKeys = new Set();
 let lastFrameTime = performance.now(), fpsAccumulator = 0, fpsFrames = 0, fpsStamp = performance.now();
 
+function isInsideFog(positionValue) {
+  return positionValue[0] >= VOLUME_MIN[0] && positionValue[0] <= VOLUME_MAX[0] &&
+    positionValue[1] >= VOLUME_MIN[1] && positionValue[1] <= VOLUME_MAX[1] &&
+    positionValue[2] >= VOLUME_MIN[2] && positionValue[2] <= VOLUME_MAX[2];
+}
+function syncCameraState() {
+  state.camera = {
+    position: cameraPosition.slice(),
+    yaw: cameraYaw,
+    pitch: cameraPitch,
+    insideFog: isInsideFog(cameraPosition)
+  };
+}
 function setStage(stageValue, detailValue) {
   state.stage = stageValue; state.detail = detailValue || "";
+  syncCameraState();
   document.body.dataset.testState = stageValue;
   statusElement.textContent =
     "stage: " + state.stage + "\n" +
     "detail: " + state.detail + "\n" +
     "shots: " + state.shots + "  texture: " + state.currentTexture + "\n" +
+    "camera: " + cameraPosition.map(function(value){return value.toFixed(2);}).join(", ") + "\n" +
+    "inside fog: " + (state.camera.insideFog ? "YES" : "NO") + "\n" +
     "fps: " + state.fps.toFixed(1) + (ciMode ? "\nCI mode" : "");
 }
 function fail(errorValue) {
@@ -434,6 +451,13 @@ function renderFrame(nowValue, encoderValue){
   passValue.draw(3);
   passValue.end();
 }
+function enterFog(){
+  cameraPosition = FOG_ENTRY_POSITION.slice();
+  cameraYaw = 0;
+  cameraPitch = 0;
+  syncCameraState();
+  if(!ciMode) setStage("running","camera moved inside fog volume");
+}
 function updateMovement(deltaSeconds){
   const vectorsValue=cameraVectors(), speedValue=(pressedKeys.has("ShiftLeft")||pressedKeys.has("ShiftRight"))?6.0:3.0;
   function moveAlong(vectorValue,amountValue){cameraPosition[0]+=vectorValue[0]*amountValue;cameraPosition[1]+=vectorValue[1]*amountValue;cameraPosition[2]+=vectorValue[2]*amountValue;}
@@ -443,6 +467,7 @@ function updateMovement(deltaSeconds){
   if(pressedKeys.has("KeyD")) moveAlong(vectorsValue.right,speedValue*deltaSeconds);
   if(pressedKeys.has("KeyQ")) cameraPosition[1]-=speedValue*deltaSeconds;
   if(pressedKeys.has("KeyE")) cameraPosition[1]+=speedValue*deltaSeconds;
+  syncCameraState();
 }
 function frame(nowValue){
   resizeCanvas();
@@ -513,8 +538,21 @@ async function renderChecksum(){
   return checksumValue;
 }
 async function runCiTest(){
-  setStage("validation-scope","testing compute erase + render readback");
+  setStage("validation-scope","testing movement + compute erase + render readback");
   device.pushErrorScope("validation");
+  enterFog();
+  if(!isInsideFog(cameraPosition)) throw new Error("camera did not enter fog volume");
+  const movementStart = cameraPosition.slice();
+  pressedKeys.add("KeyW");
+  updateMovement(0.25);
+  pressedKeys.delete("KeyW");
+  const movementDistance = Math.hypot(
+    cameraPosition[0]-movementStart[0],
+    cameraPosition[1]-movementStart[1],
+    cameraPosition[2]-movementStart[2]
+  );
+  if(movementDistance < 0.5) throw new Error("camera movement regression: distance="+movementDistance);
+  if(!isInsideFog(cameraPosition)) throw new Error("camera left fog unexpectedly during movement test");
   const beforeValue=await readFogCenter();
   await fireShot();
   const afterValue=await readFogCenter();
@@ -523,11 +561,12 @@ async function runCiTest(){
   if(checksumValue===0) throw new Error("render checksum is zero");
   const validationError=await device.popErrorScope();
   if(validationError) throw validationError;
-  state.ci={before:beforeValue,after:afterValue,checksum:checksumValue};
+  state.ci={before:beforeValue,after:afterValue,checksum:checksumValue,movementDistance:movementDistance,camera:cameraPosition.slice()};
   setStage("ok","compute erase and offscreen render completed; before="+beforeValue+" after="+afterValue+" checksum="+checksumValue);
 }
 Object.keys(controls).forEach(function(keyValue){controls[keyValue].addEventListener("input",updateOutputs);});
 document.getElementById("shootBtn").addEventListener("click",function(){fireShot();});
+document.getElementById("enterFogBtn").addEventListener("click",enterFog);
 document.getElementById("resetBtn").addEventListener("click",resetFog);
 document.getElementById("modeBtn").addEventListener("click",function(eventValue){state.mode=state.mode?0:1;eventValue.currentTarget.textContent=state.mode?"Mode: Density":"Mode: Final";});
 document.getElementById("panelBtn").addEventListener("click",function(eventValue){
