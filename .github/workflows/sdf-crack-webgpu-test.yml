@@ -31,6 +31,9 @@ jobs:
           assert "getCompilationInfo" in s
           assert "queue.onSubmittedWorkDone" in s
           assert "copyTextureToBuffer" in s
+          for slider_id in ["openingSlider","lengthSlider","dangerSlider","branchSlider"]:
+              assert f'id="{slider_id}"' in s, slider_id
+          assert "data-render-revision" in s
           print("static preflight: ok")
           PY
 
@@ -120,8 +123,39 @@ jobs:
                   print("state:",raw,flush=True)
                   last=raw
               if state["status"]=="ok":
+                  ui_raw=evaluate("""JSON.stringify({
+                    sliders:["openingSlider","lengthSlider","dangerSlider","branchSlider"].map(id=>Boolean(document.getElementById(id))),
+                    revision:Number(document.documentElement.dataset.renderRevision||"0"),
+                    openingValue:document.getElementById("openingValue")?.value||""
+                  })""")
+                  ui_state=json.loads(ui_raw)
+                  if not all(ui_state["sliders"]):
+                      ws.close()
+                      raise SystemExit("slider UI missing: "+ui_raw)
+                  before_revision=ui_state["revision"]
+                  evaluate("""(() => {
+                    const slider=document.getElementById("openingSlider");
+                    slider.value="0.100";
+                    slider.dispatchEvent(new Event("input",{bubbles:true}));
+                    return true;
+                  })()""")
+                  time.sleep(.7)
+                  after_raw=evaluate("""JSON.stringify({
+                    revision:Number(document.documentElement.dataset.renderRevision||"0"),
+                    openingValue:document.getElementById("openingValue")?.value||"",
+                    parameter:JSON.parse(document.documentElement.dataset.currentParameters||"{}").opening
+                  })""")
+                  after=json.loads(after_raw)
+                  if after["revision"] <= before_revision:
+                      ws.close()
+                      raise SystemExit("slider input did not trigger render: "+after_raw)
+                  if after["openingValue"] != "0.100" or abs(float(after["parameter"])-0.1)>1e-6:
+                      ws.close()
+                      raise SystemExit("slider value did not reach render parameters: "+after_raw)
+                  state["uiTest"]=after
+                  state_path.write_text(json.dumps(state,ensure_ascii=False,indent=2))
                   ws.close()
-                  print("SDF crack WebGPU smoke test: ok")
+                  print("SDF crack WebGPU + slider UI smoke test: ok")
                   raise SystemExit(0)
               if state["status"]=="fail":
                   ws.close()

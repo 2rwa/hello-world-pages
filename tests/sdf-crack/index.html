@@ -1,17 +1,48 @@
 <!doctype html>
-<html lang="ja" data-webgpu-status="starting">
+<html lang="ja" data-webgpu-status="starting" data-render-revision="0">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>SDF Crack WebGPU Test</title>
 <style>
-html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#08101b;color:#eaf2ff;font-family:system-ui,sans-serif}
+:root{color-scheme:dark}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#08101b;color:#eaf2ff;font-family:system-ui,-apple-system,sans-serif}
 canvas{width:100vw;height:100vh;display:block}
-#state{position:fixed;left:12px;bottom:12px;padding:8px 10px;background:#0009;border-radius:8px;font:12px ui-monospace,monospace;white-space:pre-wrap}
+#panel{position:fixed;left:16px;top:16px;width:min(340px,calc(100vw - 32px));box-sizing:border-box;padding:14px 15px 13px;border:1px solid #ffffff1f;border-radius:14px;background:#07101bd9;backdrop-filter:blur(12px);box-shadow:0 10px 30px #0007}
+#panel h1{font-size:17px;margin:0 0 5px}
+#panel p{font-size:12px;line-height:1.45;color:#b8c7dc;margin:0 0 10px}
+.control{margin:9px 0}
+.control label{display:flex;justify-content:space-between;gap:10px;font-size:12px}
+.control output{font:12px ui-monospace,monospace;color:#9fd0ff}
+.control input{width:100%;margin:4px 0 0}
+#resetButton{margin-top:5px;padding:6px 10px;border-radius:8px;border:1px solid #ffffff26;background:#ffffff12;color:#eaf2ff}
+#state{position:fixed;left:12px;bottom:12px;padding:7px 9px;background:#0009;border-radius:8px;font:11px ui-monospace,monospace;white-space:pre-wrap;pointer-events:none}
+@media(max-width:620px){#panel{left:10px;top:10px;width:calc(100vw - 20px);padding:11px 12px}.control{margin:6px 0}}
 </style>
 </head>
 <body>
 <canvas id="gpuCanvas"></canvas>
+<section id="panel">
+  <h1>SDF fracture / pre-break</h1>
+  <p>亀裂はテクスチャではなく、球のSDFから空隙を差し引いています。</p>
+  <div class="control">
+    <label for="openingSlider"><span>Crack opening</span><output id="openingValue">0.045</output></label>
+    <input id="openingSlider" data-param="opening" type="range" min="0.002" max="0.120" step="0.001" value="0.045">
+  </div>
+  <div class="control">
+    <label for="lengthSlider"><span>Crack length</span><output id="lengthValue">0.720</output></label>
+    <input id="lengthSlider" data-param="length" type="range" min="0.050" max="1.000" step="0.005" value="0.720">
+  </div>
+  <div class="control">
+    <label for="dangerSlider"><span>Pre-fracture danger</span><output id="dangerValue">0.780</output></label>
+    <input id="dangerSlider" data-param="danger" type="range" min="0.000" max="1.000" step="0.005" value="0.780">
+  </div>
+  <div class="control">
+    <label for="branchSlider"><span>Branch amount</span><output id="branchValue">0.350</output></label>
+    <input id="branchSlider" data-param="branch" type="range" min="0.000" max="1.000" step="0.005" value="0.350">
+  </div>
+  <button id="resetButton" type="button">Reset</button>
+</section>
 <div id="state">STARTING</div>
 <script type="module">
 const rootElement=document.documentElement;
@@ -19,6 +50,35 @@ const canvasElement=document.querySelector("#gpuCanvas");
 const stateElement=document.querySelector("#state");
 const ciMode=new URLSearchParams(location.search).get("ci")==="1";
 
+const controls={
+  opening:document.querySelector("#openingSlider"),
+  length:document.querySelector("#lengthSlider"),
+  danger:document.querySelector("#dangerSlider"),
+  branch:document.querySelector("#branchSlider")
+};
+const outputs={
+  opening:document.querySelector("#openingValue"),
+  length:document.querySelector("#lengthValue"),
+  danger:document.querySelector("#dangerValue"),
+  branch:document.querySelector("#branchValue")
+};
+const defaults={opening:0.045,length:0.720,danger:0.780,branch:0.350};
+
+function readParameters(){
+  return {
+    opening:Number(controls.opening.value),
+    length:Number(controls.length.value),
+    danger:Number(controls.danger.value),
+    branch:Number(controls.branch.value)
+  };
+}
+function updateOutputs(){
+  const p=readParameters();
+  outputs.opening.value=p.opening.toFixed(3);
+  outputs.length.value=p.length.toFixed(3);
+  outputs.danger.value=p.danger.toFixed(3);
+  outputs.branch.value=p.branch.toFixed(3);
+}
 function setStage(stageName){
   rootElement.dataset.webgpuStage=stageName;
   stateElement.textContent=stageName;
@@ -31,6 +91,7 @@ function failPage(errorValue){
   stateElement.textContent="FAIL: "+message;
   console.error("[webgpu-fail]",errorValue);
 }
+updateOutputs();
 setStage("script-start");
 
 async function startDemo(){
@@ -51,8 +112,7 @@ async function startDemo(){
   if(!ciMode){
     gpuContext=canvasElement.getContext("webgpu");
     if(!gpuContext) throw new Error("webgpu canvas context unavailable");
-    gpuContext.configure({device:gpuDevice,format:canvasFormat,alphaMode:"opaque"});
-  } else {
+  }else{
     canvasElement.width=256;
     canvasElement.height=144;
   }
@@ -244,8 +304,8 @@ fn fragmentMain(inputData : VertexOut) -> @location(0) vec4<f32> {
   const shaderModule=gpuDevice.createShaderModule({code:shaderSource});
   setStage("shader-compilation-info");
   const compilationInfo=await shaderModule.getCompilationInfo();
-  const shaderErrors=compilationInfo.messages.filter((entry)=>entry.type==="error");
-  if(shaderErrors.length) throw new Error(shaderErrors.map((entry)=>entry.message).join(" | "));
+  const shaderErrors=compilationInfo.messages.filter(entry=>entry.type==="error");
+  if(shaderErrors.length) throw new Error(shaderErrors.map(entry=>entry.message).join(" | "));
 
   const uniformArray=new Float32Array(16);
   const uniformBuffer=gpuDevice.createBuffer({
@@ -269,38 +329,46 @@ fn fragmentMain(inputData : VertexOut) -> @location(0) vec4<f32> {
     primitive:{topology:"triangle-list"}
   });
 
+  let renderTexture=null;
+  let readBuffer=null;
+
   function resizeCanvas(){
+    if(ciMode) return;
     const ratio=Math.min(window.devicePixelRatio||1,2);
     const widthValue=Math.max(1,Math.floor(canvasElement.clientWidth*ratio));
     const heightValue=Math.max(1,Math.floor(canvasElement.clientHeight*ratio));
     if(canvasElement.width!==widthValue||canvasElement.height!==heightValue){
       canvasElement.width=widthValue;
       canvasElement.height=heightValue;
+      gpuContext.configure({device:gpuDevice,format:canvasFormat,alphaMode:"opaque"});
     }
   }
-  if(!ciMode) resizeCanvas();
+  if(!ciMode){
+    resizeCanvas();
+    window.addEventListener("resize",()=>{resizeCanvas();renderCurrent();});
+  }else{
+    renderTexture=gpuDevice.createTexture({
+      size:[canvasElement.width,canvasElement.height,1],
+      format:canvasFormat,
+      usage:GPUTextureUsage.RENDER_ATTACHMENT|GPUTextureUsage.COPY_SRC
+    });
+    readBuffer=gpuDevice.createBuffer({
+      size:canvasElement.width*4*canvasElement.height,
+      usage:GPUBufferUsage.COPY_DST|GPUBufferUsage.MAP_READ
+    });
+  }
 
-  const renderTexture=ciMode?gpuDevice.createTexture({
-    size:[canvasElement.width,canvasElement.height,1],
-    format:canvasFormat,
-    usage:GPUTextureUsage.RENDER_ATTACHMENT|GPUTextureUsage.COPY_SRC
-  }):null;
-
-  const bytesPerRow=canvasElement.width*4;
-  const readBuffer=ciMode?gpuDevice.createBuffer({
-    size:bytesPerRow*canvasElement.height,
-    usage:GPUBufferUsage.COPY_DST|GPUBufferUsage.MAP_READ
-  }):null;
-
-  function submitFrame(){
+  function renderCurrent(){
+    const p=readParameters();
+    updateOutputs();
+    uniformArray.fill(0);
     uniformArray[0]=canvasElement.width;
     uniformArray[1]=canvasElement.height;
-    uniformArray[2]=0.0;
     uniformArray[3]=canvasElement.width/Math.max(canvasElement.height,1);
-    uniformArray[4]=0.045;
-    uniformArray[5]=0.72;
-    uniformArray[6]=0.78;
-    uniformArray[7]=0.35;
+    uniformArray[4]=p.opening;
+    uniformArray[5]=p.length;
+    uniformArray[6]=p.danger;
+    uniformArray[7]=p.branch;
     uniformArray[8]=0.15;
     uniformArray[9]=-0.10;
     uniformArray[10]=2.45;
@@ -320,19 +388,39 @@ fn fragmentMain(inputData : VertexOut) -> @location(0) vec4<f32> {
     renderPass.setBindGroup(0,bindGroup);
     renderPass.draw(3,1,0,0);
     renderPass.end();
-
     if(ciMode){
       commandEncoder.copyTextureToBuffer(
         {texture:renderTexture},
-        {buffer:readBuffer,bytesPerRow,rowsPerImage:canvasElement.height},
+        {buffer:readBuffer,bytesPerRow:canvasElement.width*4,rowsPerImage:canvasElement.height},
         [canvasElement.width,canvasElement.height,1]
       );
     }
     gpuDevice.queue.submit([commandEncoder.finish()]);
+    const nextRevision=Number(rootElement.dataset.renderRevision||"0")+1;
+    rootElement.dataset.renderRevision=String(nextRevision);
+    rootElement.dataset.currentParameters=JSON.stringify(p);
   }
 
+  let renderScheduled=false;
+  function scheduleRender(){
+    if(renderScheduled) return;
+    renderScheduled=true;
+    requestAnimationFrame(()=>{
+      renderScheduled=false;
+      renderCurrent();
+    });
+  }
+  for(const controlElement of Object.values(controls)){
+    controlElement.addEventListener("input",scheduleRender);
+  }
+  document.querySelector("#resetButton").addEventListener("click",()=>{
+    for(const [key,value] of Object.entries(defaults)) controls[key].value=String(value);
+    updateOutputs();
+    scheduleRender();
+  });
+
   setStage("first-submit");
-  submitFrame();
+  renderCurrent();
 
   setStage("validation-scope");
   const validationError=await gpuDevice.popErrorScope();
@@ -347,10 +435,7 @@ fn fragmentMain(inputData : VertexOut) -> @location(0) vec4<f32> {
     const pixelBytes=new Uint8Array(readBuffer.getMappedRange());
     let visiblePixelCount=0;
     for(let offset=0;offset<pixelBytes.length;offset+=4){
-      const redValue=pixelBytes[offset];
-      const greenValue=pixelBytes[offset+1];
-      const blueValue=pixelBytes[offset+2];
-      if(redValue>20 || greenValue>25 || blueValue>40) visiblePixelCount+=1;
+      if(pixelBytes[offset]>20 || pixelBytes[offset+1]>25 || pixelBytes[offset+2]>40) visiblePixelCount++;
     }
     rootElement.dataset.visiblePixelCount=String(visiblePixelCount);
     readBuffer.unmap();
@@ -359,7 +444,7 @@ fn fragmentMain(inputData : VertexOut) -> @location(0) vec4<f32> {
 
   setStage("done");
   rootElement.dataset.webgpuStatus="ok";
-  stateElement.textContent="OK / WebGPU SDF crack test";
+  stateElement.textContent="OK / WebGPU SDF crack / render #"+rootElement.dataset.renderRevision;
 }
 
 startDemo().catch(failPage);
