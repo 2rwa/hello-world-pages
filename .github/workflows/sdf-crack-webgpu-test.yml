@@ -35,6 +35,7 @@ jobs:
               assert f'id="{slider_id}"' in s, slider_id
           assert 'id="modeSelect"' in s
           assert "pointerdown" in s and "pointermove" in s and "wheel" in s
+          assert "__sdfCaptureMode" in s
           assert "data-render-revision" in s
           print("static preflight: ok")
           PY
@@ -212,40 +213,59 @@ jobs:
           PY
 
 
-      - name: Capture rendered preview PNG
+      - name: Capture four crack-model previews
         if: ${{ steps.webgpu.outcome == 'success' }}
         shell: bash
         run: |
           set -euo pipefail
+          mkdir -p /tmp/sdf-crack-previews
           python3 - <<'PY'
-          import base64,json,urllib.request,websocket
+          import base64,json,pathlib,urllib.request,websocket
           with urllib.request.urlopen("http://127.0.0.1:9222/json/list",timeout=2) as r:
               pages=json.load(r)
           page=next(p for p in pages if p.get("type")=="page" and "/tests/sdf-crack/" in p.get("url",""))
-          ws=websocket.create_connection(page["webSocketDebuggerUrl"],timeout=5)
-          ws.send(json.dumps({"id":1,"method":"Runtime.evaluate","params":{
-              "expression":"document.getElementById('gpuCanvas').toDataURL('image/png')",
-              "returnByValue":True
-          }}))
-          while True:
-              message=json.loads(ws.recv())
-              if message.get("id")==1:
-                  data_url=message["result"]["result"].get("value","")
-                  break
+          ws=websocket.create_connection(page["webSocketDebuggerUrl"],timeout=10)
+          next_id=1
+          names=["hairline","fissure","impact","network"]
+
+          def evaluate(expression):
+              global next_id
+              message_id=next_id
+              next_id+=1
+              ws.send(json.dumps({"id":message_id,"method":"Runtime.evaluate","params":{
+                  "expression":expression,
+                  "returnByValue":True,
+                  "awaitPromise":True
+              }}))
+              while True:
+                  message=json.loads(ws.recv())
+                  if message.get("id")==message_id:
+                      return message["result"]["result"].get("value")
+
+          output_dir=pathlib.Path("/tmp/sdf-crack-previews")
+          report={}
+          for mode_value,name in enumerate(names):
+              result=evaluate(f"window.__sdfCaptureMode({mode_value})")
+              if not isinstance(result,dict):
+                  raise SystemExit(f"capture API failed for {name}: {result!r}")
+              data_url=result.get("dataUrl","")
+              if not data_url.startswith("data:image/png;base64,"):
+                  raise SystemExit(f"PNG data URL unavailable for {name}")
+              payload=data_url.split(",",1)[1]
+              output_path=output_dir/f"{mode_value}-{name}.png"
+              output_path.write_bytes(base64.b64decode(payload))
+              report[name]={"visiblePixelCount":result.get("visiblePixelCount"),"file":str(output_path)}
+              print(name,report[name])
+          (output_dir/"report.json").write_text(json.dumps(report,indent=2))
           ws.close()
-          if not data_url.startswith("data:image/png;base64,"):
-              raise SystemExit("PNG data URL unavailable")
-          payload=data_url.split(",",1)[1]
-          open("/tmp/sdf-crack-preview.png","wb").write(base64.b64decode(payload))
-          print("saved /tmp/sdf-crack-preview.png")
           PY
 
-      - name: Upload rendered preview
+      - name: Upload crack-model preview gallery
         if: ${{ steps.webgpu.outcome == 'success' }}
         uses: actions/upload-artifact@v6
         with:
-          name: sdf-crack-preview
-          path: /tmp/sdf-crack-preview.png
+          name: sdf-crack-previews
+          path: /tmp/sdf-crack-previews/
           retention-days: 7
 
       - name: Save compact result to repository

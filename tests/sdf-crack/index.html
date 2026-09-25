@@ -575,27 +575,49 @@ fn fragmentMain(inputData : VertexOut) -> @location(0) vec4<f32> {
   const validationError=await gpuDevice.popErrorScope();
   if(validationError) throw new Error("WebGPU validation: "+validationError.message);
 
-  setStage("submitted-work-wait");
-  await gpuDevice.queue.onSubmittedWorkDone();
-
-  if(ciMode){
-    setStage("pixel-readback");
+  async function mirrorCiTextureToCanvas(){
+    if(!ciMode) return {visiblePixelCount:0,dataUrl:""};
+    await gpuDevice.queue.onSubmittedWorkDone();
     await readBuffer.mapAsync(GPUMapMode.READ);
     const pixelBytes=new Uint8Array(readBuffer.getMappedRange());
     let visiblePixelCount=0;
     for(let offset=0;offset<pixelBytes.length;offset+=4){
       if(pixelBytes[offset]>20 || pixelBytes[offset+1]>25 || pixelBytes[offset+2]>40) visiblePixelCount++;
     }
-    rootElement.dataset.visiblePixelCount=String(visiblePixelCount);
     const previewBytes=new Uint8ClampedArray(pixelBytes.slice());
     readBuffer.unmap();
     const previewContext=canvasElement.getContext("2d");
     if(previewContext){
       const previewImage=new ImageData(previewBytes,canvasElement.width,canvasElement.height);
       previewContext.putImageData(previewImage,0,0);
-      rootElement.dataset.previewReady="1";
     }
-    if(visiblePixelCount<200) throw new Error("render completed but geometry was not visibly different from background; visiblePixelCount="+visiblePixelCount);
+    rootElement.dataset.visiblePixelCount=String(visiblePixelCount);
+    rootElement.dataset.previewReady="1";
+    return {visiblePixelCount,dataUrl:canvasElement.toDataURL("image/png")};
+  }
+
+  if(ciMode){
+    window.__sdfCaptureMode=async(modeValue)=>{
+      controls.mode.value=String(modeValue);
+      updateOutputs();
+      renderCurrent();
+      const captureResult=await mirrorCiTextureToCanvas();
+      return {
+        mode:Number(modeValue),
+        modeName:modeNames[Number(modeValue)]||"Unknown",
+        visiblePixelCount:captureResult.visiblePixelCount,
+        dataUrl:captureResult.dataUrl
+      };
+    };
+  }
+
+  setStage("submitted-work-wait");
+  await gpuDevice.queue.onSubmittedWorkDone();
+
+  if(ciMode){
+    setStage("pixel-readback");
+    const initialCapture=await mirrorCiTextureToCanvas();
+    if(initialCapture.visiblePixelCount<200) throw new Error("render completed but geometry was not visibly different from background; visiblePixelCount="+initialCapture.visiblePixelCount);
   }
 
   setStage("done");
