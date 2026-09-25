@@ -50,7 +50,7 @@ jobs:
           python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/sdf-behavior-http.log 2>&1 &
           google-chrome             --headless=new             --no-sandbox             --disable-dev-shm-usage             --remote-debugging-address=127.0.0.1             --remote-debugging-port=9222             --remote-allow-origins=*             --user-data-dir=/tmp/sdf-behavior-chrome             --enable-unsafe-webgpu             --enable-features=Vulkan             --use-vulkan=swiftshader             --disable-vulkan-fallback-to-gl-for-testing             --use-webgpu-adapter=swiftshader             --enable-webgpu-developer-features             --enable-dawn-features=allow_unsafe_apis             --disable-dawn-features=use_dxc             --use-gpu-in-tests             --enable-unsafe-swiftshader             'http://127.0.0.1:8765/tests/sdf-crack/behavior-test.html' >/tmp/sdf-behavior-chrome.log 2>&1 &
           echo $! >/tmp/sdf-behavior-chrome.pid
-          for i in {1..60}; do
+          for i in {1..120}; do
             if curl -fsS http://127.0.0.1:9222/json/version >/dev/null; then exit 0; fi
             if ! kill -0 "$(cat /tmp/sdf-behavior-chrome.pid)" 2>/dev/null; then
               cat /tmp/sdf-behavior-chrome.log
