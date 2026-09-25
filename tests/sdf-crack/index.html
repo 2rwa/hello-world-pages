@@ -210,8 +210,8 @@ fn fragmentMain(inputData : VertexOut) -> @location(0) vec4<f32> {
   let cameraDistance = params.camera.z;
   let rayOriginBase = vec3<f32>(0.0,0.0,cameraDistance);
   let rayOrigin = rotateY(rotateX(rayOriginBase,pitchValue),yawValue);
-  let target = vec3<f32>(0.0,0.0,0.0);
-  let forwardDir = normalize(target - rayOrigin);
+  let targetPos = vec3<f32>(0.0,0.0,0.0);
+  let forwardDir = normalize(targetPos - rayOrigin);
   let worldUp = vec3<f32>(0.0,1.0,0.0);
   let rightDir = normalize(cross(forwardDir,worldUp));
   let upDir = normalize(cross(rightDir,forwardDir));

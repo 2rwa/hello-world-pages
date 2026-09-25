@@ -45,6 +45,7 @@ jobs:
             --disable-dev-shm-usage \
             --remote-debugging-address=127.0.0.1 \
             --remote-debugging-port=9222 \
+            --remote-allow-origins=* \
             --user-data-dir=/tmp/sdf-crack-chrome \
             --enable-unsafe-webgpu \
             --enable-features=Vulkan \
