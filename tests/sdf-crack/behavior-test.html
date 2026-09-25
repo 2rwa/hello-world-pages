@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="en" data-webgpu-status="starting">
+<head><meta charset="utf-8"><title>SDF Crack Behavior Test</title>
+<style>html,body{margin:0;background:#08101b;color:#eef;font:12px ui-monospace,monospace}pre{white-space:pre-wrap;padding:12px}</style>
+</head>
+<body><pre id="state">starting</pre>
+<script type="module">
+const rootElement=document.documentElement;
+const stateElement=document.querySelector("#state");
+function stage(name){rootElement.dataset.webgpuStage=name;stateElement.textContent=name;}
+function fail(errorValue){
+  const message=String(errorValue?.message||errorValue);
+  rootElement.dataset.webgpuStatus="fail";
+  rootElement.dataset.webgpuError=message;
+  stateElement.textContent="FAIL\n"+message;
+  console.error(errorValue);
+}
+const shaderSource=/* wgsl */ `
+struct Params {
+  viewport : vec4<f32>,
+  crack : vec4<f32>,
+  camera : vec4<f32>,
+  extra : vec4<f32>,
+};
+
+@group(0) @binding(0) var<uniform> params : Params;
+
+struct VertexOut {
+  @builtin(position) position : vec4<f32>,
+  @location(0) uv : vec2<f32>,
+};
+
+fn rotateY(pointPos : vec3<f32>, angleValue : f32) -> vec3<f32> {
+  let cosValue = cos(angleValue);
+  let sinValue = sin(angleValue);
+  return vec3<f32>(
+    cosValue * pointPos.x + sinValue * pointPos.z,
+    pointPos.y,
+    -sinValue * pointPos.x + cosValue * pointPos.z
+  );
+}
+
+fn rotateX(pointPos : vec3<f32>, angleValue : f32) -> vec3<f32> {
+  let cosValue = cos(angleValue);
+  let sinValue = sin(angleValue);
+  return vec3<f32>(
+    pointPos.x,
+    cosValue * pointPos.y - sinValue * pointPos.z,
+    sinValue * pointPos.y + cosValue * pointPos.z
+  );
+}
+
+fn sdSphere(pointPos : vec3<f32>, radiusValue : f32) -> f32 {
+  return length(pointPos) - radiusValue;
+}
+
+fn crackHalfOpening(pointPos : vec3<f32>, startX : f32, frontX : f32, baseOpening : f32, dangerValue : f32) -> f32 {
+  let crackExtent = max(frontX - startX, 0.001);
+  let behindFront = clamp((frontX - pointPos.x) / crackExtent, 0.0, 1.0);
+  let openingScale = sqrt(behindFront);
+  let openingModulation = baseOpening * (0.18 + 0.82 * dangerValue);
+  return max(0.0015, openingModulation * openingScale);
+}
+
+fn sdMainCrackVoid(pointPos : vec3<f32>, openingValue : f32, lengthValue : f32, dangerValue : f32) -> f32 {
+  let startX = -0.78;
+  let frontX = startX + clamp(lengthValue, 0.05, 1.0) * 1.30;
+  let halfSpanZ = 0.11 + 0.05 * dangerValue;
+  let halfOpen = crackHalfOpening(pointPos, startX, frontX, openingValue, dangerValue);
+  let aheadLimit = pointPos.x - frontX;
+  let behindLimit = startX - pointPos.x;
+  let planeLimit = abs(pointPos.y) - halfOpen;
+  let sideLimit = abs(pointPos.z) - halfSpanZ;
+  return max(max(aheadLimit, behindLimit), max(planeLimit, sideLimit));
+}
+
+fn sdBranchCrackVoid(pointPos : vec3<f32>, openingValue : f32, lengthValue : f32, dangerValue : f32, branchValue : f32, sideSign : f32) -> f32 {
+  let branchWeight = clamp(branchValue * dangerValue, 0.0, 1.0);
+  let startX = -0.78;
+  let mainFrontX = startX + clamp(lengthValue, 0.05, 1.0) * 1.30;
+  let branchOriginX = mainFrontX - (0.07 + 0.08 * dangerValue);
+  let branchAngle = 0.25 + 0.90 * branchWeight;
+  let cosValue = cos(sideSign * branchAngle);
+  let sinValue = sin(sideSign * branchAngle);
+  let relativeXZ = vec2<f32>(pointPos.x - branchOriginX, pointPos.z);
+  let branchU = cosValue * relativeXZ.x + sinValue * relativeXZ.y;
+  let branchV = -sinValue * relativeXZ.x + cosValue * relativeXZ.y;
+  let branchLength = (0.06 + 0.33 * branchWeight) * clamp(lengthValue, 0.0, 1.0);
+  let behindFront = clamp(1.0 - branchU / max(branchLength, 0.001), 0.0, 1.0);
+  let halfOpen = max(0.0012, openingValue * 0.72 * sqrt(behindFront) * branchWeight);
+  let halfSpanV = 0.020 + 0.020 * branchWeight;
+  return max(max(-branchU, branchU - branchLength), max(abs(pointPos.y) - halfOpen, abs(branchV) - halfSpanV));
+}
+
+fn sdCrackVoid(pointPos : vec3<f32>, openingValue : f32, lengthValue : f32, dangerValue : f32, branchValue : f32) -> f32 {
+  var crackDistance = sdMainCrackVoid(pointPos, openingValue, lengthValue, dangerValue);
+  if (branchValue > 0.001) {
+    let branchA = sdBranchCrackVoid(pointPos, openingValue, lengthValue, dangerValue, branchValue, 1.0);
+    let branchB = sdBranchCrackVoid(pointPos, openingValue, lengthValue, dangerValue, branchValue, -1.0);
+    crackDistance = min(crackDistance, min(branchA, branchB));
+  }
+  return crackDistance;
+}
+
+fn sceneDistance(pointPos : vec3<f32>) -> f32 {
+  let dBody = sdSphere(pointPos, 0.86);
+  let dVoid = sdCrackVoid(pointPos, params.crack.x, params.crack.y, params.crack.z, params.crack.w);
+  return max(dBody, -dVoid);
+}
+
+fn estimateNormal(pointPos : vec3<f32>) -> vec3<f32> {
+  let epsilonValue = 0.0022;
+  let axisX = vec3<f32>(epsilonValue,0.0,0.0);
+  let axisY = vec3<f32>(0.0,epsilonValue,0.0);
+  let axisZ = vec3<f32>(0.0,0.0,epsilonValue);
+  return normalize(vec3<f32>(
+    sceneDistance(pointPos+axisX)-sceneDistance(pointPos-axisX),
+    sceneDistance(pointPos+axisY)-sceneDistance(pointPos-axisY),
+    sceneDistance(pointPos+axisZ)-sceneDistance(pointPos-axisZ)
+  ));
+}
+
+struct MarchResult {
+  hitFlag : bool,
+  travelValue : f32,
+};
+
+fn marchScene(rayOrigin : vec3<f32>, rayDirection : vec3<f32>) -> MarchResult {
+  var travelValue = 0.0;
+  var iterationIndex : i32 = 0;
+  loop {
+    if (iterationIndex >= 140 || travelValue > 8.0) { break; }
+    let pointPos = rayOrigin + rayDirection * travelValue;
+    let distanceValue = sceneDistance(pointPos);
+    if (abs(distanceValue) < 0.0015) {
+      return MarchResult(true, travelValue);
+    }
+    travelValue = travelValue + max(distanceValue * 0.70, 0.0025);
+    iterationIndex = iterationIndex + 1;
+  }
+  return MarchResult(false, travelValue);
+}
+
+@vertex
+fn vertexMain(@builtin(vertex_index) vertexIndex : u32) -> VertexOut {
+  var positions = array<vec2<f32>,3>(
+    vec2<f32>(-1.0,-3.0),
+    vec2<f32>(3.0,1.0),
+    vec2<f32>(-1.0,1.0)
+  );
+  let positionXY = positions[vertexIndex];
+  var outputData : VertexOut;
+  outputData.position = vec4<f32>(positionXY,0.0,1.0);
+  outputData.uv = 0.5 * (positionXY + vec2<f32>(1.0,1.0));
+  return outputData;
+}
+
+@fragment
+fn fragmentMain(inputData : VertexOut) -> @location(0) vec4<f32> {
+  let aspectValue = params.viewport.w;
+  let ndcPos = vec2<f32>(
+    (inputData.uv.x * 2.0 - 1.0) * aspectValue,
+    -(inputData.uv.y * 2.0 - 1.0)
+  );
+
+  let yawValue = params.camera.x;
+  let pitchValue = params.camera.y;
+  let cameraDistance = params.camera.z;
+  let rayOriginBase = vec3<f32>(0.0,0.0,cameraDistance);
+  let rayOrigin = rotateY(rotateX(rayOriginBase,pitchValue),yawValue);
+  let targetPos = vec3<f32>(0.0,0.0,0.0);
+  let forwardDir = normalize(targetPos - rayOrigin);
+  let worldUp = vec3<f32>(0.0,1.0,0.0);
+  let rightDir = normalize(cross(forwardDir,worldUp));
+  let upDir = normalize(cross(rightDir,forwardDir));
+  let rayDirection = normalize(forwardDir*1.65 + rightDir*ndcPos.x + upDir*ndcPos.y);
+
+  var colorValue = vec3<f32>(0.02,0.04,0.08);
+  let marchResult = marchScene(rayOrigin,rayDirection);
+  if (marchResult.hitFlag) {
+    let pointPos = rayOrigin + rayDirection * marchResult.travelValue;
+    let normalValue = estimateNormal(pointPos);
+    let lightDir = normalize(vec3<f32>(0.8,1.2,0.6));
+    let diffuseValue = max(dot(normalValue,lightDir),0.0);
+    colorValue = vec3<f32>(0.30,0.56,0.88) * (0.18 + 0.82 * diffuseValue);
+  }
+  return vec4<f32>(colorValue,1.0);
+}
+`;
+
+async function main(){
+  stage("request-adapter");
+  if(!navigator.gpu) throw new Error("navigator.gpu unavailable");
+  const gpuAdapter=await navigator.gpu.requestAdapter({powerPreference:"high-performance"});
+  if(!gpuAdapter) throw new Error("requestAdapter returned null");
+
+  stage("request-device");
+  const gpuDevice=await gpuAdapter.requestDevice();
+  gpuDevice.lost.then(info=>{
+    rootElement.dataset.webgpuDeviceLostReason=String(info.reason||"");
+    rootElement.dataset.webgpuDeviceLostMessage=String(info.message||"");
+  });
+
+  stage("shader-compilation-info");
+  const shaderModule=gpuDevice.createShaderModule({code:shaderSource});
+  const compilationInfo=await shaderModule.getCompilationInfo();
+  const errors=compilationInfo.messages.filter(m=>m.type==="error");
+  if(errors.length) throw new Error(errors.map(m=>m.message).join(" | "));
+
+  const width=256;
+  const height=144;
+  const format="rgba8unorm";
+  const bytesPerRow=width*4;
+
+  const uniformArray=new Float32Array(16);
+  const uniformBuffer=gpuDevice.createBuffer({
+    size:uniformArray.byteLength,
+    usage:GPUBufferUsage.UNIFORM|GPUBufferUsage.COPY_DST
+  });
+  const bindLayout=gpuDevice.createBindGroupLayout({
+    entries:[{binding:0,visibility:GPUShaderStage.FRAGMENT,buffer:{type:"uniform"}}]
+  });
+  const bindGroup=gpuDevice.createBindGroup({
+    layout:bindLayout,
+    entries:[{binding:0,resource:{buffer:uniformBuffer}}]
+  });
+
+  gpuDevice.pushErrorScope("validation");
+  stage("create-pipeline");
+  const renderPipeline=gpuDevice.createRenderPipeline({
+    layout:gpuDevice.createPipelineLayout({bindGroupLayouts:[bindLayout]}),
+    vertex:{module:shaderModule,entryPoint:"vertexMain"},
+    fragment:{module:shaderModule,entryPoint:"fragmentMain",targets:[{format}]},
+    primitive:{topology:"triangle-list"}
+  });
+
+  const renderTexture=gpuDevice.createTexture({
+    size:[width,height,1],
+    format,
+    usage:GPUTextureUsage.RENDER_ATTACHMENT|GPUTextureUsage.COPY_SRC
+  });
+
+  async function renderCase(caseName,crackValues){
+    stage("render-"+caseName);
+    uniformArray.fill(0);
+    uniformArray[0]=width;
+    uniformArray[1]=height;
+    uniformArray[3]=width/height;
+    uniformArray[4]=crackValues.opening;
+    uniformArray[5]=crackValues.length;
+    uniformArray[6]=crackValues.danger;
+    uniformArray[7]=crackValues.branch;
+    uniformArray[8]=0.55;
+    uniformArray[9]=-0.16;
+    uniformArray[10]=2.45;
+    gpuDevice.queue.writeBuffer(uniformBuffer,0,uniformArray);
+
+    const readBuffer=gpuDevice.createBuffer({
+      size:bytesPerRow*height,
+      usage:GPUBufferUsage.COPY_DST|GPUBufferUsage.MAP_READ
+    });
+    const encoder=gpuDevice.createCommandEncoder();
+    const pass=encoder.beginRenderPass({
+      colorAttachments:[{
+        view:renderTexture.createView(),
+        clearValue:{r:0.02,g:0.04,b:0.08,a:1},
+        loadOp:"clear",
+        storeOp:"store"
+      }]
+    });
+    pass.setPipeline(renderPipeline);
+    pass.setBindGroup(0,bindGroup);
+    pass.draw(3,1,0,0);
+    pass.end();
+    encoder.copyTextureToBuffer(
+      {texture:renderTexture},
+      {buffer:readBuffer,bytesPerRow,rowsPerImage:height},
+      [width,height,1]
+    );
+    gpuDevice.queue.submit([encoder.finish()]);
+    await gpuDevice.queue.onSubmittedWorkDone();
+    await readBuffer.mapAsync(GPUMapMode.READ);
+    const copy=new Uint8Array(readBuffer.getMappedRange()).slice();
+    readBuffer.unmap();
+    readBuffer.destroy();
+    return copy;
+  }
+
+  function visiblePixelCount(bytes){
+    let count=0;
+    for(let i=0;i<bytes.length;i+=4){
+      if(bytes[i]>20 || bytes[i+1]>25 || bytes[i+2]>40) count++;
+    }
+    return count;
+  }
+
+  function compareImages(a,b){
+    let changedPixels=0;
+    let absoluteDelta=0;
+    let maxPixelDelta=0;
+    for(let i=0;i<a.length;i+=4){
+      const delta=Math.abs(a[i]-b[i])+Math.abs(a[i+1]-b[i+1])+Math.abs(a[i+2]-b[i+2]);
+      absoluteDelta+=delta;
+      if(delta>=8) changedPixels++;
+      if(delta>maxPixelDelta) maxPixelDelta=delta;
+    }
+    return {
+      changedPixels,
+      meanAbsChannelDelta:absoluteDelta/(width*height*3),
+      maxPixelDelta
+    };
+  }
+
+  const cases={
+    base:{opening:0.045,length:0.72,danger:0.78,branch:0.35},
+    openingLow:{opening:0.005,length:0.72,danger:0.78,branch:0.35},
+    openingHigh:{opening:0.100,length:0.72,danger:0.78,branch:0.35},
+    lengthLow:{opening:0.045,length:0.20,danger:0.78,branch:0.35},
+    lengthHigh:{opening:0.045,length:0.98,danger:0.78,branch:0.35},
+    dangerLow:{opening:0.045,length:0.72,danger:0.00,branch:0.35},
+    dangerHigh:{opening:0.045,length:0.72,danger:1.00,branch:0.35},
+    branchOff:{opening:0.045,length:0.72,danger:0.90,branch:0.00},
+    branchOn:{opening:0.045,length:0.72,danger:0.90,branch:1.00}
+  };
+
+  const images={};
+  const visible={};
+  for(const [name,values] of Object.entries(cases)){
+    images[name]=await renderCase(name,values);
+    visible[name]=visiblePixelCount(images[name]);
+  }
+
+  const comparisons={
+    opening:compareImages(images.openingLow,images.openingHigh),
+    length:compareImages(images.lengthLow,images.lengthHigh),
+    danger:compareImages(images.dangerLow,images.dangerHigh),
+    branch:compareImages(images.branchOff,images.branchOn)
+  };
+
+  const assertions=[];
+  function check(name,condition,details){
+    assertions.push({name,pass:Boolean(condition),details});
+  }
+
+  for(const [name,count] of Object.entries(visible)){
+    check("visible:"+name,count>200,{visiblePixelCount:count});
+    check("not-disappeared:"+name,count>3000,{visiblePixelCount:count});
+  }
+
+  for(const [name,data] of Object.entries(comparisons)){
+    check("parameter-affects-render:"+name,
+      data.changedPixels>=20 && data.meanAbsChannelDelta>=0.01,
+      data
+    );
+  }
+
+  const validationError=await gpuDevice.popErrorScope();
+  check("webgpu-validation",!validationError,{message:validationError?.message||""});
+
+  const failures=assertions.filter(item=>!item.pass);
+  const report={visible,comparisons,assertions,failures};
+  rootElement.dataset.behaviorReport=JSON.stringify(report);
+  stateElement.textContent=JSON.stringify(report,null,2);
+
+  if(failures.length){
+    rootElement.dataset.webgpuStatus="fail";
+    rootElement.dataset.webgpuError="behavior assertions failed: "+failures.map(f=>f.name).join(", ");
+    throw new Error(rootElement.dataset.webgpuError);
+  }
+
+  rootElement.dataset.webgpuStatus="ok";
+  rootElement.dataset.webgpuStage="done";
+}
+main().catch(fail);
+</script></body></html>

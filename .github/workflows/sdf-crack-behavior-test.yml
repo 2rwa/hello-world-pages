@@ -1,0 +1,137 @@
+name: SDF crack behavior regression
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'tests/sdf-crack/behavior-test.html'
+      - '.github/workflows/sdf-crack-behavior-test.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: sdf-crack-behavior-test
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  behavior:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Static preflight
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path("tests/sdf-crack/behavior-test.html").read_text()
+          for needle in [
+              "openingLow","openingHigh",
+              "lengthLow","lengthHigh",
+              "dangerLow","dangerHigh",
+              "branchOff","branchOn",
+              "parameter-affects-render",
+              "getCompilationInfo",
+              "copyTextureToBuffer",
+              "queue.onSubmittedWorkDone"
+          ]:
+              assert needle in s, needle
+          print("behavior test preflight: ok")
+          PY
+
+      - name: Start browser
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/sdf-behavior-http.log 2>&1 &
+          google-chrome             --headless=new             --no-sandbox             --disable-dev-shm-usage             --remote-debugging-address=127.0.0.1             --remote-debugging-port=9222             --remote-allow-origins=*             --user-data-dir=/tmp/sdf-behavior-chrome             --enable-unsafe-webgpu             --enable-features=Vulkan             --use-vulkan=swiftshader             --disable-vulkan-fallback-to-gl-for-testing             --use-webgpu-adapter=swiftshader             --enable-webgpu-developer-features             --enable-dawn-features=allow_unsafe_apis             --disable-dawn-features=use_dxc             --use-gpu-in-tests             --enable-unsafe-swiftshader             'http://127.0.0.1:8765/tests/sdf-crack/behavior-test.html' >/tmp/sdf-behavior-chrome.log 2>&1 &
+          echo $! >/tmp/sdf-behavior-chrome.pid
+          for i in {1..60}; do
+            if curl -fsS http://127.0.0.1:9222/json/version >/dev/null; then exit 0; fi
+            if ! kill -0 "$(cat /tmp/sdf-behavior-chrome.pid)" 2>/dev/null; then
+              cat /tmp/sdf-behavior-chrome.log
+              exit 1
+            fi
+            sleep 0.25
+          done
+          cat /tmp/sdf-behavior-chrome.log
+          exit 1
+
+      - name: Poll behavior result
+        id: behavior
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m pip install --quiet websocket-client
+          python3 - <<'PY'
+          import json,time,urllib.request,websocket,pathlib
+          state_path=pathlib.Path("/tmp/sdf-behavior-state.json")
+          deadline=time.time()+25
+          page=None
+          while time.time()<deadline:
+              try:
+                  with urllib.request.urlopen("http://127.0.0.1:9222/json/list",timeout=2) as r:
+                      pages=json.load(r)
+                  page=next((p for p in pages if p.get("type")=="page" and "behavior-test.html" in p.get("url","")),None)
+                  if page: break
+              except Exception: pass
+              time.sleep(.2)
+          if not page:
+              state_path.write_text(json.dumps({"status":"fail","error":"page target not found"},indent=2))
+              raise SystemExit("page target not found")
+          ws=websocket.create_connection(page["webSocketDebuggerUrl"],timeout=5)
+          msg_id=0
+          def evaluate(expr):
+              global msg_id
+              msg_id+=1
+              current=msg_id
+              ws.send(json.dumps({"id":current,"method":"Runtime.evaluate","params":{"expression":expr,"returnByValue":True}}))
+              while True:
+                  m=json.loads(ws.recv())
+                  if m.get("id")==current:
+                      return m["result"]["result"].get("value")
+          last=None
+          while time.time()<deadline:
+              raw=evaluate("""JSON.stringify({
+                status:document.documentElement.dataset.webgpuStatus||"",
+                stage:document.documentElement.dataset.webgpuStage||"",
+                error:document.documentElement.dataset.webgpuError||"",
+                report:document.documentElement.dataset.behaviorReport||""
+              })""")
+              if raw!=last:
+                  print(raw,flush=True); last=raw
+              state=json.loads(raw)
+              state_path.write_text(json.dumps(state,indent=2))
+              if state["status"]=="ok":
+                  ws.close(); raise SystemExit(0)
+              if state["status"]=="fail":
+                  ws.close(); raise SystemExit("behavior failure: "+raw)
+              time.sleep(.25)
+          ws.close()
+          raise SystemExit("timeout: "+str(last))
+          PY
+
+      - name: Save regression result
+        if: always()
+        env:
+          TEST_OUTCOME: ${{ steps.behavior.outcome }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "source_sha=${GITHUB_SHA}"
+            echo "test_outcome=${TEST_OUTCOME}"
+            echo "run_id=${GITHUB_RUN_ID}"
+            echo "state="
+            cat /tmp/sdf-behavior-state.json 2>/dev/null || echo '{"error":"state unavailable"}'
+            echo
+            echo "chrome_tail="
+            tail -n 20 /tmp/sdf-behavior-chrome.log 2>/dev/null || true
+          } > tests/sdf-crack/behavior-result.txt
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add tests/sdf-crack/behavior-result.txt
+          git commit -m "Record SDF crack behavior regression result" || exit 0
+          git push origin HEAD:main
