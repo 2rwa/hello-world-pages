@@ -17,6 +17,7 @@ button,select{border:1px solid #ffffff28;background:#ffffff10;color:inherit;bord
 #crosshair:before{left:10px;top:2px;width:2px;height:18px}#crosshair:after{left:2px;top:10px;width:18px;height:2px}
 #flash{position:fixed;inset:0;pointer-events:none;z-index:2;opacity:0;background:radial-gradient(circle at 50% 50%,#dff8ff35,transparent 35%);transition:opacity .12s}
 #fatal{position:fixed;inset:0;z-index:10;display:none;place-items:center;padding:24px;background:#080b10;color:#ffd2d2;white-space:pre-wrap;font:13px/1.55 ui-monospace,monospace}
+#panel.minimized{width:auto;max-height:none}#panel.minimized>:not(h1):not(.buttons){display:none}#panel.minimized .buttons{margin-top:0}#panel.minimized .buttons button:not(#panelBtn){display:none}
 @media(max-width:640px){#panel{width:min(330px,calc(100vw - 16px));left:8px;top:8px;max-height:48vh}.row{grid-template-columns:92px 1fr 42px}}
 </style>
 </head>
@@ -333,6 +334,7 @@ async function initialize(){
   if(!adapterValue) throw new Error("requestAdapter returned null");
   setStage("request-device","requesting WebGPU device");
   device = await adapterValue.requestDevice();
+  device.addEventListener("uncapturederror",function(eventValue){fail(eventValue.error || new Error("uncaptured WebGPU error"));});
   device.lost.then(function(infoValue){ if(state.stage !== "error") fail(new Error("device.lost: "+infoValue.reason+" "+infoValue.message)); });
 
   outputFormat = ciMode ? "rgba8unorm" : navigator.gpu.getPreferredCanvasFormat();
@@ -512,12 +514,15 @@ async function renderChecksum(){
 }
 async function runCiTest(){
   setStage("validation-scope","testing compute erase + render readback");
+  device.pushErrorScope("validation");
   const beforeValue=await readFogCenter();
   await fireShot();
   const afterValue=await readFogCenter();
   if(!(afterValue < beforeValue*0.55)) throw new Error("fog erase regression: before="+beforeValue+" after="+afterValue);
   const checksumValue=await renderChecksum();
   if(checksumValue===0) throw new Error("render checksum is zero");
+  const validationError=await device.popErrorScope();
+  if(validationError) throw validationError;
   state.ci={before:beforeValue,after:afterValue,checksum:checksumValue};
   setStage("ok","compute erase and offscreen render completed; before="+beforeValue+" after="+afterValue+" checksum="+checksumValue);
 }
@@ -526,10 +531,8 @@ document.getElementById("shootBtn").addEventListener("click",function(){fireShot
 document.getElementById("resetBtn").addEventListener("click",resetFog);
 document.getElementById("modeBtn").addEventListener("click",function(eventValue){state.mode=state.mode?0:1;eventValue.currentTarget.textContent=state.mode?"Mode: Density":"Mode: Final";});
 document.getElementById("panelBtn").addEventListener("click",function(eventValue){
-  const hiddenValue=panelElement.dataset.hidden==="1";
-  panelElement.dataset.hidden=hiddenValue?"0":"1";
-  Array.from(panelElement.children).forEach(function(childValue){if(childValue!==panelElement.firstElementChild&&childValue!==eventValue.currentTarget)childValue.style.display=hiddenValue?"":"none";});
-  eventValue.currentTarget.textContent=hiddenValue?"Hide":"Show";
+  const minimizedValue=panelElement.classList.toggle("minimized");
+  eventValue.currentTarget.textContent=minimizedValue?"Show":"Hide";
 });
 canvas.addEventListener("pointerdown",function(eventValue){pointerDown=true;pointerMoved=false;pointerStart=[eventValue.clientX,eventValue.clientY];lastPointer=[eventValue.clientX,eventValue.clientY];canvas.setPointerCapture(eventValue.pointerId);});
 canvas.addEventListener("pointermove",function(eventValue){
