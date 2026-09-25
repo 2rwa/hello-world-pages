@@ -32,7 +32,7 @@ jobs:
               "lengthLow","lengthHigh",
               "dangerLow","dangerHigh",
               "branchOff","branchOn",
-              "hairline","impact","network",
+              "hairline","impact","network","warped",
               "cameraRotated","cameraZoomed",
               "render-difference",
               "getCompilationInfo",

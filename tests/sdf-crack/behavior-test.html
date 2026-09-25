@@ -140,20 +140,61 @@ fn sdRadialCrack(pointPos : vec3<f32>, originXY : vec2<f32>, angleValue : f32, c
   return max(max(-lineU, lineU - crackLength), max(openingLimit, depthBackZ - pointPos.z));
 }
 
+fn sdBentRadialCrack(pointPos : vec3<f32>, originXY : vec2<f32>, angleValue : f32, crackLength : f32, halfOpen : f32, depthBackZ : f32, bendValue : f32) -> f32 {
+  let directionA = vec2<f32>(cos(angleValue), sin(angleValue));
+  let middlePos = originXY + directionA * crackLength * 0.54;
+  let directionB = vec2<f32>(cos(angleValue + bendValue), sin(angleValue + bendValue));
+  let tipPos = middlePos + directionB * crackLength * 0.46;
+  let firstSegment = sdSlotSegment(pointPos, originXY, middlePos, halfOpen, depthBackZ);
+  let secondSegment = sdSlotSegment(pointPos, middlePos, tipPos, max(0.0006, halfOpen * 0.55), depthBackZ + 0.035);
+  return min(firstSegment, secondSegment);
+}
+
+fn crackGuideY(pointX : f32, lengthValue : f32, dangerValue : f32) -> f32 {
+  let startX = -0.80;
+  let crackExtent = 0.16 + clamp(lengthValue, 0.05, 1.0) * 1.25;
+  let guideT = clamp((pointX - startX) / max(crackExtent, 0.001), 0.0, 1.0);
+  let jaggedScale = 0.015 + 0.032 * dangerValue;
+  return jaggedScale * (
+    0.60 * sin(guideT * 12.5663706 + 0.35) +
+    0.34 * sin(guideT * 25.1327412 - 0.70)
+  );
+}
+
+fn sdOpeningWarpBody(pointPos : vec3<f32>, openingValue : f32, lengthValue : f32, dangerValue : f32) -> f32 {
+  let startX = -0.80;
+  let crackExtent = 0.16 + clamp(lengthValue, 0.05, 1.0) * 1.25;
+  let frontX = startX + crackExtent;
+  let guideT = clamp((pointPos.x - startX) / max(crackExtent, 0.001), 0.0, 1.0);
+  let withinX = select(0.0, 1.0, pointPos.x >= startX && pointPos.x <= frontX);
+  let guideY = crackGuideY(pointPos.x, lengthValue, dangerValue);
+  let sideDelta = pointPos.y - guideY;
+  let sideDirection = select(-1.0, 1.0, sideDelta >= 0.0);
+  let tipOpening = sqrt(clamp(1.0 - guideT, 0.0, 1.0));
+  let lateralInfluence = exp(-abs(sideDelta) * 7.5);
+  let surfaceInfluence = clamp((pointPos.z - 0.10) / 0.70, 0.0, 1.0);
+  let openingDisplacement = openingValue * (0.35 + 1.35 * dangerValue) * tipOpening *
+                            lateralInfluence * surfaceInfluence * withinX;
+
+  var inversePoint = pointPos;
+  inversePoint.y = inversePoint.y - sideDirection * openingDisplacement;
+  return sdSphere(inversePoint, 0.86);
+}
+
 fn sdImpactCrack(pointPos : vec3<f32>, openingValue : f32, lengthValue : f32, dangerValue : f32, branchValue : f32) -> f32 {
   let originXY = vec2<f32>(-0.12, 0.02);
   let baseLength = 0.18 + 0.56 * lengthValue;
   let halfOpen = max(0.0010, openingValue * (0.10 + 0.18 * dangerValue));
   let depthBackZ = 0.58 - 0.22 * dangerValue;
 
-  let radialA = sdRadialCrack(pointPos, originXY, -0.10, baseLength * 1.00, halfOpen, depthBackZ);
-  let radialB = sdRadialCrack(pointPos, originXY,  0.58, baseLength * 0.83, halfOpen * 0.82, depthBackZ + 0.03);
-  let radialC = sdRadialCrack(pointPos, originXY,  1.36, baseLength * 0.68, halfOpen * 0.72, depthBackZ + 0.05);
-  let radialD = sdRadialCrack(pointPos, originXY, -0.86, baseLength * 0.76, halfOpen * 0.78, depthBackZ + 0.02);
+  let radialA = sdBentRadialCrack(pointPos, originXY, -0.10, baseLength * 1.00, halfOpen, depthBackZ,  0.18);
+  let radialB = sdBentRadialCrack(pointPos, originXY,  0.58, baseLength * 0.83, halfOpen * 0.82, depthBackZ + 0.03, -0.24);
+  let radialC = sdBentRadialCrack(pointPos, originXY,  1.36, baseLength * 0.68, halfOpen * 0.72, depthBackZ + 0.05,  0.31);
+  let radialD = sdBentRadialCrack(pointPos, originXY, -0.86, baseLength * 0.76, halfOpen * 0.78, depthBackZ + 0.02, -0.27);
   var impactDistance = min(min(radialA, radialB), min(radialC, radialD));
 
   if (branchValue > 0.12) {
-    let radialE = sdRadialCrack(pointPos, originXY, 2.42, baseLength * (0.38 + 0.30 * branchValue), halfOpen * 0.66, depthBackZ + 0.06);
+    let radialE = sdBentRadialCrack(pointPos, originXY, 2.42, baseLength * (0.38 + 0.30 * branchValue), halfOpen * 0.66, depthBackZ + 0.06, 0.29);
     impactDistance = min(impactDistance, radialE);
   }
   return impactDistance;
@@ -163,12 +204,12 @@ fn sdNetworkCrack(pointPos : vec3<f32>, openingValue : f32, lengthValue : f32, d
   let primaryDistance = sdPolylineCrack(pointPos, openingValue, lengthValue, dangerValue, 0.38, 0.70);
   let secondaryOpen = max(0.0007, openingValue * 0.11);
   let secondaryDepth = 0.67 - 0.12 * dangerValue;
-  let networkA = sdRadialCrack(pointPos, vec2<f32>(-0.32, 0.00),  0.78, 0.12 + 0.23 * lengthValue, secondaryOpen, secondaryDepth);
-  let networkB = sdRadialCrack(pointPos, vec2<f32>(-0.08,-0.01), -0.64, 0.10 + 0.20 * lengthValue, secondaryOpen * 0.88, secondaryDepth + 0.03);
-  let networkC = sdRadialCrack(pointPos, vec2<f32>( 0.08, 0.02),  0.28, 0.09 + 0.18 * lengthValue, secondaryOpen * 0.80, secondaryDepth + 0.02);
+  let networkA = sdBentRadialCrack(pointPos, vec2<f32>(-0.32, 0.00),  0.78, 0.12 + 0.23 * lengthValue, secondaryOpen, secondaryDepth, 0.36);
+  let networkB = sdBentRadialCrack(pointPos, vec2<f32>(-0.08,-0.01), -0.64, 0.10 + 0.20 * lengthValue, secondaryOpen * 0.88, secondaryDepth + 0.03, -0.32);
+  let networkC = sdBentRadialCrack(pointPos, vec2<f32>( 0.08, 0.02),  0.28, 0.09 + 0.18 * lengthValue, secondaryOpen * 0.80, secondaryDepth + 0.02, 0.27);
   var networkDistance = min(primaryDistance, min(networkA, min(networkB, networkC)));
   if (branchValue > 0.18) {
-    let networkD = sdRadialCrack(pointPos, vec2<f32>(-0.48,-0.01), -0.22, 0.08 + 0.20 * branchValue, secondaryOpen * 0.72, secondaryDepth + 0.04);
+    let networkD = sdBentRadialCrack(pointPos, vec2<f32>(-0.48,-0.01), -0.22, 0.08 + 0.20 * branchValue, secondaryOpen * 0.72, secondaryDepth + 0.04, -0.38);
     networkDistance = min(networkDistance, networkD);
   }
   return networkDistance;
@@ -190,11 +231,17 @@ fn crackVoidDistance(pointPos : vec3<f32>) -> f32 {
   if (modeValue < 2.5) {
     return sdImpactCrack(pointPos, openingValue, lengthValue, dangerValue, branchValue);
   }
-  return sdNetworkCrack(pointPos, openingValue, lengthValue, dangerValue, branchValue);
+  if (modeValue < 3.5) {
+    return sdNetworkCrack(pointPos, openingValue, lengthValue, dangerValue, branchValue);
+  }
+  return sdCrackVoid(pointPos, openingValue * 0.30, lengthValue, dangerValue, branchValue * 0.65);
 }
 
 fn sceneDistance(pointPos : vec3<f32>) -> f32 {
-  let bodyDistance = sdSphere(pointPos, 0.86);
+  var bodyDistance = sdSphere(pointPos, 0.86);
+  if (params.extra.x >= 3.5) {
+    bodyDistance = sdOpeningWarpBody(pointPos, params.crack.x, params.crack.y, params.crack.z);
+  }
   let voidDistance = crackVoidDistance(pointPos);
   return max(bodyDistance, -voidDistance);
 }
@@ -276,11 +323,20 @@ fn fragmentMain(inputData : VertexOut) -> @location(0) vec4<f32> {
     let viewFacing = max(dot(normalValue,-rayDirection),0.0);
     let rimValue = pow(1.0-viewFacing,2.6);
     let voidDistance = crackVoidDistance(pointPos);
-    let crackSurfaceFactor = exp(-abs(voidDistance)*42.0);
+    var crackFalloff = 42.0;
+    var crackShadeStrength = 0.72;
+    if (params.extra.x < 0.5) {
+      crackFalloff = 15.0;
+      crackShadeStrength = 0.34;
+    } else if (params.extra.x >= 3.5) {
+      crackFalloff = 28.0;
+      crackShadeStrength = 0.62;
+    }
+    let crackSurfaceFactor = exp(-abs(voidDistance)*crackFalloff);
     let baseColor = vec3<f32>(0.30,0.56,0.88);
     let interiorColor = vec3<f32>(0.025,0.032,0.045);
     colorValue = baseColor * (0.16 + 0.84 * diffuseValue);
-    colorValue = mix(colorValue, interiorColor, clamp(crackSurfaceFactor * 0.72, 0.0, 0.72));
+    colorValue = mix(colorValue, interiorColor, clamp(crackSurfaceFactor * crackShadeStrength, 0.0, crackShadeStrength));
     colorValue = colorValue + vec3<f32>(0.16,0.18,0.22) * rimValue;
   }
   return vec4<f32>(colorValue,1.0);
@@ -373,6 +429,7 @@ async function main(){
     hairline:{...base,mode:0},
     impact:{...base,mode:2},
     network:{...base,mode:3},
+    warped:{...base,mode:4},
     cameraRotated:{...base,mode:1,yaw:0.72,pitch:0.28},
     cameraZoomed:{...base,mode:1,distance:1.80}
   };
@@ -390,6 +447,7 @@ async function main(){
     hairlineVsFissure:compareImages(images.hairline,images.fissure),
     fissureVsImpact:compareImages(images.fissure,images.impact),
     impactVsNetwork:compareImages(images.impact,images.network),
+    fissureVsWarped:compareImages(images.fissure,images.warped),
     cameraRotation:compareImages(images.fissure,images.cameraRotated),
     cameraZoom:compareImages(images.fissure,images.cameraZoomed)
   };

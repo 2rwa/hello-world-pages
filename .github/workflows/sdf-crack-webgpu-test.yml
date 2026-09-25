@@ -226,7 +226,7 @@ jobs:
           page=next(p for p in pages if p.get("type")=="page" and "/tests/sdf-crack/" in p.get("url",""))
           ws=websocket.create_connection(page["webSocketDebuggerUrl"],timeout=10)
           next_id=1
-          names=["hairline","fissure","impact","network"]
+          names=["hairline","fissure","impact","network","opening-warp"]
 
           def evaluate(expression):
               global next_id
