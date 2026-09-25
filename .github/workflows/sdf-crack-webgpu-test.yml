@@ -211,6 +211,43 @@ jobs:
           raise SystemExit("timeout: "+str(last))
           PY
 
+
+      - name: Capture rendered preview PNG
+        if: ${{ steps.webgpu.outcome == 'success' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import base64,json,urllib.request,websocket
+          with urllib.request.urlopen("http://127.0.0.1:9222/json/list",timeout=2) as r:
+              pages=json.load(r)
+          page=next(p for p in pages if p.get("type")=="page" and "/tests/sdf-crack/" in p.get("url",""))
+          ws=websocket.create_connection(page["webSocketDebuggerUrl"],timeout=5)
+          ws.send(json.dumps({"id":1,"method":"Runtime.evaluate","params":{
+              "expression":"document.getElementById('gpuCanvas').toDataURL('image/png')",
+              "returnByValue":True
+          }}))
+          while True:
+              message=json.loads(ws.recv())
+              if message.get("id")==1:
+                  data_url=message["result"]["result"].get("value","")
+                  break
+          ws.close()
+          if not data_url.startswith("data:image/png;base64,"):
+              raise SystemExit("PNG data URL unavailable")
+          payload=data_url.split(",",1)[1]
+          open("/tmp/sdf-crack-preview.png","wb").write(base64.b64decode(payload))
+          print("saved /tmp/sdf-crack-preview.png")
+          PY
+
+      - name: Upload rendered preview
+        if: ${{ steps.webgpu.outcome == 'success' }}
+        uses: actions/upload-artifact@v6
+        with:
+          name: sdf-crack-preview
+          path: /tmp/sdf-crack-preview.png
+          retention-days: 7
+
       - name: Save compact result to repository
         if: always()
         env:
@@ -230,6 +267,7 @@ jobs:
           } > tests/sdf-crack/action-result.txt
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git pull --rebase origin main
           git add tests/sdf-crack/action-result.txt
           git commit -m "Record SDF crack WebGPU test result" || exit 0
           git push origin HEAD:main

@@ -134,6 +134,7 @@ jobs:
           } > tests/sdf-crack/behavior-result.txt
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git pull --rebase origin main
           git add tests/sdf-crack/behavior-result.txt
           git commit -m "Record SDF crack behavior regression result" || exit 0
           git push origin HEAD:main
