@@ -14,7 +14,8 @@ canvas{width:100vw;height:100vh;display:block}
 .control{margin:9px 0}
 .control label{display:flex;justify-content:space-between;gap:10px;font-size:12px}
 .control output{font:12px ui-monospace,monospace;color:#9fd0ff}
-.control input{width:100%;margin:4px 0 0}
+.control input,.control select{width:100%;margin:4px 0 0}
+.control select{box-sizing:border-box;padding:7px 8px;border-radius:8px;border:1px solid #ffffff26;background:#101b29;color:#eaf2ff}
 #resetButton{margin-top:5px;padding:6px 10px;border-radius:8px;border:1px solid #ffffff26;background:#ffffff12;color:#eaf2ff}
 #state{position:fixed;left:12px;bottom:12px;padding:7px 9px;background:#0009;border-radius:8px;font:11px ui-monospace,monospace;white-space:pre-wrap;pointer-events:none}
 @media(max-width:620px){#panel{left:10px;top:10px;width:calc(100vw - 20px);padding:11px 12px}.control{margin:6px 0}}
@@ -24,7 +25,16 @@ canvas{width:100vw;height:100vh;display:block}
 <canvas id="gpuCanvas"></canvas>
 <section id="panel">
   <h1>SDF fracture / pre-break</h1>
-  <p>亀裂はテクスチャではなく、球のSDFから空隙を差し引いています。</p>
+  <p>亀裂はテクスチャではなく、球のSDFから空隙を差し引いています。ドラッグで回転、ホイールでズーム。</p>
+  <div class="control">
+    <label for="modeSelect"><span>Crack model</span><output id="modeValue">Fissure</output></label>
+    <select id="modeSelect" data-param="mode">
+      <option value="0">Hairline</option>
+      <option value="1" selected>Fissure</option>
+      <option value="2">Impact</option>
+      <option value="3">Network</option>
+    </select>
+  </div>
   <div class="control">
     <label for="openingSlider"><span>Crack opening</span><output id="openingValue">0.045</output></label>
     <input id="openingSlider" data-param="opening" type="range" min="0.002" max="0.120" step="0.001" value="0.045">
@@ -51,21 +61,25 @@ const stateElement=document.querySelector("#state");
 const ciMode=new URLSearchParams(location.search).get("ci")==="1";
 
 const controls={
+  mode:document.querySelector("#modeSelect"),
   opening:document.querySelector("#openingSlider"),
   length:document.querySelector("#lengthSlider"),
   danger:document.querySelector("#dangerSlider"),
   branch:document.querySelector("#branchSlider")
 };
 const outputs={
+  mode:document.querySelector("#modeValue"),
   opening:document.querySelector("#openingValue"),
   length:document.querySelector("#lengthValue"),
   danger:document.querySelector("#dangerValue"),
   branch:document.querySelector("#branchValue")
 };
-const defaults={opening:0.045,length:0.720,danger:0.780,branch:0.350};
+const modeNames=["Hairline","Fissure","Impact","Network"];
+const defaults={mode:1,opening:0.045,length:0.720,danger:0.780,branch:0.350};
 
 function readParameters(){
   return {
+    mode:Number(controls.mode.value),
     opening:Number(controls.opening.value),
     length:Number(controls.length.value),
     danger:Number(controls.danger.value),
@@ -74,6 +88,7 @@ function readParameters(){
 }
 function updateOutputs(){
   const p=readParameters();
+  outputs.mode.value=modeNames[p.mode]||"Unknown";
   outputs.opening.value=p.opening.toFixed(3);
   outputs.length.value=p.length.toFixed(3);
   outputs.danger.value=p.danger.toFixed(3);
@@ -214,10 +229,90 @@ fn sdCrackVoid(pointPos : vec3<f32>, openingValue : f32, lengthValue : f32, dang
   return crackDistance;
 }
 
+fn sdHairlineCrack(pointPos : vec3<f32>, openingValue : f32, lengthValue : f32, dangerValue : f32) -> f32 {
+  let startX = -0.78;
+  let frontX = startX + clamp(lengthValue, 0.05, 1.0) * 1.34;
+  let normalizedX = clamp((pointPos.x - startX) / max(frontX - startX, 0.001), 0.0, 1.0);
+  let waviness = 0.018 * sin(pointPos.x * 18.0 + 0.7) + 0.009 * sin(pointPos.x * 43.0 - 0.4);
+  let localCenterY = waviness * (0.35 + 0.65 * dangerValue);
+  let tipFactor = sqrt(clamp((frontX - pointPos.x) / max(frontX - startX, 0.001), 0.0, 1.0));
+  let halfOpen = max(0.0008, openingValue * (0.07 + 0.16 * dangerValue) * tipFactor);
+  let depthBackZ = 0.72 - 0.12 * dangerValue - 0.05 * normalizedX;
+  let aheadLimit = pointPos.x - frontX;
+  let behindLimit = startX - pointPos.x;
+  let openingLimit = abs(pointPos.y - localCenterY) - halfOpen;
+  let depthLimit = depthBackZ - pointPos.z;
+  return max(max(aheadLimit, behindLimit), max(openingLimit, depthLimit));
+}
+
+fn sdRadialCrack(pointPos : vec3<f32>, originXY : vec2<f32>, angleValue : f32, crackLength : f32, halfOpen : f32, depthBackZ : f32) -> f32 {
+  let cosValue = cos(angleValue);
+  let sinValue = sin(angleValue);
+  let relativeXY = vec2<f32>(pointPos.x - originXY.x, pointPos.y - originXY.y);
+  let lineU = cosValue * relativeXY.x + sinValue * relativeXY.y;
+  let lineV = -sinValue * relativeXY.x + cosValue * relativeXY.y;
+  let taperValue = sqrt(clamp(1.0 - lineU / max(crackLength, 0.001), 0.0, 1.0));
+  let openingLimit = abs(lineV) - max(0.0007, halfOpen * taperValue);
+  return max(max(-lineU, lineU - crackLength), max(openingLimit, depthBackZ - pointPos.z));
+}
+
+fn sdImpactCrack(pointPos : vec3<f32>, openingValue : f32, lengthValue : f32, dangerValue : f32, branchValue : f32) -> f32 {
+  let originXY = vec2<f32>(-0.12, 0.02);
+  let baseLength = 0.18 + 0.56 * lengthValue;
+  let halfOpen = max(0.0010, openingValue * (0.10 + 0.18 * dangerValue));
+  let depthBackZ = 0.58 - 0.22 * dangerValue;
+
+  let radialA = sdRadialCrack(pointPos, originXY, -0.10, baseLength * 1.00, halfOpen, depthBackZ);
+  let radialB = sdRadialCrack(pointPos, originXY,  0.58, baseLength * 0.83, halfOpen * 0.82, depthBackZ + 0.03);
+  let radialC = sdRadialCrack(pointPos, originXY,  1.36, baseLength * 0.68, halfOpen * 0.72, depthBackZ + 0.05);
+  let radialD = sdRadialCrack(pointPos, originXY, -0.86, baseLength * 0.76, halfOpen * 0.78, depthBackZ + 0.02);
+  var impactDistance = min(min(radialA, radialB), min(radialC, radialD));
+
+  if (branchValue > 0.12) {
+    let radialE = sdRadialCrack(pointPos, originXY, 2.42, baseLength * (0.38 + 0.30 * branchValue), halfOpen * 0.66, depthBackZ + 0.06);
+    impactDistance = min(impactDistance, radialE);
+  }
+  return impactDistance;
+}
+
+fn sdNetworkCrack(pointPos : vec3<f32>, openingValue : f32, lengthValue : f32, dangerValue : f32, branchValue : f32) -> f32 {
+  let primaryDistance = sdHairlineCrack(pointPos, openingValue * 0.75, lengthValue, dangerValue);
+  let secondaryOpen = max(0.0007, openingValue * 0.11);
+  let secondaryDepth = 0.67 - 0.12 * dangerValue;
+  let networkA = sdRadialCrack(pointPos, vec2<f32>(-0.32, 0.00),  0.78, 0.12 + 0.23 * lengthValue, secondaryOpen, secondaryDepth);
+  let networkB = sdRadialCrack(pointPos, vec2<f32>(-0.08,-0.01), -0.64, 0.10 + 0.20 * lengthValue, secondaryOpen * 0.88, secondaryDepth + 0.03);
+  let networkC = sdRadialCrack(pointPos, vec2<f32>( 0.08, 0.02),  0.28, 0.09 + 0.18 * lengthValue, secondaryOpen * 0.80, secondaryDepth + 0.02);
+  var networkDistance = min(primaryDistance, min(networkA, min(networkB, networkC)));
+  if (branchValue > 0.18) {
+    let networkD = sdRadialCrack(pointPos, vec2<f32>(-0.48,-0.01), -0.22, 0.08 + 0.20 * branchValue, secondaryOpen * 0.72, secondaryDepth + 0.04);
+    networkDistance = min(networkDistance, networkD);
+  }
+  return networkDistance;
+}
+
+fn crackVoidDistance(pointPos : vec3<f32>) -> f32 {
+  let openingValue = params.crack.x;
+  let lengthValue = params.crack.y;
+  let dangerValue = params.crack.z;
+  let branchValue = params.crack.w;
+  let modeValue = params.extra.x;
+
+  if (modeValue < 0.5) {
+    return sdHairlineCrack(pointPos, openingValue, lengthValue, dangerValue);
+  }
+  if (modeValue < 1.5) {
+    return sdCrackVoid(pointPos, openingValue, lengthValue, dangerValue, branchValue);
+  }
+  if (modeValue < 2.5) {
+    return sdImpactCrack(pointPos, openingValue, lengthValue, dangerValue, branchValue);
+  }
+  return sdNetworkCrack(pointPos, openingValue, lengthValue, dangerValue, branchValue);
+}
+
 fn sceneDistance(pointPos : vec3<f32>) -> f32 {
-  let dBody = sdSphere(pointPos, 0.86);
-  let dVoid = sdCrackVoid(pointPos, params.crack.x, params.crack.y, params.crack.z, params.crack.w);
-  return max(dBody, -dVoid);
+  let bodyDistance = sdSphere(pointPos, 0.86);
+  let voidDistance = crackVoidDistance(pointPos);
+  return max(bodyDistance, -voidDistance);
 }
 
 fn estimateNormal(pointPos : vec3<f32>) -> vec3<f32> {
@@ -294,7 +389,15 @@ fn fragmentMain(inputData : VertexOut) -> @location(0) vec4<f32> {
     let normalValue = estimateNormal(pointPos);
     let lightDir = normalize(vec3<f32>(0.8,1.2,0.6));
     let diffuseValue = max(dot(normalValue,lightDir),0.0);
-    colorValue = vec3<f32>(0.30,0.56,0.88) * (0.18 + 0.82 * diffuseValue);
+    let viewFacing = max(dot(normalValue,-rayDirection),0.0);
+    let rimValue = pow(1.0-viewFacing,2.6);
+    let voidDistance = crackVoidDistance(pointPos);
+    let crackSurfaceFactor = exp(-abs(voidDistance)*42.0);
+    let baseColor = vec3<f32>(0.30,0.56,0.88);
+    let interiorColor = vec3<f32>(0.025,0.032,0.045);
+    colorValue = baseColor * (0.16 + 0.84 * diffuseValue);
+    colorValue = mix(colorValue, interiorColor, clamp(crackSurfaceFactor * 0.72, 0.0, 0.72));
+    colorValue = colorValue + vec3<f32>(0.16,0.18,0.22) * rimValue;
   }
   return vec4<f32>(colorValue,1.0);
 }
@@ -358,6 +461,16 @@ fn fragmentMain(inputData : VertexOut) -> @location(0) vec4<f32> {
     });
   }
 
+  const cameraState={yaw:0.15,pitch:-0.10,distance:2.45,dragging:false,lastX:0,lastY:0};
+
+  function publishCameraState(){
+    rootElement.dataset.cameraState=JSON.stringify({
+      yaw:cameraState.yaw,
+      pitch:cameraState.pitch,
+      distance:cameraState.distance
+    });
+  }
+
   function renderCurrent(){
     const p=readParameters();
     updateOutputs();
@@ -369,9 +482,11 @@ fn fragmentMain(inputData : VertexOut) -> @location(0) vec4<f32> {
     uniformArray[5]=p.length;
     uniformArray[6]=p.danger;
     uniformArray[7]=p.branch;
-    uniformArray[8]=0.15;
-    uniformArray[9]=-0.10;
-    uniformArray[10]=2.45;
+    uniformArray[8]=cameraState.yaw;
+    uniformArray[9]=cameraState.pitch;
+    uniformArray[10]=cameraState.distance;
+    uniformArray[12]=p.mode;
+    publishCameraState();
     gpuDevice.queue.writeBuffer(uniformBuffer,0,uniformArray);
 
     const commandEncoder=gpuDevice.createCommandEncoder();
@@ -412,9 +527,39 @@ fn fragmentMain(inputData : VertexOut) -> @location(0) vec4<f32> {
   }
   for(const controlElement of Object.values(controls)){
     controlElement.addEventListener("input",scheduleRender);
+    controlElement.addEventListener("change",scheduleRender);
   }
+
+  canvasElement.addEventListener("pointerdown",(eventValue)=>{
+    cameraState.dragging=true;
+    cameraState.lastX=eventValue.clientX;
+    cameraState.lastY=eventValue.clientY;
+    try{canvasElement.setPointerCapture(eventValue.pointerId);}catch{}
+  });
+  canvasElement.addEventListener("pointermove",(eventValue)=>{
+    if(!cameraState.dragging) return;
+    const deltaX=eventValue.clientX-cameraState.lastX;
+    const deltaY=eventValue.clientY-cameraState.lastY;
+    cameraState.lastX=eventValue.clientX;
+    cameraState.lastY=eventValue.clientY;
+    cameraState.yaw+=deltaX*0.010;
+    cameraState.pitch=Math.max(-1.25,Math.min(1.25,cameraState.pitch+deltaY*0.010));
+    scheduleRender();
+  });
+  function finishPointerDrag(){cameraState.dragging=false;}
+  canvasElement.addEventListener("pointerup",finishPointerDrag);
+  canvasElement.addEventListener("pointercancel",finishPointerDrag);
+  canvasElement.addEventListener("wheel",(eventValue)=>{
+    eventValue.preventDefault();
+    cameraState.distance=Math.max(1.35,Math.min(5.0,cameraState.distance*Math.exp(eventValue.deltaY*0.001)));
+    scheduleRender();
+  },{passive:false});
+
   document.querySelector("#resetButton").addEventListener("click",()=>{
     for(const [key,value] of Object.entries(defaults)) controls[key].value=String(value);
+    cameraState.yaw=0.15;
+    cameraState.pitch=-0.10;
+    cameraState.distance=2.45;
     updateOutputs();
     scheduleRender();
   });

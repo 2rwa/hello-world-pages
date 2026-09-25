@@ -32,7 +32,9 @@ jobs:
               "lengthLow","lengthHigh",
               "dangerLow","dangerHigh",
               "branchOff","branchOn",
-              "parameter-affects-render",
+              "hairline","impact","network",
+              "cameraRotated","cameraZoomed",
+              "render-difference",
               "getCompilationInfo",
               "copyTextureToBuffer",
               "queue.onSubmittedWorkDone"

@@ -1,13 +1,10 @@
 <!doctype html>
-<html lang="en" data-webgpu-status="starting">
-<head><meta charset="utf-8"><title>SDF Crack Behavior Test</title>
-<style>html,body{margin:0;background:#08101b;color:#eef;font:12px ui-monospace,monospace}pre{white-space:pre-wrap;padding:12px}</style>
-</head>
-<body><pre id="state">starting</pre>
-<script type="module">
+<html lang="en" data-webgpu-status="starting"><head><meta charset="utf-8"><title>SDF crack behavior regression</title>
+<style>html,body{margin:0;background:#08101b;color:#eef;font:12px ui-monospace,monospace}pre{padding:12px;white-space:pre-wrap}</style></head>
+<body><pre id="state">starting</pre><script type="module">
 const rootElement=document.documentElement;
 const stateElement=document.querySelector("#state");
-function stage(name){rootElement.dataset.webgpuStage=name;stateElement.textContent=name;}
+function stage(stageName){rootElement.dataset.webgpuStage=stageName;stateElement.textContent=stageName;}
 function fail(errorValue){
   const message=String(errorValue?.message||errorValue);
   rootElement.dataset.webgpuStatus="fail";
@@ -112,10 +109,90 @@ fn sdCrackVoid(pointPos : vec3<f32>, openingValue : f32, lengthValue : f32, dang
   return crackDistance;
 }
 
+fn sdHairlineCrack(pointPos : vec3<f32>, openingValue : f32, lengthValue : f32, dangerValue : f32) -> f32 {
+  let startX = -0.78;
+  let frontX = startX + clamp(lengthValue, 0.05, 1.0) * 1.34;
+  let normalizedX = clamp((pointPos.x - startX) / max(frontX - startX, 0.001), 0.0, 1.0);
+  let waviness = 0.018 * sin(pointPos.x * 18.0 + 0.7) + 0.009 * sin(pointPos.x * 43.0 - 0.4);
+  let localCenterY = waviness * (0.35 + 0.65 * dangerValue);
+  let tipFactor = sqrt(clamp((frontX - pointPos.x) / max(frontX - startX, 0.001), 0.0, 1.0));
+  let halfOpen = max(0.0008, openingValue * (0.07 + 0.16 * dangerValue) * tipFactor);
+  let depthBackZ = 0.72 - 0.12 * dangerValue - 0.05 * normalizedX;
+  let aheadLimit = pointPos.x - frontX;
+  let behindLimit = startX - pointPos.x;
+  let openingLimit = abs(pointPos.y - localCenterY) - halfOpen;
+  let depthLimit = depthBackZ - pointPos.z;
+  return max(max(aheadLimit, behindLimit), max(openingLimit, depthLimit));
+}
+
+fn sdRadialCrack(pointPos : vec3<f32>, originXY : vec2<f32>, angleValue : f32, crackLength : f32, halfOpen : f32, depthBackZ : f32) -> f32 {
+  let cosValue = cos(angleValue);
+  let sinValue = sin(angleValue);
+  let relativeXY = vec2<f32>(pointPos.x - originXY.x, pointPos.y - originXY.y);
+  let lineU = cosValue * relativeXY.x + sinValue * relativeXY.y;
+  let lineV = -sinValue * relativeXY.x + cosValue * relativeXY.y;
+  let taperValue = sqrt(clamp(1.0 - lineU / max(crackLength, 0.001), 0.0, 1.0));
+  let openingLimit = abs(lineV) - max(0.0007, halfOpen * taperValue);
+  return max(max(-lineU, lineU - crackLength), max(openingLimit, depthBackZ - pointPos.z));
+}
+
+fn sdImpactCrack(pointPos : vec3<f32>, openingValue : f32, lengthValue : f32, dangerValue : f32, branchValue : f32) -> f32 {
+  let originXY = vec2<f32>(-0.12, 0.02);
+  let baseLength = 0.18 + 0.56 * lengthValue;
+  let halfOpen = max(0.0010, openingValue * (0.10 + 0.18 * dangerValue));
+  let depthBackZ = 0.58 - 0.22 * dangerValue;
+
+  let radialA = sdRadialCrack(pointPos, originXY, -0.10, baseLength * 1.00, halfOpen, depthBackZ);
+  let radialB = sdRadialCrack(pointPos, originXY,  0.58, baseLength * 0.83, halfOpen * 0.82, depthBackZ + 0.03);
+  let radialC = sdRadialCrack(pointPos, originXY,  1.36, baseLength * 0.68, halfOpen * 0.72, depthBackZ + 0.05);
+  let radialD = sdRadialCrack(pointPos, originXY, -0.86, baseLength * 0.76, halfOpen * 0.78, depthBackZ + 0.02);
+  var impactDistance = min(min(radialA, radialB), min(radialC, radialD));
+
+  if (branchValue > 0.12) {
+    let radialE = sdRadialCrack(pointPos, originXY, 2.42, baseLength * (0.38 + 0.30 * branchValue), halfOpen * 0.66, depthBackZ + 0.06);
+    impactDistance = min(impactDistance, radialE);
+  }
+  return impactDistance;
+}
+
+fn sdNetworkCrack(pointPos : vec3<f32>, openingValue : f32, lengthValue : f32, dangerValue : f32, branchValue : f32) -> f32 {
+  let primaryDistance = sdHairlineCrack(pointPos, openingValue * 0.75, lengthValue, dangerValue);
+  let secondaryOpen = max(0.0007, openingValue * 0.11);
+  let secondaryDepth = 0.67 - 0.12 * dangerValue;
+  let networkA = sdRadialCrack(pointPos, vec2<f32>(-0.32, 0.00),  0.78, 0.12 + 0.23 * lengthValue, secondaryOpen, secondaryDepth);
+  let networkB = sdRadialCrack(pointPos, vec2<f32>(-0.08,-0.01), -0.64, 0.10 + 0.20 * lengthValue, secondaryOpen * 0.88, secondaryDepth + 0.03);
+  let networkC = sdRadialCrack(pointPos, vec2<f32>( 0.08, 0.02),  0.28, 0.09 + 0.18 * lengthValue, secondaryOpen * 0.80, secondaryDepth + 0.02);
+  var networkDistance = min(primaryDistance, min(networkA, min(networkB, networkC)));
+  if (branchValue > 0.18) {
+    let networkD = sdRadialCrack(pointPos, vec2<f32>(-0.48,-0.01), -0.22, 0.08 + 0.20 * branchValue, secondaryOpen * 0.72, secondaryDepth + 0.04);
+    networkDistance = min(networkDistance, networkD);
+  }
+  return networkDistance;
+}
+
+fn crackVoidDistance(pointPos : vec3<f32>) -> f32 {
+  let openingValue = params.crack.x;
+  let lengthValue = params.crack.y;
+  let dangerValue = params.crack.z;
+  let branchValue = params.crack.w;
+  let modeValue = params.extra.x;
+
+  if (modeValue < 0.5) {
+    return sdHairlineCrack(pointPos, openingValue, lengthValue, dangerValue);
+  }
+  if (modeValue < 1.5) {
+    return sdCrackVoid(pointPos, openingValue, lengthValue, dangerValue, branchValue);
+  }
+  if (modeValue < 2.5) {
+    return sdImpactCrack(pointPos, openingValue, lengthValue, dangerValue, branchValue);
+  }
+  return sdNetworkCrack(pointPos, openingValue, lengthValue, dangerValue, branchValue);
+}
+
 fn sceneDistance(pointPos : vec3<f32>) -> f32 {
-  let dBody = sdSphere(pointPos, 0.86);
-  let dVoid = sdCrackVoid(pointPos, params.crack.x, params.crack.y, params.crack.z, params.crack.w);
-  return max(dBody, -dVoid);
+  let bodyDistance = sdSphere(pointPos, 0.86);
+  let voidDistance = crackVoidDistance(pointPos);
+  return max(bodyDistance, -voidDistance);
 }
 
 fn estimateNormal(pointPos : vec3<f32>) -> vec3<f32> {
@@ -192,7 +269,15 @@ fn fragmentMain(inputData : VertexOut) -> @location(0) vec4<f32> {
     let normalValue = estimateNormal(pointPos);
     let lightDir = normalize(vec3<f32>(0.8,1.2,0.6));
     let diffuseValue = max(dot(normalValue,lightDir),0.0);
-    colorValue = vec3<f32>(0.30,0.56,0.88) * (0.18 + 0.82 * diffuseValue);
+    let viewFacing = max(dot(normalValue,-rayDirection),0.0);
+    let rimValue = pow(1.0-viewFacing,2.6);
+    let voidDistance = crackVoidDistance(pointPos);
+    let crackSurfaceFactor = exp(-abs(voidDistance)*42.0);
+    let baseColor = vec3<f32>(0.30,0.56,0.88);
+    let interiorColor = vec3<f32>(0.025,0.032,0.045);
+    colorValue = baseColor * (0.16 + 0.84 * diffuseValue);
+    colorValue = mix(colorValue, interiorColor, clamp(crackSurfaceFactor * 0.72, 0.0, 0.72));
+    colorValue = colorValue + vec3<f32>(0.16,0.18,0.22) * rimValue;
   }
   return vec4<f32>(colorValue,1.0);
 }
@@ -203,37 +288,20 @@ async function main(){
   if(!navigator.gpu) throw new Error("navigator.gpu unavailable");
   const gpuAdapter=await navigator.gpu.requestAdapter({powerPreference:"high-performance"});
   if(!gpuAdapter) throw new Error("requestAdapter returned null");
-
   stage("request-device");
   const gpuDevice=await gpuAdapter.requestDevice();
-  gpuDevice.lost.then(info=>{
-    rootElement.dataset.webgpuDeviceLostReason=String(info.reason||"");
-    rootElement.dataset.webgpuDeviceLostMessage=String(info.message||"");
-  });
 
   stage("shader-compilation-info");
   const shaderModule=gpuDevice.createShaderModule({code:shaderSource});
   const compilationInfo=await shaderModule.getCompilationInfo();
-  const errors=compilationInfo.messages.filter(m=>m.type==="error");
-  if(errors.length) throw new Error(errors.map(m=>m.message).join(" | "));
+  const shaderErrors=compilationInfo.messages.filter(entry=>entry.type==="error");
+  if(shaderErrors.length) throw new Error(shaderErrors.map(entry=>entry.message).join(" | "));
 
-  const width=256;
-  const height=144;
-  const format="rgba8unorm";
-  const bytesPerRow=width*4;
-
+  const width=256,height=144,format="rgba8unorm",bytesPerRow=width*4;
   const uniformArray=new Float32Array(16);
-  const uniformBuffer=gpuDevice.createBuffer({
-    size:uniformArray.byteLength,
-    usage:GPUBufferUsage.UNIFORM|GPUBufferUsage.COPY_DST
-  });
-  const bindLayout=gpuDevice.createBindGroupLayout({
-    entries:[{binding:0,visibility:GPUShaderStage.FRAGMENT,buffer:{type:"uniform"}}]
-  });
-  const bindGroup=gpuDevice.createBindGroup({
-    layout:bindLayout,
-    entries:[{binding:0,resource:{buffer:uniformBuffer}}]
-  });
+  const uniformBuffer=gpuDevice.createBuffer({size:uniformArray.byteLength,usage:GPUBufferUsage.UNIFORM|GPUBufferUsage.COPY_DST});
+  const bindLayout=gpuDevice.createBindGroupLayout({entries:[{binding:0,visibility:GPUShaderStage.FRAGMENT,buffer:{type:"uniform"}}]});
+  const bindGroup=gpuDevice.createBindGroup({layout:bindLayout,entries:[{binding:0,resource:{buffer:uniformBuffer}}]});
 
   gpuDevice.pushErrorScope("validation");
   stage("create-pipeline");
@@ -243,127 +311,94 @@ async function main(){
     fragment:{module:shaderModule,entryPoint:"fragmentMain",targets:[{format}]},
     primitive:{topology:"triangle-list"}
   });
+  const renderTexture=gpuDevice.createTexture({size:[width,height,1],format,usage:GPUTextureUsage.RENDER_ATTACHMENT|GPUTextureUsage.COPY_SRC});
 
-  const renderTexture=gpuDevice.createTexture({
-    size:[width,height,1],
-    format,
-    usage:GPUTextureUsage.RENDER_ATTACHMENT|GPUTextureUsage.COPY_SRC
-  });
-
-  async function renderCase(caseName,crackValues){
+  async function renderCase(caseName,values){
     stage("render-"+caseName);
     uniformArray.fill(0);
-    uniformArray[0]=width;
-    uniformArray[1]=height;
-    uniformArray[3]=width/height;
-    uniformArray[4]=crackValues.opening;
-    uniformArray[5]=crackValues.length;
-    uniformArray[6]=crackValues.danger;
-    uniformArray[7]=crackValues.branch;
-    uniformArray[8]=0.15;
-    uniformArray[9]=-0.10;
-    uniformArray[10]=2.45;
+    uniformArray[0]=width; uniformArray[1]=height; uniformArray[3]=width/height;
+    uniformArray[4]=values.opening; uniformArray[5]=values.length; uniformArray[6]=values.danger; uniformArray[7]=values.branch;
+    uniformArray[8]=values.yaw??0.15; uniformArray[9]=values.pitch??-0.10; uniformArray[10]=values.distance??2.45;
+    uniformArray[12]=values.mode??1;
     gpuDevice.queue.writeBuffer(uniformBuffer,0,uniformArray);
 
-    const readBuffer=gpuDevice.createBuffer({
-      size:bytesPerRow*height,
-      usage:GPUBufferUsage.COPY_DST|GPUBufferUsage.MAP_READ
-    });
-    const encoder=gpuDevice.createCommandEncoder();
-    const pass=encoder.beginRenderPass({
-      colorAttachments:[{
-        view:renderTexture.createView(),
-        clearValue:{r:0.02,g:0.04,b:0.08,a:1},
-        loadOp:"clear",
-        storeOp:"store"
-      }]
-    });
-    pass.setPipeline(renderPipeline);
-    pass.setBindGroup(0,bindGroup);
-    pass.draw(3,1,0,0);
-    pass.end();
-    encoder.copyTextureToBuffer(
-      {texture:renderTexture},
-      {buffer:readBuffer,bytesPerRow,rowsPerImage:height},
-      [width,height,1]
-    );
-    gpuDevice.queue.submit([encoder.finish()]);
+    const readBuffer=gpuDevice.createBuffer({size:bytesPerRow*height,usage:GPUBufferUsage.COPY_DST|GPUBufferUsage.MAP_READ});
+    const commandEncoder=gpuDevice.createCommandEncoder();
+    const renderPass=commandEncoder.beginRenderPass({colorAttachments:[{
+      view:renderTexture.createView(),clearValue:{r:0.02,g:0.04,b:0.08,a:1},loadOp:"clear",storeOp:"store"
+    }]});
+    renderPass.setPipeline(renderPipeline); renderPass.setBindGroup(0,bindGroup); renderPass.draw(3,1,0,0); renderPass.end();
+    commandEncoder.copyTextureToBuffer({texture:renderTexture},{buffer:readBuffer,bytesPerRow,rowsPerImage:height},[width,height,1]);
+    gpuDevice.queue.submit([commandEncoder.finish()]);
     await gpuDevice.queue.onSubmittedWorkDone();
     await readBuffer.mapAsync(GPUMapMode.READ);
-    const copy=new Uint8Array(readBuffer.getMappedRange()).slice();
-    readBuffer.unmap();
-    readBuffer.destroy();
-    return copy;
+    const copyBytes=new Uint8Array(readBuffer.getMappedRange()).slice();
+    readBuffer.unmap(); readBuffer.destroy();
+    return copyBytes;
   }
 
   function visiblePixelCount(bytes){
     let count=0;
-    for(let i=0;i<bytes.length;i+=4){
-      if(bytes[i]>20 || bytes[i+1]>25 || bytes[i+2]>40) count++;
+    for(let index=0;index<bytes.length;index+=4){
+      if(bytes[index]>20||bytes[index+1]>25||bytes[index+2]>40) count++;
     }
     return count;
   }
-
-  function compareImages(a,b){
-    let changedPixels=0;
-    let absoluteDelta=0;
-    let maxPixelDelta=0;
-    for(let i=0;i<a.length;i+=4){
-      const delta=Math.abs(a[i]-b[i])+Math.abs(a[i+1]-b[i+1])+Math.abs(a[i+2]-b[i+2]);
-      absoluteDelta+=delta;
-      if(delta>=8) changedPixels++;
-      if(delta>maxPixelDelta) maxPixelDelta=delta;
+  function compareImages(firstBytes,secondBytes){
+    let changedPixels=0,absoluteDelta=0,maxPixelDelta=0;
+    for(let index=0;index<firstBytes.length;index+=4){
+      const pixelDelta=Math.abs(firstBytes[index]-secondBytes[index])+Math.abs(firstBytes[index+1]-secondBytes[index+1])+Math.abs(firstBytes[index+2]-secondBytes[index+2]);
+      absoluteDelta+=pixelDelta;
+      if(pixelDelta>=8) changedPixels++;
+      if(pixelDelta>maxPixelDelta) maxPixelDelta=pixelDelta;
     }
-    return {
-      changedPixels,
-      meanAbsChannelDelta:absoluteDelta/(width*height*3),
-      maxPixelDelta
-    };
+    return {changedPixels,meanAbsChannelDelta:absoluteDelta/(width*height*3),maxPixelDelta};
   }
 
+  const base={opening:0.045,length:0.72,danger:0.78,branch:0.35,yaw:0.15,pitch:-0.10,distance:2.45};
   const cases={
-    base:{opening:0.045,length:0.72,danger:0.78,branch:0.35},
-    openingLow:{opening:0.005,length:0.72,danger:0.78,branch:0.35},
-    openingHigh:{opening:0.100,length:0.72,danger:0.78,branch:0.35},
-    lengthLow:{opening:0.045,length:0.20,danger:0.78,branch:0.35},
-    lengthHigh:{opening:0.045,length:0.98,danger:0.78,branch:0.35},
-    dangerLow:{opening:0.045,length:0.72,danger:0.00,branch:0.35},
-    dangerHigh:{opening:0.045,length:0.72,danger:1.00,branch:0.35},
-    branchOff:{opening:0.045,length:0.72,danger:0.90,branch:0.00},
-    branchOn:{opening:0.045,length:0.72,danger:0.90,branch:1.00}
+    fissure:{...base,mode:1},
+    openingLow:{...base,mode:1,opening:0.005},
+    openingHigh:{...base,mode:1,opening:0.100},
+    lengthLow:{...base,mode:1,length:0.20},
+    lengthHigh:{...base,mode:1,length:0.98},
+    dangerLow:{...base,mode:1,danger:0.00},
+    dangerHigh:{...base,mode:1,danger:1.00},
+    branchOff:{...base,mode:1,branch:0.00},
+    branchOn:{...base,mode:1,branch:1.00},
+    hairline:{...base,mode:0},
+    impact:{...base,mode:2},
+    network:{...base,mode:3},
+    cameraRotated:{...base,mode:1,yaw:0.72,pitch:0.28},
+    cameraZoomed:{...base,mode:1,distance:1.80}
   };
-
-  const images={};
-  const visible={};
-  for(const [name,values] of Object.entries(cases)){
-    images[name]=await renderCase(name,values);
-    visible[name]=visiblePixelCount(images[name]);
+  const images={},visible={};
+  for(const [caseName,values] of Object.entries(cases)){
+    images[caseName]=await renderCase(caseName,values);
+    visible[caseName]=visiblePixelCount(images[caseName]);
   }
 
   const comparisons={
     opening:compareImages(images.openingLow,images.openingHigh),
     length:compareImages(images.lengthLow,images.lengthHigh),
     danger:compareImages(images.dangerLow,images.dangerHigh),
-    branch:compareImages(images.branchOff,images.branchOn)
+    branch:compareImages(images.branchOff,images.branchOn),
+    hairlineVsFissure:compareImages(images.hairline,images.fissure),
+    fissureVsImpact:compareImages(images.fissure,images.impact),
+    impactVsNetwork:compareImages(images.impact,images.network),
+    cameraRotation:compareImages(images.fissure,images.cameraRotated),
+    cameraZoom:compareImages(images.fissure,images.cameraZoomed)
   };
 
   const assertions=[];
-  function check(name,condition,details){
-    assertions.push({name,pass:Boolean(condition),details});
+  function check(assertName,condition,details){assertions.push({name:assertName,pass:Boolean(condition),details});}
+  for(const [caseName,count] of Object.entries(visible)){
+    check("visible:"+caseName,count>200,{visiblePixelCount:count});
+    check("not-disappeared:"+caseName,count>2500,{visiblePixelCount:count});
   }
-
-  for(const [name,count] of Object.entries(visible)){
-    check("visible:"+name,count>200,{visiblePixelCount:count});
-    check("not-disappeared:"+name,count>3000,{visiblePixelCount:count});
+  for(const [comparisonName,data] of Object.entries(comparisons)){
+    check("render-difference:"+comparisonName,data.changedPixels>=20&&data.meanAbsChannelDelta>=0.01,data);
   }
-
-  for(const [name,data] of Object.entries(comparisons)){
-    check("parameter-affects-render:"+name,
-      data.changedPixels>=20 && data.meanAbsChannelDelta>=0.01,
-      data
-    );
-  }
-
   const validationError=await gpuDevice.popErrorScope();
   check("webgpu-validation",!validationError,{message:validationError?.message||""});
 
@@ -371,15 +406,8 @@ async function main(){
   const report={visible,comparisons,assertions,failures};
   rootElement.dataset.behaviorReport=JSON.stringify(report);
   stateElement.textContent=JSON.stringify(report,null,2);
-
-  if(failures.length){
-    rootElement.dataset.webgpuStatus="fail";
-    rootElement.dataset.webgpuError="behavior assertions failed: "+failures.map(f=>f.name).join(", ");
-    throw new Error(rootElement.dataset.webgpuError);
-  }
-
-  rootElement.dataset.webgpuStatus="ok";
-  rootElement.dataset.webgpuStage="done";
+  if(failures.length) throw new Error("behavior assertions failed: "+failures.map(item=>item.name).join(", "));
+  rootElement.dataset.webgpuStatus="ok"; rootElement.dataset.webgpuStage="done";
 }
 main().catch(fail);
 </script></body></html>

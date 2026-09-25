@@ -33,6 +33,8 @@ jobs:
           assert "copyTextureToBuffer" in s
           for slider_id in ["openingSlider","lengthSlider","dangerSlider","branchSlider"]:
               assert f'id="{slider_id}"' in s, slider_id
+          assert 'id="modeSelect"' in s
+          assert "pointerdown" in s and "pointermove" in s and "wheel" in s
           assert "data-render-revision" in s
           print("static preflight: ok")
           PY
@@ -152,10 +154,52 @@ jobs:
                   if after["openingValue"] != "0.100" or abs(float(after["parameter"])-0.1)>1e-6:
                       ws.close()
                       raise SystemExit("slider value did not reach render parameters: "+after_raw)
-                  state["uiTest"]=after
+
+                  mode_before=after["revision"]
+                  evaluate("""(() => {
+                    const selectElement=document.getElementById("modeSelect");
+                    selectElement.value="2";
+                    selectElement.dispatchEvent(new Event("change",{bubbles:true}));
+                    return true;
+                  })()""")
+                  time.sleep(.7)
+                  mode_raw=evaluate("""JSON.stringify({
+                    revision:Number(document.documentElement.dataset.renderRevision||"0"),
+                    mode:Number(JSON.parse(document.documentElement.dataset.currentParameters||"{}").mode),
+                    label:document.getElementById("modeValue")?.value||""
+                  })""")
+                  mode_state=json.loads(mode_raw)
+                  if mode_state["revision"] <= mode_before or mode_state["mode"] != 2 or mode_state["label"] != "Impact":
+                      ws.close()
+                      raise SystemExit("mode select did not reach render parameters: "+mode_raw)
+
+                  camera_before=mode_state["revision"]
+                  camera_raw_before=evaluate("document.documentElement.dataset.cameraState||'{}'")
+                  evaluate("""(() => {
+                    const canvas=document.getElementById("gpuCanvas");
+                    canvas.dispatchEvent(new PointerEvent("pointerdown",{pointerId:17,clientX:100,clientY:80,bubbles:true}));
+                    canvas.dispatchEvent(new PointerEvent("pointermove",{pointerId:17,clientX:145,clientY:102,bubbles:true}));
+                    canvas.dispatchEvent(new PointerEvent("pointerup",{pointerId:17,clientX:145,clientY:102,bubbles:true}));
+                    return true;
+                  })()""")
+                  time.sleep(.7)
+                  camera_raw=evaluate("""JSON.stringify({
+                    revision:Number(document.documentElement.dataset.renderRevision||"0"),
+                    camera:JSON.parse(document.documentElement.dataset.cameraState||"{}")
+                  })""")
+                  camera_state=json.loads(camera_raw)
+                  camera_before_state=json.loads(camera_raw_before)
+                  if camera_state["revision"] <= camera_before:
+                      ws.close()
+                      raise SystemExit("pointer drag did not trigger render: "+camera_raw)
+                  if abs(float(camera_state["camera"]["yaw"])-float(camera_before_state["yaw"])) < 0.05:
+                      ws.close()
+                      raise SystemExit("pointer drag did not change yaw: "+camera_raw)
+
+                  state["uiTest"]={"slider":after,"mode":mode_state,"camera":camera_state}
                   state_path.write_text(json.dumps(state,ensure_ascii=False,indent=2))
                   ws.close()
-                  print("SDF crack WebGPU + slider UI smoke test: ok")
+                  print("SDF crack WebGPU + controls + orbit smoke test: ok")
                   raise SystemExit(0)
               if state["status"]=="fail":
                   ws.close()
