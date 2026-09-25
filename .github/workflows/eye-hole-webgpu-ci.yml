@@ -81,7 +81,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          cat > /tmp/poll-webgpu.mjs <<'NODE'
+          cat > .eye-hole-poll-webgpu.mjs <<'NODE'
           import WebSocket from 'ws';
 
           const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -166,7 +166,7 @@ jobs:
           NODE
 
           npm install --no-save --no-package-lock ws@8 >/tmp/eye-hole-npm.log 2>&1
-          node /tmp/poll-webgpu.mjs
+          node ./.eye-hole-poll-webgpu.mjs
 
       - name: Browser diagnostics
         if: always()
