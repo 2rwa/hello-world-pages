@@ -90,6 +90,26 @@ function sceneFieldJs(point){
 }
 function canOccupy(point){return sceneFieldJs(point).distance>PLAYER_RADIUS}
 
+function runGameplayLogicSelfTest(){
+  const savedDigs=digSpheres.map(dig=>({c:[...dig.c],r:dig.r}));
+  try{
+    digSpheres=[];
+    const wallPoint=[0,0,8.0];
+    if(canOccupy(wallPoint))throw new Error('logic self-test: intact wall is passable');
+    const {forward}=cameraBasis();
+    const initialHit=rayMarchJs(cameraPos,forward,42);
+    if(!initialHit.hit||initialHit.materialId!==2)throw new Error('logic self-test: forward drill ray did not hit a wall');
+    const testDigCenter=vecAdd(initialHit.point,vecScale(forward,1.15));
+    digSpheres=[{c:testDigCenter,r:DIG_RADIUS}];
+    const passagePoint=vecAdd(initialHit.point,vecScale(forward,0.45));
+    if(!canOccupy(passagePoint))throw new Error('logic self-test: carved wall remains blocked');
+    if(!canOccupy(cameraPos))throw new Error('logic self-test: spawn point is blocked');
+    document.documentElement.dataset.logicStatus='ok';
+  }finally{
+    digSpheres=savedDigs;
+  }
+}
+
 function rayMarchJs(origin,direction,maxDistance=50){
   let travel=0;
   for(let i=0;i<120;i++){
@@ -233,6 +253,7 @@ function frame(now){
 async function initializeWebGpu(){
   try{
     setCiStage('script-start');
+    if(CI_MODE){setCiStage('logic-self-test');runGameplayLogicSelfTest();}
     if(!navigator.gpu)throw new Error('navigator.gpu is unavailable');
     setCiStage('request-adapter');
     const gpuAdapter=await navigator.gpu.requestAdapter({powerPreference:'high-performance'});if(!gpuAdapter)throw new Error('requestAdapter returned null');
