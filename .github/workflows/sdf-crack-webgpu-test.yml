@@ -255,6 +255,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git pull --rebase origin main
           {
             echo "source_sha=${GITHUB_SHA}"
             echo "test_outcome=${TEST_OUTCOME}"
@@ -267,7 +270,6 @@ jobs:
           } > tests/sdf-crack/action-result.txt
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git pull --rebase origin main
           git add tests/sdf-crack/action-result.txt
           git commit -m "Record SDF crack WebGPU test result" || exit 0
           git push origin HEAD:main
