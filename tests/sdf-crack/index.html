@@ -27,6 +27,10 @@ canvas{width:100vw;height:100vh;display:block}
   <h1>SDF fracture / pre-break</h1>
   <p>亀裂はテクスチャではなく、球のSDFから空隙を差し引いています。ドラッグで回転、ホイールでズーム。</p>
   <div class="control">
+    <label for="loadSlider"><span>Fracture load</span><output id="loadValue">0.700</output></label>
+    <input id="loadSlider" type="range" min="0.000" max="1.000" step="0.005" value="0.700">
+  </div>
+  <div class="control">
     <label for="modeSelect"><span>Crack model</span><output id="modeValue">Fissure</output></label>
     <select id="modeSelect" data-param="mode">
       <option value="0">Hairline</option>
@@ -53,6 +57,7 @@ canvas{width:100vw;height:100vh;display:block}
     <label for="branchSlider"><span>Branch amount</span><output id="branchValue">0.350</output></label>
     <input id="branchSlider" data-param="branch" type="range" min="0.000" max="1.000" step="0.005" value="0.350">
   </div>
+  <button id="playLoadButton" type="button">Play load</button>
   <button id="resetButton" type="button">Reset</button>
 </section>
 <div id="state">STARTING</div>
@@ -69,6 +74,9 @@ const controls={
   danger:document.querySelector("#dangerSlider"),
   branch:document.querySelector("#branchSlider")
 };
+const loadSlider=document.querySelector("#loadSlider");
+const loadValue=document.querySelector("#loadValue");
+const playLoadButton=document.querySelector("#playLoadButton");
 const outputs={
   mode:document.querySelector("#modeValue"),
   opening:document.querySelector("#openingValue"),
@@ -90,6 +98,7 @@ function readParameters(){
 }
 function updateOutputs(){
   const p=readParameters();
+  loadValue.value=Number(loadSlider.value).toFixed(3);
   outputs.mode.value=modeNames[p.mode]||"Unknown";
   outputs.opening.value=p.opening.toFixed(3);
   outputs.length.value=p.length.toFixed(3);
@@ -107,6 +116,21 @@ function failPage(errorValue){
   rootElement.dataset.webgpuError=message;
   stateElement.textContent="FAIL: "+message;
   console.error("[webgpu-fail]",errorValue);
+}
+function clampUnit(value){
+  return Math.max(0,Math.min(1,value));
+}
+function applyFractureLoad(loadInput){
+  const loadAmount=clampUnit(Number(loadInput));
+  loadSlider.value=loadAmount.toFixed(3);
+  controls.danger.value=loadAmount.toFixed(3);
+  controls.length.value=Math.min(1.0,0.05+0.95*loadAmount).toFixed(3);
+  const openingPhase=clampUnit((loadAmount-0.25)/0.75);
+  const openingAmount=0.002+0.108*Math.pow(openingPhase,1.6);
+  controls.opening.value=openingAmount.toFixed(3);
+  const branchAmount=clampUnit((loadAmount-0.52)/0.48);
+  controls.branch.value=branchAmount.toFixed(3);
+  updateOutputs();
 }
 updateOutputs();
 setStage("script-start");
@@ -599,6 +623,43 @@ fn fragmentMain(inputData : VertexOut) -> @location(0) vec4<f32> {
     controlElement.addEventListener("change",scheduleRender);
   }
 
+  let loadAnimationFrame=0;
+  let loadAnimationStart=0;
+  function stopLoadAnimation(){
+    if(loadAnimationFrame){
+      cancelAnimationFrame(loadAnimationFrame);
+      loadAnimationFrame=0;
+    }
+    playLoadButton.textContent="Play load";
+  }
+  function runLoadAnimation(frameTime){
+    if(!loadAnimationStart) loadAnimationStart=frameTime;
+    const elapsedSeconds=(frameTime-loadAnimationStart)/1000;
+    const loadAmount=Math.min(1,elapsedSeconds/4.0);
+    applyFractureLoad(loadAmount);
+    renderCurrent();
+    if(loadAmount<1){
+      loadAnimationFrame=requestAnimationFrame(runLoadAnimation);
+    }else{
+      loadAnimationFrame=0;
+      loadAnimationStart=0;
+      playLoadButton.textContent="Replay load";
+    }
+  }
+  loadSlider.addEventListener("input",()=>{
+    stopLoadAnimation();
+    applyFractureLoad(loadSlider.value);
+    scheduleRender();
+  });
+  playLoadButton.addEventListener("click",()=>{
+    stopLoadAnimation();
+    loadAnimationStart=0;
+    applyFractureLoad(0);
+    renderCurrent();
+    playLoadButton.textContent="Playing…";
+    loadAnimationFrame=requestAnimationFrame(runLoadAnimation);
+  });
+
   canvasElement.addEventListener("pointerdown",(eventValue)=>{
     cameraState.dragging=true;
     cameraState.lastX=eventValue.clientX;
@@ -625,6 +686,8 @@ fn fragmentMain(inputData : VertexOut) -> @location(0) vec4<f32> {
   },{passive:false});
 
   document.querySelector("#resetButton").addEventListener("click",()=>{
+    stopLoadAnimation();
+    loadSlider.value="0.700";
     for(const [key,value] of Object.entries(defaults)) controls[key].value=String(value);
     cameraState.yaw=0.15;
     cameraState.pitch=-0.10;

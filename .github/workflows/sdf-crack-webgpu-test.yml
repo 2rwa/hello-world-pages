@@ -34,6 +34,8 @@ jobs:
           for slider_id in ["openingSlider","lengthSlider","dangerSlider","branchSlider"]:
               assert f'id="{slider_id}"' in s, slider_id
           assert 'id="modeSelect"' in s
+          assert 'id="loadSlider"' in s and 'id="playLoadButton"' in s
+          assert "applyFractureLoad" in s
           assert "pointerdown" in s and "pointermove" in s and "wheel" in s
           assert "__sdfCaptureMode" in s
           assert "data-render-revision" in s
@@ -156,7 +158,32 @@ jobs:
                       ws.close()
                       raise SystemExit("slider value did not reach render parameters: "+after_raw)
 
-                  mode_before=after["revision"]
+                  load_before=after["revision"]
+                  evaluate("""(() => {
+                    const loadElement=document.getElementById("loadSlider");
+                    loadElement.value="0.900";
+                    loadElement.dispatchEvent(new Event("input",{bubbles:true}));
+                    return true;
+                  })()""")
+                  time.sleep(.7)
+                  load_raw=evaluate("""JSON.stringify({
+                    revision:Number(document.documentElement.dataset.renderRevision||"0"),
+                    load:document.getElementById("loadValue")?.value||"",
+                    params:JSON.parse(document.documentElement.dataset.currentParameters||"{}")
+                  })""")
+                  load_state=json.loads(load_raw)
+                  if load_state["revision"] <= load_before:
+                      ws.close()
+                      raise SystemExit("load slider did not trigger render: "+load_raw)
+                  load_params=load_state["params"]
+                  if load_state["load"] != "0.900" or abs(float(load_params.get("danger",0))-0.9)>0.002:
+                      ws.close()
+                      raise SystemExit("load did not propagate danger: "+load_raw)
+                  if float(load_params.get("opening",0)) < 0.07 or float(load_params.get("branch",0)) < 0.70:
+                      ws.close()
+                      raise SystemExit("load did not propagate fracture parameters: "+load_raw)
+
+                  mode_before=load_state["revision"]
                   evaluate("""(() => {
                     const selectElement=document.getElementById("modeSelect");
                     selectElement.value="2";
@@ -197,7 +224,7 @@ jobs:
                       ws.close()
                       raise SystemExit("pointer drag did not change yaw: "+camera_raw)
 
-                  state["uiTest"]={"slider":after,"mode":mode_state,"camera":camera_state}
+                  state["uiTest"]={"slider":after,"load":load_state,"mode":mode_state,"camera":camera_state}
                   state_path.write_text(json.dumps(state,ensure_ascii=False,indent=2))
                   ws.close()
                   print("SDF crack WebGPU + controls + orbit smoke test: ok")
