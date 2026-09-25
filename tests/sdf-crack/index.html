@@ -597,14 +597,22 @@ fn fragmentMain(inputData : VertexOut) -> @location(0) vec4<f32> {
   }
 
   if(ciMode){
-    window.__sdfCaptureMode=async(modeValue)=>{
+    window.__sdfCaptureMode=async(modeValue,cameraYaw=0.0,cameraPitch=-0.05,cameraDistance=2.45)=>{
+      for(const [key,value] of Object.entries(defaults)){
+        controls[key].value=String(value);
+      }
       controls.mode.value=String(modeValue);
+      cameraState.yaw=Number(cameraYaw);
+      cameraState.pitch=Number(cameraPitch);
+      cameraState.distance=Number(cameraDistance);
       updateOutputs();
       renderCurrent();
       const captureResult=await mirrorCiTextureToCanvas();
       return {
         mode:Number(modeValue),
         modeName:modeNames[Number(modeValue)]||"Unknown",
+        camera:{yaw:cameraState.yaw,pitch:cameraState.pitch,distance:cameraState.distance},
+        parameters:readParameters(),
         visiblePixelCount:captureResult.visiblePixelCount,
         dataUrl:captureResult.dataUrl
       };

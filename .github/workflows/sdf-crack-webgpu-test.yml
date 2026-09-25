@@ -65,7 +65,7 @@ jobs:
             --enable-unsafe-swiftshader \
             'http://127.0.0.1:8765/tests/sdf-crack/?ci=1' >/tmp/sdf-chrome.log 2>&1 &
           echo $! >/tmp/sdf-chrome.pid
-          for i in {1..60}; do
+          for i in {1..120}; do
             if curl -fsS http://127.0.0.1:9222/json/version >/dev/null; then exit 0; fi
             if ! kill -0 "$(cat /tmp/sdf-chrome.pid)" 2>/dev/null; then
               cat /tmp/sdf-chrome.log
@@ -244,18 +244,30 @@ jobs:
 
           output_dir=pathlib.Path("/tmp/sdf-crack-previews")
           report={}
-          for mode_value,name in enumerate(names):
-              result=evaluate(f"window.__sdfCaptureMode({mode_value})")
-              if not isinstance(result,dict):
-                  raise SystemExit(f"capture API failed for {name}: {result!r}")
-              data_url=result.get("dataUrl","")
-              if not data_url.startswith("data:image/png;base64,"):
-                  raise SystemExit(f"PNG data URL unavailable for {name}")
-              payload=data_url.split(",",1)[1]
-              output_path=output_dir/f"{mode_value}-{name}.png"
-              output_path.write_bytes(base64.b64decode(payload))
-              report[name]={"visiblePixelCount":result.get("visiblePixelCount"),"file":str(output_path)}
-              print(name,report[name])
+          views={
+              "front":(0.0,-0.05,2.45),
+              "oblique":(0.52,0.18,2.45),
+          }
+          for view_name,(yaw_value,pitch_value,distance_value) in views.items():
+              for mode_value,name in enumerate(names):
+                  result=evaluate(
+                      f"window.__sdfCaptureMode({mode_value},{yaw_value},{pitch_value},{distance_value})"
+                  )
+                  if not isinstance(result,dict):
+                      raise SystemExit(f"capture API failed for {view_name}/{name}: {result!r}")
+                  data_url=result.get("dataUrl","")
+                  if not data_url.startswith("data:image/png;base64,"):
+                      raise SystemExit(f"PNG data URL unavailable for {view_name}/{name}")
+                  payload=data_url.split(",",1)[1]
+                  output_path=output_dir/f"{view_name}-{mode_value}-{name}.png"
+                  output_path.write_bytes(base64.b64decode(payload))
+                  report[f"{view_name}/{name}"]={
+                      "visiblePixelCount":result.get("visiblePixelCount"),
+                      "camera":result.get("camera"),
+                      "parameters":result.get("parameters"),
+                      "file":str(output_path),
+                  }
+                  print(view_name,name,report[f"{view_name}/{name}"])
           (output_dir/"report.json").write_text(json.dumps(report,indent=2))
           ws.close()
           PY
