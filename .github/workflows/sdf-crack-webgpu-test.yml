@@ -8,8 +8,12 @@ on:
       - '.github/workflows/sdf-crack-webgpu-test.yml'
   workflow_dispatch:
 
+concurrency:
+  group: sdf-crack-webgpu-test
+  cancel-in-progress: true
+
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   webgpu-test:
@@ -35,7 +39,24 @@ jobs:
         run: |
           set -euo pipefail
           python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/sdf-http.log 2>&1 &
-          google-chrome             --headless=new             --no-sandbox             --disable-dev-shm-usage             --remote-debugging-address=127.0.0.1             --remote-debugging-port=9222             --user-data-dir=/tmp/sdf-crack-chrome             --enable-unsafe-webgpu             --enable-features=Vulkan             --use-vulkan=swiftshader             --disable-vulkan-fallback-to-gl-for-testing             --use-webgpu-adapter=swiftshader             --enable-webgpu-developer-features             --enable-dawn-features=allow_unsafe_apis             --disable-dawn-features=use_dxc             --use-gpu-in-tests             --enable-unsafe-swiftshader             'http://127.0.0.1:8765/tests/sdf-crack/?ci=1' >/tmp/sdf-chrome.log 2>&1 &
+          google-chrome \
+            --headless=new \
+            --no-sandbox \
+            --disable-dev-shm-usage \
+            --remote-debugging-address=127.0.0.1 \
+            --remote-debugging-port=9222 \
+            --user-data-dir=/tmp/sdf-crack-chrome \
+            --enable-unsafe-webgpu \
+            --enable-features=Vulkan \
+            --use-vulkan=swiftshader \
+            --disable-vulkan-fallback-to-gl-for-testing \
+            --use-webgpu-adapter=swiftshader \
+            --enable-webgpu-developer-features \
+            --enable-dawn-features=allow_unsafe_apis \
+            --disable-dawn-features=use_dxc \
+            --use-gpu-in-tests \
+            --enable-unsafe-swiftshader \
+            'http://127.0.0.1:8765/tests/sdf-crack/?ci=1' >/tmp/sdf-chrome.log 2>&1 &
           echo $! >/tmp/sdf-chrome.pid
           for i in {1..60}; do
             if curl -fsS http://127.0.0.1:9222/json/version >/dev/null; then exit 0; fi
@@ -49,14 +70,18 @@ jobs:
           exit 1
 
       - name: Poll page result
+        id: webgpu
         shell: bash
         run: |
           set -euo pipefail
           python3 -m pip install --quiet websocket-client
           python3 - <<'PY'
-          import json,time,urllib.request,websocket
+          import json,time,urllib.request,websocket,pathlib
           deadline=time.time()+25
           page=None
+          state={"status":"","stage":"startup","error":"","visiblePixelCount":""}
+          state_path=pathlib.Path("/tmp/sdf-state.json")
+          state_path.write_text(json.dumps(state,ensure_ascii=False,indent=2))
           while time.time()<deadline:
               try:
                   with urllib.request.urlopen("http://127.0.0.1:9222/json/list",timeout=2) as r:
@@ -65,7 +90,10 @@ jobs:
                   if page: break
               except Exception: pass
               time.sleep(.2)
-          if not page: raise SystemExit("test page target not found")
+          if not page:
+              state["error"]="test page target not found"
+              state_path.write_text(json.dumps(state,ensure_ascii=False,indent=2))
+              raise SystemExit(state["error"])
           ws=websocket.create_connection(page["webSocketDebuggerUrl"],timeout=5)
           msg_id=0
           def evaluate(expr):
@@ -85,10 +113,11 @@ jobs:
                 error:document.documentElement.dataset.webgpuError||"",
                 visiblePixelCount:document.documentElement.dataset.visiblePixelCount||""
               })""")
+              state=json.loads(raw)
+              state_path.write_text(json.dumps(state,ensure_ascii=False,indent=2))
               if raw!=last:
                   print("state:",raw,flush=True)
                   last=raw
-              state=json.loads(raw)
               if state["status"]=="ok":
                   ws.close()
                   print("SDF crack WebGPU smoke test: ok")
@@ -98,13 +127,30 @@ jobs:
                   raise SystemExit("page failure: "+raw)
               time.sleep(.25)
           ws.close()
+          state["error"]="timeout waiting for WebGPU result"
+          state_path.write_text(json.dumps(state,ensure_ascii=False,indent=2))
           raise SystemExit("timeout: "+str(last))
           PY
 
-      - name: Diagnostics
+      - name: Save compact result to repository
         if: always()
+        env:
+          TEST_OUTCOME: ${{ steps.webgpu.outcome }}
+        shell: bash
         run: |
-          echo '--- Chrome ---'
-          cat /tmp/sdf-chrome.log 2>/dev/null || true
-          echo '--- HTTP ---'
-          cat /tmp/sdf-http.log 2>/dev/null || true
+          set -euo pipefail
+          {
+            echo "source_sha=${GITHUB_SHA}"
+            echo "test_outcome=${TEST_OUTCOME}"
+            echo "run_id=${GITHUB_RUN_ID}"
+            echo "state="
+            cat /tmp/sdf-state.json 2>/dev/null || echo '{"error":"state file unavailable"}'
+            echo
+            echo "chrome_tail="
+            tail -n 25 /tmp/sdf-chrome.log 2>/dev/null || true
+          } > tests/sdf-crack/action-result.txt
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add tests/sdf-crack/action-result.txt
+          git commit -m "Record SDF crack WebGPU test result" || exit 0
+          git push origin HEAD:main
