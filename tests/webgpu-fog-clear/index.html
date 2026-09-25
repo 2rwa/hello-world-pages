@@ -1,0 +1,550 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>WebGPU Fog Clear Test</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#05080d;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+canvas{display:block;width:100%;height:100%;touch-action:none}
+#panel{position:fixed;left:12px;top:12px;z-index:4;width:min(370px,calc(100vw - 24px));max-height:calc(100vh - 24px);overflow:auto;padding:12px;border:1px solid #ffffff25;border-radius:12px;background:#08101bdb;backdrop-filter:blur(10px)}
+h1{font-size:15px;margin:0 0 6px}.small{font-size:11px;line-height:1.45;opacity:.72}.status{font:11px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre-wrap;margin:8px 0;padding:7px;border-radius:7px;background:#0005}
+.row{display:grid;grid-template-columns:104px 1fr 48px;gap:7px;align-items:center;margin-top:7px;font-size:11px}.row input{width:100%}.buttons{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
+button,select{border:1px solid #ffffff28;background:#ffffff10;color:inherit;border-radius:7px;padding:6px 9px}button{cursor:pointer}
+#crosshair{position:fixed;left:50%;top:50%;z-index:3;width:22px;height:22px;transform:translate(-50%,-50%);pointer-events:none}
+#crosshair:before,#crosshair:after{content:"";position:absolute;background:#fff9;box-shadow:0 0 4px #000}
+#crosshair:before{left:10px;top:2px;width:2px;height:18px}#crosshair:after{left:2px;top:10px;width:18px;height:2px}
+#flash{position:fixed;inset:0;pointer-events:none;z-index:2;opacity:0;background:radial-gradient(circle at 50% 50%,#dff8ff35,transparent 35%);transition:opacity .12s}
+#fatal{position:fixed;inset:0;z-index:10;display:none;place-items:center;padding:24px;background:#080b10;color:#ffd2d2;white-space:pre-wrap;font:13px/1.55 ui-monospace,monospace}
+@media(max-width:640px){#panel{width:min(330px,calc(100vw - 16px));left:8px;top:8px;max-height:48vh}.row{grid-template-columns:92px 1fr 42px}}
+</style>
+</head>
+<body data-test-state="boot">
+<canvas id="gpuCanvas"></canvas>
+<div id="crosshair"></div><div id="flash"></div><div id="fatal"></div>
+<section id="panel">
+<h1>WebGPU Fog Clear Test v0.1</h1>
+<div class="small">3D密度場をvolume ray marchし、クリック/Spaceで照準方向のcapsule領域をCompute Shaderで削ります。ドラッグで視点、WASD/QEで移動。</div>
+<div class="status" id="status">boot</div>
+<div class="row"><label>Fog density</label><input id="density" type="range" min="0.2" max="2.2" step="0.05" value="1.25"><output id="densityOut"></output></div>
+<div class="row"><label>Extinction</label><input id="extinction" type="range" min="0.2" max="3.0" step="0.05" value="1.15"><output id="extinctionOut"></output></div>
+<div class="row"><label>Steps</label><input id="steps" type="range" min="24" max="128" step="8" value="72"><output id="stepsOut"></output></div>
+<div class="row"><label>Shot radius</label><input id="radius" type="range" min="0.2" max="1.8" step="0.05" value="0.72"><output id="radiusOut"></output></div>
+<div class="row"><label>Erase</label><input id="strength" type="range" min="0.1" max="1.0" step="0.05" value="0.92"><output id="strengthOut"></output></div>
+<div class="row"><label>Phase g</label><input id="phase" type="range" min="-0.6" max="0.8" step="0.05" value="0.35"><output id="phaseOut"></output></div>
+<div class="buttons"><button id="shootBtn">Shoot</button><button id="resetBtn">Reset fog</button><button id="modeBtn">Mode: Final</button><button id="panelBtn">Hide</button></div>
+</section>
+
+<script type="text/plain" id="renderShader">
+struct RenderParams {
+  resolutionTime: vec4<f32>,
+  cameraPosFov: vec4<f32>,
+  cameraForwardExtinction: vec4<f32>,
+  cameraRightPhase: vec4<f32>,
+  cameraUpLight: vec4<f32>,
+  volumeMin: vec4<f32>,
+  volumeMax: vec4<f32>,
+  control: vec4<f32>,
+}
+@group(0) @binding(0) var fogTexture: texture_3d<f32>;
+@group(0) @binding(1) var fogSampler: sampler;
+@group(0) @binding(2) var<uniform> renderParams: RenderParams;
+
+struct VertexOut {
+  @builtin(position) position: vec4<f32>,
+}
+@vertex
+fn vertexMain(@builtin(vertex_index) vertexIndex: u32) -> VertexOut {
+  var positions = array<vec2<f32>, 3>(
+    vec2<f32>(-1.0, -1.0),
+    vec2<f32>(3.0, -1.0),
+    vec2<f32>(-1.0, 3.0)
+  );
+  var outputValue: VertexOut;
+  outputValue.position = vec4<f32>(positions[vertexIndex], 0.0, 1.0);
+  return outputValue;
+}
+
+fn intersectBox(rayOrigin: vec3<f32>, rayDirection: vec3<f32>, boxMin: vec3<f32>, boxMax: vec3<f32>) -> vec2<f32> {
+  let inverseDirection = 1.0 / rayDirection;
+  let nearValues = (boxMin - rayOrigin) * inverseDirection;
+  let farValues = (boxMax - rayOrigin) * inverseDirection;
+  let smallerValues = min(nearValues, farValues);
+  let largerValues = max(nearValues, farValues);
+  let nearDistance = max(smallerValues.x, max(smallerValues.y, smallerValues.z));
+  let farDistance = min(largerValues.x, min(largerValues.y, largerValues.z));
+  return vec2<f32>(nearDistance, farDistance);
+}
+
+fn sphereDistance(pointValue: vec3<f32>, sphereRadius: f32) -> f32 {
+  return length(pointValue) - sphereRadius;
+}
+fn boxDistance(pointValue: vec3<f32>, halfSize: vec3<f32>) -> f32 {
+  let offsetValue = abs(pointValue) - halfSize;
+  return length(max(offsetValue, vec3<f32>(0.0))) + min(max(offsetValue.x, max(offsetValue.y, offsetValue.z)), 0.0);
+}
+fn sceneDistance(pointValue: vec3<f32>) -> f32 {
+  let floorDistance = pointValue.y + 2.45;
+  let beaconDistance = sphereDistance(pointValue - vec3<f32>(0.0, 0.15, 10.2), 0.95);
+  let leftPillarDistance = boxDistance(pointValue - vec3<f32>(-2.1, -0.45, 7.2), vec3<f32>(0.62, 2.0, 0.62));
+  let rightPillarDistance = boxDistance(pointValue - vec3<f32>(2.2, -0.75, 8.4), vec3<f32>(0.48, 1.7, 0.48));
+  return min(floorDistance, min(beaconDistance, min(leftPillarDistance, rightPillarDistance)));
+}
+fn sceneNormal(pointValue: vec3<f32>) -> vec3<f32> {
+  let epsilonValue = 0.0025;
+  let xDifference = sceneDistance(pointValue + vec3<f32>(epsilonValue,0.0,0.0)) - sceneDistance(pointValue - vec3<f32>(epsilonValue,0.0,0.0));
+  let yDifference = sceneDistance(pointValue + vec3<f32>(0.0,epsilonValue,0.0)) - sceneDistance(pointValue - vec3<f32>(0.0,epsilonValue,0.0));
+  let zDifference = sceneDistance(pointValue + vec3<f32>(0.0,0.0,epsilonValue)) - sceneDistance(pointValue - vec3<f32>(0.0,0.0,epsilonValue));
+  return normalize(vec3<f32>(xDifference, yDifference, zDifference));
+}
+fn traceScene(rayOrigin: vec3<f32>, rayDirection: vec3<f32>, startDistance: f32, endDistance: f32) -> f32 {
+  var travelDistance = max(0.0, startDistance);
+  for (var iterationIndex = 0u; iterationIndex < 96u; iterationIndex = iterationIndex + 1u) {
+    let samplePoint = rayOrigin + rayDirection * travelDistance;
+    let distanceValue = sceneDistance(samplePoint);
+    if (distanceValue < 0.0025) {
+      return travelDistance;
+    }
+    travelDistance = travelDistance + clamp(distanceValue * 0.82, 0.004, 0.5);
+    if (travelDistance > endDistance) {
+      break;
+    }
+  }
+  return endDistance + 1.0;
+}
+fn hashPixel(pixelValue: vec2<f32>) -> f32 {
+  return fract(sin(dot(pixelValue, vec2<f32>(12.9898, 78.233))) * 43758.5453);
+}
+fn phaseApproximation(cosineValue: f32, anisotropyValue: f32) -> f32 {
+  let squaredG = anisotropyValue * anisotropyValue;
+  let denominatorValue = pow(max(0.001, 1.0 + squaredG - 2.0 * anisotropyValue * cosineValue), 1.5);
+  return (1.0 - squaredG) / denominatorValue;
+}
+fn surfaceLighting(pointValue: vec3<f32>, normalValue: vec3<f32>) -> vec3<f32> {
+  let lightDirection = normalize(vec3<f32>(-0.35, 0.65, -0.68));
+  let diffuseValue = max(0.0, dot(normalValue, lightDirection));
+  let beaconMetric = length(pointValue - vec3<f32>(0.0, 0.15, 10.2));
+  if (beaconMetric < 1.05) {
+    return vec3<f32>(2.5, 0.62, 0.12) * (0.7 + diffuseValue);
+  }
+  let checkerValue = 0.5 + 0.5 * sin(pointValue.x * 2.2) * sin(pointValue.z * 2.2);
+  return mix(vec3<f32>(0.12,0.15,0.18), vec3<f32>(0.32,0.36,0.42), checkerValue) * (0.35 + 0.9 * diffuseValue);
+}
+
+@fragment
+fn fragmentMain(@builtin(position) fragmentPosition: vec4<f32>) -> @location(0) vec4<f32> {
+  let resolutionValue = renderParams.resolutionTime.xy;
+  let normalizedX = (fragmentPosition.x / resolutionValue.x) * 2.0 - 1.0;
+  let normalizedY = 1.0 - (fragmentPosition.y / resolutionValue.y) * 2.0;
+  let aspectValue = resolutionValue.x / max(1.0, resolutionValue.y);
+  let rayDirection = normalize(
+    renderParams.cameraForwardExtinction.xyz +
+    renderParams.cameraRightPhase.xyz * normalizedX * aspectValue * renderParams.cameraPosFov.w +
+    renderParams.cameraUpLight.xyz * normalizedY * renderParams.cameraPosFov.w
+  );
+  let rayOrigin = renderParams.cameraPosFov.xyz;
+  let boxRange = intersectBox(rayOrigin, rayDirection, renderParams.volumeMin.xyz, renderParams.volumeMax.xyz);
+
+  var backgroundColor = mix(vec3<f32>(0.025,0.04,0.065), vec3<f32>(0.12,0.17,0.23), clamp(0.5 + rayDirection.y * 0.7, 0.0, 1.0));
+  if (boxRange.y <= max(0.0, boxRange.x)) {
+    return vec4<f32>(pow(backgroundColor, vec3<f32>(1.0 / 2.2)), 1.0);
+  }
+
+  let volumeStart = max(0.0, boxRange.x);
+  let volumeEnd = boxRange.y;
+  let surfaceDistance = traceScene(rayOrigin, rayDirection, volumeStart, volumeEnd);
+  let fogEnd = min(volumeEnd, surfaceDistance);
+  let requestedSteps = max(1.0, renderParams.control.y);
+  let stepDistance = max(0.002, (fogEnd - volumeStart) / requestedSteps);
+  let jitterValue = hashPixel(fragmentPosition.xy);
+  var currentDistance = volumeStart + stepDistance * jitterValue;
+  var transmittanceValue = 1.0;
+  var fogAccumulation = vec3<f32>(0.0);
+  let lightDirection = normalize(vec3<f32>(-0.35, 0.65, -0.68));
+  let phaseValue = clamp(phaseApproximation(dot(-rayDirection, lightDirection), renderParams.cameraRightPhase.w), 0.15, 3.2);
+  let fogColor = vec3<f32>(0.43, 0.54, 0.64) * (0.28 + phaseValue * 0.38 * renderParams.cameraUpLight.w);
+
+  for (var stepIndex = 0u; stepIndex < 128u; stepIndex = stepIndex + 1u) {
+    if (f32(stepIndex) >= requestedSteps || currentDistance >= fogEnd || transmittanceValue < 0.012) {
+      break;
+    }
+    let worldPoint = rayOrigin + rayDirection * currentDistance;
+    let textureCoordinate = clamp((worldPoint - renderParams.volumeMin.xyz) / (renderParams.volumeMax.xyz - renderParams.volumeMin.xyz), vec3<f32>(0.0), vec3<f32>(1.0));
+    let densityValue = textureSampleLevel(fogTexture, fogSampler, textureCoordinate, 0.0).r * renderParams.resolutionTime.w;
+    let opticalDepth = max(0.0, densityValue * renderParams.cameraForwardExtinction.w * stepDistance);
+    let alphaValue = 1.0 - exp(-opticalDepth);
+    fogAccumulation = fogAccumulation + transmittanceValue * alphaValue * fogColor;
+    transmittanceValue = transmittanceValue * (1.0 - alphaValue);
+    currentDistance = currentDistance + stepDistance;
+  }
+
+  if (renderParams.control.x > 0.5) {
+    let densityDisplay = 1.0 - transmittanceValue;
+    return vec4<f32>(vec3<f32>(densityDisplay), 1.0);
+  }
+
+  if (surfaceDistance <= volumeEnd) {
+    let surfacePoint = rayOrigin + rayDirection * surfaceDistance;
+    let surfaceNormal = sceneNormal(surfacePoint);
+    backgroundColor = surfaceLighting(surfacePoint, surfaceNormal);
+  }
+  let finalLinear = fogAccumulation + transmittanceValue * backgroundColor;
+  let exposedColor = vec3<f32>(1.0) - exp(-finalLinear * renderParams.control.z);
+  return vec4<f32>(pow(max(exposedColor, vec3<f32>(0.0)), vec3<f32>(1.0 / 2.2)), 1.0);
+}
+</script>
+
+<script type="text/plain" id="computeShader">
+struct ShotParams {
+  volumeMinRadius: vec4<f32>,
+  volumeMaxStrength: vec4<f32>,
+  segmentStart: vec4<f32>,
+  segmentEnd: vec4<f32>,
+  dimensions: vec4<f32>,
+}
+@group(0) @binding(0) var sourceFogTexture: texture_3d<f32>;
+@group(0) @binding(1) var destinationFogTexture: texture_storage_3d<rgba8unorm, write>;
+@group(0) @binding(2) var<uniform> shotParams: ShotParams;
+
+fn segmentDistance(pointValue: vec3<f32>, segmentStartValue: vec3<f32>, segmentEndValue: vec3<f32>) -> f32 {
+  let segmentVector = segmentEndValue - segmentStartValue;
+  let segmentLengthSquared = max(dot(segmentVector, segmentVector), 0.000001);
+  let segmentParameter = clamp(dot(pointValue - segmentStartValue, segmentVector) / segmentLengthSquared, 0.0, 1.0);
+  let closestPoint = segmentStartValue + segmentVector * segmentParameter;
+  return length(pointValue - closestPoint);
+}
+
+@compute @workgroup_size(4, 4, 4)
+fn computeMain(@builtin(global_invocation_id) globalId: vec3<u32>) {
+  let dimensionsValue = vec3<u32>(u32(shotParams.dimensions.x), u32(shotParams.dimensions.y), u32(shotParams.dimensions.z));
+  if (globalId.x >= dimensionsValue.x || globalId.y >= dimensionsValue.y || globalId.z >= dimensionsValue.z) {
+    return;
+  }
+  let textureCoordinate = (vec3<f32>(globalId) + vec3<f32>(0.5)) / vec3<f32>(dimensionsValue);
+  let worldPoint = shotParams.volumeMinRadius.xyz + textureCoordinate * (shotParams.volumeMaxStrength.xyz - shotParams.volumeMinRadius.xyz);
+  let previousDensity = textureLoad(sourceFogTexture, vec3<i32>(globalId), 0).r;
+  let distanceToShot = segmentDistance(worldPoint, shotParams.segmentStart.xyz, shotParams.segmentEnd.xyz);
+  let radiusValue = max(0.001, shotParams.volumeMinRadius.w);
+  let edgeFalloff = 1.0 - smoothstep(radiusValue * 0.45, radiusValue, distanceToShot);
+  let nextDensity = clamp(previousDensity * (1.0 - shotParams.volumeMaxStrength.w * edgeFalloff), 0.0, 1.0);
+  textureStore(destinationFogTexture, vec3<i32>(globalId), vec4<f32>(nextDensity, nextDensity, nextDensity, 1.0));
+}
+</script>
+
+<script>
+(function(){
+"use strict";
+const ciMode = new URLSearchParams(location.search).get("ci") === "1";
+const canvas = document.getElementById("gpuCanvas");
+const statusElement = document.getElementById("status");
+const fatalElement = document.getElementById("fatal");
+const panelElement = document.getElementById("panel");
+const flashElement = document.getElementById("flash");
+const controls = {
+  density: document.getElementById("density"), extinction: document.getElementById("extinction"),
+  steps: document.getElementById("steps"), radius: document.getElementById("radius"),
+  strength: document.getElementById("strength"), phase: document.getElementById("phase")
+};
+const outputs = {
+  density: document.getElementById("densityOut"), extinction: document.getElementById("extinctionOut"),
+  steps: document.getElementById("stepsOut"), radius: document.getElementById("radiusOut"),
+  strength: document.getElementById("strengthOut"), phase: document.getElementById("phaseOut")
+};
+const VOL_W = 64, VOL_H = 40, VOL_D = 80;
+const VOLUME_MIN = [-5.8, -3.0, 0.0], VOLUME_MAX = [5.8, 3.0, 14.0];
+const state = { stage:"boot", detail:"", shots:0, fps:0, currentTexture:0, mode:0, ci:null };
+window.__fogClearTest = state;
+let device, context, renderPipeline, computePipeline, renderUniformBuffer, shotUniformBuffer, fogSampler;
+let fogTextures = [], renderBindGroups = [], computeBindGroups = [], outputFormat, offscreenTarget = null;
+let initialFogBytes = null;
+let cameraPosition = [0, 0.1, -4.2], cameraYaw = 0, cameraPitch = 0;
+let pointerDown = false, pointerMoved = false, pointerStart = null, lastPointer = null;
+const pressedKeys = new Set();
+let lastFrameTime = performance.now(), fpsAccumulator = 0, fpsFrames = 0, fpsStamp = performance.now();
+
+function setStage(stageValue, detailValue) {
+  state.stage = stageValue; state.detail = detailValue || "";
+  document.body.dataset.testState = stageValue;
+  statusElement.textContent =
+    "stage: " + state.stage + "\n" +
+    "detail: " + state.detail + "\n" +
+    "shots: " + state.shots + "  texture: " + state.currentTexture + "\n" +
+    "fps: " + state.fps.toFixed(1) + (ciMode ? "\nCI mode" : "");
+}
+function fail(errorValue) {
+  const messageValue = errorValue && errorValue.stack ? errorValue.stack : String(errorValue);
+  setStage("error", messageValue);
+  fatalElement.style.display = "grid";
+  fatalElement.textContent = "WebGPU Fog Clear Test failed\n\n" + messageValue;
+}
+function updateOutputs() {
+  Object.keys(controls).forEach(function(keyValue){ outputs[keyValue].textContent = Number(controls[keyValue].value).toFixed(keyValue === "steps" ? 0 : 2); });
+}
+function normalize3(value){ const lengthValue=Math.hypot(value[0],value[1],value[2])||1; return [value[0]/lengthValue,value[1]/lengthValue,value[2]/lengthValue]; }
+function cameraVectors(){
+  const cp=Math.cos(cameraPitch), sp=Math.sin(cameraPitch), sy=Math.sin(cameraYaw), cy=Math.cos(cameraYaw);
+  const forwardValue=normalize3([sy*cp,sp,cy*cp]);
+  const rightValue=normalize3([cy,0,-sy]);
+  const upValue=normalize3([
+    forwardValue[1]*rightValue[2]-forwardValue[2]*rightValue[1],
+    forwardValue[2]*rightValue[0]-forwardValue[0]*rightValue[2],
+    forwardValue[0]*rightValue[1]-forwardValue[1]*rightValue[0]
+  ]);
+  return {forward:forwardValue,right:rightValue,up:upValue};
+}
+function createFogBytes(){
+  const bytesValue = new Uint8Array(VOL_W*VOL_H*VOL_D*4);
+  for(let zIndex=0;zIndex<VOL_D;zIndex++){
+    for(let yIndex=0;yIndex<VOL_H;yIndex++){
+      for(let xIndex=0;xIndex<VOL_W;xIndex++){
+        const nx=xIndex/VOL_W, ny=yIndex/VOL_H, nz=zIndex/VOL_D;
+        const waveValue = 0.5 + 0.5*Math.sin(nx*10.7 + nz*5.1)*Math.sin(ny*8.3 - nz*7.9);
+        const layerValue = 0.5 + 0.5*Math.sin(nz*20.0 + nx*3.0);
+        const verticalValue = 1.0 - Math.min(0.45, Math.abs(ny-0.52)*0.45);
+        const densityValue = Math.max(0.42, Math.min(0.98, (0.64 + waveValue*0.20 + layerValue*0.10)*verticalValue));
+        const byteValue = Math.round(densityValue*255);
+        const offsetValue=((zIndex*VOL_H+yIndex)*VOL_W+xIndex)*4;
+        bytesValue[offsetValue]=byteValue; bytesValue[offsetValue+1]=byteValue; bytesValue[offsetValue+2]=byteValue; bytesValue[offsetValue+3]=255;
+      }
+    }
+  }
+  return bytesValue;
+}
+function uploadInitialFog(){
+  for(const textureValue of fogTextures){
+    device.queue.writeTexture(
+      {texture:textureValue},
+      initialFogBytes,
+      {offset:0,bytesPerRow:VOL_W*4,rowsPerImage:VOL_H},
+      {width:VOL_W,height:VOL_H,depthOrArrayLayers:VOL_D}
+    );
+  }
+  state.currentTexture=0; state.shots=0;
+}
+function shaderErrors(compilationInfoValue){
+  return compilationInfoValue.messages.filter(function(messageValue){ return messageValue.type === "error"; });
+}
+async function initialize(){
+  setStage("script-start","checking navigator.gpu");
+  if(!navigator.gpu) throw new Error("navigator.gpu is unavailable");
+  setStage("request-adapter","requesting WebGPU adapter");
+  const adapterValue = await navigator.gpu.requestAdapter({powerPreference:"high-performance"});
+  if(!adapterValue) throw new Error("requestAdapter returned null");
+  setStage("request-device","requesting WebGPU device");
+  device = await adapterValue.requestDevice();
+  device.lost.then(function(infoValue){ if(state.stage !== "error") fail(new Error("device.lost: "+infoValue.reason+" "+infoValue.message)); });
+
+  outputFormat = ciMode ? "rgba8unorm" : navigator.gpu.getPreferredCanvasFormat();
+  if(!ciMode){
+    context = canvas.getContext("webgpu");
+    context.configure({device:device,format:outputFormat,alphaMode:"opaque"});
+  } else {
+    canvas.width=64; canvas.height=64;
+    offscreenTarget = device.createTexture({size:[64,64,1],format:outputFormat,usage:GPUTextureUsage.RENDER_ATTACHMENT|GPUTextureUsage.COPY_SRC});
+  }
+
+  renderUniformBuffer = device.createBuffer({size:128,usage:GPUBufferUsage.UNIFORM|GPUBufferUsage.COPY_DST});
+  shotUniformBuffer = device.createBuffer({size:80,usage:GPUBufferUsage.UNIFORM|GPUBufferUsage.COPY_DST});
+  fogSampler = device.createSampler({magFilter:"linear",minFilter:"linear",mipmapFilter:"nearest"});
+
+  const textureUsage = GPUTextureUsage.TEXTURE_BINDING|GPUTextureUsage.STORAGE_BINDING|GPUTextureUsage.COPY_DST|GPUTextureUsage.COPY_SRC;
+  fogTextures = [0,1].map(function(){
+    return device.createTexture({size:[VOL_W,VOL_H,VOL_D],dimension:"3d",format:"rgba8unorm",usage:textureUsage});
+  });
+  initialFogBytes=createFogBytes();
+  uploadInitialFog();
+
+  setStage("shader-compilation-info","compiling WGSL");
+  const renderModule = device.createShaderModule({code:document.getElementById("renderShader").textContent});
+  const computeModule = device.createShaderModule({code:document.getElementById("computeShader").textContent});
+  const infos = await Promise.all([renderModule.getCompilationInfo(), computeModule.getCompilationInfo()]);
+  const errorsValue = shaderErrors(infos[0]).concat(shaderErrors(infos[1]));
+  if(errorsValue.length) throw new Error(errorsValue.map(function(m){return m.lineNum+":"+m.linePos+" "+m.message;}).join("\n"));
+
+  setStage("create-pipeline","creating render and compute pipelines");
+  renderPipeline = await device.createRenderPipelineAsync({
+    layout:"auto",
+    vertex:{module:renderModule,entryPoint:"vertexMain"},
+    fragment:{module:renderModule,entryPoint:"fragmentMain",targets:[{format:outputFormat}]},
+    primitive:{topology:"triangle-list"}
+  });
+  computePipeline = await device.createComputePipelineAsync({layout:"auto",compute:{module:computeModule,entryPoint:"computeMain"}});
+
+  renderBindGroups = fogTextures.map(function(textureValue){
+    return device.createBindGroup({
+      layout:renderPipeline.getBindGroupLayout(0),
+      entries:[
+        {binding:0,resource:textureValue.createView()},
+        {binding:1,resource:fogSampler},
+        {binding:2,resource:{buffer:renderUniformBuffer}}
+      ]
+    });
+  });
+  computeBindGroups = [
+    device.createBindGroup({layout:computePipeline.getBindGroupLayout(0),entries:[
+      {binding:0,resource:fogTextures[0].createView()},
+      {binding:1,resource:fogTextures[1].createView()},
+      {binding:2,resource:{buffer:shotUniformBuffer}}
+    ]}),
+    device.createBindGroup({layout:computePipeline.getBindGroupLayout(0),entries:[
+      {binding:0,resource:fogTextures[1].createView()},
+      {binding:1,resource:fogTextures[0].createView()},
+      {binding:2,resource:{buffer:shotUniformBuffer}}
+    ]})
+  ];
+
+  setStage("ready","GPU resources ready");
+  if(ciMode) {
+    await runCiTest();
+  } else {
+    requestAnimationFrame(frame);
+  }
+}
+function resizeCanvas(){
+  if(ciMode) return;
+  const dpr=Math.min(devicePixelRatio||1,1.5);
+  const widthValue=Math.max(1,Math.floor(innerWidth*dpr)), heightValue=Math.max(1,Math.floor(innerHeight*dpr));
+  if(canvas.width!==widthValue||canvas.height!==heightValue){canvas.width=widthValue;canvas.height=heightValue;}
+}
+function writeRenderUniform(nowValue){
+  const vectorsValue=cameraVectors();
+  const widthValue=ciMode?64:canvas.width, heightValue=ciMode?64:canvas.height;
+  const dataValue=new Float32Array(32);
+  dataValue.set([widthValue,heightValue,nowValue*0.001,Number(controls.density.value)],0);
+  dataValue.set([cameraPosition[0],cameraPosition[1],cameraPosition[2],Math.tan(58*Math.PI/360)],4);
+  dataValue.set([vectorsValue.forward[0],vectorsValue.forward[1],vectorsValue.forward[2],Number(controls.extinction.value)],8);
+  dataValue.set([vectorsValue.right[0],vectorsValue.right[1],vectorsValue.right[2],Number(controls.phase.value)],12);
+  dataValue.set([vectorsValue.up[0],vectorsValue.up[1],vectorsValue.up[2],1.0],16);
+  dataValue.set([VOLUME_MIN[0],VOLUME_MIN[1],VOLUME_MIN[2],0],20);
+  dataValue.set([VOLUME_MAX[0],VOLUME_MAX[1],VOLUME_MAX[2],0],24);
+  dataValue.set([state.mode,Number(controls.steps.value),1.25,0],28);
+  device.queue.writeBuffer(renderUniformBuffer,0,dataValue);
+}
+function renderFrame(nowValue, encoderValue){
+  writeRenderUniform(nowValue);
+  const targetView = ciMode ? offscreenTarget.createView() : context.getCurrentTexture().createView();
+  const passValue=encoderValue.beginRenderPass({
+    colorAttachments:[{view:targetView,loadOp:"clear",storeOp:"store",clearValue:{r:0,g:0,b:0,a:1}}]
+  });
+  passValue.setPipeline(renderPipeline);
+  passValue.setBindGroup(0,renderBindGroups[state.currentTexture]);
+  passValue.draw(3);
+  passValue.end();
+}
+function updateMovement(deltaSeconds){
+  const vectorsValue=cameraVectors(), speedValue=(pressedKeys.has("ShiftLeft")||pressedKeys.has("ShiftRight"))?6.0:3.0;
+  function moveAlong(vectorValue,amountValue){cameraPosition[0]+=vectorValue[0]*amountValue;cameraPosition[1]+=vectorValue[1]*amountValue;cameraPosition[2]+=vectorValue[2]*amountValue;}
+  if(pressedKeys.has("KeyW")) moveAlong(vectorsValue.forward,speedValue*deltaSeconds);
+  if(pressedKeys.has("KeyS")) moveAlong(vectorsValue.forward,-speedValue*deltaSeconds);
+  if(pressedKeys.has("KeyA")) moveAlong(vectorsValue.right,-speedValue*deltaSeconds);
+  if(pressedKeys.has("KeyD")) moveAlong(vectorsValue.right,speedValue*deltaSeconds);
+  if(pressedKeys.has("KeyQ")) cameraPosition[1]-=speedValue*deltaSeconds;
+  if(pressedKeys.has("KeyE")) cameraPosition[1]+=speedValue*deltaSeconds;
+}
+function frame(nowValue){
+  resizeCanvas();
+  const deltaSeconds=Math.min(0.05,(nowValue-lastFrameTime)/1000); lastFrameTime=nowValue;
+  updateMovement(deltaSeconds);
+  const encoderValue=device.createCommandEncoder();
+  renderFrame(nowValue,encoderValue);
+  device.queue.submit([encoderValue.finish()]);
+  fpsAccumulator+=deltaSeconds; fpsFrames++;
+  if(nowValue-fpsStamp>500){state.fps=fpsFrames/Math.max(0.001,fpsAccumulator);fpsAccumulator=0;fpsFrames=0;fpsStamp=nowValue;setStage("running","volume ray march + editable 3D density");}
+  requestAnimationFrame(frame);
+}
+function fireShot(){
+  const vectorsValue=cameraVectors();
+  const startValue=[cameraPosition[0]+vectorsValue.forward[0]*1.0,cameraPosition[1]+vectorsValue.forward[1]*1.0,cameraPosition[2]+vectorsValue.forward[2]*1.0];
+  const endValue=[cameraPosition[0]+vectorsValue.forward[0]*20.0,cameraPosition[1]+vectorsValue.forward[1]*20.0,cameraPosition[2]+vectorsValue.forward[2]*20.0];
+  const dataValue=new Float32Array(20);
+  dataValue.set([VOLUME_MIN[0],VOLUME_MIN[1],VOLUME_MIN[2],Number(controls.radius.value)],0);
+  dataValue.set([VOLUME_MAX[0],VOLUME_MAX[1],VOLUME_MAX[2],Number(controls.strength.value)],4);
+  dataValue.set([startValue[0],startValue[1],startValue[2],0],8);
+  dataValue.set([endValue[0],endValue[1],endValue[2],0],12);
+  dataValue.set([VOL_W,VOL_H,VOL_D,0],16);
+  device.queue.writeBuffer(shotUniformBuffer,0,dataValue);
+  const encoderValue=device.createCommandEncoder();
+  const passValue=encoderValue.beginComputePass();
+  passValue.setPipeline(computePipeline);
+  passValue.setBindGroup(0,computeBindGroups[state.currentTexture]);
+  passValue.dispatchWorkgroups(Math.ceil(VOL_W/4),Math.ceil(VOL_H/4),Math.ceil(VOL_D/4));
+  passValue.end();
+  device.queue.submit([encoderValue.finish()]);
+  state.currentTexture=1-state.currentTexture; state.shots++;
+  if(!ciMode){flashElement.style.opacity="1";requestAnimationFrame(function(){flashElement.style.opacity="0";});}
+  return device.queue.onSubmittedWorkDone();
+}
+function resetFog(){
+  uploadInitialFog();
+  setStage(ciMode?"ready":"running","fog reset");
+}
+async function readFogCenter(){
+  const bytesPerRow=VOL_W*4, bufferSize=bytesPerRow*VOL_H*VOL_D;
+  const bufferValue=device.createBuffer({size:bufferSize,usage:GPUBufferUsage.COPY_DST|GPUBufferUsage.MAP_READ});
+  const encoderValue=device.createCommandEncoder();
+  encoderValue.copyTextureToBuffer(
+    {texture:fogTextures[state.currentTexture]},
+    {buffer:bufferValue,bytesPerRow:bytesPerRow,rowsPerImage:VOL_H},
+    {width:VOL_W,height:VOL_H,depthOrArrayLayers:VOL_D}
+  );
+  device.queue.submit([encoderValue.finish()]);
+  await bufferValue.mapAsync(GPUMapMode.READ);
+  const bytesValue=new Uint8Array(bufferValue.getMappedRange());
+  const xIndex=Math.floor(VOL_W/2), yIndex=Math.floor(VOL_H/2), zIndex=Math.floor(VOL_D/2);
+  const offsetValue=((zIndex*VOL_H+yIndex)*VOL_W+xIndex)*4;
+  const resultValue=bytesValue[offsetValue];
+  bufferValue.unmap(); bufferValue.destroy();
+  return resultValue;
+}
+async function renderChecksum(){
+  const rowBytes=64*4, bufferValue=device.createBuffer({size:rowBytes*64,usage:GPUBufferUsage.COPY_DST|GPUBufferUsage.MAP_READ});
+  const encoderValue=device.createCommandEncoder();
+  renderFrame(performance.now(),encoderValue);
+  encoderValue.copyTextureToBuffer({texture:offscreenTarget},{buffer:bufferValue,bytesPerRow:rowBytes,rowsPerImage:64},{width:64,height:64,depthOrArrayLayers:1});
+  device.queue.submit([encoderValue.finish()]);
+  await device.queue.onSubmittedWorkDone();
+  await bufferValue.mapAsync(GPUMapMode.READ);
+  const bytesValue=new Uint8Array(bufferValue.getMappedRange());
+  let checksumValue=0; for(let indexValue=0;indexValue<bytesValue.length;indexValue+=97){checksumValue=(checksumValue+bytesValue[indexValue])>>>0;}
+  bufferValue.unmap(); bufferValue.destroy();
+  return checksumValue;
+}
+async function runCiTest(){
+  setStage("validation-scope","testing compute erase + render readback");
+  const beforeValue=await readFogCenter();
+  await fireShot();
+  const afterValue=await readFogCenter();
+  if(!(afterValue < beforeValue*0.55)) throw new Error("fog erase regression: before="+beforeValue+" after="+afterValue);
+  const checksumValue=await renderChecksum();
+  if(checksumValue===0) throw new Error("render checksum is zero");
+  state.ci={before:beforeValue,after:afterValue,checksum:checksumValue};
+  setStage("ok","compute erase and offscreen render completed; before="+beforeValue+" after="+afterValue+" checksum="+checksumValue);
+}
+Object.keys(controls).forEach(function(keyValue){controls[keyValue].addEventListener("input",updateOutputs);});
+document.getElementById("shootBtn").addEventListener("click",function(){fireShot();});
+document.getElementById("resetBtn").addEventListener("click",resetFog);
+document.getElementById("modeBtn").addEventListener("click",function(eventValue){state.mode=state.mode?0:1;eventValue.currentTarget.textContent=state.mode?"Mode: Density":"Mode: Final";});
+document.getElementById("panelBtn").addEventListener("click",function(eventValue){
+  const hiddenValue=panelElement.dataset.hidden==="1";
+  panelElement.dataset.hidden=hiddenValue?"0":"1";
+  Array.from(panelElement.children).forEach(function(childValue){if(childValue!==panelElement.firstElementChild&&childValue!==eventValue.currentTarget)childValue.style.display=hiddenValue?"":"none";});
+  eventValue.currentTarget.textContent=hiddenValue?"Hide":"Show";
+});
+canvas.addEventListener("pointerdown",function(eventValue){pointerDown=true;pointerMoved=false;pointerStart=[eventValue.clientX,eventValue.clientY];lastPointer=[eventValue.clientX,eventValue.clientY];canvas.setPointerCapture(eventValue.pointerId);});
+canvas.addEventListener("pointermove",function(eventValue){
+  if(!pointerDown)return;
+  const dx=eventValue.clientX-lastPointer[0],dy=eventValue.clientY-lastPointer[1];
+  if(Math.hypot(eventValue.clientX-pointerStart[0],eventValue.clientY-pointerStart[1])>4)pointerMoved=true;
+  cameraYaw-=dx*0.0045;cameraPitch=Math.max(-1.42,Math.min(1.42,cameraPitch-dy*0.0045));lastPointer=[eventValue.clientX,eventValue.clientY];
+});
+canvas.addEventListener("pointerup",function(){if(pointerDown&&!pointerMoved)fireShot();pointerDown=false;});
+canvas.addEventListener("pointercancel",function(){pointerDown=false;});
+addEventListener("keydown",function(eventValue){pressedKeys.add(eventValue.code);if(eventValue.code==="Space"){eventValue.preventDefault();if(!eventValue.repeat)fireShot();}});
+addEventListener("keyup",function(eventValue){pressedKeys.delete(eventValue.code);});
+updateOutputs();
+initialize().catch(fail);
+})();
+</script>
+</body>
+</html>
