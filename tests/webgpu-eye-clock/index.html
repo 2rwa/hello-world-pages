@@ -18,6 +18,7 @@ canvas{width:100vw;height:100vh;display:block}
 <script type="module">
 const rootElement=document.documentElement;
 const canvasElement=document.querySelector("#gpuCanvas");
+const ciMode=new URLSearchParams(location.search).get("ci")==="1";
 const timeElement=document.querySelector("#time");
 const stateElement=document.querySelector("#state");
 
@@ -52,11 +53,13 @@ async function startDemo(){
   });
 
   setTestStage("canvas-context");
-  const gpuContext=canvasElement.getContext("webgpu");
-  if(!gpuContext) throw new Error("webgpu canvas context unavailable");
-
-  const canvasFormat=navigator.gpu.getPreferredCanvasFormat();
-  gpuContext.configure({device:gpuDevice,format:canvasFormat,alphaMode:"opaque"});
+  let gpuContext=null;
+  const canvasFormat=ciMode ? "rgba8unorm" : navigator.gpu.getPreferredCanvasFormat();
+  if(!ciMode){
+    gpuContext=canvasElement.getContext("webgpu");
+    if(!gpuContext) throw new Error("webgpu canvas context unavailable");
+    gpuContext.configure({device:gpuDevice,format:canvasFormat,alphaMode:"opaque"});
+  }
 
   const shaderSource=/* wgsl */ `
 struct EyeVertexInput {
@@ -246,6 +249,16 @@ fn eyeFragmentMain(inputData: EyeVertexOutput) -> @location(0) vec4<f32> {
     entries:[{binding:0,resource:{buffer:sceneBuffer}}]
   });
 
+  if(ciMode){
+    canvasElement.width=640;
+    canvasElement.height=360;
+  }
+  const ciRenderTexture=ciMode ? gpuDevice.createTexture({
+    size:[canvasElement.width,canvasElement.height,1],
+    format:canvasFormat,
+    usage:GPUTextureUsage.RENDER_ATTACHMENT|GPUTextureUsage.COPY_SRC
+  }) : null;
+
   let randomState=0x51f15e;
   function nextRandom(){
     randomState=(Math.imul(randomState,1664525)+1013904223)>>>0;
@@ -332,7 +345,9 @@ fn eyeFragmentMain(inputData: EyeVertexOutput) -> @location(0) vec4<f32> {
   }
 
   function renderFrame(frameTimeMs){
-    resizeCanvas();
+    if(!ciMode){
+      resizeCanvas();
+    }
     const elapsedSeconds=frameTimeMs*0.001;
     const currentDate=new Date();
     const currentHours=currentDate.getHours();
@@ -364,7 +379,7 @@ fn eyeFragmentMain(inputData: EyeVertexOutput) -> @location(0) vec4<f32> {
     const commandEncoder=gpuDevice.createCommandEncoder();
     const renderPass=commandEncoder.beginRenderPass({
       colorAttachments:[{
-        view:gpuContext.getCurrentTexture().createView(),
+        view:ciMode ? ciRenderTexture.createView() : gpuContext.getCurrentTexture().createView(),
         clearValue:{r:0.014,g:0.020,b:0.033,a:1},
         loadOp:"clear",
         storeOp:"store"
@@ -380,12 +395,16 @@ fn eyeFragmentMain(inputData: EyeVertexOutput) -> @location(0) vec4<f32> {
 
     const twoDigits=(numberValue)=>String(numberValue).padStart(2,"0");
     timeElement.textContent=twoDigits(currentHours)+":"+twoDigits(currentMinutes)+":"+twoDigits(currentSeconds);
-    stateElement.textContent=eyeInstanceCount+" EYES / WEBGPU";
-    requestAnimationFrame(renderFrame);
+    stateElement.textContent=eyeInstanceCount+" EYES / WEBGPU"+(ciMode?" / CI OFFSCREEN":"");
+    if(!ciMode){
+      requestAnimationFrame(renderFrame);
+    }
   }
 
   setTestStage("first-submit");
-  resizeCanvas();
+  if(!ciMode){
+    resizeCanvas();
+  }
   renderFrame(performance.now());
 
   setTestStage("validation-scope");
