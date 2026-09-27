@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>GitHub Actions Monitor</title>
+<style>
+:root{
+  --bg:#0b0f14;--panel:#121821;--panel2:#171f2a;--line:#273244;--text:#e6edf3;--muted:#8b949e;
+  --ok:#3fb950;--bad:#f85149;--wait:#d29922;--run:#58a6ff;--cancel:#8b949e;--accent:#7c3aed;
+}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+a{color:inherit}.wrap{width:min(1100px,100%);margin:auto;padding:16px}.header{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;margin-bottom:14px}
+h1{font-size:22px;margin:0}.sub{color:var(--muted);font-size:13px;margin-top:4px}.toolbar{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}.toolbar button,.toolbar input{font:inherit;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--text);padding:9px 11px}.toolbar button{cursor:pointer}.toolbar button.active{outline:2px solid var(--run)}.toolbar input{min-width:180px;flex:1}.summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:12px 0}.metric{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px}.metric strong{display:block;font-size:22px}.metric span{font-size:12px;color:var(--muted)}.notice{background:#141a24;border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:12px;color:var(--muted);margin:10px 0}.repo{border:1px solid var(--line);border-radius:14px;background:var(--panel);margin:10px 0;overflow:hidden}.repo-head{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:11px 12px;background:var(--panel2)}.repo-name{font-weight:700}.repo-meta{font-size:12px;color:var(--muted)}.runs{display:grid}.run{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 12px;border-top:1px solid var(--line);text-decoration:none}.run:first-child{border-top:0}.run:hover{background:#182131}.status-dot{width:12px;height:12px;border-radius:50%;box-shadow:0 0 0 3px #ffffff10}.status-dot.running{background:var(--run);animation:pulse 1.2s infinite}.status-dot.queued{background:var(--wait)}.status-dot.success{background:var(--ok)}.status-dot.failure{background:var(--bad)}.status-dot.cancelled,.status-dot.other{background:var(--cancel)}@keyframes pulse{50%{opacity:.35}}.run-title{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.run-sub{margin-top:3px;font-size:12px;color:var(--muted);display:flex;gap:8px;flex-wrap:wrap}.badge{border:1px solid var(--line);padding:3px 7px;border-radius:999px;font-size:11px;color:var(--muted)}.badge.running{color:#9ecbff;border-color:#315f92}.badge.queued{color:#f2cc60;border-color:#6d5720}.badge.failure{color:#ff9b95;border-color:#7b2d29}.badge.success{color:#79d889;border-color:#275f32}.empty{padding:26px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:12px}.footer{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:16px 0 6px;color:var(--muted);font-size:12px}.hidden{display:none!important}
+@media(max-width:700px){.wrap{padding:12px}.summary{grid-template-columns:repeat(2,minmax(0,1fr))}.run{grid-template-columns:22px minmax(0,1fr)}.run>.badge{display:none}.repo-head{align-items:flex-start}.repo-meta{text-align:right}}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <div class="header">
+    <div><h1>GitHub Actions Monitor</h1><div class="sub">2rwa の公開リポジトリを横断して workflow run を確認</div></div>
+    <div class="repo-meta" id="updated">未取得</div>
+  </div>
+
+  <div class="notice">テスト版。GitHub Pages 上に認証情報を置かないため、現在は公開リポジトリのみ対象です。GitHub API の未認証レート制限を避けるため、最初は最近更新された20 repoを読み込み、追加分は手動で読み込みます。</div>
+
+  <div class="summary">
+    <div class="metric"><strong id="mRunning">0</strong><span>Running</span></div>
+    <div class="metric"><strong id="mQueued">0</strong><span>Queued</span></div>
+    <div class="metric"><strong id="mFailed">0</strong><span>Failed</span></div>
+    <div class="metric"><strong id="mSuccess">0</strong><span>Success</span></div>
+  </div>
+
+  <div class="toolbar">
+    <button data-filter="active" class="active">Active</button>
+    <button data-filter="failed">Failed</button>
+    <button data-filter="all">All</button>
+    <input id="search" type="search" placeholder="repo / workflow を検索">
+    <button id="refresh">再取得</button>
+    <button id="loadMore">+10 repo</button>
+  </div>
+
+  <div class="repo-meta" id="apiState">API: 未取得</div>
+  <section id="content"><div class="empty">読み込み中...</div></section>
+  <div class="footer"><span id="scanState"></span><span>Active runs は30秒ごとに自動更新</span></div>
+</main>
+<script>
+(() => {
+  'use strict';
+  const OWNER='2rwa';
+  const INITIAL_REPOS=20;
+  const MORE_REPOS=10;
+  const RUNS_PER_REPO=5;
+  const ACTIVE_POLL_MS=30000;
+  const CACHE_KEY='actions-monitor-cache-v1';
+  const state={repos:[],loaded:0,runs:new Map(),filter:'active',query:'',rate:null,lastUpdated:null,pollTimer:null};
+  const el=id=>document.getElementById(id);
+
+  function statusOf(run){
+    if(run.status==='queued'||run.status==='waiting'||run.status==='pending'||run.status==='requested') return 'queued';
+    if(run.status==='in_progress') return 'running';
+    if(run.conclusion==='success') return 'success';
+    if(run.conclusion==='failure'||run.conclusion==='timed_out'||run.conclusion==='action_required'||run.conclusion==='startup_failure') return 'failure';
+    if(run.conclusion==='cancelled'||run.conclusion==='skipped'||run.conclusion==='neutral'||run.conclusion==='stale') return 'cancelled';
+    return 'other';
+  }
+  const isActive=s=>s==='running'||s==='queued';
+  function ago(iso){const d=(Date.now()-new Date(iso).getTime())/1000;if(d<60)return Math.max(0,Math.floor(d))+'s前';if(d<3600)return Math.floor(d/60)+'m前';if(d<86400)return Math.floor(d/3600)+'h前';return Math.floor(d/86400)+'d前'}
+  function duration(run){const a=new Date(run.run_started_at||run.created_at).getTime();const b=run.updated_at?new Date(run.updated_at).getTime():Date.now();if(!Number.isFinite(a))return '';const sec=Math.max(0,Math.floor((b-a)/1000));if(sec<60)return sec+'s';const m=Math.floor(sec/60);return m<60?m+'m':Math.floor(m/60)+'h '+(m%60)+'m'}
+  function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+  function setRate(resp){const rem=resp.headers.get('x-ratelimit-remaining');const lim=resp.headers.get('x-ratelimit-limit');const reset=resp.headers.get('x-ratelimit-reset');if(rem!=null){state.rate={remaining:Number(rem),limit:Number(lim),reset:Number(reset)};renderApiState()}}
+  async function api(url){const r=await fetch(url,{headers:{Accept:'application/vnd.github+json'}});setRate(r);if(!r.ok){const e=new Error('GitHub API '+r.status);e.status=r.status;e.response=r;throw e}return r.json()}
+  function renderApiState(){if(!state.rate){el('apiState').textContent='API: 未取得';return}const reset=state.rate.reset?new Date(state.rate.reset*1000).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}):'-';el('apiState').textContent=`API remaining: ${state.rate.remaining}/${state.rate.limit} · reset ${reset}`}
+  function saveCache(){try{const payload={savedAt:Date.now(),repos:state.repos.slice(0,state.loaded),runs:[...state.runs.entries()]};localStorage.setItem(CACHE_KEY,JSON.stringify(payload))}catch(_){}}
+  function loadCache(){try{const raw=localStorage.getItem(CACHE_KEY);if(!raw)return;const p=JSON.parse(raw);if(!Array.isArray(p.repos)||!Array.isArray(p.runs))return;state.repos=p.repos;state.loaded=p.repos.length;state.runs=new Map(p.runs);state.lastUpdated=p.savedAt;render()}catch(_){}}
+  async function loadRepos(){const repos=await api(`https://api.github.com/users/${OWNER}/repos?per_page=100&type=owner&sort=updated`);state.repos=repos.filter(r=>!r.archived).sort((a,b)=>new Date(b.updated_at)-new Date(a.updated_at));state.loaded=Math.min(INITIAL_REPOS,state.repos.length)}
+  async function fetchRuns(repo){try{const data=await api(`https://api.github.com/repos/${OWNER}/${encodeURIComponent(repo.name)}/actions/runs?per_page=${RUNS_PER_REPO}`);state.runs.set(repo.name,data.workflow_runs||[])}catch(err){state.runs.set(repo.name,{error:err.message,status:err.status||0})}}
+  async function mapLimit(items,limit,fn){let i=0;const workers=Array.from({length:Math.min(limit,items.length)},async()=>{while(i<items.length){const x=items[i++];await fn(x)}});await Promise.all(workers)}
+  async function scanRange(start,end){const list=state.repos.slice(start,end);el('scanState').textContent=`${start+1}-${end} / ${state.repos.length} repo を取得中...`;await mapLimit(list,4,fetchRuns);state.lastUpdated=Date.now();saveCache();render();el('scanState').textContent=`${state.loaded} / ${state.repos.length} repo 読み込み済み`}
+  async function initialLoad(force=false){try{if(force){state.runs.clear();state.loaded=0}el('scanState').textContent='repository一覧を取得中...';await loadRepos();await scanRange(0,state.loaded)}catch(err){el('scanState').textContent='取得失敗: '+err.message;render()}}
+  async function loadMore(){if(state.loaded>=state.repos.length)return;const start=state.loaded;state.loaded=Math.min(state.repos.length,state.loaded+MORE_REPOS);await scanRange(start,state.loaded)}
+  async function pollActive(){const names=[];for(const [name,runs] of state.runs.entries()){if(Array.isArray(runs)&&runs.some(r=>isActive(statusOf(r))))names.push(name)}if(!names.length)return;const repos=names.map(n=>state.repos.find(r=>r.name===n)).filter(Boolean);await mapLimit(repos,3,fetchRuns);state.lastUpdated=Date.now();saveCache();render()}
+  function allRuns(){const out=[];for(const repo of state.repos.slice(0,state.loaded)){const runs=state.runs.get(repo.name);if(Array.isArray(runs))for(const run of runs)out.push({repo,run,status:statusOf(run)})}return out}
+  function render(){const items=allRuns();const counts={running:0,queued:0,failure:0,success:0};for(const x of items)if(counts[x.status]!=null)counts[x.status]++;el('mRunning').textContent=counts.running;el('mQueued').textContent=counts.queued;el('mFailed').textContent=counts.failure;el('mSuccess').textContent=counts.success;el('updated').textContent=state.lastUpdated?'更新 '+new Date(state.lastUpdated).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'}):'未取得';
+    const q=state.query.toLowerCase();const groups=[];
+    for(const repo of state.repos.slice(0,state.loaded)){
+      const raw=state.runs.get(repo.name);if(!Array.isArray(raw))continue;let runs=raw.map(run=>({run,status:statusOf(run)}));
+      if(state.filter==='active')runs=runs.filter(x=>isActive(x.status));else if(state.filter==='failed')runs=runs.filter(x=>x.status==='failure');
+      if(q)runs=runs.filter(x=>(repo.name+' '+x.run.name+' '+(x.run.display_title||'')+' '+(x.run.head_branch||'')).toLowerCase().includes(q));
+      if(runs.length)groups.push({repo,runs});
+    }
+    const content=el('content');if(!groups.length){content.innerHTML=`<div class="empty">該当するworkflow runはありません。${state.filter==='active'?' 現在実行中が無い可能性があります。':''}</div>`;return}
+    content.innerHTML=groups.map(g=>`<article class="repo"><div class="repo-head"><div><div class="repo-name">${esc(g.repo.name)}</div><div class="repo-meta">${esc(g.repo.description||'')}</div></div><a class="repo-meta" href="${esc(g.repo.html_url)}/actions" target="_blank" rel="noopener">Actions ↗</a></div><div class="runs">${g.runs.map(x=>{const r=x.run;return `<a class="run" href="${esc(r.html_url)}" target="_blank" rel="noopener"><span class="status-dot ${x.status}"></span><span><div class="run-title">${esc(r.name||r.display_title||'workflow')}</div><div class="run-sub"><span>${esc(r.head_branch||'-')}</span><span>${ago(r.created_at)}</span><span>${duration(r)}</span><span>#${esc(r.run_number||'')}</span></div></span><span class="badge ${x.status}">${x.status}</span></a>`}).join('')}</div></article>`).join('')
+  }
+  document.querySelectorAll('[data-filter]').forEach(btn=>btn.addEventListener('click',()=>{state.filter=btn.dataset.filter;document.querySelectorAll('[data-filter]').forEach(x=>x.classList.toggle('active',x===btn));render()}));
+  el('search').addEventListener('input',e=>{state.query=e.target.value.trim();render()});
+  el('refresh').addEventListener('click',()=>initialLoad(true));
+  el('loadMore').addEventListener('click',loadMore);
+  loadCache();initialLoad(false);state.pollTimer=setInterval(pollActive,ACTIVE_POLL_MS);
+})();
+</script>
+</body>
+</html>
