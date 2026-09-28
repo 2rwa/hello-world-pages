@@ -105,7 +105,7 @@
         {
           "id": 36369860412,
           "title": "fix: realize SPH diagnostic instances before validation",
-          "status": "unknown",
+          "status": "in_progress",
           "conclusion": null,
           "status_label": "currently running:  Run 2 of SPH point diagnostics. fix: realize SPH diagnostic instances before validation",
           "branch": "main",
@@ -277,5 +277,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-28T02:32:05Z"
+  "updated_at": "2026-09-28T02:33:10Z"
 }
