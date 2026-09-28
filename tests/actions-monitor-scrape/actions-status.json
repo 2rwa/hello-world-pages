@@ -150,44 +150,44 @@
       "actions_url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions",
       "runs": [
         {
-          "id": 36392989683,
-          "title": "fix: publish tearing result workflow",
+          "id": 36394765420,
+          "title": "feat: add five Blender 5.2 ball-impact tearing experiments",
           "status": "in_progress",
           "conclusion": null,
-          "status_label": "currently running:  Run 23 of Blender experiment. fix: publish tearing result workflow",
+          "status_label": "currently running:  Run 1 of Blender 5.2 impact tearing batch. feat: add five Blender 5.2 ball-impact tearing experiments",
+          "branch": "main",
+          "time": "2026-09-28T08:00:05Z",
+          "url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions/runs/36394765420"
+        },
+        {
+          "id": 36394765414,
+          "title": "feat: add five Blender 5.2 ball-impact tearing experiments",
+          "status": "completed",
+          "conclusion": "failure",
+          "status_label": "failed:  Run 8 of Blender 5.2 tearing experiment. feat: add five Blender 5.2 ball-impact tearing experiments",
+          "branch": "main",
+          "time": "2026-09-28T08:00:05Z",
+          "url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions/runs/36394765414"
+        },
+        {
+          "id": 36394765295,
+          "title": "feat: add five Blender 5.2 ball-impact tearing experiments",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 24 of Blender experiment. feat: add five Blender 5.2 ball-impact tearing experiments",
+          "branch": "main",
+          "time": "2026-09-28T08:00:05Z",
+          "url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions/runs/36394765295"
+        },
+        {
+          "id": 36392989683,
+          "title": "fix: publish tearing result workflow",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 23 of Blender experiment. fix: publish tearing result workflow",
           "branch": "main",
           "time": "2026-09-28T07:41:05Z",
           "url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions/runs/36392989683"
-        },
-        {
-          "id": 36392989570,
-          "title": "fix: publish tearing result workflow",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 7 of Blender 5.2 tearing experiment. fix: publish tearing result workflow",
-          "branch": "main",
-          "time": "2026-09-28T07:41:05Z",
-          "url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions/runs/36392989570"
-        },
-        {
-          "id": 36392894722,
-          "title": "feat: publish Blender 5.2 tearing results to Pages",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 3 of Pages gallery. feat: publish Blender 5.2 tearing results to Pages",
-          "branch": "main",
-          "time": "2026-09-28T07:40:04Z",
-          "url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions/runs/36392894722"
-        },
-        {
-          "id": 36392894709,
-          "title": "feat: publish Blender 5.2 tearing results to Pages",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 22 of Blender experiment. feat: publish Blender 5.2 tearing results to Pages",
-          "branch": "main",
-          "time": "2026-09-28T07:40:04Z",
-          "url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions/runs/36392894709"
         }
       ]
     },
@@ -277,5 +277,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-28T07:50:07Z"
+  "updated_at": "2026-09-28T08:04:17Z"
 }
