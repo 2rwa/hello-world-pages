@@ -152,9 +152,9 @@
         {
           "id": 36496409168,
           "title": "chore: trigger SQLite-backed Pages rebuild",
-          "status": "unknown",
-          "conclusion": null,
-          "status_label": "waiting for another serialized run to finish:  Run 29 of Blender experiment. chore: trigger SQLite-backed Pages rebuild",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 29 of Blender experiment. chore: trigger SQLite-backed Pages rebuild",
           "branch": "main",
           "time": "2026-09-28T23:08:42Z",
           "url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions/runs/36496409168"
@@ -172,9 +172,9 @@
         {
           "id": 36496376134,
           "title": "feat: index experiment results with SQLite-backed Pages",
-          "status": "in_progress",
-          "conclusion": null,
-          "status_label": "currently running:  Run 28 of Blender experiment. feat: index experiment results with SQLite-backed Pages",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 28 of Blender experiment. feat: index experiment results with SQLite-backed Pages",
           "branch": "main",
           "time": "2026-09-28T23:08:22Z",
           "url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions/runs/36496376134"
@@ -277,5 +277,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-28T23:12:29Z"
+  "updated_at": "2026-09-28T23:26:50Z"
 }
