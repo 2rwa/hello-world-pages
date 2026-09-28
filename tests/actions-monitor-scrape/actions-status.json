@@ -150,6 +150,26 @@
       "actions_url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions",
       "runs": [
         {
+          "id": 36411738548,
+          "title": "fix: preserve publish metadata across result commit step",
+          "status": "queued",
+          "conclusion": null,
+          "status_label": "queued:  Run 4 of Blender 5.2 impact tearing batch. fix: preserve publish metadata across result commit step",
+          "branch": "main",
+          "time": "2026-09-28T10:47:00Z",
+          "url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions/runs/36411738548"
+        },
+        {
+          "id": 36411733508,
+          "title": "chore: trigger impact batch after publish fix",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 3 of Blender 5.2 impact tearing batch. chore: trigger impact batch after publish fix",
+          "branch": "main",
+          "time": "2026-09-28T10:46:57Z",
+          "url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions/runs/36411733508"
+        },
+        {
           "id": 36404952930,
           "title": "chore: rerun impact tearing batch with 120 minute timeout",
           "status": "completed",
@@ -168,26 +188,6 @@
           "branch": "main",
           "time": "2026-09-28T08:08:22Z",
           "url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions/runs/36395574771"
-        },
-        {
-          "id": 36395395118,
-          "title": "fix: update main before publishing tearing result",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 9 of Blender 5.2 tearing experiment. fix: update main before publishing tearing result",
-          "branch": "main",
-          "time": "2026-09-28T08:06:32Z",
-          "url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions/runs/36395395118"
-        },
-        {
-          "id": 36395394088,
-          "title": "fix: update main before publishing tearing result",
-          "status": "completed",
-          "conclusion": "failure",
-          "status_label": "failed:  Run 26 of Blender experiment. fix: update main before publishing tearing result",
-          "branch": null,
-          "time": "2026-09-28T08:06:31Z",
-          "url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions/runs/36395394088"
         }
       ]
     },
@@ -277,5 +277,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-28T10:25:41Z"
+  "updated_at": "2026-09-28T10:50:10Z"
 }
