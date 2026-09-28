@@ -11,8 +11,8 @@
         {
           "id": 36148827794,
           "title": "pages build and deployment",
-          "status": "unknown",
-          "conclusion": null,
+          "status": "completed",
+          "conclusion": "cancelled",
           "branch": "refs/heads/main",
           "time": "2026-09-25T14:38:24Z",
           "url": "https://github.com/2rwa/2rwa-public/actions/runs/36148827794"
@@ -20,8 +20,8 @@
         {
           "id": 36080318720,
           "title": "pages build and deployment",
-          "status": "unknown",
-          "conclusion": null,
+          "status": "completed",
+          "conclusion": "cancelled",
           "branch": "refs/heads/main",
           "time": "2026-09-25T14:38:24Z",
           "url": "https://github.com/2rwa/2rwa-public/actions/runs/36080318720"
@@ -29,8 +29,8 @@
         {
           "id": 35966763259,
           "title": "pages build and deployment",
-          "status": "unknown",
-          "conclusion": null,
+          "status": "completed",
+          "conclusion": "cancelled",
           "branch": "refs/heads/main",
           "time": "2026-09-25T01:03:20Z",
           "url": "https://github.com/2rwa/2rwa-public/actions/runs/35966763259"
@@ -38,8 +38,8 @@
         {
           "id": 35965621968,
           "title": "pages build and deployment",
-          "status": "unknown",
-          "conclusion": null,
+          "status": "completed",
+          "conclusion": "cancelled",
           "branch": "refs/heads/main",
           "time": "2026-09-24T06:54:02Z",
           "url": "https://github.com/2rwa/2rwa-public/actions/runs/35965621968"
@@ -54,8 +54,8 @@
         {
           "id": 33871506222,
           "title": "pages build and deployment",
-          "status": "unknown",
-          "conclusion": null,
+          "status": "completed",
+          "conclusion": "cancelled",
           "branch": "refs/heads/main",
           "time": "2026-09-04T12:11:11Z",
           "url": "https://github.com/2rwa/devlog/actions/runs/33871506222"
@@ -63,8 +63,8 @@
         {
           "id": 33871208617,
           "title": "pages build and deployment",
-          "status": "unknown",
-          "conclusion": null,
+          "status": "completed",
+          "conclusion": "cancelled",
           "branch": "refs/heads/main",
           "time": "2026-09-04T12:11:11Z",
           "url": "https://github.com/2rwa/devlog/actions/runs/33871208617"
@@ -72,8 +72,8 @@
         {
           "id": 33871099114,
           "title": "pages build and deployment",
-          "status": "unknown",
-          "conclusion": null,
+          "status": "completed",
+          "conclusion": "cancelled",
           "branch": "refs/heads/main",
           "time": "2026-09-04T12:07:33Z",
           "url": "https://github.com/2rwa/devlog/actions/runs/33871099114"
@@ -81,8 +81,8 @@
         {
           "id": 33870989305,
           "title": "pages build and deployment",
-          "status": "unknown",
-          "conclusion": null,
+          "status": "completed",
+          "conclusion": "cancelled",
           "branch": "refs/heads/main",
           "time": "2026-09-04T12:06:13Z",
           "url": "https://github.com/2rwa/devlog/actions/runs/33870989305"
@@ -95,40 +95,40 @@
       "actions_url": "https://github.com/2rwa/tmp-blender/actions",
       "runs": [
         {
+          "id": 36367843695,
+          "title": "Pages gallery",
+          "status": "completed",
+          "conclusion": "cancelled",
+          "branch": null,
+          "time": "2026-09-28T01:55:46Z",
+          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36367843695"
+        },
+        {
+          "id": 36367597034,
+          "title": "test: add SPH Geometry Nodes point-volume pipeline",
+          "status": "completed",
+          "conclusion": "cancelled",
+          "branch": "refs/heads/main",
+          "time": "2026-09-28T01:55:46Z",
+          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36367597034"
+        },
+        {
+          "id": 36367596940,
+          "title": "test: add SPH Geometry Nodes point-volume pipeline",
+          "status": "completed",
+          "conclusion": "cancelled",
+          "branch": "refs/heads/main",
+          "time": "2026-09-28T01:51:49Z",
+          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36367596940"
+        },
+        {
           "id": 36365529626,
           "title": "Pages gallery",
-          "status": "unknown",
-          "conclusion": null,
-          "branch": null,
-          "time": "2026-09-28T01:19:16Z",
+          "status": "completed",
+          "conclusion": "cancelled",
+          "branch": "refs/heads/main",
+          "time": "2026-09-28T01:51:49Z",
           "url": "https://github.com/2rwa/tmp-blender/actions/runs/36365529626"
-        },
-        {
-          "id": 36364391725,
-          "title": "fix: install numpy for SPH mesh smoothing",
-          "status": "unknown",
-          "conclusion": null,
-          "branch": "refs/heads/main",
-          "time": "2026-09-28T01:19:16Z",
-          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36364391725"
-        },
-        {
-          "id": 36364367894,
-          "title": "Pages gallery",
-          "status": "unknown",
-          "conclusion": null,
-          "branch": "refs/heads/main",
-          "time": "2026-09-28T01:01:49Z",
-          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36364367894"
-        },
-        {
-          "id": 36364346156,
-          "title": "test: add Taubin-smoothed large-droplet SPH render",
-          "status": "unknown",
-          "conclusion": null,
-          "branch": "refs/heads/main",
-          "time": "2026-09-28T01:01:25Z",
-          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36364346156"
         }
       ]
     },
@@ -140,8 +140,8 @@
         {
           "id": 36357349545,
           "title": "fix: target Blender 5.2 cloth tearing socket names",
-          "status": "unknown",
-          "conclusion": null,
+          "status": "completed",
+          "conclusion": "cancelled",
           "branch": "refs/heads/main",
           "time": "2026-09-27T23:02:49Z",
           "url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions/runs/36357349545"
@@ -149,8 +149,8 @@
         {
           "id": 36357349539,
           "title": "fix: target Blender 5.2 cloth tearing socket names",
-          "status": "unknown",
-          "conclusion": null,
+          "status": "completed",
+          "conclusion": "failure",
           "branch": "refs/heads/main",
           "time": "2026-09-27T23:02:49Z",
           "url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions/runs/36357349539"
@@ -158,8 +158,8 @@
         {
           "id": 36357267678,
           "title": "fix: use Blender 5.2 geometry-node modifier API",
-          "status": "unknown",
-          "conclusion": null,
+          "status": "completed",
+          "conclusion": "cancelled",
           "branch": "refs/heads/main",
           "time": "2026-09-27T23:02:49Z",
           "url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions/runs/36357267678"
@@ -167,8 +167,8 @@
         {
           "id": 36357267625,
           "title": "fix: use Blender 5.2 geometry-node modifier API",
-          "status": "unknown",
-          "conclusion": null,
+          "status": "completed",
+          "conclusion": "failure",
           "branch": "refs/heads/main",
           "time": "2026-09-27T23:01:25Z",
           "url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions/runs/36357267625"
@@ -183,8 +183,8 @@
         {
           "id": 36217773152,
           "title": "Simplify baseline to Hello world",
-          "status": "unknown",
-          "conclusion": null,
+          "status": "completed",
+          "conclusion": "cancelled",
           "branch": "refs/heads/main",
           "time": "2026-09-26T04:25:13Z",
           "url": "https://github.com/2rwa/tmp-blender-telop/actions/runs/36217773152"
@@ -192,8 +192,8 @@
         {
           "id": 36216238965,
           "title": "Set up Blender telop render pipeline",
-          "status": "unknown",
-          "conclusion": null,
+          "status": "completed",
+          "conclusion": "failure",
           "branch": "refs/heads/main",
           "time": "2026-09-26T04:25:13Z",
           "url": "https://github.com/2rwa/tmp-blender-telop/actions/runs/36216238965"
@@ -201,8 +201,8 @@
         {
           "id": 36213102957,
           "title": "Set up GitHub Pages",
-          "status": "unknown",
-          "conclusion": null,
+          "status": "completed",
+          "conclusion": "cancelled",
           "branch": "refs/heads/main",
           "time": "2026-09-26T03:54:28Z",
           "url": "https://github.com/2rwa/tmp-blender-telop/actions/runs/36213102957"
@@ -217,8 +217,8 @@
         {
           "id": 36302527144,
           "title": "pages: publish 2026-09-27 shō listening lab",
-          "status": "unknown",
-          "conclusion": null,
+          "status": "completed",
+          "conclusion": "cancelled",
           "branch": "refs/heads/main",
           "time": "2026-09-27T07:15:12Z",
           "url": "https://github.com/2rwa/tmp-sho/actions/runs/36302527144"
@@ -226,8 +226,8 @@
         {
           "id": 36300492329,
           "title": "Publish shō engineering checkpoint",
-          "status": "unknown",
-          "conclusion": null,
+          "status": "completed",
+          "conclusion": "cancelled",
           "branch": "refs/heads/main",
           "time": "2026-09-27T07:15:12Z",
           "url": "https://github.com/2rwa/tmp-sho/actions/runs/36300492329"
@@ -235,8 +235,8 @@
         {
           "id": 36298908053,
           "title": "Search passive shō constant-reflection retune",
-          "status": "unknown",
-          "conclusion": null,
+          "status": "completed",
+          "conclusion": "cancelled",
           "branch": "refs/heads/main",
           "time": "2026-09-27T06:34:29Z",
           "url": "https://github.com/2rwa/tmp-sho/actions/runs/36298908053"
@@ -244,8 +244,8 @@
         {
           "id": 36298800629,
           "title": "Map constant-reflection shō passivity feasibility",
-          "status": "unknown",
-          "conclusion": null,
+          "status": "completed",
+          "conclusion": "failure",
           "branch": "refs/heads/main",
           "time": "2026-09-27T06:02:05Z",
           "url": "https://github.com/2rwa/tmp-sho/actions/runs/36298800629"
@@ -254,5 +254,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-28T01:37:10Z"
+  "updated_at": "2026-09-28T02:00:22Z"
 }
