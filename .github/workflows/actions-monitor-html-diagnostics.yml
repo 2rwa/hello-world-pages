@@ -1,0 +1,35 @@
+name: Actions Monitor HTML Diagnostics
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/actions-monitor-html-diagnostics-trigger"
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch and analyze GitHub Actions HTML
+        run: python3 scripts/actions-monitor-scrape/diagnose_html.py
+
+      - name: Publish summary
+        shell: bash
+        run: |
+          cat diagnostics/actions-monitor-html/summary.md >> "$GITHUB_STEP_SUMMARY"
+          echo
+          echo "===== COMPACT SUMMARY ====="
+          cat diagnostics/actions-monitor-html/summary.md
+
+      - name: Upload raw HTML fixtures
+        uses: actions/upload-artifact@v4
+        with:
+          name: actions-monitor-html-diagnostics
+          path: diagnostics/actions-monitor-html/
+          retention-days: 7
