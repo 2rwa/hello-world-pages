@@ -78,77 +78,63 @@ def discover_repos():
     repos.difference_update(EXCLUDE)
     return repos, errors
 
-def detect_status(fragment: str):
-    # GitHub often stores run state in SVG/aria/title attributes rather than visible text.
-    # Intentionally broad: this monitor is allowed to be brittle and easy to repair.
-    raw = html_lib.unescape(fragment).lower()
-    visible = plain(fragment).lower()
-    t = raw + " " + visible
-
-    success_words = (
-        "completed successfully", "completed with success", "conclusion-success",
-        "octicon-check-circle-fill", "success", "successful", "passed"
-    )
-    failure_words = (
-        "completed with failure", "conclusion-failure", "octicon-x-circle-fill",
-        "timed out", "timed_out", "startup failure", "startup_failure",
-        "failed", "failure"
-    )
-    cancelled_words = (
-        "cancelled", "canceled", "conclusion-cancelled", "conclusion-canceled",
-        "octicon-stop"
-    )
-    running_words = (
-        "in progress", "in_progress", "currently running", "status-in_progress",
-        "octicon-dot-fill"
-    )
-    queued_words = ("queued", "waiting", "pending", "requested")
-    skipped_words = ("skipped", "conclusion-skipped")
-
-    # Terminal states first so words elsewhere in a large snippet do not turn an old run into running.
-    if any(x in t for x in failure_words):
-        return "completed", "failure"
-    if any(x in t for x in cancelled_words):
-        return "completed", "cancelled"
-    if any(x in t for x in success_words):
+def status_from_label(label: str):
+    low = html_lib.unescape(label or "").strip().lower()
+    if low.startswith("completed successfully:"):
         return "completed", "success"
-    if any(x in t for x in skipped_words):
+    if low.startswith(("failed:", "completed with failure:")):
+        return "completed", "failure"
+    if low.startswith(("cancelled:", "canceled:")):
+        return "completed", "cancelled"
+    if low.startswith("skipped:"):
         return "completed", "skipped"
-    if any(x in t for x in queued_words):
-        return "queued", None
-    if any(x in t for x in running_words):
+    if low.startswith(("in progress:", "in_progress:", "running:")):
         return "in_progress", None
+    if low.startswith(("queued:", "waiting:", "pending:", "requested:")):
+        return "queued", None
     return "unknown", None
 
-def extract_anchor_text(snippet: str, run_id: str, repo: str) -> str:
+def extract_row(doc: str, match) -> str:
+    start = doc.rfind('<div class="Box-row', 0, match.start())
+    if start < 0:
+        start = max(0, match.start() - 2000)
+    end = doc.find('<div class="Box-row', match.end())
+    if end < 0:
+        end = min(len(doc), match.end() + 6000)
+    return doc[start:end]
+
+def extract_anchor(row: str, run_id: str, repo: str):
     pattern = re.compile(
-        rf'<a[^>]*href=["\']/{re.escape(OWNER)}/{re.escape(repo)}/actions/runs/{re.escape(run_id)}[^"\']*["\'][^>]*>(.*?)</a>',
+        rf'<a\\b([^>]*)href=["\\']/{re.escape(OWNER)}/{re.escape(repo)}/actions/runs/{re.escape(run_id)}[^"\\']*["\\']([^>]*)>(.*?)</a>',
         re.I | re.S,
     )
-    m = pattern.search(snippet)
-    if m:
-        value = plain(m.group(1))
-        if 1 < len(value) <= 160:
-            return value
-    for attr in ("aria-label", "title"):
-        m = re.search(rf'{attr}=["\']([^"\']{{2,160}})["\']', snippet, re.I)
-        if m:
-            return html_lib.unescape(m.group(1)).strip()
-    return f"Run {run_id}"
+    m = pattern.search(row)
+    if not m:
+        return "", f"Run {run_id}"
+    attrs = m.group(1) + " " + m.group(2)
+    label_match = re.search(r'aria-label=["\\']([^"\\']+)["\\']', attrs, re.I)
+    label = html_lib.unescape(label_match.group(1)).strip() if label_match else ""
+    title = plain(m.group(3))
+    if not title or len(title) > 180:
+        title = f"Run {run_id}"
+    return label, title
 
-def extract_time(snippet: str):
-    values = re.findall(r'<relative-time[^>]+datetime=["\']([^"\']+)', snippet, re.I)
+def extract_time(row: str):
+    values = re.findall(r'<relative-time[^>]+datetime=["\\']([^"\\']+)', row, re.I)
     return values[0] if values else None
 
-def extract_branch(snippet: str, repo: str):
+def extract_branch(row: str, repo: str):
     patterns = [
-        rf'/{re.escape(OWNER)}/{re.escape(repo)}/tree/([^"\'?#<]+)',
+        rf'/{re.escape(OWNER)}/{re.escape(repo)}/tree/([^"\\'?#<]+)',
         r'refs/heads/([A-Za-z0-9_./-]+)',
     ]
     for pattern in patterns:
-        m = re.search(pattern, snippet)
+        m = re.search(pattern, row)
         if m:
-            return html_lib.unescape(urllib.parse.unquote(m.group(1))).strip("/")
+            value = html_lib.unescape(urllib.parse.unquote(m.group(1))).strip("/")
+            if value.startswith("refs/heads/"):
+                value = value[len("refs/heads/"):]
+            return value
     return None
 
 def scrape_repo(repo: str) -> dict:
@@ -163,18 +149,17 @@ def scrape_repo(repo: str) -> dict:
         if run_id in seen:
             continue
         seen.add(run_id)
-        start = max(0, match.start() - 4500)
-        end = min(len(doc), match.end() + 4500)
-        snippet = doc[start:end]
-        status, conclusion = detect_status(snippet)
-        title = extract_anchor_text(snippet, run_id, repo)
+        row = extract_row(doc, match)
+        status_label, title = extract_anchor(row, run_id, repo)
+        status, conclusion = status_from_label(status_label)
         runs.append({
             "id": int(run_id),
             "title": title,
             "status": status,
             "conclusion": conclusion,
-            "branch": extract_branch(snippet, repo),
-            "time": extract_time(snippet),
+            "status_label": status_label,
+            "branch": extract_branch(row, repo),
+            "time": extract_time(row),
             "url": f"https://github.com/{OWNER}/{repo}/actions/runs/{run_id}",
         })
         if len(runs) >= RUNS_PER_REPO:
