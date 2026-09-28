@@ -150,6 +150,16 @@
       "actions_url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions",
       "runs": [
         {
+          "id": 36472219772,
+          "title": "feat: add long wide-view 10-case cloth tearing batch",
+          "status": "in_progress",
+          "conclusion": null,
+          "status_label": "currently running:  Run 9 of Blender 5.2 impact tearing batch. feat: add long wide-view 10-case cloth tearing batch",
+          "branch": "main",
+          "time": "2026-09-28T19:26:12Z",
+          "url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions/runs/36472219772"
+        },
+        {
           "id": 36463210144,
           "title": "fix: allow compact video for no-contact cloth control",
           "status": "completed",
@@ -178,16 +188,6 @@
           "branch": "main",
           "time": "2026-09-28T11:15:25Z",
           "url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions/runs/36414569236"
-        },
-        {
-          "id": 36414555350,
-          "title": "feat: add second impact tearing calibration batch",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 5 of Blender 5.2 impact tearing batch. feat: add second impact tearing calibration batch",
-          "branch": "main",
-          "time": "2026-09-28T11:15:18Z",
-          "url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions/runs/36414555350"
         }
       ]
     },
@@ -277,5 +277,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-28T18:27:03Z"
+  "updated_at": "2026-09-28T19:27:02Z"
 }
