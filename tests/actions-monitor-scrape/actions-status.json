@@ -103,6 +103,16 @@
       "actions_url": "https://github.com/2rwa/tmp-blender/actions",
       "runs": [
         {
+          "id": 36382441551,
+          "title": "docs: consolidate SPH findings and add handoff",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 68 of Blender experiment. docs: consolidate SPH findings and add handoff",
+          "branch": "main",
+          "time": "2026-09-28T05:33:43Z",
+          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36382441551"
+        },
+        {
           "id": 36381519052,
           "title": "Pages gallery",
           "status": "completed",
@@ -131,16 +141,6 @@
           "branch": "main",
           "time": "2026-09-28T05:17:35Z",
           "url": "https://github.com/2rwa/tmp-blender/actions/runs/36381274807"
-        },
-        {
-          "id": 36377812720,
-          "title": "Pages gallery",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 21 of Pages gallery.",
-          "branch": null,
-          "time": "2026-09-28T04:27:51Z",
-          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36377812720"
         }
       ]
     },
@@ -277,5 +277,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-28T05:24:15Z"
+  "updated_at": "2026-09-28T05:38:04Z"
 }
