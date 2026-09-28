@@ -152,9 +152,9 @@
         {
           "id": 36411738548,
           "title": "fix: preserve publish metadata across result commit step",
-          "status": "queued",
-          "conclusion": null,
-          "status_label": "queued:  Run 4 of Blender 5.2 impact tearing batch. fix: preserve publish metadata across result commit step",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 4 of Blender 5.2 impact tearing batch. fix: preserve publish metadata across result commit step",
           "branch": "main",
           "time": "2026-09-28T10:47:00Z",
           "url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions/runs/36411738548"
@@ -277,5 +277,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-28T10:50:10Z"
+  "updated_at": "2026-09-28T10:57:42Z"
 }
