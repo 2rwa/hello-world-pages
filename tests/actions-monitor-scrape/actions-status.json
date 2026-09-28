@@ -150,44 +150,44 @@
       "actions_url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions",
       "runs": [
         {
-          "id": 36390192047,
-          "title": "feat: sort gallery newest first and disable autoplay",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 21 of Blender experiment. feat: sort gallery newest first and disable autoplay",
+          "id": 36392989683,
+          "title": "fix: publish tearing result workflow",
+          "status": "in_progress",
+          "conclusion": null,
+          "status_label": "currently running:  Run 23 of Blender experiment. fix: publish tearing result workflow",
           "branch": "main",
-          "time": "2026-09-28T07:10:18Z",
-          "url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions/runs/36390192047"
+          "time": "2026-09-28T07:41:05Z",
+          "url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions/runs/36392989683"
         },
         {
-          "id": 36388756770,
-          "title": "fix: calibrate tearing blend-size validation",
+          "id": 36392989570,
+          "title": "fix: publish tearing result workflow",
           "status": "completed",
           "conclusion": "success",
-          "status_label": "completed successfully:  Run 20 of Blender experiment. fix: calibrate tearing blend-size validation",
+          "status_label": "completed successfully:  Run 7 of Blender 5.2 tearing experiment. fix: publish tearing result workflow",
           "branch": "main",
-          "time": "2026-09-28T06:53:55Z",
-          "url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions/runs/36388756770"
+          "time": "2026-09-28T07:41:05Z",
+          "url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions/runs/36392989570"
         },
         {
-          "id": 36388756717,
-          "title": "fix: calibrate tearing blend-size validation",
+          "id": 36392894722,
+          "title": "feat: publish Blender 5.2 tearing results to Pages",
           "status": "completed",
           "conclusion": "success",
-          "status_label": "completed successfully:  Run 5 of Blender 5.2 tearing experiment. fix: calibrate tearing blend-size validation",
+          "status_label": "completed successfully:  Run 3 of Pages gallery. feat: publish Blender 5.2 tearing results to Pages",
           "branch": "main",
-          "time": "2026-09-28T06:53:55Z",
-          "url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions/runs/36388756717"
+          "time": "2026-09-28T07:40:04Z",
+          "url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions/runs/36392894722"
         },
         {
-          "id": 36388550367,
-          "title": "fix: accept compact tearing video and record run 3",
+          "id": 36392894709,
+          "title": "feat: publish Blender 5.2 tearing results to Pages",
           "status": "completed",
-          "conclusion": "failure",
-          "status_label": "failed:  Run 4 of Blender 5.2 tearing experiment. fix: accept compact tearing video and record run 3",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 22 of Blender experiment. feat: publish Blender 5.2 tearing results to Pages",
           "branch": "main",
-          "time": "2026-09-28T06:51:30Z",
-          "url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions/runs/36388550367"
+          "time": "2026-09-28T07:40:04Z",
+          "url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions/runs/36392894709"
         }
       ]
     },
@@ -277,5 +277,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-28T07:16:39Z"
+  "updated_at": "2026-09-28T07:50:07Z"
 }
