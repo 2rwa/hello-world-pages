@@ -1,2 +1,2 @@
-triggered-at: 2026-09-28T02:28:19.560Z
-reason: row-scoped aria-label parser
+triggered-at: 2026-09-28T02:30:08.039Z
+reason: fix collector regex quoting and preflight

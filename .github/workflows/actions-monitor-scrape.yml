@@ -34,6 +34,9 @@ jobs:
       - name: Sync main before generating result
         run: git pull --rebase origin main
 
+      - name: Preflight collector syntax
+        run: python3 -m py_compile scripts/actions-monitor-scrape/collect.py
+
       - name: Scrape public Actions pages
         run: python3 scripts/actions-monitor-scrape/collect.py
 

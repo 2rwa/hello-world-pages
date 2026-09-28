@@ -105,14 +105,14 @@ def extract_row(doc: str, match) -> str:
 
 def extract_anchor(row: str, run_id: str, repo: str):
     pattern = re.compile(
-        rf'<a\\b([^>]*)href=["\\']/{re.escape(OWNER)}/{re.escape(repo)}/actions/runs/{re.escape(run_id)}[^"\\']*["\\']([^>]*)>(.*?)</a>',
+        rf"<a\\b([^>]*)href=['\"]/{re.escape(OWNER)}/{re.escape(repo)}/actions/runs/{re.escape(run_id)}[^'\"]*['\"]([^>]*)>(.*?)</a>",
         re.I | re.S,
     )
     m = pattern.search(row)
     if not m:
         return "", f"Run {run_id}"
     attrs = m.group(1) + " " + m.group(2)
-    label_match = re.search(r'aria-label=["\\']([^"\\']+)["\\']', attrs, re.I)
+    label_match = re.search(r"aria-label=['\"]([^'\"]+)['\"]", attrs, re.I)
     label = html_lib.unescape(label_match.group(1)).strip() if label_match else ""
     title = plain(m.group(3))
     if not title or len(title) > 180:
@@ -120,13 +120,13 @@ def extract_anchor(row: str, run_id: str, repo: str):
     return label, title
 
 def extract_time(row: str):
-    values = re.findall(r'<relative-time[^>]+datetime=["\\']([^"\\']+)', row, re.I)
+    values = re.findall(r"<relative-time[^>]+datetime=['\"]([^'\"]+)", row, re.I)
     return values[0] if values else None
 
 def extract_branch(row: str, repo: str):
     patterns = [
-        rf'/{re.escape(OWNER)}/{re.escape(repo)}/tree/([^"\\'?#<]+)',
-        r'refs/heads/([A-Za-z0-9_./-]+)',
+        rf"/{re.escape(OWNER)}/{re.escape(repo)}/tree/([^'\"?#<]+)",
+        r"refs/heads/([A-Za-z0-9_./-]+)",
     ]
     for pattern in patterns:
         m = re.search(pattern, row)
