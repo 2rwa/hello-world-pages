@@ -103,6 +103,16 @@
       "actions_url": "https://github.com/2rwa/tmp-blender/actions",
       "runs": [
         {
+          "id": 36477481958,
+          "title": "Pages gallery",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 34 of Pages gallery.",
+          "branch": null,
+          "time": "2026-09-28T20:11:54Z",
+          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36477481958"
+        },
+        {
           "id": 36463442520,
           "title": "Pages gallery",
           "status": "completed",
@@ -125,22 +135,12 @@
         {
           "id": 36463320360,
           "title": "ci: supersede broken fracture sweep runs",
-          "status": "in_progress",
-          "conclusion": null,
-          "status_label": "currently running:  Run 9 of SPH fracture overnight sweep 10. ci: supersede broken fracture sweep runs",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 9 of SPH fracture overnight sweep 10. ci: supersede broken fracture sweep runs",
           "branch": "main",
           "time": "2026-09-28T18:10:28Z",
           "url": "https://github.com/2rwa/tmp-blender/actions/runs/36463320360"
-        },
-        {
-          "id": 36463260140,
-          "title": "Pages gallery",
-          "status": "completed",
-          "conclusion": "skipped",
-          "status_label": "skipped:  Run 31 of Pages gallery.",
-          "branch": null,
-          "time": "2026-09-28T18:09:58Z",
-          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36463260140"
         }
       ]
     },
@@ -277,5 +277,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-28T19:27:02Z"
+  "updated_at": "2026-09-28T20:22:36Z"
 }
