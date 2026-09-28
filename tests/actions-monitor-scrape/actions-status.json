@@ -150,44 +150,44 @@
       "actions_url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions",
       "runs": [
         {
-          "id": 36472219772,
-          "title": "feat: add long wide-view 10-case cloth tearing batch",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 9 of Blender 5.2 impact tearing batch. feat: add long wide-view 10-case cloth tearing batch",
+          "id": 36496409168,
+          "title": "chore: trigger SQLite-backed Pages rebuild",
+          "status": "unknown",
+          "conclusion": null,
+          "status_label": "waiting for another serialized run to finish:  Run 29 of Blender experiment. chore: trigger SQLite-backed Pages rebuild",
           "branch": "main",
-          "time": "2026-09-28T19:26:12Z",
-          "url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions/runs/36472219772"
+          "time": "2026-09-28T23:08:42Z",
+          "url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions/runs/36496409168"
         },
         {
-          "id": 36463210144,
-          "title": "fix: allow compact video for no-contact cloth control",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 8 of Blender 5.2 impact tearing batch. fix: allow compact video for no-contact cloth control",
-          "branch": "main",
-          "time": "2026-09-28T18:09:31Z",
-          "url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions/runs/36463210144"
-        },
-        {
-          "id": 36457979035,
-          "title": "feat: queue overnight 10-case cloth tearing sweep",
+          "id": 36496409114,
+          "title": "chore: trigger SQLite-backed Pages rebuild",
           "status": "completed",
           "conclusion": "failure",
-          "status_label": "failed:  Run 7 of Blender 5.2 impact tearing batch. feat: queue overnight 10-case cloth tearing sweep",
+          "status_label": "failed:  Run 5 of Pages gallery. chore: trigger SQLite-backed Pages rebuild",
           "branch": "main",
-          "time": "2026-09-28T17:25:09Z",
-          "url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions/runs/36457979035"
+          "time": "2026-09-28T23:08:42Z",
+          "url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions/runs/36496409114"
         },
         {
-          "id": 36414569236,
-          "title": "chore: trigger threshold calibration batch",
+          "id": 36496376134,
+          "title": "feat: index experiment results with SQLite-backed Pages",
+          "status": "in_progress",
+          "conclusion": null,
+          "status_label": "currently running:  Run 28 of Blender experiment. feat: index experiment results with SQLite-backed Pages",
+          "branch": "main",
+          "time": "2026-09-28T23:08:22Z",
+          "url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions/runs/36496376134"
+        },
+        {
+          "id": 36496375887,
+          "title": "feat: index experiment results with SQLite-backed Pages",
           "status": "completed",
           "conclusion": "success",
-          "status_label": "completed successfully:  Run 6 of Blender 5.2 impact tearing batch. chore: trigger threshold calibration batch",
+          "status_label": "completed successfully:  Run 4 of Pages gallery. feat: index experiment results with SQLite-backed Pages",
           "branch": "main",
-          "time": "2026-09-28T11:15:25Z",
-          "url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions/runs/36414569236"
+          "time": "2026-09-28T23:08:22Z",
+          "url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions/runs/36496375887"
         }
       ]
     },
@@ -277,5 +277,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-28T22:30:46Z"
+  "updated_at": "2026-09-28T23:12:29Z"
 }
