@@ -103,44 +103,44 @@
       "actions_url": "https://github.com/2rwa/tmp-blender/actions",
       "runs": [
         {
-          "id": 36407087514,
-          "title": "feat: add audio-reactive Blender music visualizer",
+          "id": 36459133941,
+          "title": "ci: publish overnight fracture sweep to Pages",
           "status": "completed",
           "conclusion": "success",
-          "status_label": "completed successfully:  Run 70 of Blender experiment. feat: add audio-reactive Blender music visualizer",
+          "status_label": "completed successfully:  Run 29 of Pages gallery. ci: publish overnight fracture sweep to Pages",
           "branch": "main",
-          "time": "2026-09-28T10:00:49Z",
-          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36407087514"
+          "time": "2026-09-28T17:34:54Z",
+          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36459133941"
         },
         {
-          "id": 36405742419,
-          "title": "Add files via upload",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 69 of Blender experiment. Add files via upload",
+          "id": 36459054831,
+          "title": "test: run ten fracture probes with 180 minute limits",
+          "status": "unknown",
+          "conclusion": null,
+          "status_label": "waiting for another serialized run to finish:  Run 6 of SPH fracture overnight sweep 10. test: run ten fracture probes with 180 minute limits",
           "branch": "main",
-          "time": "2026-09-28T09:47:38Z",
-          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36405742419"
+          "time": "2026-09-28T17:34:14Z",
+          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36459054831"
         },
         {
-          "id": 36390316984,
-          "title": "Pages gallery",
+          "id": 36459022737,
+          "title": "test: expand fracture sweep to ten parameter cases",
           "status": "completed",
-          "conclusion": "skipped",
-          "status_label": "skipped:  Run 28 of Pages gallery.",
-          "branch": null,
-          "time": "2026-09-28T07:11:37Z",
-          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36390316984"
+          "conclusion": "cancelled",
+          "status_label": "cancelled:  Run 5 of SPH fracture overnight sweep 10. test: expand fracture sweep to ten parameter cases",
+          "branch": "main",
+          "time": "2026-09-28T17:33:58Z",
+          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36459022737"
         },
         {
-          "id": 36387672436,
-          "title": "Pages gallery",
-          "status": "completed",
-          "conclusion": "skipped",
-          "status_label": "skipped:  Run 27 of Pages gallery.",
-          "branch": null,
-          "time": "2026-09-28T06:40:54Z",
-          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36387672436"
+          "id": 36458993989,
+          "title": "fix: parse DSPartVTK POLYDATA output directly",
+          "status": "in_progress",
+          "conclusion": null,
+          "status_label": "currently running:  Run 4 of SPH fracture overnight sweep 10. fix: parse DSPartVTK POLYDATA output directly",
+          "branch": "main",
+          "time": "2026-09-28T17:33:44Z",
+          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36458993989"
         }
       ]
     },
@@ -277,5 +277,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-28T17:31:18Z"
+  "updated_at": "2026-09-28T17:43:26Z"
 }
