@@ -78,20 +78,46 @@ def discover_repos():
     repos.difference_update(EXCLUDE)
     return repos, errors
 
-def detect_status(text: str):
-    t = text.lower()
-    if any(x in t for x in ("in progress", "in_progress", "currently running", "running")):
-        return "in_progress", None
-    if any(x in t for x in ("queued", "waiting", "pending", "requested")):
-        return "queued", None
-    if any(x in t for x in ("timed out", "timed_out", "startup failure", "startup_failure", "failed", "failure")):
+def detect_status(fragment: str):
+    # GitHub often stores run state in SVG/aria/title attributes rather than visible text.
+    # Intentionally broad: this monitor is allowed to be brittle and easy to repair.
+    raw = html_lib.unescape(fragment).lower()
+    visible = plain(fragment).lower()
+    t = raw + " " + visible
+
+    success_words = (
+        "completed successfully", "completed with success", "conclusion-success",
+        "octicon-check-circle-fill", "success", "successful", "passed"
+    )
+    failure_words = (
+        "completed with failure", "conclusion-failure", "octicon-x-circle-fill",
+        "timed out", "timed_out", "startup failure", "startup_failure",
+        "failed", "failure"
+    )
+    cancelled_words = (
+        "cancelled", "canceled", "conclusion-cancelled", "conclusion-canceled",
+        "octicon-stop"
+    )
+    running_words = (
+        "in progress", "in_progress", "currently running", "status-in_progress",
+        "octicon-dot-fill"
+    )
+    queued_words = ("queued", "waiting", "pending", "requested")
+    skipped_words = ("skipped", "conclusion-skipped")
+
+    # Terminal states first so words elsewhere in a large snippet do not turn an old run into running.
+    if any(x in t for x in failure_words):
         return "completed", "failure"
-    if any(x in t for x in ("cancelled", "canceled")):
+    if any(x in t for x in cancelled_words):
         return "completed", "cancelled"
-    if any(x in t for x in ("successful", "success", "passed")):
+    if any(x in t for x in success_words):
         return "completed", "success"
-    if "skipped" in t:
+    if any(x in t for x in skipped_words):
         return "completed", "skipped"
+    if any(x in t for x in queued_words):
+        return "queued", None
+    if any(x in t for x in running_words):
+        return "in_progress", None
     return "unknown", None
 
 def extract_anchor_text(snippet: str, run_id: str, repo: str) -> str:
@@ -140,7 +166,7 @@ def scrape_repo(repo: str) -> dict:
         start = max(0, match.start() - 4500)
         end = min(len(doc), match.end() + 4500)
         snippet = doc[start:end]
-        status, conclusion = detect_status(plain(snippet))
+        status, conclusion = detect_status(snippet)
         title = extract_anchor_text(snippet, run_id, repo)
         runs.append({
             "id": int(run_id),

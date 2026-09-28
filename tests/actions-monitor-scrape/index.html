@@ -33,6 +33,7 @@
     <div class="metric"><strong id="queued">0</strong><span>Queued</span></div>
     <div class="metric"><strong id="failed">0</strong><span>Failed</span></div>
     <div class="metric"><strong id="success">0</strong><span>Success</span></div>
+    <div class="metric"><strong id="unknown">0</strong><span>Unknown</span></div>
   </div>
 
   <div class="tools">
@@ -117,12 +118,13 @@ async function load(manual){
 function render(){
   const data=state.data||{};
   const repos=Array.isArray(data.repositories)?data.repositories:[];
-  const counts={in_progress:0,queued:0,failure:0,success:0};
-  repos.forEach(repo=>(repo.runs||[]).forEach(run=>{const s=status(run);if(counts[s]!=null)counts[s]++}));
+  const counts={in_progress:0,queued:0,failure:0,success:0,unknown:0};
+  repos.forEach(repo=>(repo.runs||[]).forEach(run=>{const s=status(run);if(counts[s]!=null)counts[s]++;else counts.unknown++}));
   el('running').textContent=counts.in_progress;
   el('queued').textContent=counts.queued;
   el('failed').textContent=counts.failure;
   el('success').textContent=counts.success;
+  el('unknown').textContent=counts.unknown;
   el('updated').textContent=data.updated_at?('状態更新 '+new Date(data.updated_at).toLocaleString()):'collector未実行';
   el('errors').textContent=(data.errors||[]).join('\n');
 
