@@ -103,6 +103,16 @@
       "actions_url": "https://github.com/2rwa/tmp-blender/actions",
       "runs": [
         {
+          "id": 36405742419,
+          "title": "Add files via upload",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 69 of Blender experiment. Add files via upload",
+          "branch": "main",
+          "time": "2026-09-28T09:47:38Z",
+          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36405742419"
+        },
+        {
           "id": 36390316984,
           "title": "Pages gallery",
           "status": "completed",
@@ -131,16 +141,6 @@
           "branch": "main",
           "time": "2026-09-28T06:33:19Z",
           "url": "https://github.com/2rwa/tmp-blender/actions/runs/36387052679"
-        },
-        {
-          "id": 36387047879,
-          "title": "fix: use GenCase XML path for fracture postprocessing",
-          "status": "completed",
-          "conclusion": "failure",
-          "status_label": "failed:  Run 3 of SPH fracture pack 5. fix: use GenCase XML path for fracture postprocessing",
-          "branch": "main",
-          "time": "2026-09-28T06:33:15Z",
-          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36387047879"
         }
       ]
     },
@@ -149,6 +149,16 @@
       "url": "https://github.com/2rwa/tmp-blender-rigid-cloth",
       "actions_url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions",
       "runs": [
+        {
+          "id": 36404952930,
+          "title": "chore: rerun impact tearing batch with 120 minute timeout",
+          "status": "in_progress",
+          "conclusion": null,
+          "status_label": "currently running:  Run 2 of Blender 5.2 impact tearing batch. chore: rerun impact tearing batch with 120 minute timeout",
+          "branch": "main",
+          "time": "2026-09-28T09:40:04Z",
+          "url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions/runs/36404952930"
+        },
         {
           "id": 36395574771,
           "title": "fix: restore full Blender 4 workflow",
@@ -178,16 +188,6 @@
           "branch": null,
           "time": "2026-09-28T08:06:31Z",
           "url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions/runs/36395394088"
-        },
-        {
-          "id": 36395181118,
-          "title": "chore: keep Blender 4 workflow out of 5.2 experiments",
-          "status": "completed",
-          "conclusion": "failure",
-          "status_label": "failed:  Run 25 of Blender experiment. chore: keep Blender 4 workflow out of 5.2 experiments",
-          "branch": null,
-          "time": "2026-09-28T08:04:19Z",
-          "url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions/runs/36395181118"
         }
       ]
     },
@@ -277,5 +277,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-28T08:39:11Z"
+  "updated_at": "2026-09-28T09:52:01Z"
 }
