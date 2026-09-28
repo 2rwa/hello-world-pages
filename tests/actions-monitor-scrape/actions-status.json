@@ -103,6 +103,26 @@
       "actions_url": "https://github.com/2rwa/tmp-blender/actions",
       "runs": [
         {
+          "id": 36492307754,
+          "title": "ci: publish Blender fracture 3D result to Pages",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 35 of Pages gallery. ci: publish Blender fracture 3D result to Pages",
+          "branch": "main",
+          "time": "2026-09-28T22:25:34Z",
+          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36492307754"
+        },
+        {
+          "id": 36492297377,
+          "title": "test: render extreme fracture case as Blender 3D CG",
+          "status": "in_progress",
+          "conclusion": null,
+          "status_label": "currently running:  Run 1 of SPH fracture 3D extreme. test: render extreme fracture case as Blender 3D CG",
+          "branch": "main",
+          "time": "2026-09-28T22:25:28Z",
+          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36492297377"
+        },
+        {
           "id": 36477481958,
           "title": "Pages gallery",
           "status": "completed",
@@ -121,26 +141,6 @@
           "branch": null,
           "time": "2026-09-28T18:11:31Z",
           "url": "https://github.com/2rwa/tmp-blender/actions/runs/36463442520"
-        },
-        {
-          "id": 36463327787,
-          "title": "Pages gallery",
-          "status": "completed",
-          "conclusion": "skipped",
-          "status_label": "skipped:  Run 32 of Pages gallery.",
-          "branch": null,
-          "time": "2026-09-28T18:10:32Z",
-          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36463327787"
-        },
-        {
-          "id": 36463320360,
-          "title": "ci: supersede broken fracture sweep runs",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 9 of SPH fracture overnight sweep 10. ci: supersede broken fracture sweep runs",
-          "branch": "main",
-          "time": "2026-09-28T18:10:28Z",
-          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36463320360"
         }
       ]
     },
@@ -277,5 +277,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-28T20:46:55Z"
+  "updated_at": "2026-09-28T22:30:46Z"
 }
