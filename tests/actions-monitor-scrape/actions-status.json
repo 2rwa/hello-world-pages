@@ -103,6 +103,16 @@
       "actions_url": "https://github.com/2rwa/tmp-blender/actions",
       "runs": [
         {
+          "id": 36370986979,
+          "title": "ci: include SPH point diagnostics in Pages gallery",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 14 of Pages gallery. ci: include SPH point diagnostics in Pages gallery",
+          "branch": "main",
+          "time": "2026-09-28T02:44:40Z",
+          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36370986979"
+        },
+        {
           "id": 36369860412,
           "title": "fix: realize SPH diagnostic instances before validation",
           "status": "completed",
@@ -131,16 +141,6 @@
           "branch": null,
           "time": "2026-09-28T01:55:46Z",
           "url": "https://github.com/2rwa/tmp-blender/actions/runs/36367843695"
-        },
-        {
-          "id": 36367597034,
-          "title": "test: add SPH Geometry Nodes point-volume pipeline",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 12 of Pages gallery. test: add SPH Geometry Nodes point-volume pipeline",
-          "branch": "main",
-          "time": "2026-09-28T01:51:49Z",
-          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36367597034"
         }
       ]
     },
@@ -277,5 +277,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-28T02:37:57Z"
+  "updated_at": "2026-09-28T02:57:32Z"
 }
