@@ -95,18 +95,27 @@
       "actions_url": "https://github.com/2rwa/tmp-blender/actions",
       "runs": [
         {
+          "id": 36365529626,
+          "title": "Pages gallery",
+          "status": "unknown",
+          "conclusion": null,
+          "branch": null,
+          "time": "2026-09-28T01:19:16Z",
+          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36365529626"
+        },
+        {
           "id": 36364391725,
           "title": "fix: install numpy for SPH mesh smoothing",
-          "status": "in_progress",
+          "status": "unknown",
           "conclusion": null,
           "branch": "refs/heads/main",
-          "time": "2026-09-28T01:01:49Z",
+          "time": "2026-09-28T01:19:16Z",
           "url": "https://github.com/2rwa/tmp-blender/actions/runs/36364391725"
         },
         {
           "id": 36364367894,
           "title": "Pages gallery",
-          "status": "in_progress",
+          "status": "unknown",
           "conclusion": null,
           "branch": "refs/heads/main",
           "time": "2026-09-28T01:01:49Z",
@@ -120,15 +129,6 @@
           "branch": "refs/heads/main",
           "time": "2026-09-28T01:01:25Z",
           "url": "https://github.com/2rwa/tmp-blender/actions/runs/36364346156"
-        },
-        {
-          "id": 36364346051,
-          "title": "test: add Taubin-smoothed large-droplet SPH render",
-          "status": "unknown",
-          "conclusion": null,
-          "branch": "refs/heads/main",
-          "time": "2026-09-28T01:01:05Z",
-          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36364346051"
         }
       ]
     },
@@ -254,5 +254,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-28T01:06:58Z"
+  "updated_at": "2026-09-28T01:37:10Z"
 }
