@@ -103,6 +103,26 @@
       "actions_url": "https://github.com/2rwa/tmp-blender/actions",
       "runs": [
         {
+          "id": 36383409140,
+          "title": "test: launch five burst-like elastic SPH simulations",
+          "status": "in_progress",
+          "conclusion": null,
+          "status_label": "currently running:  Run 1 of SPH elastic burst pack 5. test: launch five burst-like elastic SPH simulations",
+          "branch": "main",
+          "time": "2026-09-28T05:47:07Z",
+          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36383409140"
+        },
+        {
+          "id": 36383359805,
+          "title": "ci: include elastic burst pack in Pages gallery",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 24 of Pages gallery. ci: include elastic burst pack in Pages gallery",
+          "branch": "main",
+          "time": "2026-09-28T05:46:26Z",
+          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36383359805"
+        },
+        {
           "id": 36382441551,
           "title": "docs: consolidate SPH findings and add handoff",
           "status": "completed",
@@ -121,26 +141,6 @@
           "branch": null,
           "time": "2026-09-28T05:20:54Z",
           "url": "https://github.com/2rwa/tmp-blender/actions/runs/36381519052"
-        },
-        {
-          "id": 36381274836,
-          "title": "test: launch five elastic SPH simulations",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 1 of SPH elastic sample pack 5. test: launch five elastic SPH simulations",
-          "branch": "main",
-          "time": "2026-09-28T05:17:35Z",
-          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36381274836"
-        },
-        {
-          "id": 36381274807,
-          "title": "test: launch five elastic SPH simulations",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 22 of Pages gallery. test: launch five elastic SPH simulations",
-          "branch": "main",
-          "time": "2026-09-28T05:17:35Z",
-          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36381274807"
         }
       ]
     },
@@ -277,5 +277,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-28T05:38:04Z"
+  "updated_at": "2026-09-28T05:50:17Z"
 }
