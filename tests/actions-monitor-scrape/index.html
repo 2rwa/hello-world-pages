@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0b0f14">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="manifest" href="./manifest.webmanifest">
+<title>Actions Monitor Scrape</title>
+<style>
+:root{--bg:#0b0f14;--panel:#121821;--panel2:#171f2a;--line:#273244;--text:#e6edf3;--muted:#8b949e;--ok:#3fb950;--bad:#f85149;--wait:#d29922;--run:#58a6ff}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}a{color:inherit}.wrap{width:min(1050px,100%);margin:auto;padding:14px}h1{font-size:21px;margin:0}.sub,.meta{font-size:12px;color:var(--muted)}.head,.device,.tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.head,.device{justify-content:space-between}.panel,.repo{border:1px solid var(--line);background:var(--panel);border-radius:12px;margin:10px 0}.panel{padding:10px 12px}.summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:10px 0}.metric{border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:10px}.metric strong{display:block;font-size:22px}.metric span{font-size:11px;color:var(--muted)}button,input{font:inherit;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:9px;padding:9px 10px}button{cursor:pointer}button.on{border-color:var(--run);color:#9ecbff}input{flex:1;min-width:170px}.repo{overflow:hidden}.repo-head{display:flex;justify-content:space-between;gap:8px;padding:10px 12px;background:var(--panel2)}.run{display:grid;grid-template-columns:18px minmax(0,1fr) auto;gap:8px;padding:9px 11px;border-top:1px solid var(--line);text-decoration:none}.dot{width:11px;height:11px;border-radius:50%;background:var(--muted);margin-top:3px}.dot.in_progress{background:var(--run)}.dot.queued{background:var(--wait)}.dot.success{background:var(--ok)}.dot.failure{background:var(--bad)}.run-title{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.errors{font-size:12px;color:#ff9b95;white-space:pre-wrap}.empty{padding:24px;text-align:center;color:var(--muted)}.footer{font-size:12px;color:var(--muted);margin:14px 0}.toast{position:fixed;right:12px;bottom:12px;max-width:min(390px,calc(100vw - 24px));background:#172131;border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:none}
+@media(max-width:650px){.summary{grid-template-columns:repeat(2,minmax(0,1fr))}.run{grid-template-columns:18px minmax(0,1fr)}.badge{display:none}.device .tools{width:100%}.device button{flex:1;min-height:44px}}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <div class="head">
+    <div><h1>Actions Monitor — HTML Scrape</h1><div class="sub">GitHub APIなし。public /actions HTML をcollectorが雑に読む版</div></div>
+    <div id="updated" class="meta">未取得</div>
+  </div>
+
+  <div class="panel sub">既存のAPI版は <a href="../actions-monitor/">こちら</a>。この版はGitHub側のHTML変更で壊れる前提です。</div>
+
+  <div class="panel device">
+    <div class="meta">Wake Lock: <strong id="wakeState">?</strong> / 通知: <strong id="notifyState">?</strong> / Source: HTML scrape</div>
+    <div class="tools"><button id="wakeBtn" class="on">スリープ防止 ON</button><button id="notifyBtn">通知を有効化</button></div>
+  </div>
+
+  <div class="summary">
+    <div class="metric"><strong id="running">0</strong><span>Running</span></div>
+    <div class="metric"><strong id="queued">0</strong><span>Queued</span></div>
+    <div class="metric"><strong id="failed">0</strong><span>Failed</span></div>
+    <div class="metric"><strong id="success">0</strong><span>Success</span></div>
+  </div>
+
+  <div class="tools">
+    <button data-filter="active" class="on">Active</button>
+    <button data-filter="failed">Failed</button>
+    <button data-filter="all">All</button>
+    <input id="search" type="search" placeholder="repo / run を検索">
+    <button id="refresh">JSON再読込</button>
+  </div>
+
+  <div id="errors" class="errors"></div>
+  <section id="content"><div class="empty">actions-status.json 読み込み中...</div></section>
+  <div id="stateLine" class="footer">JSONは3分ごと / collectorは5分ごと</div>
+</main>
+<div id="toast" class="toast"></div>
+
+<script>
+(()=>{
+'use strict';
+const POLL_MS=180000;
+const CACHE_KEY='actions-monitor-scrape-v1';
+const state={data:null,filter:'active',query:'',wake:null,keepAwake:true,sw:null,busy:false};
+const el=id=>document.getElementById(id);
+const active=s=>s==='in_progress'||s==='queued';
+
+function status(run){
+  if(run.status==='completed'&&run.conclusion)return run.conclusion;
+  return run.status||'unknown';
+}
+function esc(v){
+  return String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function previous(){
+  try{return JSON.parse(localStorage.getItem(CACHE_KEY)||'null')}catch(_){return null}
+}
+function save(data){
+  try{localStorage.setItem(CACHE_KEY,JSON.stringify(data))}catch(_){}
+}
+function toast(message){
+  const t=el('toast');t.textContent=message;t.style.display='block';setTimeout(()=>{t.style.display='none'},6000);
+}
+async function serviceWorker(){
+  if(state.sw)return state.sw;
+  if(!('serviceWorker' in navigator))return null;
+  state.sw=await navigator.serviceWorker.register('./sw.js',{scope:'./'});
+  return state.sw;
+}
+async function notify(repo,run,s){
+  toast(repo+' / '+(run.title||('Run '+run.id))+' → '+s);
+  if(!('Notification' in window)||Notification.permission!=='granted')return;
+  try{
+    const reg=await serviceWorker();
+    if(reg)await reg.showNotification('Actions '+s+': '+repo,{body:run.title||('Run '+run.id),tag:'scrape-'+run.id,data:{url:run.url}});
+  }catch(_){}
+}
+function transitions(oldData,newData){
+  if(!oldData||!Array.isArray(oldData.repositories))return;
+  const before=new Map();
+  oldData.repositories.forEach(repo=>(repo.runs||[]).forEach(run=>before.set(String(run.id),status(run))));
+  (newData.repositories||[]).forEach(repo=>(repo.runs||[]).forEach(run=>{
+    const old=before.get(String(run.id)),now=status(run);
+    if(old&&active(old)&&!active(now))notify(repo.name,run,now);
+  }));
+}
+async function load(manual){
+  if(state.busy||(!manual&&document.visibilityState!=='visible'))return;
+  state.busy=true;
+  try{
+    const response=await fetch('./actions-status.json?t='+Date.now(),{cache:'no-store'});
+    if(!response.ok)throw new Error('HTTP '+response.status);
+    const data=await response.json();
+    transitions(previous(),data);
+    state.data=data;
+    save(data);
+    render();
+  }catch(err){
+    el('stateLine').textContent='JSON取得失敗: '+err.message;
+  }finally{
+    state.busy=false;
+  }
+}
+function render(){
+  const data=state.data||{};
+  const repos=Array.isArray(data.repositories)?data.repositories:[];
+  const counts={in_progress:0,queued:0,failure:0,success:0};
+  repos.forEach(repo=>(repo.runs||[]).forEach(run=>{const s=status(run);if(counts[s]!=null)counts[s]++}));
+  el('running').textContent=counts.in_progress;
+  el('queued').textContent=counts.queued;
+  el('failed').textContent=counts.failure;
+  el('success').textContent=counts.success;
+  el('updated').textContent=data.updated_at?('状態更新 '+new Date(data.updated_at).toLocaleString()):'collector未実行';
+  el('errors').textContent=(data.errors||[]).join('\n');
+
+  const q=state.query.toLowerCase();
+  const groups=[];
+  repos.forEach(repo=>{
+    let runs=(repo.runs||[]).map(run=>({run:run,status:status(run)}));
+    if(state.filter==='active')runs=runs.filter(x=>active(x.status));
+    else if(state.filter==='failed')runs=runs.filter(x=>x.status==='failure');
+    if(q)runs=runs.filter(x=>(repo.name+' '+(x.run.title||'')+' '+(x.run.branch||'')).toLowerCase().includes(q));
+    if(runs.length)groups.push({repo:repo,runs:runs});
+  });
+
+  if(!groups.length){
+    el('content').innerHTML='<div class="empty">該当runなし</div>';
+  }else{
+    el('content').innerHTML=groups.map(g=>{
+      const head='<div class="repo-head"><strong>'+esc(g.repo.name)+(g.repo.stale?' · stale':'')+'</strong><a class="meta" target="_blank" rel="noopener" href="'+esc(g.repo.actions_url||g.repo.url||'#')+'">Actions ↗</a></div>';
+      const runs=g.runs.map(x=>'<a class="run" target="_blank" rel="noopener" href="'+esc(x.run.url)+'"><span class="dot '+esc(x.status)+'"></span><span><div class="run-title">'+esc(x.run.title||('Run '+x.run.id))+'</div><div class="meta">'+esc(x.run.branch||'-')+' · #'+esc(x.run.id)+'</div></span><span class="badge meta">'+esc(x.status)+'</span></a>').join('');
+      return '<article class="repo">'+head+runs+'</article>';
+    }).join('');
+  }
+  el('stateLine').textContent=repos.length+' repo / '+(data.source||'-')+' / JSONは3分ごと';
+}
+function device(){
+  const held=state.wake&&!state.wake.released;
+  el('wakeState').textContent=!('wakeLock' in navigator)?'非対応':held?'保持中':state.keepAwake?'待機中':'OFF';
+  el('wakeBtn').textContent='スリープ防止 '+(state.keepAwake?'ON':'OFF');
+  el('wakeBtn').classList.toggle('on',state.keepAwake);
+  const p=('Notification' in window)?Notification.permission:'非対応';
+  el('notifyState').textContent=p;
+}
+async function requestWake(){
+  if(!state.keepAwake||document.visibilityState!=='visible'||!('wakeLock' in navigator)){device();return}
+  try{
+    if(state.wake&&!state.wake.released)return;
+    const w=await navigator.wakeLock.request('screen');
+    state.wake=w;
+    w.addEventListener('release',()=>{if(state.wake===w)state.wake=null;device()});
+    device();
+  }catch(_){state.wake=null;device()}
+}
+
+el('wakeBtn').addEventListener('click',async()=>{
+  state.keepAwake=!state.keepAwake;
+  if(!state.keepAwake&&state.wake&&!state.wake.released)await state.wake.release();
+  state.wake=null;device();if(state.keepAwake)requestWake();
+});
+el('notifyBtn').addEventListener('click',async()=>{
+  if(!('Notification' in window)){toast('通知API非対応');return}
+  await Notification.requestPermission();device();await serviceWorker().catch(()=>null);
+});
+el('refresh').addEventListener('click',()=>load(true));
+el('search').addEventListener('input',e=>{state.query=e.target.value.trim();render()});
+document.querySelectorAll('[data-filter]').forEach(btn=>btn.addEventListener('click',()=>{
+  state.filter=btn.dataset.filter;
+  document.querySelectorAll('[data-filter]').forEach(x=>x.classList.toggle('on',x===btn));
+  render();
+}));
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){requestWake();load(false)}});
+
+device();
+requestWake();
+serviceWorker().catch(()=>{});
+load(false);
+setInterval(()=>load(false),POLL_MS);
+})();
+</script>
+</body>
+</html>

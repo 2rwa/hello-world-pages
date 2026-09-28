@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "owner": "2rwa",
+  "source": "github-html-scrape",
+  "updated_at": null,
+  "repositories": [
+    {"name":"2rwa-public","runs":[]},
+    {"name":"devlog","runs":[]},
+    {"name":"tmp-blender","runs":[]},
+    {"name":"tmp-blender-rigid-cloth","runs":[]},
+    {"name":"tmp-blender-telop","runs":[]},
+    {"name":"tmp-sho","runs":[]}
+  ],
+  "errors": ["waiting for first collector run"]
+}

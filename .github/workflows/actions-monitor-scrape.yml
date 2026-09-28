@@ -1,0 +1,44 @@
+name: Actions Monitor HTML Scrape
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "*/5 * * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: actions-monitor-html-scrape
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Sync main before generating result
+        run: git pull --rebase origin main
+
+      - name: Scrape public Actions pages
+        run: python3 scripts/actions-monitor-scrape/collect.py
+
+      - name: Commit changed status JSON only
+        shell: bash
+        run: |
+          set -euo pipefail
+          FILE="tests/actions-monitor-scrape/actions-status.json"
+          if git diff --quiet -- "$FILE"; then
+            echo "No status change"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$FILE"
+          git commit -m "Update scraped Actions status"
+          git push origin HEAD:main

@@ -1,0 +1,8 @@
+# Seed list. The collector also scrapes the public repository list from github.com/2rwa.
+# hello-world-pages is intentionally excluded by collect.py to avoid monitoring the collector itself.
+2rwa-public
+devlog
+tmp-blender
+tmp-blender-rigid-cloth
+tmp-blender-telop
+tmp-sho
