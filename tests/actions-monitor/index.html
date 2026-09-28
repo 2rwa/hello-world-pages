@@ -48,13 +48,14 @@ h1{font-size:22px;margin:0}.sub{color:var(--muted);font-size:13px;margin-top:4px
     <button data-filter="failed">Failed</button>
     <button data-filter="all">All</button>
     <input id="search" type="search" placeholder="repo / workflow を検索">
-    <button id="refresh">再取得</button>
+    <button id="refresh">Active更新</button>
+    <button id="fullRefresh" title="読み込み済みrepoをすべて再走査します。API消費が多めです。">全体再走査</button>
     <button id="loadMore">+10 repo</button>
   </div>
 
   <div class="repo-meta" id="apiState">API: 未取得</div>
   <section id="content"><div class="empty">読み込み中...</div></section>
-  <div class="footer"><span id="scanState"></span><span>Active runs は30秒ごとに自動更新</span></div>
+  <div class="footer"><span id="scanState"></span><span id="pollState">Active runs は3分ごとに自動更新</span></div>
 </main>
 <div id="toastArea" class="toast-area" aria-live="polite" aria-atomic="true"></div>
 <script>
@@ -64,9 +65,10 @@ h1{font-size:22px;margin:0}.sub{color:var(--muted);font-size:13px;margin-top:4px
   const INITIAL_REPOS=20;
   const MORE_REPOS=10;
   const RUNS_PER_REPO=5;
-  const ACTIVE_POLL_MS=30000;
+  const ACTIVE_POLL_MS=180000;
+  const RATE_GUARD_REMAINING=10;
   const CACHE_KEY='actions-monitor-cache-v1';
-  const state={repos:[],loaded:0,runs:new Map(),filter:'active',query:'',rate:null,lastUpdated:null,pollTimer:null,wakeSentinel:null,keepAwake:true,swRegistration:null};
+  const state={repos:[],loaded:0,runs:new Map(),filter:'active',query:'',rate:null,lastUpdated:null,pollTimer:null,wakeSentinel:null,keepAwake:true,swRegistration:null,polling:false,ratePausedUntil:0};
   const el=id=>document.getElementById(id);
 
   function statusOf(run){
@@ -159,18 +161,126 @@ h1{font-size:22px;margin:0}.sub{color:var(--muted);font-size:13px;margin-top:4px
   function ago(iso){const d=(Date.now()-new Date(iso).getTime())/1000;if(d<60)return Math.max(0,Math.floor(d))+'s前';if(d<3600)return Math.floor(d/60)+'m前';if(d<86400)return Math.floor(d/3600)+'h前';return Math.floor(d/86400)+'d前'}
   function duration(run){const a=new Date(run.run_started_at||run.created_at).getTime();const b=run.updated_at?new Date(run.updated_at).getTime():Date.now();if(!Number.isFinite(a))return '';const sec=Math.max(0,Math.floor((b-a)/1000));if(sec<60)return sec+'s';const m=Math.floor(sec/60);return m<60?m+'m':Math.floor(m/60)+'h '+(m%60)+'m'}
   function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-  function setRate(resp){const rem=resp.headers.get('x-ratelimit-remaining');const lim=resp.headers.get('x-ratelimit-limit');const reset=resp.headers.get('x-ratelimit-reset');if(rem!=null){state.rate={remaining:Number(rem),limit:Number(lim),reset:Number(reset)};renderApiState()}}
-  async function api(url){const r=await fetch(url,{headers:{Accept:'application/vnd.github+json'}});setRate(r);if(!r.ok){const e=new Error('GitHub API '+r.status);e.status=r.status;e.response=r;throw e}return r.json()}
-  function renderApiState(){if(!state.rate){el('apiState').textContent='API: 未取得';return}const reset=state.rate.reset?new Date(state.rate.reset*1000).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}):'-';el('apiState').textContent=`API remaining: ${state.rate.remaining}/${state.rate.limit} · reset ${reset}`}
+  function setRate(resp){
+    const rem=resp.headers.get('x-ratelimit-remaining');
+    const lim=resp.headers.get('x-ratelimit-limit');
+    const reset=resp.headers.get('x-ratelimit-reset');
+    if(rem!=null){
+      state.rate={remaining:Number(rem),limit:Number(lim),reset:Number(reset)};
+      if(state.rate.remaining<=RATE_GUARD_REMAINING&&state.rate.reset){
+        state.ratePausedUntil=Math.max(state.ratePausedUntil,state.rate.reset*1000+5000);
+      }
+      renderApiState();
+    }
+  }
+  function ratePauseReason(required=1){
+    const now=Date.now();
+    if(state.ratePausedUntil>now)return 'API保護のため一時停止';
+    if(state.rate&&state.rate.remaining<=Math.max(RATE_GUARD_REMAINING,required+2)){
+      if(state.rate.reset)state.ratePausedUntil=state.rate.reset*1000+5000;
+      return 'API残量保護のため一時停止';
+    }
+    return '';
+  }
+  async function api(url){
+    const r=await fetch(url,{headers:{Accept:'application/vnd.github+json'}});
+    setRate(r);
+    if(!r.ok){
+      const retryAfter=Number(r.headers.get('retry-after')||0);
+      if((r.status===403||r.status===429)&&retryAfter>0)state.ratePausedUntil=Math.max(state.ratePausedUntil,Date.now()+retryAfter*1000+1000);
+      if((r.status===403||r.status===429)&&state.rate&&state.rate.reset&&state.rate.remaining===0)state.ratePausedUntil=Math.max(state.ratePausedUntil,state.rate.reset*1000+5000);
+      const e=new Error('GitHub API '+r.status);e.status=r.status;e.response=r;throw e;
+    }
+    return r.json();
+  }
+  function renderApiState(){
+    if(!state.rate){el('apiState').textContent='API: 未取得';return}
+    const reset=state.rate.reset?new Date(state.rate.reset*1000).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}):'-';
+    const paused=state.ratePausedUntil>Date.now()?' · 自動取得一時停止':'';
+    el('apiState').textContent=`API remaining: ${state.rate.remaining}/${state.rate.limit} · reset ${reset}${paused}`;
+  }
   function saveCache(){try{const payload={savedAt:Date.now(),repos:state.repos.slice(0,state.loaded),runs:[...state.runs.entries()]};localStorage.setItem(CACHE_KEY,JSON.stringify(payload))}catch(_){}}
   function loadCache(){try{const raw=localStorage.getItem(CACHE_KEY);if(!raw)return;const p=JSON.parse(raw);if(!Array.isArray(p.repos)||!Array.isArray(p.runs))return;state.repos=p.repos;state.loaded=p.repos.length;state.runs=new Map(p.runs);state.lastUpdated=p.savedAt;render()}catch(_){}}
   async function loadRepos(){const repos=await api(`https://api.github.com/users/${OWNER}/repos?per_page=100&type=owner&sort=updated`);state.repos=repos.filter(r=>!r.archived).sort((a,b)=>new Date(b.updated_at)-new Date(a.updated_at));state.loaded=Math.min(INITIAL_REPOS,state.repos.length)}
-  async function fetchRuns(repo){try{const previous=state.runs.get(repo.name);const data=await api(`https://api.github.com/repos/${OWNER}/${encodeURIComponent(repo.name)}/actions/runs?per_page=${RUNS_PER_REPO}`);const next=data.workflow_runs||[];detectCompletions(repo.name,previous,next);state.runs.set(repo.name,next)}catch(err){state.runs.set(repo.name,{error:err.message,status:err.status||0})}}
+  async function fetchRuns(repo){try{const previous=state.runs.get(repo.name);const data=await api(`https://api.github.com/repos/${OWNER}/${encodeURIComponent(repo.name)}/actions/runs?per_page=${RUNS_PER_REPO}`);const next=data.workflow_runs||[];detectCompletions(repo.name,previous,next);state.runs.set(repo.name,next);return true}catch(err){console.warn('fetchRuns failed',repo.name,err);return false}}
   async function mapLimit(items,limit,fn){let i=0;const workers=Array.from({length:Math.min(limit,items.length)},async()=>{while(i<items.length){const x=items[i++];await fn(x)}});await Promise.all(workers)}
-  async function scanRange(start,end){const list=state.repos.slice(start,end);el('scanState').textContent=`${start+1}-${end} / ${state.repos.length} repo を取得中...`;await mapLimit(list,4,fetchRuns);state.lastUpdated=Date.now();saveCache();render();el('scanState').textContent=`${state.loaded} / ${state.repos.length} repo 読み込み済み`}
-  async function initialLoad(force=false){try{if(force){state.runs.clear();state.loaded=0}el('scanState').textContent='repository一覧を取得中...';await loadRepos();await scanRange(0,state.loaded)}catch(err){el('scanState').textContent='取得失敗: '+err.message;render()}}
-  async function loadMore(){if(state.loaded>=state.repos.length)return;const start=state.loaded;state.loaded=Math.min(state.repos.length,state.loaded+MORE_REPOS);await scanRange(start,state.loaded)}
-  async function pollActive(){const names=[];for(const [name,runs] of state.runs.entries()){if(Array.isArray(runs)&&runs.some(r=>isActive(statusOf(r))))names.push(name)}if(!names.length)return;const repos=names.map(n=>state.repos.find(r=>r.name===n)).filter(Boolean);await mapLimit(repos,3,fetchRuns);state.lastUpdated=Date.now();saveCache();render()}
+  async function scanRange(start,end){
+    const list=state.repos.slice(start,end);
+    const pause=ratePauseReason(list.length);
+    if(pause){el('scanState').textContent=pause+'。reset後に再試行してください';renderApiState();return false}
+    el('scanState').textContent=`${start+1}-${end} / ${state.repos.length} repo を取得中...`;
+    await mapLimit(list,4,fetchRuns);
+    state.lastUpdated=Date.now();saveCache();render();
+    el('scanState').textContent=`${state.loaded} / ${state.repos.length} repo 読み込み済み`;
+    return true;
+  }
+  async function initialLoad(){
+    try{
+      el('scanState').textContent='repository一覧を取得中...';
+      const previousLoaded=state.loaded;
+      await loadRepos();
+      if(previousLoaded>state.loaded)state.loaded=Math.min(previousLoaded,state.repos.length);
+      await scanRange(0,state.loaded);
+    }catch(err){
+      el('scanState').textContent='取得失敗: '+err.message+'（既存表示は保持）';
+      render();
+    }
+  }
+  async function fullRefresh(){
+    if(state.polling)return;
+    const pause=ratePauseReason(state.loaded+1);
+    if(pause){toast(pause+'。API reset後に試してください','failure');renderApiState();return}
+    state.polling=true;
+    el('fullRefresh').disabled=true;el('refresh').disabled=true;
+    try{
+      await loadRepos();
+      await scanRange(0,state.loaded);
+    }catch(err){
+      toast('全体再走査に失敗: '+err.message,'failure');
+    }finally{
+      state.polling=false;el('fullRefresh').disabled=false;el('refresh').disabled=false;
+    }
+  }
+  async function loadMore(){
+    if(state.loaded>=state.repos.length||state.polling)return;
+    const start=state.loaded;
+    const next=Math.min(state.repos.length,state.loaded+MORE_REPOS);
+    const pause=ratePauseReason(next-start);
+    if(pause){toast(pause+'。API reset後に試してください','failure');return}
+    state.loaded=next;await scanRange(start,state.loaded);
+  }
+  async function pollActive(manual=false){
+    if(state.polling)return;
+    if(!manual&&document.visibilityState!=='visible'){
+      el('pollState').textContent='非表示中のため自動更新を休止';
+      return;
+    }
+    const names=[];
+    for(const [name,runs] of state.runs.entries()){
+      if(Array.isArray(runs)&&runs.some(r=>isActive(statusOf(r))))names.push(name);
+    }
+    if(!names.length){
+      el('pollState').textContent='Active runなし · 3分ごとに確認';
+      return;
+    }
+    const pause=ratePauseReason(names.length);
+    if(pause){
+      el('pollState').textContent=pause;
+      renderApiState();
+      return;
+    }
+    const repos=names.map(n=>state.repos.find(r=>r.name===n)).filter(Boolean);
+    state.polling=true;
+    el('refresh').disabled=true;
+    try{
+      await mapLimit(repos,3,fetchRuns);
+      state.lastUpdated=Date.now();saveCache();render();
+      el('pollState').textContent=`Active ${repos.length} repo · 3分ごとに自動更新`;
+    }finally{
+      state.polling=false;
+      el('refresh').disabled=false;
+    }
+  }
   function allRuns(){const out=[];for(const repo of state.repos.slice(0,state.loaded)){const runs=state.runs.get(repo.name);if(Array.isArray(runs))for(const run of runs)out.push({repo,run,status:statusOf(run)})}return out}
   function render(){const items=allRuns();const counts={running:0,queued:0,failure:0,success:0};for(const x of items)if(counts[x.status]!=null)counts[x.status]++;el('mRunning').textContent=counts.running;el('mQueued').textContent=counts.queued;el('mFailed').textContent=counts.failure;el('mSuccess').textContent=counts.success;el('updated').textContent=state.lastUpdated?'更新 '+new Date(state.lastUpdated).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'}):'未取得';
     const q=state.query.toLowerCase();const groups=[];
@@ -185,11 +295,12 @@ h1{font-size:22px;margin:0}.sub{color:var(--muted);font-size:13px;margin-top:4px
   }
   document.querySelectorAll('[data-filter]').forEach(btn=>btn.addEventListener('click',()=>{state.filter=btn.dataset.filter;document.querySelectorAll('[data-filter]').forEach(x=>x.classList.toggle('active',x===btn));render()}));
   el('search').addEventListener('input',e=>{state.query=e.target.value.trim();render()});
-  el('refresh').addEventListener('click',()=>initialLoad(true));
+  el('refresh').addEventListener('click',()=>pollActive(true));
+  el('fullRefresh').addEventListener('click',fullRefresh);
   el('loadMore').addEventListener('click',loadMore);
   el('wakeToggle').addEventListener('click',toggleWake);
   el('notifyBtn').addEventListener('click',enableNotifications);
-  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&state.keepAwake)void requestWakeLock(false)});
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){if(state.keepAwake)void requestWakeLock(false);el('pollState').textContent='Active runs は3分ごとに自動更新'}else{el('pollState').textContent='非表示中のため自動更新を休止'}});
   window.addEventListener('pageshow',()=>{if(state.keepAwake)void requestWakeLock(false)});
   updateDeviceUi();
   void ensureServiceWorker().catch(()=>{});
