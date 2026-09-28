@@ -105,9 +105,9 @@
         {
           "id": 36369860412,
           "title": "fix: realize SPH diagnostic instances before validation",
-          "status": "in_progress",
-          "conclusion": null,
-          "status_label": "currently running:  Run 2 of SPH point diagnostics. fix: realize SPH diagnostic instances before validation",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 2 of SPH point diagnostics. fix: realize SPH diagnostic instances before validation",
           "branch": "main",
           "time": "2026-09-28T02:26:59Z",
           "url": "https://github.com/2rwa/tmp-blender/actions/runs/36369860412"
@@ -277,5 +277,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-28T02:33:10Z"
+  "updated_at": "2026-09-28T02:37:57Z"
 }
