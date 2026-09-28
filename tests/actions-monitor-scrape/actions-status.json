@@ -103,6 +103,16 @@
       "actions_url": "https://github.com/2rwa/tmp-blender/actions",
       "runs": [
         {
+          "id": 36373321765,
+          "title": "fix: show newest Blender gallery results first",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 15 of Pages gallery. fix: show newest Blender gallery results first",
+          "branch": "main",
+          "time": "2026-09-28T03:20:10Z",
+          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36373321765"
+        },
+        {
           "id": 36370986979,
           "title": "ci: include SPH point diagnostics in Pages gallery",
           "status": "completed",
@@ -131,16 +141,6 @@
           "branch": "main",
           "time": "2026-09-28T02:21:28Z",
           "url": "https://github.com/2rwa/tmp-blender/actions/runs/36369506487"
-        },
-        {
-          "id": 36367843695,
-          "title": "Pages gallery",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 13 of Pages gallery.",
-          "branch": null,
-          "time": "2026-09-28T01:55:46Z",
-          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36367843695"
         }
       ]
     },
@@ -277,5 +277,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-28T02:57:32Z"
+  "updated_at": "2026-09-28T03:27:34Z"
 }
