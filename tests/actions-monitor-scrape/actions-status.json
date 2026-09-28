@@ -103,11 +103,21 @@
       "actions_url": "https://github.com/2rwa/tmp-blender/actions",
       "runs": [
         {
+          "id": 36383661119,
+          "title": "Pages gallery",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 25 of Pages gallery.",
+          "branch": null,
+          "time": "2026-09-28T05:50:40Z",
+          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36383661119"
+        },
+        {
           "id": 36383409140,
           "title": "test: launch five burst-like elastic SPH simulations",
-          "status": "in_progress",
-          "conclusion": null,
-          "status_label": "currently running:  Run 1 of SPH elastic burst pack 5. test: launch five burst-like elastic SPH simulations",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 1 of SPH elastic burst pack 5. test: launch five burst-like elastic SPH simulations",
           "branch": "main",
           "time": "2026-09-28T05:47:07Z",
           "url": "https://github.com/2rwa/tmp-blender/actions/runs/36383409140"
@@ -131,16 +141,6 @@
           "branch": "main",
           "time": "2026-09-28T05:33:43Z",
           "url": "https://github.com/2rwa/tmp-blender/actions/runs/36382441551"
-        },
-        {
-          "id": 36381519052,
-          "title": "Pages gallery",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 23 of Pages gallery.",
-          "branch": null,
-          "time": "2026-09-28T05:20:54Z",
-          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36381519052"
         }
       ]
     },
@@ -277,5 +277,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-28T05:50:17Z"
+  "updated_at": "2026-09-28T05:57:51Z"
 }
