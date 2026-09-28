@@ -105,9 +105,9 @@
         {
           "id": 36407087514,
           "title": "feat: add audio-reactive Blender music visualizer",
-          "status": "in_progress",
-          "conclusion": null,
-          "status_label": "currently running:  Run 70 of Blender experiment. feat: add audio-reactive Blender music visualizer",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 70 of Blender experiment. feat: add audio-reactive Blender music visualizer",
           "branch": "main",
           "time": "2026-09-28T10:00:49Z",
           "url": "https://github.com/2rwa/tmp-blender/actions/runs/36407087514"
@@ -152,9 +152,9 @@
         {
           "id": 36404952930,
           "title": "chore: rerun impact tearing batch with 120 minute timeout",
-          "status": "in_progress",
-          "conclusion": null,
-          "status_label": "currently running:  Run 2 of Blender 5.2 impact tearing batch. chore: rerun impact tearing batch with 120 minute timeout",
+          "status": "completed",
+          "conclusion": "failure",
+          "status_label": "failed:  Run 2 of Blender 5.2 impact tearing batch. chore: rerun impact tearing batch with 120 minute timeout",
           "branch": "main",
           "time": "2026-09-28T09:40:04Z",
           "url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions/runs/36404952930"
@@ -277,5 +277,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-28T10:01:01Z"
+  "updated_at": "2026-09-28T10:25:41Z"
 }
