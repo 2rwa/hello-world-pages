@@ -103,6 +103,16 @@
       "actions_url": "https://github.com/2rwa/tmp-blender/actions",
       "runs": [
         {
+          "id": 36407087514,
+          "title": "feat: add audio-reactive Blender music visualizer",
+          "status": "in_progress",
+          "conclusion": null,
+          "status_label": "currently running:  Run 70 of Blender experiment. feat: add audio-reactive Blender music visualizer",
+          "branch": "main",
+          "time": "2026-09-28T10:00:49Z",
+          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36407087514"
+        },
+        {
           "id": 36405742419,
           "title": "Add files via upload",
           "status": "completed",
@@ -131,16 +141,6 @@
           "branch": null,
           "time": "2026-09-28T06:40:54Z",
           "url": "https://github.com/2rwa/tmp-blender/actions/runs/36387672436"
-        },
-        {
-          "id": 36387052679,
-          "title": "ci: include fracture pack in Pages gallery",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 26 of Pages gallery. ci: include fracture pack in Pages gallery",
-          "branch": "main",
-          "time": "2026-09-28T06:33:19Z",
-          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36387052679"
         }
       ]
     },
@@ -277,5 +277,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-28T09:52:01Z"
+  "updated_at": "2026-09-28T10:01:01Z"
 }
