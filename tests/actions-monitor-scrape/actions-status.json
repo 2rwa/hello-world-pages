@@ -152,9 +152,9 @@
         {
           "id": 36472219772,
           "title": "feat: add long wide-view 10-case cloth tearing batch",
-          "status": "in_progress",
-          "conclusion": null,
-          "status_label": "currently running:  Run 9 of Blender 5.2 impact tearing batch. feat: add long wide-view 10-case cloth tearing batch",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 9 of Blender 5.2 impact tearing batch. feat: add long wide-view 10-case cloth tearing batch",
           "branch": "main",
           "time": "2026-09-28T19:26:12Z",
           "url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions/runs/36472219772"
@@ -277,5 +277,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-28T20:22:36Z"
+  "updated_at": "2026-09-28T20:46:55Z"
 }
