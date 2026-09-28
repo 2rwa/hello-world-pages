@@ -1,2 +1,2 @@
-triggered-at: 2026-09-28T02:30:08.039Z
-reason: fix collector regex quoting and preflight
+triggered-at: 2026-09-28T02:31:34.742Z
+reason: fix anchor word-boundary regex

@@ -105,7 +105,7 @@ def extract_row(doc: str, match) -> str:
 
 def extract_anchor(row: str, run_id: str, repo: str):
     pattern = re.compile(
-        rf"<a\\b([^>]*)href=['\"]/{re.escape(OWNER)}/{re.escape(repo)}/actions/runs/{re.escape(run_id)}[^'\"]*['\"]([^>]*)>(.*?)</a>",
+        rf"<a\b([^>]*)href=['\"]/{re.escape(OWNER)}/{re.escape(repo)}/actions/runs/{re.escape(run_id)}[^'\"]*['\"]([^>]*)>(.*?)</a>",
         re.I | re.S,
     )
     m = pattern.search(row)
