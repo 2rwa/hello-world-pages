@@ -103,44 +103,44 @@
       "actions_url": "https://github.com/2rwa/tmp-blender/actions",
       "runs": [
         {
-          "id": 36383661119,
+          "id": 36387672436,
           "title": "Pages gallery",
           "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 25 of Pages gallery.",
+          "conclusion": "skipped",
+          "status_label": "skipped:  Run 27 of Pages gallery.",
           "branch": null,
-          "time": "2026-09-28T05:50:40Z",
-          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36383661119"
+          "time": "2026-09-28T06:40:54Z",
+          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36387672436"
         },
         {
-          "id": 36383409140,
-          "title": "test: launch five burst-like elastic SPH simulations",
+          "id": 36387052679,
+          "title": "ci: include fracture pack in Pages gallery",
           "status": "completed",
           "conclusion": "success",
-          "status_label": "completed successfully:  Run 1 of SPH elastic burst pack 5. test: launch five burst-like elastic SPH simulations",
+          "status_label": "completed successfully:  Run 26 of Pages gallery. ci: include fracture pack in Pages gallery",
           "branch": "main",
-          "time": "2026-09-28T05:47:07Z",
-          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36383409140"
+          "time": "2026-09-28T06:33:19Z",
+          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36387052679"
         },
         {
-          "id": 36383359805,
-          "title": "ci: include elastic burst pack in Pages gallery",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 24 of Pages gallery. ci: include elastic burst pack in Pages gallery",
+          "id": 36387047879,
+          "title": "fix: use GenCase XML path for fracture postprocessing",
+          "status": "in_progress",
+          "conclusion": null,
+          "status_label": "currently running:  Run 3 of SPH fracture pack 5. fix: use GenCase XML path for fracture postprocessing",
           "branch": "main",
-          "time": "2026-09-28T05:46:26Z",
-          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36383359805"
+          "time": "2026-09-28T06:33:15Z",
+          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36387047879"
         },
         {
-          "id": 36382441551,
-          "title": "docs: consolidate SPH findings and add handoff",
+          "id": 36385028283,
+          "title": "fix: build SoliDualSPHysics CPU tools in Actions",
           "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 68 of Blender experiment. docs: consolidate SPH findings and add handoff",
+          "conclusion": "failure",
+          "status_label": "failed:  Run 2 of SPH fracture pack 5. fix: build SoliDualSPHysics CPU tools in Actions",
           "branch": "main",
-          "time": "2026-09-28T05:33:43Z",
-          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36382441551"
+          "time": "2026-09-28T06:09:02Z",
+          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36385028283"
         }
       ]
     },
@@ -277,5 +277,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-28T05:57:51Z"
+  "updated_at": "2026-09-28T06:48:11Z"
 }
