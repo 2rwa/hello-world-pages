@@ -1,2 +1,2 @@
-triggered-at: 2026-09-28T02:31:34.742Z
-reason: fix anchor word-boundary regex
+triggered-at: 2026-09-28T02:32:33.989Z
+reason: support currently running aria-label

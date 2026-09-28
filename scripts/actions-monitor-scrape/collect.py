@@ -88,7 +88,7 @@ def status_from_label(label: str):
         return "completed", "cancelled"
     if low.startswith("skipped:"):
         return "completed", "skipped"
-    if low.startswith(("in progress:", "in_progress:", "running:")):
+    if low.startswith(("in progress:", "currently running:", "in_progress:", "running:")):
         return "in_progress", None
     if low.startswith(("queued:", "waiting:", "pending:", "requested:")):
         return "queued", None
