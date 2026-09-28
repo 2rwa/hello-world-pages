@@ -103,6 +103,16 @@
       "actions_url": "https://github.com/2rwa/tmp-blender/actions",
       "runs": [
         {
+          "id": 36390316984,
+          "title": "Pages gallery",
+          "status": "completed",
+          "conclusion": "skipped",
+          "status_label": "skipped:  Run 28 of Pages gallery.",
+          "branch": null,
+          "time": "2026-09-28T07:11:37Z",
+          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36390316984"
+        },
+        {
           "id": 36387672436,
           "title": "Pages gallery",
           "status": "completed",
@@ -125,22 +135,12 @@
         {
           "id": 36387047879,
           "title": "fix: use GenCase XML path for fracture postprocessing",
-          "status": "in_progress",
-          "conclusion": null,
-          "status_label": "currently running:  Run 3 of SPH fracture pack 5. fix: use GenCase XML path for fracture postprocessing",
+          "status": "completed",
+          "conclusion": "failure",
+          "status_label": "failed:  Run 3 of SPH fracture pack 5. fix: use GenCase XML path for fracture postprocessing",
           "branch": "main",
           "time": "2026-09-28T06:33:15Z",
           "url": "https://github.com/2rwa/tmp-blender/actions/runs/36387047879"
-        },
-        {
-          "id": 36385028283,
-          "title": "fix: build SoliDualSPHysics CPU tools in Actions",
-          "status": "completed",
-          "conclusion": "failure",
-          "status_label": "failed:  Run 2 of SPH fracture pack 5. fix: build SoliDualSPHysics CPU tools in Actions",
-          "branch": "main",
-          "time": "2026-09-28T06:09:02Z",
-          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36385028283"
         }
       ]
     },
@@ -150,44 +150,44 @@
       "actions_url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions",
       "runs": [
         {
-          "id": 36357349545,
-          "title": "fix: target Blender 5.2 cloth tearing socket names",
+          "id": 36390192047,
+          "title": "feat: sort gallery newest first and disable autoplay",
           "status": "completed",
           "conclusion": "success",
-          "status_label": "completed successfully:  Run 18 of Blender experiment. fix: target Blender 5.2 cloth tearing socket names",
+          "status_label": "completed successfully:  Run 21 of Blender experiment. feat: sort gallery newest first and disable autoplay",
           "branch": "main",
-          "time": "2026-09-27T23:02:49Z",
-          "url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions/runs/36357349545"
+          "time": "2026-09-28T07:10:18Z",
+          "url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions/runs/36390192047"
         },
         {
-          "id": 36357349539,
-          "title": "fix: target Blender 5.2 cloth tearing socket names",
-          "status": "completed",
-          "conclusion": "failure",
-          "status_label": "failed:  Run 3 of Blender 5.2 tearing experiment. fix: target Blender 5.2 cloth tearing socket names",
-          "branch": "main",
-          "time": "2026-09-27T23:02:49Z",
-          "url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions/runs/36357349539"
-        },
-        {
-          "id": 36357267678,
-          "title": "fix: use Blender 5.2 geometry-node modifier API",
+          "id": 36388756770,
+          "title": "fix: calibrate tearing blend-size validation",
           "status": "completed",
           "conclusion": "success",
-          "status_label": "completed successfully:  Run 17 of Blender experiment. fix: use Blender 5.2 geometry-node modifier API",
+          "status_label": "completed successfully:  Run 20 of Blender experiment. fix: calibrate tearing blend-size validation",
           "branch": "main",
-          "time": "2026-09-27T23:01:25Z",
-          "url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions/runs/36357267678"
+          "time": "2026-09-28T06:53:55Z",
+          "url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions/runs/36388756770"
         },
         {
-          "id": 36357267625,
-          "title": "fix: use Blender 5.2 geometry-node modifier API",
+          "id": 36388756717,
+          "title": "fix: calibrate tearing blend-size validation",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 5 of Blender 5.2 tearing experiment. fix: calibrate tearing blend-size validation",
+          "branch": "main",
+          "time": "2026-09-28T06:53:55Z",
+          "url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions/runs/36388756717"
+        },
+        {
+          "id": 36388550367,
+          "title": "fix: accept compact tearing video and record run 3",
           "status": "completed",
           "conclusion": "failure",
-          "status_label": "failed:  Run 2 of Blender 5.2 tearing experiment. fix: use Blender 5.2 geometry-node modifier API",
+          "status_label": "failed:  Run 4 of Blender 5.2 tearing experiment. fix: accept compact tearing video and record run 3",
           "branch": "main",
-          "time": "2026-09-27T23:01:25Z",
-          "url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions/runs/36357267625"
+          "time": "2026-09-28T06:51:30Z",
+          "url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions/runs/36388550367"
         }
       ]
     },
@@ -277,5 +277,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-28T06:48:11Z"
+  "updated_at": "2026-09-28T07:16:39Z"
 }
