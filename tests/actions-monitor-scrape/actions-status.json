@@ -150,6 +150,26 @@
       "actions_url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions",
       "runs": [
         {
+          "id": 36414569236,
+          "title": "chore: trigger threshold calibration batch",
+          "status": "unknown",
+          "conclusion": null,
+          "status_label": "waiting for another serialized run to finish:  Run 6 of Blender 5.2 impact tearing batch. chore: trigger threshold calibration batch",
+          "branch": "main",
+          "time": "2026-09-28T11:15:25Z",
+          "url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions/runs/36414569236"
+        },
+        {
+          "id": 36414555350,
+          "title": "feat: add second impact tearing calibration batch",
+          "status": "in_progress",
+          "conclusion": null,
+          "status_label": "currently running:  Run 5 of Blender 5.2 impact tearing batch. feat: add second impact tearing calibration batch",
+          "branch": "main",
+          "time": "2026-09-28T11:15:18Z",
+          "url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions/runs/36414555350"
+        },
+        {
           "id": 36411738548,
           "title": "fix: preserve publish metadata across result commit step",
           "status": "completed",
@@ -168,26 +188,6 @@
           "branch": "main",
           "time": "2026-09-28T10:46:57Z",
           "url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions/runs/36411733508"
-        },
-        {
-          "id": 36404952930,
-          "title": "chore: rerun impact tearing batch with 120 minute timeout",
-          "status": "completed",
-          "conclusion": "failure",
-          "status_label": "failed:  Run 2 of Blender 5.2 impact tearing batch. chore: rerun impact tearing batch with 120 minute timeout",
-          "branch": "main",
-          "time": "2026-09-28T09:40:04Z",
-          "url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions/runs/36404952930"
-        },
-        {
-          "id": 36395574771,
-          "title": "fix: restore full Blender 4 workflow",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 27 of Blender experiment. fix: restore full Blender 4 workflow",
-          "branch": "main",
-          "time": "2026-09-28T08:08:22Z",
-          "url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions/runs/36395574771"
         }
       ]
     },
@@ -277,5 +277,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-28T10:57:42Z"
+  "updated_at": "2026-09-28T11:19:24Z"
 }
