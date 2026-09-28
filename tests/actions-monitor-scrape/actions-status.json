@@ -150,6 +150,16 @@
       "actions_url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions",
       "runs": [
         {
+          "id": 36457979035,
+          "title": "feat: queue overnight 10-case cloth tearing sweep",
+          "status": "in_progress",
+          "conclusion": null,
+          "status_label": "currently running:  Run 7 of Blender 5.2 impact tearing batch. feat: queue overnight 10-case cloth tearing sweep",
+          "branch": "main",
+          "time": "2026-09-28T17:25:09Z",
+          "url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions/runs/36457979035"
+        },
+        {
           "id": 36414569236,
           "title": "chore: trigger threshold calibration batch",
           "status": "completed",
@@ -178,16 +188,6 @@
           "branch": "main",
           "time": "2026-09-28T10:47:00Z",
           "url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions/runs/36411738548"
-        },
-        {
-          "id": 36411733508,
-          "title": "chore: trigger impact batch after publish fix",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 3 of Blender 5.2 impact tearing batch. chore: trigger impact batch after publish fix",
-          "branch": "main",
-          "time": "2026-09-28T10:46:57Z",
-          "url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions/runs/36411733508"
         }
       ]
     },
@@ -277,5 +277,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-28T12:00:30Z"
+  "updated_at": "2026-09-28T17:31:18Z"
 }
