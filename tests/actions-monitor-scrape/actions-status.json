@@ -103,44 +103,44 @@
       "actions_url": "https://github.com/2rwa/tmp-blender/actions",
       "runs": [
         {
-          "id": 36459133941,
-          "title": "ci: publish overnight fracture sweep to Pages",
+          "id": 36463442520,
+          "title": "Pages gallery",
           "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 29 of Pages gallery. ci: publish overnight fracture sweep to Pages",
-          "branch": "main",
-          "time": "2026-09-28T17:34:54Z",
-          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36459133941"
+          "conclusion": "skipped",
+          "status_label": "skipped:  Run 33 of Pages gallery.",
+          "branch": null,
+          "time": "2026-09-28T18:11:31Z",
+          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36463442520"
         },
         {
-          "id": 36459054831,
-          "title": "test: run ten fracture probes with 180 minute limits",
-          "status": "unknown",
-          "conclusion": null,
-          "status_label": "waiting for another serialized run to finish:  Run 6 of SPH fracture overnight sweep 10. test: run ten fracture probes with 180 minute limits",
-          "branch": "main",
-          "time": "2026-09-28T17:34:14Z",
-          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36459054831"
-        },
-        {
-          "id": 36459022737,
-          "title": "test: expand fracture sweep to ten parameter cases",
+          "id": 36463327787,
+          "title": "Pages gallery",
           "status": "completed",
-          "conclusion": "cancelled",
-          "status_label": "cancelled:  Run 5 of SPH fracture overnight sweep 10. test: expand fracture sweep to ten parameter cases",
-          "branch": "main",
-          "time": "2026-09-28T17:33:58Z",
-          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36459022737"
+          "conclusion": "skipped",
+          "status_label": "skipped:  Run 32 of Pages gallery.",
+          "branch": null,
+          "time": "2026-09-28T18:10:32Z",
+          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36463327787"
         },
         {
-          "id": 36458993989,
-          "title": "fix: parse DSPartVTK POLYDATA output directly",
+          "id": 36463320360,
+          "title": "ci: supersede broken fracture sweep runs",
           "status": "in_progress",
           "conclusion": null,
-          "status_label": "currently running:  Run 4 of SPH fracture overnight sweep 10. fix: parse DSPartVTK POLYDATA output directly",
+          "status_label": "currently running:  Run 9 of SPH fracture overnight sweep 10. ci: supersede broken fracture sweep runs",
           "branch": "main",
-          "time": "2026-09-28T17:33:44Z",
-          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36458993989"
+          "time": "2026-09-28T18:10:28Z",
+          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36463320360"
+        },
+        {
+          "id": 36463260140,
+          "title": "Pages gallery",
+          "status": "completed",
+          "conclusion": "skipped",
+          "status_label": "skipped:  Run 31 of Pages gallery.",
+          "branch": null,
+          "time": "2026-09-28T18:09:58Z",
+          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36463260140"
         }
       ]
     },
@@ -150,11 +150,21 @@
       "actions_url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions",
       "runs": [
         {
+          "id": 36463210144,
+          "title": "fix: allow compact video for no-contact cloth control",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 8 of Blender 5.2 impact tearing batch. fix: allow compact video for no-contact cloth control",
+          "branch": "main",
+          "time": "2026-09-28T18:09:31Z",
+          "url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions/runs/36463210144"
+        },
+        {
           "id": 36457979035,
           "title": "feat: queue overnight 10-case cloth tearing sweep",
-          "status": "in_progress",
-          "conclusion": null,
-          "status_label": "currently running:  Run 7 of Blender 5.2 impact tearing batch. feat: queue overnight 10-case cloth tearing sweep",
+          "status": "completed",
+          "conclusion": "failure",
+          "status_label": "failed:  Run 7 of Blender 5.2 impact tearing batch. feat: queue overnight 10-case cloth tearing sweep",
           "branch": "main",
           "time": "2026-09-28T17:25:09Z",
           "url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions/runs/36457979035"
@@ -178,16 +188,6 @@
           "branch": "main",
           "time": "2026-09-28T11:15:18Z",
           "url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions/runs/36414555350"
-        },
-        {
-          "id": 36411738548,
-          "title": "fix: preserve publish metadata across result commit step",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 4 of Blender 5.2 impact tearing batch. fix: preserve publish metadata across result commit step",
-          "branch": "main",
-          "time": "2026-09-28T10:47:00Z",
-          "url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions/runs/36411738548"
         }
       ]
     },
@@ -277,5 +277,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-28T17:43:26Z"
+  "updated_at": "2026-09-28T18:27:03Z"
 }
