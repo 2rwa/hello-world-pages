@@ -103,6 +103,36 @@
       "actions_url": "https://github.com/2rwa/tmp-blender/actions",
       "runs": [
         {
+          "id": 36375172337,
+          "title": "Pages gallery",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 17 of Pages gallery.",
+          "branch": null,
+          "time": "2026-09-28T03:48:47Z",
+          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36375172337"
+        },
+        {
+          "id": 36374953522,
+          "title": "test: launch five lightweight SPH sample simulations",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 16 of Pages gallery. test: launch five lightweight SPH sample simulations",
+          "branch": "main",
+          "time": "2026-09-28T03:45:18Z",
+          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36374953522"
+        },
+        {
+          "id": 36374953517,
+          "title": "test: launch five lightweight SPH sample simulations",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 1 of SPH sample pack 5. test: launch five lightweight SPH sample simulations",
+          "branch": "main",
+          "time": "2026-09-28T03:45:18Z",
+          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36374953517"
+        },
+        {
           "id": 36373321765,
           "title": "fix: show newest Blender gallery results first",
           "status": "completed",
@@ -111,36 +141,6 @@
           "branch": "main",
           "time": "2026-09-28T03:20:10Z",
           "url": "https://github.com/2rwa/tmp-blender/actions/runs/36373321765"
-        },
-        {
-          "id": 36370986979,
-          "title": "ci: include SPH point diagnostics in Pages gallery",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 14 of Pages gallery. ci: include SPH point diagnostics in Pages gallery",
-          "branch": "main",
-          "time": "2026-09-28T02:44:40Z",
-          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36370986979"
-        },
-        {
-          "id": 36369860412,
-          "title": "fix: realize SPH diagnostic instances before validation",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 2 of SPH point diagnostics. fix: realize SPH diagnostic instances before validation",
-          "branch": "main",
-          "time": "2026-09-28T02:26:59Z",
-          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36369860412"
-        },
-        {
-          "id": 36369506487,
-          "title": "ci: launch SPH velocity and acceleration diagnostics",
-          "status": "completed",
-          "conclusion": "failure",
-          "status_label": "failed:  Run 1 of SPH point diagnostics. ci: launch SPH velocity and acceleration diagnostics",
-          "branch": "main",
-          "time": "2026-09-28T02:21:28Z",
-          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36369506487"
         }
       ]
     },
@@ -277,5 +277,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-28T03:27:34Z"
+  "updated_at": "2026-09-28T03:50:23Z"
 }
