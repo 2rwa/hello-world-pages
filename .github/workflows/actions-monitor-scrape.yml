@@ -10,6 +10,8 @@ on:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 concurrency:
   group: actions-monitor-html-scrape
@@ -19,6 +21,10 @@ jobs:
   collect:
     runs-on: ubuntu-latest
     timeout-minutes: 4
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -38,10 +44,22 @@ jobs:
           FILE="tests/actions-monitor-scrape/actions-status.json"
           if git diff --quiet -- "$FILE"; then
             echo "No status change"
-            exit 0
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add "$FILE"
+            git commit -m "Update scraped Actions status"
+            git push origin HEAD:main
           fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add "$FILE"
-          git commit -m "Update scraped Actions status"
-          git push origin HEAD:main
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: "."
+
+      - name: Deploy Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
