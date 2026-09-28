@@ -4,6 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0b0f14">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Actions Monitor">
+<link rel="manifest" href="./manifest.webmanifest">
 <title>GitHub Actions Monitor</title>
 <style>
 :root{
@@ -13,8 +18,8 @@
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
 body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
 a{color:inherit}.wrap{width:min(1100px,100%);margin:auto;padding:16px}.header{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;margin-bottom:14px}
-h1{font-size:22px;margin:0}.sub{color:var(--muted);font-size:13px;margin-top:4px}.toolbar{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}.toolbar button,.toolbar input{font:inherit;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--text);padding:9px 11px}.toolbar button{cursor:pointer}.toolbar button.active{outline:2px solid var(--run)}.toolbar input{min-width:180px;flex:1}.summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:12px 0}.metric{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px}.metric strong{display:block;font-size:22px}.metric span{font-size:12px;color:var(--muted)}.notice{background:#141a24;border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:12px;color:var(--muted);margin:10px 0}.repo{border:1px solid var(--line);border-radius:14px;background:var(--panel);margin:10px 0;overflow:hidden}.repo-head{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:11px 12px;background:var(--panel2)}.repo-name{font-weight:700}.repo-meta{font-size:12px;color:var(--muted)}.runs{display:grid}.run{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 12px;border-top:1px solid var(--line);text-decoration:none}.run:first-child{border-top:0}.run:hover{background:#182131}.status-dot{width:12px;height:12px;border-radius:50%;box-shadow:0 0 0 3px #ffffff10}.status-dot.running{background:var(--run);animation:pulse 1.2s infinite}.status-dot.queued{background:var(--wait)}.status-dot.success{background:var(--ok)}.status-dot.failure{background:var(--bad)}.status-dot.cancelled,.status-dot.other{background:var(--cancel)}@keyframes pulse{50%{opacity:.35}}.run-title{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.run-sub{margin-top:3px;font-size:12px;color:var(--muted);display:flex;gap:8px;flex-wrap:wrap}.badge{border:1px solid var(--line);padding:3px 7px;border-radius:999px;font-size:11px;color:var(--muted)}.badge.running{color:#9ecbff;border-color:#315f92}.badge.queued{color:#f2cc60;border-color:#6d5720}.badge.failure{color:#ff9b95;border-color:#7b2d29}.badge.success{color:#79d889;border-color:#275f32}.empty{padding:26px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:12px}.footer{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:16px 0 6px;color:var(--muted);font-size:12px}.hidden{display:none!important}
-@media(max-width:700px){.wrap{padding:12px}.summary{grid-template-columns:repeat(2,minmax(0,1fr))}.run{grid-template-columns:22px minmax(0,1fr)}.run>.badge{display:none}.repo-head{align-items:flex-start}.repo-meta{text-align:right}}
+h1{font-size:22px;margin:0}.sub{color:var(--muted);font-size:13px;margin-top:4px}.toolbar{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}.toolbar button,.toolbar input{font:inherit;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--text);padding:9px 11px}.toolbar button{cursor:pointer}.toolbar button.active{outline:2px solid var(--run)}.toolbar input{min-width:180px;flex:1}.summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:12px 0}.metric{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px}.metric strong{display:block;font-size:22px}.metric span{font-size:12px;color:var(--muted)}.notice{background:#141a24;border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:12px;color:var(--muted);margin:10px 0}.devicebar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:10px 0}.device-status{display:flex;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--muted)}.device-status strong{color:var(--text)}.device-actions{display:flex;gap:8px;flex-wrap:wrap}.device-actions button{font:inherit;border:1px solid var(--line);border-radius:10px;background:var(--panel2);color:var(--text);padding:9px 11px;cursor:pointer}.device-actions button.on{border-color:#315f92;color:#9ecbff}.device-actions button:disabled{opacity:.55;cursor:not-allowed}.toast-area{position:fixed;right:max(12px,env(safe-area-inset-right));bottom:max(12px,env(safe-area-inset-bottom));z-index:20;display:grid;gap:8px;width:min(390px,calc(100vw - 24px));pointer-events:none}.toast{background:#172131;border:1px solid var(--line);border-radius:12px;padding:11px 12px;box-shadow:0 12px 30px #0008;font-size:13px;animation:toast-in .18s ease-out}.toast.success{border-color:#275f32}.toast.failure{border-color:#7b2d29}@keyframes toast-in{from{opacity:0;transform:translateY(8px)}}.repo{border:1px solid var(--line);border-radius:14px;background:var(--panel);margin:10px 0;overflow:hidden}.repo-head{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:11px 12px;background:var(--panel2)}.repo-name{font-weight:700}.repo-meta{font-size:12px;color:var(--muted)}.runs{display:grid}.run{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 12px;border-top:1px solid var(--line);text-decoration:none}.run:first-child{border-top:0}.run:hover{background:#182131}.status-dot{width:12px;height:12px;border-radius:50%;box-shadow:0 0 0 3px #ffffff10}.status-dot.running{background:var(--run);animation:pulse 1.2s infinite}.status-dot.queued{background:var(--wait)}.status-dot.success{background:var(--ok)}.status-dot.failure{background:var(--bad)}.status-dot.cancelled,.status-dot.other{background:var(--cancel)}@keyframes pulse{50%{opacity:.35}}.run-title{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.run-sub{margin-top:3px;font-size:12px;color:var(--muted);display:flex;gap:8px;flex-wrap:wrap}.badge{border:1px solid var(--line);padding:3px 7px;border-radius:999px;font-size:11px;color:var(--muted)}.badge.running{color:#9ecbff;border-color:#315f92}.badge.queued{color:#f2cc60;border-color:#6d5720}.badge.failure{color:#ff9b95;border-color:#7b2d29}.badge.success{color:#79d889;border-color:#275f32}.empty{padding:26px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:12px}.footer{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:16px 0 6px;color:var(--muted);font-size:12px}.hidden{display:none!important}
+@media(max-width:700px){.wrap{padding:12px}.devicebar{align-items:stretch}.device-actions{display:grid;grid-template-columns:1fr 1fr;width:100%}.device-actions button{min-height:44px}.summary{grid-template-columns:repeat(2,minmax(0,1fr))}.run{grid-template-columns:22px minmax(0,1fr)}.run>.badge{display:none}.repo-head{align-items:flex-start}.repo-meta{text-align:right}}
 </style>
 </head>
 <body>
@@ -25,6 +30,11 @@ h1{font-size:22px;margin:0}.sub{color:var(--muted);font-size:13px;margin-top:4px
   </div>
 
   <div class="notice">テスト版。GitHub Pages 上に認証情報を置かないため、現在は公開リポジトリのみ対象です。GitHub API の未認証レート制限を避けるため、最初は最近更新された20 repoを読み込み、追加分は手動で読み込みます。</div>
+
+  <div class="devicebar">
+    <div class="device-status"><span>Wake Lock: <strong id="wakeState">確認中</strong></span><span>通知: <strong id="notifyState">確認中</strong></span></div>
+    <div class="device-actions"><button id="wakeToggle" class="on">スリープ防止: ON</button><button id="notifyBtn">通知を有効化</button></div>
+  </div>
 
   <div class="summary">
     <div class="metric"><strong id="mRunning">0</strong><span>Running</span></div>
@@ -46,6 +56,7 @@ h1{font-size:22px;margin:0}.sub{color:var(--muted);font-size:13px;margin-top:4px
   <section id="content"><div class="empty">読み込み中...</div></section>
   <div class="footer"><span id="scanState"></span><span>Active runs は30秒ごとに自動更新</span></div>
 </main>
+<div id="toastArea" class="toast-area" aria-live="polite" aria-atomic="true"></div>
 <script>
 (() => {
   'use strict';
@@ -55,7 +66,7 @@ h1{font-size:22px;margin:0}.sub{color:var(--muted);font-size:13px;margin-top:4px
   const RUNS_PER_REPO=5;
   const ACTIVE_POLL_MS=30000;
   const CACHE_KEY='actions-monitor-cache-v1';
-  const state={repos:[],loaded:0,runs:new Map(),filter:'active',query:'',rate:null,lastUpdated:null,pollTimer:null};
+  const state={repos:[],loaded:0,runs:new Map(),filter:'active',query:'',rate:null,lastUpdated:null,pollTimer:null,wakeSentinel:null,keepAwake:true,swRegistration:null};
   const el=id=>document.getElementById(id);
 
   function statusOf(run){
@@ -67,6 +78,84 @@ h1{font-size:22px;margin:0}.sub{color:var(--muted);font-size:13px;margin-top:4px
     return 'other';
   }
   const isActive=s=>s==='running'||s==='queued';
+  const isTerminal=s=>s==='success'||s==='failure'||s==='cancelled'||s==='other';
+  function toast(message,kind=''){
+    const node=document.createElement('div');node.className='toast '+kind;node.textContent=message;el('toastArea').appendChild(node);
+    setTimeout(()=>node.remove(),6500);
+  }
+  function updateDeviceUi(){
+    const supported='wakeLock' in navigator;
+    const held=!!state.wakeSentinel&&!state.wakeSentinel.released;
+    el('wakeState').textContent=!supported?'非対応':held?'保持中':state.keepAwake?'待機中':'OFF';
+    el('wakeToggle').textContent=state.keepAwake?'スリープ防止: ON':'スリープ防止: OFF';
+    el('wakeToggle').classList.toggle('on',state.keepAwake);
+    const notif=('Notification' in window)?Notification.permission:'unsupported';
+    el('notifyState').textContent=notif==='granted'?'許可済み':notif==='denied'?'拒否':notif==='default'?'未許可':'非対応';
+    el('notifyBtn').textContent=notif==='granted'?'通知: ON':notif==='denied'?'通知: ブロック中':'通知を有効化';
+    el('notifyBtn').classList.toggle('on',notif==='granted');
+    el('notifyBtn').disabled=notif==='denied';
+  }
+  async function requestWakeLock(showError=false){
+    if(!state.keepAwake||document.visibilityState!=='visible'){updateDeviceUi();return}
+    if(!('wakeLock' in navigator)){updateDeviceUi();if(showError)toast('このブラウザは Screen Wake Lock に対応していません');return}
+    try{
+      if(state.wakeSentinel&&!state.wakeSentinel.released){updateDeviceUi();return}
+      const sentinel=await navigator.wakeLock.request('screen');state.wakeSentinel=sentinel;
+      sentinel.addEventListener('release',()=>{if(state.wakeSentinel===sentinel)state.wakeSentinel=null;updateDeviceUi()});
+      updateDeviceUi();
+    }catch(err){state.wakeSentinel=null;updateDeviceUi();if(showError)toast('Wake Lock を取得できません: '+err.message,'failure')}
+  }
+  async function toggleWake(){
+    if(state.keepAwake){
+      state.keepAwake=false;
+      if(state.wakeSentinel&&!state.wakeSentinel.released)await state.wakeSentinel.release();
+      state.wakeSentinel=null;updateDeviceUi();
+    }else{
+      state.keepAwake=true;updateDeviceUi();await requestWakeLock(true);
+    }
+  }
+  async function ensureServiceWorker(){
+    if(state.swRegistration)return state.swRegistration;
+    if(!('serviceWorker' in navigator))return null;
+    state.swRegistration=await navigator.serviceWorker.register('./sw.js',{scope:'./'});
+    return state.swRegistration;
+  }
+  async function enableNotifications(){
+    if(!('Notification' in window)){toast('このブラウザでは通知APIを利用できません。iPhoneではホーム画面に追加して開いてください。','failure');updateDeviceUi();return}
+    try{
+      const permission=await Notification.requestPermission();
+      updateDeviceUi();
+      if(permission!=='granted'){toast('通知は許可されませんでした');return}
+      const reg=await ensureServiceWorker();
+      if(reg)await reg.showNotification('Actions Monitor',{body:'Actions完了通知を有効にしました',tag:'actions-monitor-enabled'});
+      toast('Actions完了通知を有効にしました','success');
+    }catch(err){toast('通知の有効化に失敗: '+err.message,'failure');updateDeviceUi()}
+  }
+  async function notifyCompleted(repoName,run,status){
+    const label=status==='success'?'成功':status==='failure'?'失敗':status==='cancelled'?'キャンセル':'完了';
+    const workflow=run.name||run.display_title||'workflow';
+    const message=`${repoName} / ${workflow} #${run.run_number||''} → ${label}`;
+    toast(message,status==='success'?'success':status==='failure'?'failure':'');
+    if(!('Notification' in window)||Notification.permission!=='granted')return;
+    try{
+      const reg=await ensureServiceWorker();
+      if(reg)await reg.showNotification(`Actions ${label}: ${repoName}`,{
+        body:`${workflow} #${run.run_number||''} · ${run.head_branch||'-'}`,
+        tag:`actions-run-${run.id}`,
+        renotify:false,
+        data:{url:run.html_url||'./'}
+      });
+    }catch(err){console.warn('notification failed',err)}
+  }
+  function detectCompletions(repoName,previous,next){
+    if(!Array.isArray(previous)||!Array.isArray(next))return;
+    const before=new Map(previous.map(run=>[String(run.id),statusOf(run)]));
+    for(const run of next){
+      const oldStatus=before.get(String(run.id));if(!oldStatus)continue;
+      const newStatus=statusOf(run);
+      if(isActive(oldStatus)&&isTerminal(newStatus))void notifyCompleted(repoName,run,newStatus);
+    }
+  }
   function ago(iso){const d=(Date.now()-new Date(iso).getTime())/1000;if(d<60)return Math.max(0,Math.floor(d))+'s前';if(d<3600)return Math.floor(d/60)+'m前';if(d<86400)return Math.floor(d/3600)+'h前';return Math.floor(d/86400)+'d前'}
   function duration(run){const a=new Date(run.run_started_at||run.created_at).getTime();const b=run.updated_at?new Date(run.updated_at).getTime():Date.now();if(!Number.isFinite(a))return '';const sec=Math.max(0,Math.floor((b-a)/1000));if(sec<60)return sec+'s';const m=Math.floor(sec/60);return m<60?m+'m':Math.floor(m/60)+'h '+(m%60)+'m'}
   function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
@@ -76,7 +165,7 @@ h1{font-size:22px;margin:0}.sub{color:var(--muted);font-size:13px;margin-top:4px
   function saveCache(){try{const payload={savedAt:Date.now(),repos:state.repos.slice(0,state.loaded),runs:[...state.runs.entries()]};localStorage.setItem(CACHE_KEY,JSON.stringify(payload))}catch(_){}}
   function loadCache(){try{const raw=localStorage.getItem(CACHE_KEY);if(!raw)return;const p=JSON.parse(raw);if(!Array.isArray(p.repos)||!Array.isArray(p.runs))return;state.repos=p.repos;state.loaded=p.repos.length;state.runs=new Map(p.runs);state.lastUpdated=p.savedAt;render()}catch(_){}}
   async function loadRepos(){const repos=await api(`https://api.github.com/users/${OWNER}/repos?per_page=100&type=owner&sort=updated`);state.repos=repos.filter(r=>!r.archived).sort((a,b)=>new Date(b.updated_at)-new Date(a.updated_at));state.loaded=Math.min(INITIAL_REPOS,state.repos.length)}
-  async function fetchRuns(repo){try{const data=await api(`https://api.github.com/repos/${OWNER}/${encodeURIComponent(repo.name)}/actions/runs?per_page=${RUNS_PER_REPO}`);state.runs.set(repo.name,data.workflow_runs||[])}catch(err){state.runs.set(repo.name,{error:err.message,status:err.status||0})}}
+  async function fetchRuns(repo){try{const previous=state.runs.get(repo.name);const data=await api(`https://api.github.com/repos/${OWNER}/${encodeURIComponent(repo.name)}/actions/runs?per_page=${RUNS_PER_REPO}`);const next=data.workflow_runs||[];detectCompletions(repo.name,previous,next);state.runs.set(repo.name,next)}catch(err){state.runs.set(repo.name,{error:err.message,status:err.status||0})}}
   async function mapLimit(items,limit,fn){let i=0;const workers=Array.from({length:Math.min(limit,items.length)},async()=>{while(i<items.length){const x=items[i++];await fn(x)}});await Promise.all(workers)}
   async function scanRange(start,end){const list=state.repos.slice(start,end);el('scanState').textContent=`${start+1}-${end} / ${state.repos.length} repo を取得中...`;await mapLimit(list,4,fetchRuns);state.lastUpdated=Date.now();saveCache();render();el('scanState').textContent=`${state.loaded} / ${state.repos.length} repo 読み込み済み`}
   async function initialLoad(force=false){try{if(force){state.runs.clear();state.loaded=0}el('scanState').textContent='repository一覧を取得中...';await loadRepos();await scanRange(0,state.loaded)}catch(err){el('scanState').textContent='取得失敗: '+err.message;render()}}
@@ -98,6 +187,13 @@ h1{font-size:22px;margin:0}.sub{color:var(--muted);font-size:13px;margin-top:4px
   el('search').addEventListener('input',e=>{state.query=e.target.value.trim();render()});
   el('refresh').addEventListener('click',()=>initialLoad(true));
   el('loadMore').addEventListener('click',loadMore);
+  el('wakeToggle').addEventListener('click',toggleWake);
+  el('notifyBtn').addEventListener('click',enableNotifications);
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&state.keepAwake)void requestWakeLock(false)});
+  window.addEventListener('pageshow',()=>{if(state.keepAwake)void requestWakeLock(false)});
+  updateDeviceUi();
+  void ensureServiceWorker().catch(()=>{});
+  void requestWakeLock(false);
   loadCache();initialLoad(false);state.pollTimer=setInterval(pollActive,ACTIVE_POLL_MS);
 })();
 </script>

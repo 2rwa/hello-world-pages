@@ -1,0 +1,11 @@
+{
+  "id": "./",
+  "name": "GitHub Actions Monitor",
+  "short_name": "Actions Monitor",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0b0f14",
+  "theme_color": "#0b0f14",
+  "description": "GitHub Actions workflow runs monitor"
+}
