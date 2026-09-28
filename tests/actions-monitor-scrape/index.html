@@ -21,7 +21,7 @@
     <div id="updated" class="meta">未取得</div>
   </div>
 
-  <div class="panel sub">既存のAPI版は <a href="../actions-monitor/">こちら</a>。この版はGitHub側のHTML変更で壊れる前提です。</div>
+  <div class="panel sub">既存のAPI版は <a href="../actions-monitor/">こちら</a>。この版はGitHub側のHTML変更で壊れる前提です。 / <a href="./timeline.html">全repo時系列ビュー →</a></div>
 
   <div class="panel device">
     <div class="meta">Wake Lock: <strong id="wakeState">?</strong> / 通知: <strong id="notifyState">?</strong> / Source: HTML scrape</div>
@@ -65,6 +65,18 @@ function status(run){
 }
 function esc(v){
   return String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function timeText(value){
+  if(!value)return '時刻不明';
+  const d=new Date(value);
+  if(Number.isNaN(d.getTime()))return value;
+  const abs=new Intl.DateTimeFormat('ja-JP',{timeZone:'Asia/Tokyo',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).format(d)+' JST';
+  let sec=Math.max(0,Math.floor((Date.now()-d.getTime())/1000)),rel;
+  if(sec<60)rel=sec+'秒前';
+  else if(sec<3600)rel=Math.floor(sec/60)+'分前';
+  else if(sec<86400)rel=Math.floor(sec/3600)+'時間前';
+  else rel=Math.floor(sec/86400)+'日前';
+  return abs+' · '+rel;
 }
 function previous(){
   try{return JSON.parse(localStorage.getItem(CACHE_KEY)||'null')}catch(_){return null}
@@ -143,7 +155,7 @@ function render(){
   }else{
     el('content').innerHTML=groups.map(g=>{
       const head='<div class="repo-head"><strong>'+esc(g.repo.name)+(g.repo.stale?' · stale':'')+'</strong><a class="meta" target="_blank" rel="noopener" href="'+esc(g.repo.actions_url||g.repo.url||'#')+'">Actions ↗</a></div>';
-      const runs=g.runs.map(x=>'<a class="run" target="_blank" rel="noopener" href="'+esc(x.run.url)+'"><span class="dot '+esc(x.status)+'"></span><span><div class="run-title">'+esc(x.run.title||('Run '+x.run.id))+'</div><div class="meta">'+esc(x.run.branch||'-')+' · #'+esc(x.run.id)+'</div></span><span class="badge meta">'+esc(x.status)+'</span></a>').join('');
+      const runs=g.runs.map(x=>'<a class="run" target="_blank" rel="noopener" href="'+esc(x.run.url)+'"><span class="dot '+esc(x.status)+'"></span><span><div class="run-title">'+esc(x.run.title||('Run '+x.run.id))+'</div><div class="meta">'+esc(timeText(x.run.time))+' · '+esc(x.run.branch||'-')+' · #'+esc(x.run.id)+'</div></span><span class="badge meta">'+esc(x.status)+'</span></a>').join('');
       return '<article class="repo">'+head+runs+'</article>';
     }).join('');
   }

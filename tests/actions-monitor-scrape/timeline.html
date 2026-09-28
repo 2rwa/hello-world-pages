@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0b0f14">
+<title>Actions Timeline</title>
+<style>
+:root{--bg:#0b0f14;--panel:#121821;--panel2:#171f2a;--line:#273244;--text:#e6edf3;--muted:#8b949e;--ok:#3fb950;--bad:#f85149;--run:#58a6ff}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}a{color:inherit}.wrap{width:min(1200px,100%);margin:auto;padding:14px}h1{font-size:21px;margin:0}.sub,.meta{font-size:12px;color:var(--muted)}.head,.tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.head{justify-content:space-between}.panel{border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:10px 12px;margin:10px 0}button,input{font:inherit;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:9px;padding:9px 10px}button{cursor:pointer}button.on{border-color:var(--run);color:#9ecbff}input{flex:1;min-width:170px}.table-wrap{border:1px solid var(--line);border-radius:12px;overflow:auto;background:var(--panel)}table{border-collapse:collapse;width:100%;min-width:850px}th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}th{position:sticky;top:0;background:var(--panel2);font-size:12px;color:var(--muted);z-index:1}td{font-size:13px}.repo{font-weight:650}.title{max-width:440px}.status{font-weight:700}.status.success{color:var(--ok)}.status.failure{color:var(--bad)}.status.in_progress,.status.queued{color:var(--run)}.empty{text-align:center;padding:26px;color:var(--muted)}.footer{font-size:12px;color:var(--muted);margin:12px 0}.count{font-variant-numeric:tabular-nums}
+@media(max-width:650px){.wrap{padding:10px}.title{max-width:280px}.tools button{flex:1}.tools input{width:100%;flex-basis:100%}}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <div class="head">
+    <div><h1>Actions Timeline</h1><div class="sub">全public repoのrunを時刻降順で一本化</div></div>
+    <div id="updated" class="meta">未取得</div>
+  </div>
+
+  <div class="panel tools">
+    <a href="./">← カード表示</a>
+    <button data-filter="all" class="on">All <span id="allCount" class="count"></span></button>
+    <button data-filter="failed">Failed <span id="failedCount" class="count"></span></button>
+    <button data-filter="success">Success <span id="successCount" class="count"></span></button>
+    <input id="search" type="search" placeholder="repo / title / branch検索">
+    <button id="refresh">JSON再読込</button>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>時刻 (JST)</th><th>Status</th><th>Repo</th><th>Run</th><th>Branch</th><th>ID</th></tr></thead>
+      <tbody id="rows"><tr><td colspan="6" class="empty">読込中...</td></tr></tbody>
+    </table>
+  </div>
+  <div id="stateLine" class="footer">JSONは3分ごとに再読込</div>
+</main>
+<script>
+(()=>{
+'use strict';
+const POLL_MS=180000;
+const state={data:null,filter:'all',query:'',busy:false};
+const el=id=>document.getElementById(id);
+
+function status(run){
+  if(run.status==='completed'&&run.conclusion)return run.conclusion;
+  return run.status||'unknown';
+}
+function esc(v){
+  return String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function when(value){
+  if(!value)return {sort:0,text:'時刻不明',rel:''};
+  const d=new Date(value),ms=d.getTime();
+  if(Number.isNaN(ms))return {sort:0,text:value,rel:''};
+  const text=new Intl.DateTimeFormat('ja-JP',{timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(d)+' JST';
+  let sec=Math.max(0,Math.floor((Date.now()-ms)/1000)),rel;
+  if(sec<60)rel=sec+'秒前';
+  else if(sec<3600)rel=Math.floor(sec/60)+'分前';
+  else if(sec<86400)rel=Math.floor(sec/3600)+'時間前';
+  else rel=Math.floor(sec/86400)+'日前';
+  return {sort:ms,text,rel};
+}
+function flatten(data){
+  const out=[];
+  (data.repositories||[]).forEach(repo=>(repo.runs||[]).forEach(run=>{
+    const t=when(run.time);
+    out.push({repo:repo.name,run,status:status(run),time:t});
+  }));
+  out.sort((a,b)=>b.time.sort-a.time.sort||b.run.id-a.run.id);
+  return out;
+}
+function render(){
+  const data=state.data||{repositories:[]};
+  const all=flatten(data);
+  el('allCount').textContent='('+all.length+')';
+  el('failedCount').textContent='('+all.filter(x=>x.status==='failure').length+')';
+  el('successCount').textContent='('+all.filter(x=>x.status==='success').length+')';
+  el('updated').textContent=data.updated_at?('状態更新 '+new Date(data.updated_at).toLocaleString('ja-JP',{timeZone:'Asia/Tokyo'})+' JST'):'collector未実行';
+
+  const q=state.query.toLowerCase();
+  let rows=all;
+  if(state.filter==='failed')rows=rows.filter(x=>x.status==='failure');
+  else if(state.filter==='success')rows=rows.filter(x=>x.status==='success');
+  if(q)rows=rows.filter(x=>(x.repo+' '+(x.run.title||'')+' '+(x.run.branch||'')+' '+x.run.id).toLowerCase().includes(q));
+
+  el('rows').innerHTML=rows.length?rows.map(x=>
+    '<tr>'+
+      '<td><div>'+esc(x.time.text)+'</div><div class="meta">'+esc(x.time.rel)+'</div></td>'+
+      '<td><span class="status '+esc(x.status)+'">'+esc(x.status)+'</span></td>'+
+      '<td class="repo">'+esc(x.repo)+'</td>'+
+      '<td class="title"><a target="_blank" rel="noopener" href="'+esc(x.run.url)+'">'+esc(x.run.title||('Run '+x.run.id))+'</a></td>'+
+      '<td>'+esc(x.run.branch||'-')+'</td>'+
+      '<td>#'+esc(x.run.id)+'</td>'+
+    '</tr>'
+  ).join(''):'<tr><td colspan="6" class="empty">該当runなし</td></tr>';
+  el('stateLine').textContent=rows.length+' / '+all.length+' runs表示 · '+(data.source||'-')+' · JSONは3分ごと';
+}
+async function load(manual){
+  if(state.busy||(!manual&&document.visibilityState!=='visible'))return;
+  state.busy=true;
+  try{
+    const r=await fetch('./actions-status.json?t='+Date.now(),{cache:'no-store'});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    state.data=await r.json();
+    render();
+  }catch(err){
+    el('stateLine').textContent='JSON取得失敗: '+err.message;
+  }finally{state.busy=false}
+}
+document.querySelectorAll('[data-filter]').forEach(btn=>btn.addEventListener('click',()=>{
+  state.filter=btn.dataset.filter;
+  document.querySelectorAll('[data-filter]').forEach(x=>x.classList.toggle('on',x===btn));
+  render();
+}));
+el('search').addEventListener('input',e=>{state.query=e.target.value.trim();render()});
+el('refresh').addEventListener('click',()=>load(true));
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')load(false)});
+load(false);
+setInterval(()=>load(false),POLL_MS);
+setInterval(()=>{if(state.data)render()},60000);
+})();
+</script>
+</body>
+</html>
