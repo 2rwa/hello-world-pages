@@ -103,44 +103,44 @@
       "actions_url": "https://github.com/2rwa/sph-web-samples/actions",
       "runs": [
         {
-          "id": 36601234699,
-          "title": "fix: normalize cached PBD patch command",
+          "id": 36602524888,
+          "title": "test: probe SPH to PBD dynamic boundary coupling",
           "status": "completed",
           "conclusion": "success",
-          "status_label": "completed successfully:  Run 5 of SPlisHSPlasH PBD WASM compile probe. fix: normalize cached PBD patch command",
+          "status_label": "completed successfully:  Run 52 of SPlisHSPlasH WASM build probe. test: probe SPH to PBD dynamic boundary coupling",
           "branch": "main",
-          "time": "2026-09-29T16:55:23Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36601234699"
+          "time": "2026-09-29T17:05:57Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36602524888"
         },
         {
-          "id": 36601234687,
-          "title": "fix: normalize cached PBD patch command",
-          "status": "in_progress",
-          "conclusion": null,
-          "status_label": "currently running:  Run 129 of Test, build WASM, and deploy Pages. fix: normalize cached PBD patch command",
-          "branch": "main",
-          "time": "2026-09-29T16:55:23Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36601234687"
-        },
-        {
-          "id": 36601234627,
-          "title": "fix: normalize cached PBD patch command",
+          "id": 36602524413,
+          "title": "test: probe SPH to PBD dynamic boundary coupling",
           "status": "completed",
           "conclusion": "success",
-          "status_label": "completed successfully:  Run 50 of SPlisHSPlasH WASM build probe. fix: normalize cached PBD patch command",
+          "status_label": "completed successfully:  Run 7 of SPlisHSPlasH PBD WASM compile probe. test: probe SPH to PBD dynamic boundary coupling",
           "branch": "main",
-          "time": "2026-09-29T16:55:23Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36601234627"
+          "time": "2026-09-29T17:05:57Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36602524413"
         },
         {
-          "id": 36601026640,
-          "title": "fix: stub PBD OpenMP calls for single-thread WASM",
+          "id": 36602524376,
+          "title": "test: probe SPH to PBD dynamic boundary coupling",
           "status": "completed",
           "conclusion": "success",
-          "status_label": "completed successfully:  Run 49 of SPlisHSPlasH WASM build probe. fix: stub PBD OpenMP calls for single-thread WASM",
+          "status_label": "completed successfully:  Run 131 of Test, build WASM, and deploy Pages. test: probe SPH to PBD dynamic boundary coupling",
           "branch": "main",
-          "time": "2026-09-29T16:53:39Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36601026640"
+          "time": "2026-09-29T17:05:57Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36602524376"
+        },
+        {
+          "id": 36601840699,
+          "title": "test: run minimal PBDRigidBody WASM bridge",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 6 of SPlisHSPlasH PBD WASM compile probe. test: run minimal PBDRigidBody WASM bridge",
+          "branch": "main",
+          "time": "2026-09-29T17:00:26Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36601840699"
         }
       ]
     },
@@ -371,5 +371,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-29T16:58:44Z"
+  "updated_at": "2026-09-29T17:19:00Z"
 }
