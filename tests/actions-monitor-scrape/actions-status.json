@@ -103,6 +103,36 @@
       "actions_url": "https://github.com/2rwa/sph-web-samples/actions",
       "runs": [
         {
+          "id": 36577473065,
+          "title": "feat: add ICSPH and PF scenes to browser selector",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 91 of Test, build WASM, and deploy Pages. feat: add ICSPH and PF scenes to browser selector",
+          "branch": "main",
+          "time": "2026-09-29T13:45:30Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36577473065"
+        },
+        {
+          "id": 36577270159,
+          "title": "feat: add ICSPH and Projective Fluids generic wasm ABI",
+          "status": "completed",
+          "conclusion": "cancelled",
+          "status_label": "cancelled:  Run 90 of Test, build WASM, and deploy Pages. feat: add ICSPH and Projective Fluids generic wasm ABI",
+          "branch": "main",
+          "time": "2026-09-29T13:43:57Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36577270159"
+        },
+        {
+          "id": 36577270114,
+          "title": "feat: add ICSPH and Projective Fluids generic wasm ABI",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 24 of SPlisHSPlasH WASM build probe. feat: add ICSPH and Projective Fluids generic wasm ABI",
+          "branch": "main",
+          "time": "2026-09-29T13:43:57Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36577270114"
+        },
+        {
           "id": 36567336833,
           "title": "feat: add multi-scene SPlisHSPlasH browser",
           "status": "completed",
@@ -111,36 +141,6 @@
           "branch": "main",
           "time": "2026-09-29T12:19:24Z",
           "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36567336833"
-        },
-        {
-          "id": 36566904639,
-          "title": "feat: add DoubleDamBreak DFSPH browser regression",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 23 of SPlisHSPlasH WASM build probe. feat: add DoubleDamBreak DFSPH browser regression",
-          "branch": "main",
-          "time": "2026-09-29T12:15:22Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36566904639"
-        },
-        {
-          "id": 36566904305,
-          "title": "feat: add DoubleDamBreak DFSPH browser regression",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 88 of Test, build WASM, and deploy Pages. feat: add DoubleDamBreak DFSPH browser regression",
-          "branch": "main",
-          "time": "2026-09-29T12:15:22Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36566904305"
-        },
-        {
-          "id": 36566353914,
-          "title": "feat: run upstream DamBreakModel through generic DFSPH wasm ABI",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 87 of Test, build WASM, and deploy Pages. feat: run upstream DamBreakModel through generic DFSPH wasm ABI",
-          "branch": "main",
-          "time": "2026-09-29T12:10:17Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36566353914"
         }
       ]
     },
@@ -371,5 +371,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-29T12:34:25Z"
+  "updated_at": "2026-09-29T13:50:42Z"
 }
