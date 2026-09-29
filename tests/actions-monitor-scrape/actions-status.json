@@ -103,11 +103,31 @@
       "actions_url": "https://github.com/2rwa/sph-web-samples/actions",
       "runs": [
         {
-          "id": 36517022429,
-          "title": "feat: add interactive Salva obstacle sample",
+          "id": 36518261898,
+          "title": "feat: add particle-only reset with selectable count",
           "status": "in_progress",
           "conclusion": null,
-          "status_label": "currently running:  Run 7 of Test, build WASM, and deploy Pages. feat: add interactive Salva obstacle sample",
+          "status_label": "currently running:  Run 9 of Test, build WASM, and deploy Pages. feat: add particle-only reset with selectable count",
+          "branch": "main",
+          "time": "2026-09-29T03:41:33Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36518261898"
+        },
+        {
+          "id": 36518187475,
+          "title": "test: define particle-only reset contract",
+          "status": "completed",
+          "conclusion": "failure",
+          "status_label": "failed:  Run 8 of Test, build WASM, and deploy Pages. test: define particle-only reset contract",
+          "branch": "main",
+          "time": "2026-09-29T03:40:33Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36518187475"
+        },
+        {
+          "id": 36517022429,
+          "title": "feat: add interactive Salva obstacle sample",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 7 of Test, build WASM, and deploy Pages. feat: add interactive Salva obstacle sample",
           "branch": "main",
           "time": "2026-09-29T03:24:55Z",
           "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36517022429"
@@ -121,26 +141,6 @@
           "branch": "main",
           "time": "2026-09-29T03:21:57Z",
           "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36516802132"
-        },
-        {
-          "id": 36516273696,
-          "title": "docs: note benchmark boundary leakage behavior",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 5 of Test, build WASM, and deploy Pages. docs: note benchmark boundary leakage behavior",
-          "branch": "main",
-          "time": "2026-09-29T03:14:39Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36516273696"
-        },
-        {
-          "id": 36515470094,
-          "title": "feat: add adjustable Salva WASM benchmark",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 4 of Test, build WASM, and deploy Pages. feat: add adjustable Salva WASM benchmark",
-          "branch": "main",
-          "time": "2026-09-29T03:03:55Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36515470094"
         }
       ]
     },
@@ -371,5 +371,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-29T03:25:20Z"
+  "updated_at": "2026-09-29T03:42:29Z"
 }
