@@ -103,44 +103,44 @@
       "actions_url": "https://github.com/2rwa/sph-web-samples/actions",
       "runs": [
         {
-          "id": 36528494402,
-          "title": "fix: share explicit WebGPU faucet compute layout",
-          "status": "unknown",
-          "conclusion": null,
-          "status_label": "waiting for another serialized run to finish:  Run 40 of Test, build WASM, and deploy Pages. fix: share explicit WebGPU faucet compute layout",
-          "branch": "main",
-          "time": "2026-09-29T05:55:38Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36528494402"
-        },
-        {
-          "id": 36528437319,
-          "title": "test: validate WebGPU faucet atomic splat",
+          "id": 36530057145,
+          "title": "fix: align elasticity page contract with field resources",
           "status": "completed",
-          "conclusion": "cancelled",
-          "status_label": "cancelled:  Run 39 of Test, build WASM, and deploy Pages. test: validate WebGPU faucet atomic splat",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 44 of Test, build WASM, and deploy Pages. fix: align elasticity page contract with field resources",
           "branch": "main",
-          "time": "2026-09-29T05:54:57Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36528437319"
+          "time": "2026-09-29T06:14:26Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36530057145"
         },
         {
-          "id": 36528393598,
-          "title": "feat: add WebGPU faucet atomic-splat raymarch",
-          "status": "in_progress",
-          "conclusion": null,
-          "status_label": "currently running:  Run 38 of Test, build WASM, and deploy Pages. feat: add WebGPU faucet atomic-splat raymarch",
-          "branch": "main",
-          "time": "2026-09-29T05:54:24Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36528393598"
-        },
-        {
-          "id": 36528147916,
-          "title": "test: define WebGPU faucet raymarch contract",
+          "id": 36529882382,
+          "title": "test: validate WebGPU elasticity dual-density raymarch",
           "status": "completed",
           "conclusion": "failure",
-          "status_label": "failed:  Run 37 of Test, build WASM, and deploy Pages. test: define WebGPU faucet raymarch contract",
+          "status_label": "failed:  Run 43 of Test, build WASM, and deploy Pages. test: validate WebGPU elasticity dual-density raymarch",
           "branch": "main",
-          "time": "2026-09-29T05:51:23Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36528147916"
+          "time": "2026-09-29T06:12:22Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36529882382"
+        },
+        {
+          "id": 36529837872,
+          "title": "feat: add WebGPU elasticity dual-density raymarch",
+          "status": "completed",
+          "conclusion": "failure",
+          "status_label": "failed:  Run 42 of Test, build WASM, and deploy Pages. feat: add WebGPU elasticity dual-density raymarch",
+          "branch": "main",
+          "time": "2026-09-29T06:11:51Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36529837872"
+        },
+        {
+          "id": 36529595970,
+          "title": "test: define WebGPU elasticity raymarch contract",
+          "status": "completed",
+          "conclusion": "failure",
+          "status_label": "failed:  Run 41 of Test, build WASM, and deploy Pages. test: define WebGPU elasticity raymarch contract",
+          "branch": "main",
+          "time": "2026-09-29T06:08:58Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36529595970"
         }
       ]
     },
@@ -371,5 +371,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-29T05:56:09Z"
+  "updated_at": "2026-09-29T06:22:12Z"
 }
