@@ -103,6 +103,36 @@
       "actions_url": "https://github.com/2rwa/sph-web-samples/actions",
       "runs": [
         {
+          "id": 36635596177,
+          "title": "test: sweep stable PBD coupling parameters",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 53 of SPlisHSPlasH WASM build probe. test: sweep stable PBD coupling parameters",
+          "branch": "main",
+          "time": "2026-09-29T21:47:33Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36635596177"
+        },
+        {
+          "id": 36635595886,
+          "title": "test: sweep stable PBD coupling parameters",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 8 of SPlisHSPlasH PBD WASM compile probe. test: sweep stable PBD coupling parameters",
+          "branch": "main",
+          "time": "2026-09-29T21:47:33Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36635595886"
+        },
+        {
+          "id": 36635595856,
+          "title": "test: sweep stable PBD coupling parameters",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 132 of Test, build WASM, and deploy Pages. test: sweep stable PBD coupling parameters",
+          "branch": "main",
+          "time": "2026-09-29T21:47:33Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36635595856"
+        },
+        {
           "id": 36602524888,
           "title": "test: probe SPH to PBD dynamic boundary coupling",
           "status": "completed",
@@ -111,36 +141,6 @@
           "branch": "main",
           "time": "2026-09-29T17:05:57Z",
           "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36602524888"
-        },
-        {
-          "id": 36602524413,
-          "title": "test: probe SPH to PBD dynamic boundary coupling",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 7 of SPlisHSPlasH PBD WASM compile probe. test: probe SPH to PBD dynamic boundary coupling",
-          "branch": "main",
-          "time": "2026-09-29T17:05:57Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36602524413"
-        },
-        {
-          "id": 36602524376,
-          "title": "test: probe SPH to PBD dynamic boundary coupling",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 131 of Test, build WASM, and deploy Pages. test: probe SPH to PBD dynamic boundary coupling",
-          "branch": "main",
-          "time": "2026-09-29T17:05:57Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36602524376"
-        },
-        {
-          "id": 36601840699,
-          "title": "test: run minimal PBDRigidBody WASM bridge",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 6 of SPlisHSPlasH PBD WASM compile probe. test: run minimal PBDRigidBody WASM bridge",
-          "branch": "main",
-          "time": "2026-09-29T17:00:26Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36601840699"
         }
       ]
     },
@@ -371,5 +371,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-29T17:19:00Z"
+  "updated_at": "2026-09-29T21:51:08Z"
 }
