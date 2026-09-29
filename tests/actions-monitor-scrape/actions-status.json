@@ -103,44 +103,44 @@
       "actions_url": "https://github.com/2rwa/sph-web-samples/actions",
       "runs": [
         {
-          "id": 36582088878,
-          "title": "docs: record persisted Bender2019 map cache probe",
-          "status": "unknown",
+          "id": 36583423518,
+          "title": "test: validate native Bender scenes by finite browser step",
+          "status": "queued",
           "conclusion": null,
-          "status_label": "waiting for another serialized run to finish:  Run 97 of Test, build WASM, and deploy Pages. docs: record persisted Bender2019 map cache probe",
+          "status_label": "queued:  Run 100 of Test, build WASM, and deploy Pages. test: validate native Bender scenes by finite browser step",
           "branch": "main",
-          "time": "2026-09-29T14:21:41Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36582088878"
+          "time": "2026-09-29T14:32:24Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36583423518"
         },
         {
-          "id": 36582088663,
-          "title": "docs: record persisted Bender2019 map cache probe",
-          "status": "in_progress",
-          "conclusion": null,
-          "status_label": "currently running:  Run 30 of SPlisHSPlasH WASM build probe. docs: record persisted Bender2019 map cache probe",
+          "id": 36582836501,
+          "title": "feat: use native Bender2019 maps in scene browser",
+          "status": "completed",
+          "conclusion": "failure",
+          "status_label": "failed:  Run 99 of Test, build WASM, and deploy Pages. feat: use native Bender2019 maps in scene browser",
           "branch": "main",
-          "time": "2026-09-29T14:21:40Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36582088663"
+          "time": "2026-09-29T14:27:42Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36582836501"
         },
         {
-          "id": 36581826533,
-          "title": "fix: persist Bender2019 cdm through Node raw filesystem",
+          "id": 36582479754,
+          "title": "feat: cache Bender2019 maps for browser scenes",
+          "status": "completed",
+          "conclusion": "cancelled",
+          "status_label": "cancelled:  Run 98 of Test, build WASM, and deploy Pages. feat: cache Bender2019 maps for browser scenes",
+          "branch": "main",
+          "time": "2026-09-29T14:24:49Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36582479754"
+        },
+        {
+          "id": 36582479748,
+          "title": "feat: cache Bender2019 maps for browser scenes",
           "status": "completed",
           "conclusion": "success",
-          "status_label": "completed successfully:  Run 29 of SPlisHSPlasH WASM build probe. fix: persist Bender2019 cdm through Node raw filesystem",
+          "status_label": "completed successfully:  Run 31 of SPlisHSPlasH WASM build probe. feat: cache Bender2019 maps for browser scenes",
           "branch": "main",
-          "time": "2026-09-29T14:19:37Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36581826533"
-        },
-        {
-          "id": 36581826495,
-          "title": "fix: persist Bender2019 cdm through Node raw filesystem",
-          "status": "in_progress",
-          "conclusion": null,
-          "status_label": "currently running:  Run 96 of Test, build WASM, and deploy Pages. fix: persist Bender2019 cdm through Node raw filesystem",
-          "branch": "main",
-          "time": "2026-09-29T14:19:37Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36581826495"
+          "time": "2026-09-29T14:24:49Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36582479748"
         }
       ]
     },
@@ -371,5 +371,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-29T14:22:00Z"
+  "updated_at": "2026-09-29T14:36:14Z"
 }
