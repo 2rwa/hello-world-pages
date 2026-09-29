@@ -103,44 +103,44 @@
       "actions_url": "https://github.com/2rwa/sph-web-samples/actions",
       "runs": [
         {
-          "id": 36533056450,
-          "title": "test: validate WebGPU custom-force volume",
+          "id": 36541663728,
+          "title": "refactor: keep deep-dive render layout explicit",
           "status": "completed",
           "conclusion": "success",
-          "status_label": "completed successfully:  Run 53 of Test, build WASM, and deploy Pages. test: validate WebGPU custom-force volume",
+          "status_label": "completed successfully:  Run 61 of Test, build WASM, and deploy Pages. refactor: keep deep-dive render layout explicit",
           "branch": "main",
-          "time": "2026-09-29T06:48:50Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36533056450"
+          "time": "2026-09-29T08:16:10Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36541663728"
         },
         {
-          "id": 36533012327,
-          "title": "feat: add WebGPU custom-force volume visualization",
+          "id": 36541622941,
+          "title": "fix: use explicit deep-dive render bind group layout",
           "status": "completed",
           "conclusion": "success",
-          "status_label": "completed successfully:  Run 52 of Test, build WASM, and deploy Pages. feat: add WebGPU custom-force volume visualization",
+          "status_label": "completed successfully:  Run 60 of Test, build WASM, and deploy Pages. fix: use explicit deep-dive render bind group layout",
           "branch": "main",
-          "time": "2026-09-29T06:48:20Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36533012327"
+          "time": "2026-09-29T08:15:47Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36541622941"
         },
         {
-          "id": 36532754421,
-          "title": "test: define WebGPU custom-force volume contract",
+          "id": 36541238068,
+          "title": "fix: align deep-dive WASM URL contract",
           "status": "completed",
           "conclusion": "failure",
-          "status_label": "failed:  Run 51 of Test, build WASM, and deploy Pages. test: define WebGPU custom-force volume contract",
+          "status_label": "failed:  Run 59 of Test, build WASM, and deploy Pages. fix: align deep-dive WASM URL contract",
           "branch": "main",
-          "time": "2026-09-29T06:45:29Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36532754421"
+          "time": "2026-09-29T08:12:06Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36541238068"
         },
         {
-          "id": 36532157617,
-          "title": "test: validate WebGPU basic density raymarch",
+          "id": 36540961720,
+          "title": "fix: align Faucet deep-dive contract text",
           "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 50 of Test, build WASM, and deploy Pages. test: validate WebGPU basic density raymarch",
+          "conclusion": "failure",
+          "status_label": "failed:  Run 58 of Test, build WASM, and deploy Pages. fix: align Faucet deep-dive contract text",
           "branch": "main",
-          "time": "2026-09-29T06:38:53Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36532157617"
+          "time": "2026-09-29T08:09:26Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36540961720"
         }
       ]
     },
@@ -371,5 +371,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-29T07:08:11Z"
+  "updated_at": "2026-09-29T08:30:33Z"
 }
