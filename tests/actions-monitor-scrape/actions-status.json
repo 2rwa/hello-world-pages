@@ -103,6 +103,26 @@
       "actions_url": "https://github.com/2rwa/sph-web-samples/actions",
       "runs": [
         {
+          "id": 36524465567,
+          "title": "feat: add WebGL2 ports for all examples3d modes",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 33 of Test, build WASM, and deploy Pages. feat: add WebGL2 ports for all examples3d modes",
+          "branch": "main",
+          "time": "2026-09-29T05:04:29Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36524465567"
+        },
+        {
+          "id": 36524363360,
+          "title": "test: define remaining WebGL2 examples3d pages",
+          "status": "completed",
+          "conclusion": "failure",
+          "status_label": "failed:  Run 32 of Test, build WASM, and deploy Pages. test: define remaining WebGL2 examples3d pages",
+          "branch": "main",
+          "time": "2026-09-29T05:03:09Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36524363360"
+        },
+        {
           "id": 36523502205,
           "title": "feat: add WebGL2 renderer for Salva 3D Basic",
           "status": "completed",
@@ -121,26 +141,6 @@
           "branch": "main",
           "time": "2026-09-29T04:50:30Z",
           "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36523410726"
-        },
-        {
-          "id": 36522760277,
-          "title": "test: cover official examples3d browser ports",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 29 of Test, build WASM, and deploy Pages. test: cover official examples3d browser ports",
-          "branch": "main",
-          "time": "2026-09-29T04:41:43Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36522760277"
-        },
-        {
-          "id": 36522619958,
-          "title": "fix: convert 3D boundary samples for Rapier poses",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 28 of Test, build WASM, and deploy Pages. fix: convert 3D boundary samples for Rapier poses",
-          "branch": "main",
-          "time": "2026-09-29T04:39:49Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36522619958"
         }
       ]
     },
@@ -371,5 +371,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-29T04:56:53Z"
+  "updated_at": "2026-09-29T05:17:26Z"
 }
