@@ -103,11 +103,21 @@
       "actions_url": "https://github.com/2rwa/sph-web-samples/actions",
       "runs": [
         {
+          "id": 36518661125,
+          "title": "test: reproduce particle reset in generated WASM",
+          "status": "completed",
+          "conclusion": "failure",
+          "status_label": "failed:  Run 10 of Test, build WASM, and deploy Pages. test: reproduce particle reset in generated WASM",
+          "branch": "main",
+          "time": "2026-09-29T03:46:56Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36518661125"
+        },
+        {
           "id": 36518261898,
           "title": "feat: add particle-only reset with selectable count",
-          "status": "in_progress",
-          "conclusion": null,
-          "status_label": "currently running:  Run 9 of Test, build WASM, and deploy Pages. feat: add particle-only reset with selectable count",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 9 of Test, build WASM, and deploy Pages. feat: add particle-only reset with selectable count",
           "branch": "main",
           "time": "2026-09-29T03:41:33Z",
           "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36518261898"
@@ -131,16 +141,6 @@
           "branch": "main",
           "time": "2026-09-29T03:24:55Z",
           "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36517022429"
-        },
-        {
-          "id": 36516802132,
-          "title": "test: define interactive Salva obstacle contract",
-          "status": "completed",
-          "conclusion": "failure",
-          "status_label": "failed:  Run 6 of Test, build WASM, and deploy Pages. test: define interactive Salva obstacle contract",
-          "branch": "main",
-          "time": "2026-09-29T03:21:57Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36516802132"
         }
       ]
     },
@@ -371,5 +371,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-29T03:42:29Z"
+  "updated_at": "2026-09-29T03:54:44Z"
 }
