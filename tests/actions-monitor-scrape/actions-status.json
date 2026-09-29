@@ -103,44 +103,44 @@
       "actions_url": "https://github.com/2rwa/sph-web-samples/actions",
       "runs": [
         {
-          "id": 36646285116,
-          "title": "fix: initialize PBD timing statics in timestep probe",
+          "id": 36646936395,
+          "title": "test: allow PBD substep velocity roundoff",
           "status": "in_progress",
           "conclusion": null,
-          "status_label": "currently running:  Run 141 of Test, build WASM, and deploy Pages. fix: initialize PBD timing statics in timestep probe",
+          "status_label": "currently running:  Run 61 of SPlisHSPlasH WASM build probe. test: allow PBD substep velocity roundoff",
           "branch": "main",
-          "time": "2026-09-29T23:38:34Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36646285116"
+          "time": "2026-09-29T23:46:12Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36646936395"
         },
         {
-          "id": 36646285101,
-          "title": "fix: initialize PBD timing statics in timestep probe",
+          "id": 36646936373,
+          "title": "test: allow PBD substep velocity roundoff",
+          "status": "unknown",
+          "conclusion": null,
+          "status_label": "waiting for another serialized run to finish:  Run 145 of Test, build WASM, and deploy Pages. test: allow PBD substep velocity roundoff",
+          "branch": "main",
+          "time": "2026-09-29T23:46:12Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36646936373"
+        },
+        {
+          "id": 36646936368,
+          "title": "test: allow PBD substep velocity roundoff",
+          "status": "in_progress",
+          "conclusion": null,
+          "status_label": "currently running:  Run 15 of SPlisHSPlasH PBD WASM compile probe. test: allow PBD substep velocity roundoff",
+          "branch": "main",
+          "time": "2026-09-29T23:46:12Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36646936368"
+        },
+        {
+          "id": 36646873682,
+          "title": "test: couple SPH through upstream PBD timestep",
           "status": "completed",
           "conclusion": "success",
-          "status_label": "completed successfully:  Run 59 of SPlisHSPlasH WASM build probe. fix: initialize PBD timing statics in timestep probe",
+          "status_label": "completed successfully:  Run 60 of SPlisHSPlasH WASM build probe. test: couple SPH through upstream PBD timestep",
           "branch": "main",
-          "time": "2026-09-29T23:38:34Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36646285101"
-        },
-        {
-          "id": 36640661159,
-          "title": "ci: rerun PBD timestep probe after fix",
-          "status": "completed",
-          "conclusion": "failure",
-          "status_label": "failed:  Run 12 of SPlisHSPlasH PBD WASM compile probe. ci: rerun PBD timestep probe after fix",
-          "branch": "main",
-          "time": "2026-09-29T22:37:25Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36640661159"
-        },
-        {
-          "id": 36640661157,
-          "title": "ci: rerun PBD timestep probe after fix",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 58 of SPlisHSPlasH WASM build probe. ci: rerun PBD timestep probe after fix",
-          "branch": "main",
-          "time": "2026-09-29T22:37:25Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36640661157"
+          "time": "2026-09-29T23:45:28Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36646873682"
         }
       ]
     },
@@ -371,5 +371,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-29T23:40:32Z"
+  "updated_at": "2026-09-29T23:47:18Z"
 }
