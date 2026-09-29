@@ -103,6 +103,26 @@
       "actions_url": "https://github.com/2rwa/sph-web-samples/actions",
       "runs": [
         {
+          "id": 36646285116,
+          "title": "fix: initialize PBD timing statics in timestep probe",
+          "status": "in_progress",
+          "conclusion": null,
+          "status_label": "currently running:  Run 141 of Test, build WASM, and deploy Pages. fix: initialize PBD timing statics in timestep probe",
+          "branch": "main",
+          "time": "2026-09-29T23:38:34Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36646285116"
+        },
+        {
+          "id": 36646285101,
+          "title": "fix: initialize PBD timing statics in timestep probe",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 59 of SPlisHSPlasH WASM build probe. fix: initialize PBD timing statics in timestep probe",
+          "branch": "main",
+          "time": "2026-09-29T23:38:34Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36646285101"
+        },
+        {
           "id": 36640661159,
           "title": "ci: rerun PBD timestep probe after fix",
           "status": "completed",
@@ -121,26 +141,6 @@
           "branch": "main",
           "time": "2026-09-29T22:37:25Z",
           "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36640661157"
-        },
-        {
-          "id": 36640661115,
-          "title": "ci: rerun PBD timestep probe after fix",
-          "status": "completed",
-          "conclusion": "failure",
-          "status_label": "failed:  Run 140 of Test, build WASM, and deploy Pages. ci: rerun PBD timestep probe after fix",
-          "branch": "main",
-          "time": "2026-09-29T22:37:25Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36640661115"
-        },
-        {
-          "id": 36640579588,
-          "title": "ci: run PBD probe on wasm smoke changes",
-          "status": "completed",
-          "conclusion": "cancelled",
-          "status_label": "cancelled:  Run 139 of Test, build WASM, and deploy Pages. ci: run PBD probe on wasm smoke changes",
-          "branch": "main",
-          "time": "2026-09-29T22:36:35Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36640579588"
         }
       ]
     },
@@ -371,5 +371,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-29T22:42:57Z"
+  "updated_at": "2026-09-29T23:40:32Z"
 }
