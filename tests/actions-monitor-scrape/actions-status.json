@@ -103,6 +103,26 @@
       "actions_url": "https://github.com/2rwa/sph-web-samples/actions",
       "runs": [
         {
+          "id": 36562929389,
+          "title": "feat: start browser adapter for upstream SPlisHSPlasH scenes",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 82 of Test, build WASM, and deploy Pages. feat: start browser adapter for upstream SPlisHSPlasH scenes",
+          "branch": "main",
+          "time": "2026-09-29T11:37:44Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36562929389"
+        },
+        {
+          "id": 36562587613,
+          "title": "docs: freeze SPlisHSPlasH wasm milestone",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 81 of Test, build WASM, and deploy Pages. docs: freeze SPlisHSPlasH wasm milestone",
+          "branch": "main",
+          "time": "2026-09-29T11:34:27Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36562587613"
+        },
+        {
           "id": 36560712213,
           "title": "ci: reuse compiled SPlisHSPlasH wasm artifacts",
           "status": "completed",
@@ -121,26 +141,6 @@
           "branch": "main",
           "time": "2026-09-29T11:16:26Z",
           "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36560712060"
-        },
-        {
-          "id": 36560253284,
-          "title": "fix: reduce WCSPH dam break CFL timestep",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 17 of SPlisHSPlasH WASM build probe. fix: reduce WCSPH dam break CFL timestep",
-          "branch": "main",
-          "time": "2026-09-29T11:11:58Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36560253284"
-        },
-        {
-          "id": 36560253245,
-          "title": "fix: reduce WCSPH dam break CFL timestep",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 79 of Test, build WASM, and deploy Pages. fix: reduce WCSPH dam break CFL timestep",
-          "branch": "main",
-          "time": "2026-09-29T11:11:58Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36560253245"
         }
       ]
     },
@@ -371,5 +371,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-29T11:30:25Z"
+  "updated_at": "2026-09-29T11:43:07Z"
 }
