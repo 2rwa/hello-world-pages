@@ -103,44 +103,44 @@
       "actions_url": "https://github.com/2rwa/sph-web-samples/actions",
       "runs": [
         {
-          "id": 36518661125,
-          "title": "test: reproduce particle reset in generated WASM",
-          "status": "completed",
-          "conclusion": "failure",
-          "status_label": "failed:  Run 10 of Test, build WASM, and deploy Pages. test: reproduce particle reset in generated WASM",
-          "branch": "main",
-          "time": "2026-09-29T03:46:56Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36518661125"
-        },
-        {
-          "id": 36518261898,
-          "title": "feat: add particle-only reset with selectable count",
+          "id": 36519814725,
+          "title": "fix: resolve WASM relative to module URL",
           "status": "completed",
           "conclusion": "success",
-          "status_label": "completed successfully:  Run 9 of Test, build WASM, and deploy Pages. feat: add particle-only reset with selectable count",
+          "status_label": "completed successfully:  Run 15 of Test, build WASM, and deploy Pages. fix: resolve WASM relative to module URL",
           "branch": "main",
-          "time": "2026-09-29T03:41:33Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36518261898"
+          "time": "2026-09-29T04:02:28Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36519814725"
         },
         {
-          "id": 36518187475,
-          "title": "test: define particle-only reset contract",
+          "id": 36519782936,
+          "title": "test: require module-relative WASM URLs",
           "status": "completed",
           "conclusion": "failure",
-          "status_label": "failed:  Run 8 of Test, build WASM, and deploy Pages. test: define particle-only reset contract",
+          "status_label": "failed:  Run 14 of Test, build WASM, and deploy Pages. test: require module-relative WASM URLs",
           "branch": "main",
-          "time": "2026-09-29T03:40:33Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36518187475"
+          "time": "2026-09-29T04:02:02Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36519782936"
         },
         {
-          "id": 36517022429,
-          "title": "feat: add interactive Salva obstacle sample",
+          "id": 36519549137,
+          "title": "feat: add Salva 3D Canvas dot sample",
           "status": "completed",
           "conclusion": "success",
-          "status_label": "completed successfully:  Run 7 of Test, build WASM, and deploy Pages. feat: add interactive Salva obstacle sample",
+          "status_label": "completed successfully:  Run 13 of Test, build WASM, and deploy Pages. feat: add Salva 3D Canvas dot sample",
           "branch": "main",
-          "time": "2026-09-29T03:24:55Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36517022429"
+          "time": "2026-09-29T03:59:00Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36519549137"
+        },
+        {
+          "id": 36519421654,
+          "title": "test: define Salva 3D WASM simulation contract",
+          "status": "completed",
+          "conclusion": "failure",
+          "status_label": "failed:  Run 12 of Test, build WASM, and deploy Pages. test: define Salva 3D WASM simulation contract",
+          "branch": "main",
+          "time": "2026-09-29T03:57:12Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36519421654"
         }
       ]
     },
@@ -371,5 +371,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-29T03:54:44Z"
+  "updated_at": "2026-09-29T04:06:51Z"
 }
