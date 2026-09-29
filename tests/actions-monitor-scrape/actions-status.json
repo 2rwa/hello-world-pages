@@ -103,44 +103,44 @@
       "actions_url": "https://github.com/2rwa/sph-web-samples/actions",
       "runs": [
         {
-          "id": 36635596177,
-          "title": "test: sweep stable PBD coupling parameters",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 53 of SPlisHSPlasH WASM build probe. test: sweep stable PBD coupling parameters",
+          "id": 36638777588,
+          "title": "test: sweep gravity-driven PBD fluid impact",
+          "status": "in_progress",
+          "conclusion": null,
+          "status_label": "currently running:  Run 10 of SPlisHSPlasH PBD WASM compile probe. test: sweep gravity-driven PBD fluid impact",
           "branch": "main",
-          "time": "2026-09-29T21:47:33Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36635596177"
+          "time": "2026-09-29T22:18:25Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36638777588"
         },
         {
-          "id": 36635595886,
-          "title": "test: sweep stable PBD coupling parameters",
+          "id": 36638777554,
+          "title": "test: sweep gravity-driven PBD fluid impact",
           "status": "completed",
           "conclusion": "success",
-          "status_label": "completed successfully:  Run 8 of SPlisHSPlasH PBD WASM compile probe. test: sweep stable PBD coupling parameters",
+          "status_label": "completed successfully:  Run 55 of SPlisHSPlasH WASM build probe. test: sweep gravity-driven PBD fluid impact",
           "branch": "main",
-          "time": "2026-09-29T21:47:33Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36635595886"
+          "time": "2026-09-29T22:18:25Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36638777554"
         },
         {
-          "id": 36635595856,
-          "title": "test: sweep stable PBD coupling parameters",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 132 of Test, build WASM, and deploy Pages. test: sweep stable PBD coupling parameters",
+          "id": 36638777533,
+          "title": "test: sweep gravity-driven PBD fluid impact",
+          "status": "in_progress",
+          "conclusion": null,
+          "status_label": "currently running:  Run 134 of Test, build WASM, and deploy Pages. test: sweep gravity-driven PBD fluid impact",
           "branch": "main",
-          "time": "2026-09-29T21:47:33Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36635595856"
+          "time": "2026-09-29T22:18:25Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36638777533"
         },
         {
-          "id": 36602524888,
-          "title": "test: probe SPH to PBD dynamic boundary coupling",
+          "id": 36638017094,
+          "title": "feat: add browser PBD two-way coupling demo",
           "status": "completed",
           "conclusion": "success",
-          "status_label": "completed successfully:  Run 52 of SPlisHSPlasH WASM build probe. test: probe SPH to PBD dynamic boundary coupling",
+          "status_label": "completed successfully:  Run 54 of SPlisHSPlasH WASM build probe. feat: add browser PBD two-way coupling demo",
           "branch": "main",
-          "time": "2026-09-29T17:05:57Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36602524888"
+          "time": "2026-09-29T22:10:57Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36638017094"
         }
       ]
     },
@@ -371,5 +371,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-29T21:51:08Z"
+  "updated_at": "2026-09-29T22:20:11Z"
 }
