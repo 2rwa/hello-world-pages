@@ -103,11 +103,31 @@
       "actions_url": "https://github.com/2rwa/sph-web-samples/actions",
       "runs": [
         {
+          "id": 36545608703,
+          "title": "fix: disable OpenMP in wasm external dependencies",
+          "status": "completed",
+          "conclusion": "failure",
+          "status_label": "failed:  Run 4 of SPlisHSPlasH WASM build probe. fix: disable OpenMP in wasm external dependencies",
+          "branch": "main",
+          "time": "2026-09-29T08:53:38Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36545608703"
+        },
+        {
+          "id": 36545608700,
+          "title": "fix: disable OpenMP in wasm external dependencies",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 65 of Test, build WASM, and deploy Pages. fix: disable OpenMP in wasm external dependencies",
+          "branch": "main",
+          "time": "2026-09-29T08:53:38Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36545608700"
+        },
+        {
           "id": 36544833558,
           "title": "fix: build wasm external dependencies before link",
-          "status": "in_progress",
-          "conclusion": null,
-          "status_label": "currently running:  Run 64 of Test, build WASM, and deploy Pages. fix: build wasm external dependencies before link",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 64 of Test, build WASM, and deploy Pages. fix: build wasm external dependencies before link",
           "branch": "main",
           "time": "2026-09-29T08:46:14Z",
           "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36544833558"
@@ -121,26 +141,6 @@
           "branch": "main",
           "time": "2026-09-29T08:46:14Z",
           "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36544833524"
-        },
-        {
-          "id": 36544660984,
-          "title": "fix: point wasm probe at Eigen headers",
-          "status": "completed",
-          "conclusion": "failure",
-          "status_label": "failed:  Run 2 of SPlisHSPlasH WASM build probe. fix: point wasm probe at Eigen headers",
-          "branch": "main",
-          "time": "2026-09-29T08:44:40Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36544660984"
-        },
-        {
-          "id": 36544660968,
-          "title": "fix: point wasm probe at Eigen headers",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 63 of Test, build WASM, and deploy Pages. fix: point wasm probe at Eigen headers",
-          "branch": "main",
-          "time": "2026-09-29T08:44:40Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36544660968"
         }
       ]
     },
@@ -371,5 +371,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-29T08:50:19Z"
+  "updated_at": "2026-09-29T08:59:48Z"
 }
