@@ -145,6 +145,12 @@
       ]
     },
     {
+      "name": "tmp-blender-52",
+      "url": "https://github.com/2rwa/tmp-blender-52",
+      "actions_url": "https://github.com/2rwa/tmp-blender-52/actions",
+      "runs": []
+    },
+    {
       "name": "tmp-blender-rigid-cloth",
       "url": "https://github.com/2rwa/tmp-blender-rigid-cloth",
       "actions_url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions",
@@ -277,5 +283,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-28T23:26:50Z"
+  "updated_at": "2026-09-29T00:00:38Z"
 }
