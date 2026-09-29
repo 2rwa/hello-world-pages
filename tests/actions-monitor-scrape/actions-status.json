@@ -103,6 +103,26 @@
       "actions_url": "https://github.com/2rwa/sph-web-samples/actions",
       "runs": [
         {
+          "id": 36550697572,
+          "title": "fix: use global Real type in wasm smoke test",
+          "status": "in_progress",
+          "conclusion": null,
+          "status_label": "currently running:  Run 6 of SPlisHSPlasH WASM build probe. fix: use global Real type in wasm smoke test",
+          "branch": "main",
+          "time": "2026-09-29T09:40:39Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36550697572"
+        },
+        {
+          "id": 36550697454,
+          "title": "fix: use global Real type in wasm smoke test",
+          "status": "in_progress",
+          "conclusion": null,
+          "status_label": "currently running:  Run 67 of Test, build WASM, and deploy Pages. fix: use global Real type in wasm smoke test",
+          "branch": "main",
+          "time": "2026-09-29T09:40:39Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36550697454"
+        },
+        {
           "id": 36547763918,
           "title": "fix: make wasm dependency patch idempotent",
           "status": "completed",
@@ -121,26 +141,6 @@
           "branch": "main",
           "time": "2026-09-29T09:13:27Z",
           "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36547763702"
-        },
-        {
-          "id": 36545608703,
-          "title": "fix: disable OpenMP in wasm external dependencies",
-          "status": "completed",
-          "conclusion": "failure",
-          "status_label": "failed:  Run 4 of SPlisHSPlasH WASM build probe. fix: disable OpenMP in wasm external dependencies",
-          "branch": "main",
-          "time": "2026-09-29T08:53:38Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36545608703"
-        },
-        {
-          "id": 36545608700,
-          "title": "fix: disable OpenMP in wasm external dependencies",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 65 of Test, build WASM, and deploy Pages. fix: disable OpenMP in wasm external dependencies",
-          "branch": "main",
-          "time": "2026-09-29T08:53:38Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36545608700"
         }
       ]
     },
@@ -371,5 +371,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-29T09:25:07Z"
+  "updated_at": "2026-09-29T09:41:03Z"
 }
