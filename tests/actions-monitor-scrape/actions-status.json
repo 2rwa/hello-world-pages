@@ -103,6 +103,26 @@
       "actions_url": "https://github.com/2rwa/tmp-blender/actions",
       "runs": [
         {
+          "id": 36509029173,
+          "title": "ci: rebuild Pages after fracture 3D publish",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 37 of Pages gallery. ci: rebuild Pages after fracture 3D publish",
+          "branch": "main",
+          "time": "2026-09-29T01:40:42Z",
+          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36509029173"
+        },
+        {
+          "id": 36508959357,
+          "title": "ci: publish successful fracture 3D artifact without recompute",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 1 of Publish fracture 3D extreme. ci: publish successful fracture 3D artifact without recompute",
+          "branch": "main",
+          "time": "2026-09-29T01:39:50Z",
+          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36508959357"
+        },
+        {
           "id": 36504337819,
           "title": "Pages gallery",
           "status": "completed",
@@ -121,26 +141,6 @@
           "branch": "main",
           "time": "2026-09-28T22:25:34Z",
           "url": "https://github.com/2rwa/tmp-blender/actions/runs/36492307754"
-        },
-        {
-          "id": 36492297377,
-          "title": "test: render extreme fracture case as Blender 3D CG",
-          "status": "completed",
-          "conclusion": "failure",
-          "status_label": "failed:  Run 1 of SPH fracture 3D extreme. test: render extreme fracture case as Blender 3D CG",
-          "branch": "main",
-          "time": "2026-09-28T22:25:28Z",
-          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36492297377"
-        },
-        {
-          "id": 36477481958,
-          "title": "Pages gallery",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 34 of Pages gallery.",
-          "branch": null,
-          "time": "2026-09-28T20:11:54Z",
-          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36477481958"
         }
       ]
     },
@@ -149,6 +149,16 @@
       "url": "https://github.com/2rwa/tmp-blender-52",
       "actions_url": "https://github.com/2rwa/tmp-blender-52/actions",
       "runs": [
+        {
+          "id": 36510151830,
+          "title": "fix: rebuild Pages after showcase publish",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 2 of GitHub Pages. fix: rebuild Pages after showcase publish",
+          "branch": "main",
+          "time": "2026-09-29T01:55:15Z",
+          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36510151830"
+        },
         {
           "id": 36507938449,
           "title": "ci: keep baseline render trigger scoped to baseline",
@@ -172,22 +182,12 @@
         {
           "id": 36507852100,
           "title": "fix: use Blender 5.2 compositor node groups",
-          "status": "in_progress",
-          "conclusion": null,
-          "status_label": "currently running:  Run 5 of Blender 5.2 feature showcase. fix: use Blender 5.2 compositor node groups",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 5 of Blender 5.2 feature showcase. fix: use Blender 5.2 compositor node groups",
           "branch": "main",
           "time": "2026-09-29T01:25:48Z",
           "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36507852100"
-        },
-        {
-          "id": 36507575784,
-          "title": "fix: make showcase Blender wrappers self-contained",
-          "status": "completed",
-          "conclusion": "cancelled",
-          "status_label": "cancelled:  Run 4 of Blender 5.2 feature showcase. fix: make showcase Blender wrappers self-contained",
-          "branch": "main",
-          "time": "2026-09-29T01:22:19Z",
-          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36507575784"
         }
       ]
     },
@@ -324,5 +324,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-29T01:35:45Z"
+  "updated_at": "2026-09-29T01:58:20Z"
 }
