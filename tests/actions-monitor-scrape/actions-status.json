@@ -103,44 +103,44 @@
       "actions_url": "https://github.com/2rwa/sph-web-samples/actions",
       "runs": [
         {
-          "id": 36564708268,
-          "title": "ci: cancel stale Pages runs during iteration",
+          "id": 36567336833,
+          "title": "feat: add multi-scene SPlisHSPlasH browser",
           "status": "completed",
           "conclusion": "success",
-          "status_label": "completed successfully:  Run 86 of Test, build WASM, and deploy Pages. ci: cancel stale Pages runs during iteration",
+          "status_label": "completed successfully:  Run 89 of Test, build WASM, and deploy Pages. feat: add multi-scene SPlisHSPlasH browser",
           "branch": "main",
-          "time": "2026-09-29T11:54:55Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36564708268"
+          "time": "2026-09-29T12:19:24Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36567336833"
         },
         {
-          "id": 36564492204,
-          "title": "test: fix generic scene velocity direction assertion",
+          "id": 36566904639,
+          "title": "feat: add DoubleDamBreak DFSPH browser regression",
           "status": "completed",
           "conclusion": "success",
-          "status_label": "completed successfully:  Run 21 of SPlisHSPlasH WASM build probe. test: fix generic scene velocity direction assertion",
+          "status_label": "completed successfully:  Run 23 of SPlisHSPlasH WASM build probe. feat: add DoubleDamBreak DFSPH browser regression",
           "branch": "main",
-          "time": "2026-09-29T11:52:54Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36564492204"
+          "time": "2026-09-29T12:15:22Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36566904639"
         },
         {
-          "id": 36564492063,
-          "title": "test: fix generic scene velocity direction assertion",
+          "id": 36566904305,
+          "title": "feat: add DoubleDamBreak DFSPH browser regression",
           "status": "completed",
-          "conclusion": "cancelled",
-          "status_label": "cancelled:  Run 85 of Test, build WASM, and deploy Pages. test: fix generic scene velocity direction assertion",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 88 of Test, build WASM, and deploy Pages. feat: add DoubleDamBreak DFSPH browser regression",
           "branch": "main",
-          "time": "2026-09-29T11:52:54Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36564492063"
+          "time": "2026-09-29T12:15:22Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36566904305"
         },
         {
-          "id": 36564295769,
-          "title": "fix: declare generic boundary bridge before scene commit",
+          "id": 36566353914,
+          "title": "feat: run upstream DamBreakModel through generic DFSPH wasm ABI",
           "status": "completed",
-          "conclusion": "failure",
-          "status_label": "failed:  Run 84 of Test, build WASM, and deploy Pages. fix: declare generic boundary bridge before scene commit",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 87 of Test, build WASM, and deploy Pages. feat: run upstream DamBreakModel through generic DFSPH wasm ABI",
           "branch": "main",
-          "time": "2026-09-29T11:51:00Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36564295769"
+          "time": "2026-09-29T12:10:17Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36566353914"
         }
       ]
     },
@@ -371,5 +371,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-29T11:59:58Z"
+  "updated_at": "2026-09-29T12:34:25Z"
 }
