@@ -103,44 +103,44 @@
       "actions_url": "https://github.com/2rwa/sph-web-samples/actions",
       "runs": [
         {
-          "id": 36577473065,
-          "title": "feat: add ICSPH and PF scenes to browser selector",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 91 of Test, build WASM, and deploy Pages. feat: add ICSPH and PF scenes to browser selector",
+          "id": 36578815605,
+          "title": "fix: capture Bender2019 quadrature domain",
+          "status": "in_progress",
+          "conclusion": null,
+          "status_label": "currently running:  Run 93 of Test, build WASM, and deploy Pages. fix: capture Bender2019 quadrature domain",
           "branch": "main",
-          "time": "2026-09-29T13:45:30Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36577473065"
+          "time": "2026-09-29T13:56:05Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36578815605"
         },
         {
-          "id": 36577270159,
-          "title": "feat: add ICSPH and Projective Fluids generic wasm ABI",
+          "id": 36578815588,
+          "title": "fix: capture Bender2019 quadrature domain",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 26 of SPlisHSPlasH WASM build probe. fix: capture Bender2019 quadrature domain",
+          "branch": "main",
+          "time": "2026-09-29T13:56:05Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36578815588"
+        },
+        {
+          "id": 36578599233,
+          "title": "test: probe native Bender2019 volume map in wasm",
           "status": "completed",
           "conclusion": "cancelled",
-          "status_label": "cancelled:  Run 90 of Test, build WASM, and deploy Pages. feat: add ICSPH and Projective Fluids generic wasm ABI",
+          "status_label": "cancelled:  Run 92 of Test, build WASM, and deploy Pages. test: probe native Bender2019 volume map in wasm",
           "branch": "main",
-          "time": "2026-09-29T13:43:57Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36577270159"
+          "time": "2026-09-29T13:54:24Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36578599233"
         },
         {
-          "id": 36577270114,
-          "title": "feat: add ICSPH and Projective Fluids generic wasm ABI",
+          "id": 36578599198,
+          "title": "test: probe native Bender2019 volume map in wasm",
           "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 24 of SPlisHSPlasH WASM build probe. feat: add ICSPH and Projective Fluids generic wasm ABI",
+          "conclusion": "failure",
+          "status_label": "failed:  Run 25 of SPlisHSPlasH WASM build probe. test: probe native Bender2019 volume map in wasm",
           "branch": "main",
-          "time": "2026-09-29T13:43:57Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36577270114"
-        },
-        {
-          "id": 36567336833,
-          "title": "feat: add multi-scene SPlisHSPlasH browser",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 89 of Test, build WASM, and deploy Pages. feat: add multi-scene SPlisHSPlasH browser",
-          "branch": "main",
-          "time": "2026-09-29T12:19:24Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36567336833"
+          "time": "2026-09-29T13:54:24Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36578599198"
         }
       ]
     },
@@ -371,5 +371,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-29T13:50:42Z"
+  "updated_at": "2026-09-29T13:59:36Z"
 }
