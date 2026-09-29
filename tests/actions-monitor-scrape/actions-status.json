@@ -103,11 +103,31 @@
       "actions_url": "https://github.com/2rwa/sph-web-samples/actions",
       "runs": [
         {
-          "id": 36550697572,
-          "title": "fix: use global Real type in wasm smoke test",
+          "id": 36551794948,
+          "title": "fix: make node wasm smoke deterministic",
           "status": "in_progress",
           "conclusion": null,
-          "status_label": "currently running:  Run 6 of SPlisHSPlasH WASM build probe. fix: use global Real type in wasm smoke test",
+          "status_label": "currently running:  Run 7 of SPlisHSPlasH WASM build probe. fix: make node wasm smoke deterministic",
+          "branch": "main",
+          "time": "2026-09-29T09:50:52Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36551794948"
+        },
+        {
+          "id": 36551794907,
+          "title": "fix: make node wasm smoke deterministic",
+          "status": "in_progress",
+          "conclusion": null,
+          "status_label": "currently running:  Run 68 of Test, build WASM, and deploy Pages. fix: make node wasm smoke deterministic",
+          "branch": "main",
+          "time": "2026-09-29T09:50:52Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36551794907"
+        },
+        {
+          "id": 36550697572,
+          "title": "fix: use global Real type in wasm smoke test",
+          "status": "completed",
+          "conclusion": "failure",
+          "status_label": "failed:  Run 6 of SPlisHSPlasH WASM build probe. fix: use global Real type in wasm smoke test",
           "branch": "main",
           "time": "2026-09-29T09:40:39Z",
           "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36550697572"
@@ -115,32 +135,12 @@
         {
           "id": 36550697454,
           "title": "fix: use global Real type in wasm smoke test",
-          "status": "in_progress",
-          "conclusion": null,
-          "status_label": "currently running:  Run 67 of Test, build WASM, and deploy Pages. fix: use global Real type in wasm smoke test",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 67 of Test, build WASM, and deploy Pages. fix: use global Real type in wasm smoke test",
           "branch": "main",
           "time": "2026-09-29T09:40:39Z",
           "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36550697454"
-        },
-        {
-          "id": 36547763918,
-          "title": "fix: make wasm dependency patch idempotent",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 66 of Test, build WASM, and deploy Pages. fix: make wasm dependency patch idempotent",
-          "branch": "main",
-          "time": "2026-09-29T09:13:27Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36547763918"
-        },
-        {
-          "id": 36547763702,
-          "title": "fix: make wasm dependency patch idempotent",
-          "status": "completed",
-          "conclusion": "failure",
-          "status_label": "failed:  Run 5 of SPlisHSPlasH WASM build probe. fix: make wasm dependency patch idempotent",
-          "branch": "main",
-          "time": "2026-09-29T09:13:27Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36547763702"
         }
       ]
     },
@@ -371,5 +371,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-29T09:41:03Z"
+  "updated_at": "2026-09-29T09:52:11Z"
 }
