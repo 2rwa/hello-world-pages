@@ -105,9 +105,9 @@
         {
           "id": 36551794948,
           "title": "fix: make node wasm smoke deterministic",
-          "status": "in_progress",
-          "conclusion": null,
-          "status_label": "currently running:  Run 7 of SPlisHSPlasH WASM build probe. fix: make node wasm smoke deterministic",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 7 of SPlisHSPlasH WASM build probe. fix: make node wasm smoke deterministic",
           "branch": "main",
           "time": "2026-09-29T09:50:52Z",
           "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36551794948"
@@ -115,9 +115,9 @@
         {
           "id": 36551794907,
           "title": "fix: make node wasm smoke deterministic",
-          "status": "in_progress",
-          "conclusion": null,
-          "status_label": "currently running:  Run 68 of Test, build WASM, and deploy Pages. fix: make node wasm smoke deterministic",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 68 of Test, build WASM, and deploy Pages. fix: make node wasm smoke deterministic",
           "branch": "main",
           "time": "2026-09-29T09:50:52Z",
           "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36551794907"
@@ -371,5 +371,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-29T09:52:11Z"
+  "updated_at": "2026-09-29T09:59:23Z"
 }
