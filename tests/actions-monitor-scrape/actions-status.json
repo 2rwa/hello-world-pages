@@ -103,44 +103,44 @@
       "actions_url": "https://github.com/2rwa/sph-web-samples/actions",
       "runs": [
         {
-          "id": 36640136189,
-          "title": "test: probe upstream PBD timestep in WASM",
-          "status": "in_progress",
-          "conclusion": null,
-          "status_label": "currently running:  Run 11 of SPlisHSPlasH PBD WASM compile probe. test: probe upstream PBD timestep in WASM",
+          "id": 36640661159,
+          "title": "ci: rerun PBD timestep probe after fix",
+          "status": "completed",
+          "conclusion": "failure",
+          "status_label": "failed:  Run 12 of SPlisHSPlasH PBD WASM compile probe. ci: rerun PBD timestep probe after fix",
           "branch": "main",
-          "time": "2026-09-29T22:32:08Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36640136189"
+          "time": "2026-09-29T22:37:25Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36640661159"
         },
         {
-          "id": 36640136133,
-          "title": "test: probe upstream PBD timestep in WASM",
-          "status": "unknown",
-          "conclusion": null,
-          "status_label": "waiting for another serialized run to finish:  Run 137 of Test, build WASM, and deploy Pages. test: probe upstream PBD timestep in WASM",
+          "id": 36640661157,
+          "title": "ci: rerun PBD timestep probe after fix",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 58 of SPlisHSPlasH WASM build probe. ci: rerun PBD timestep probe after fix",
           "branch": "main",
-          "time": "2026-09-29T22:32:08Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36640136133"
+          "time": "2026-09-29T22:37:25Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36640661157"
         },
         {
-          "id": 36640136020,
-          "title": "test: probe upstream PBD timestep in WASM",
-          "status": "in_progress",
-          "conclusion": null,
-          "status_label": "currently running:  Run 56 of SPlisHSPlasH WASM build probe. test: probe upstream PBD timestep in WASM",
+          "id": 36640661115,
+          "title": "ci: rerun PBD timestep probe after fix",
+          "status": "completed",
+          "conclusion": "failure",
+          "status_label": "failed:  Run 140 of Test, build WASM, and deploy Pages. ci: rerun PBD timestep probe after fix",
           "branch": "main",
-          "time": "2026-09-29T22:32:08Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36640136020"
+          "time": "2026-09-29T22:37:25Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36640661115"
         },
         {
-          "id": 36640008767,
-          "title": "docs: record browser PBD coupling milestone",
-          "status": "in_progress",
-          "conclusion": null,
-          "status_label": "currently running:  Run 136 of Test, build WASM, and deploy Pages. docs: record browser PBD coupling milestone",
+          "id": 36640579588,
+          "title": "ci: run PBD probe on wasm smoke changes",
+          "status": "completed",
+          "conclusion": "cancelled",
+          "status_label": "cancelled:  Run 139 of Test, build WASM, and deploy Pages. ci: run PBD probe on wasm smoke changes",
           "branch": "main",
-          "time": "2026-09-29T22:30:49Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36640008767"
+          "time": "2026-09-29T22:36:35Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36640579588"
         }
       ]
     },
@@ -371,5 +371,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-29T22:32:28Z"
+  "updated_at": "2026-09-29T22:42:57Z"
 }
