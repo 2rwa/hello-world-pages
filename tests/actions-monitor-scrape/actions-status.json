@@ -103,44 +103,44 @@
       "actions_url": "https://github.com/2rwa/sph-web-samples/actions",
       "runs": [
         {
-          "id": 36600561469,
-          "title": "fix: refresh cached tree before PBD probe",
+          "id": 36601234699,
+          "title": "fix: normalize cached PBD patch command",
           "status": "completed",
           "conclusion": "success",
-          "status_label": "completed successfully:  Run 48 of SPlisHSPlasH WASM build probe. fix: refresh cached tree before PBD probe",
+          "status_label": "completed successfully:  Run 5 of SPlisHSPlasH PBD WASM compile probe. fix: normalize cached PBD patch command",
           "branch": "main",
-          "time": "2026-09-29T16:49:47Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36600561469"
+          "time": "2026-09-29T16:55:23Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36601234699"
         },
         {
-          "id": 36600561336,
-          "title": "fix: refresh cached tree before PBD probe",
+          "id": 36601234687,
+          "title": "fix: normalize cached PBD patch command",
           "status": "in_progress",
           "conclusion": null,
-          "status_label": "currently running:  Run 3 of SPlisHSPlasH PBD WASM compile probe. fix: refresh cached tree before PBD probe",
+          "status_label": "currently running:  Run 129 of Test, build WASM, and deploy Pages. fix: normalize cached PBD patch command",
           "branch": "main",
-          "time": "2026-09-29T16:49:47Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36600561336"
+          "time": "2026-09-29T16:55:23Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36601234687"
         },
         {
-          "id": 36600561299,
-          "title": "fix: refresh cached tree before PBD probe",
-          "status": "unknown",
-          "conclusion": null,
-          "status_label": "waiting for another serialized run to finish:  Run 127 of Test, build WASM, and deploy Pages. fix: refresh cached tree before PBD probe",
-          "branch": "main",
-          "time": "2026-09-29T16:49:47Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36600561299"
-        },
-        {
-          "id": 36600402403,
-          "title": "ci: rerun PBD probe for Emscripten patches",
+          "id": 36601234627,
+          "title": "fix: normalize cached PBD patch command",
           "status": "completed",
-          "conclusion": "failure",
-          "status_label": "failed:  Run 2 of SPlisHSPlasH PBD WASM compile probe. ci: rerun PBD probe for Emscripten patches",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 50 of SPlisHSPlasH WASM build probe. fix: normalize cached PBD patch command",
           "branch": "main",
-          "time": "2026-09-29T16:48:26Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36600402403"
+          "time": "2026-09-29T16:55:23Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36601234627"
+        },
+        {
+          "id": 36601026640,
+          "title": "fix: stub PBD OpenMP calls for single-thread WASM",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 49 of SPlisHSPlasH WASM build probe. fix: stub PBD OpenMP calls for single-thread WASM",
+          "branch": "main",
+          "time": "2026-09-29T16:53:39Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36601026640"
         }
       ]
     },
@@ -371,5 +371,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-29T16:50:45Z"
+  "updated_at": "2026-09-29T16:58:44Z"
 }
