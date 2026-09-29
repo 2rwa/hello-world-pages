@@ -103,44 +103,44 @@
       "actions_url": "https://github.com/2rwa/sph-web-samples/actions",
       "runs": [
         {
-          "id": 36598328534,
-          "title": "fix: close rotated Bender2019 smoke main",
+          "id": 36600561469,
+          "title": "fix: refresh cached tree before PBD probe",
           "status": "completed",
           "conclusion": "success",
-          "status_label": "completed successfully:  Run 44 of SPlisHSPlasH WASM build probe. fix: close rotated Bender2019 smoke main",
+          "status_label": "completed successfully:  Run 48 of SPlisHSPlasH WASM build probe. fix: refresh cached tree before PBD probe",
           "branch": "main",
-          "time": "2026-09-29T16:31:22Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36598328534"
+          "time": "2026-09-29T16:49:47Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36600561469"
         },
         {
-          "id": 36598328485,
-          "title": "fix: close rotated Bender2019 smoke main",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 122 of Test, build WASM, and deploy Pages. fix: close rotated Bender2019 smoke main",
+          "id": 36600561336,
+          "title": "fix: refresh cached tree before PBD probe",
+          "status": "in_progress",
+          "conclusion": null,
+          "status_label": "currently running:  Run 3 of SPlisHSPlasH PBD WASM compile probe. fix: refresh cached tree before PBD probe",
           "branch": "main",
-          "time": "2026-09-29T16:31:22Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36598328485"
+          "time": "2026-09-29T16:49:47Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36600561336"
         },
         {
-          "id": 36594912063,
-          "title": "feat: support rotated static Bender2019 boundaries",
+          "id": 36600561299,
+          "title": "fix: refresh cached tree before PBD probe",
+          "status": "unknown",
+          "conclusion": null,
+          "status_label": "waiting for another serialized run to finish:  Run 127 of Test, build WASM, and deploy Pages. fix: refresh cached tree before PBD probe",
+          "branch": "main",
+          "time": "2026-09-29T16:49:47Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36600561299"
+        },
+        {
+          "id": 36600402403,
+          "title": "ci: rerun PBD probe for Emscripten patches",
           "status": "completed",
           "conclusion": "failure",
-          "status_label": "failed:  Run 121 of Test, build WASM, and deploy Pages. feat: support rotated static Bender2019 boundaries",
+          "status_label": "failed:  Run 2 of SPlisHSPlasH PBD WASM compile probe. ci: rerun PBD probe for Emscripten patches",
           "branch": "main",
-          "time": "2026-09-29T16:03:36Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36594912063"
-        },
-        {
-          "id": 36594911793,
-          "title": "feat: support rotated static Bender2019 boundaries",
-          "status": "completed",
-          "conclusion": "failure",
-          "status_label": "failed:  Run 43 of SPlisHSPlasH WASM build probe. feat: support rotated static Bender2019 boundaries",
-          "branch": "main",
-          "time": "2026-09-29T16:03:35Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36594911793"
+          "time": "2026-09-29T16:48:26Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36600402403"
         }
       ]
     },
@@ -371,5 +371,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-29T16:37:39Z"
+  "updated_at": "2026-09-29T16:50:45Z"
 }
