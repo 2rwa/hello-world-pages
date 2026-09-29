@@ -103,6 +103,36 @@
       "actions_url": "https://github.com/2rwa/sph-web-samples/actions",
       "runs": [
         {
+          "id": 36526634056,
+          "title": "test: validate WebGPU raymarch in headless Chrome",
+          "status": "in_progress",
+          "conclusion": null,
+          "status_label": "currently running:  Run 36 of Test, build WASM, and deploy Pages. test: validate WebGPU raymarch in headless Chrome",
+          "branch": "main",
+          "time": "2026-09-29T05:32:17Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36526634056"
+        },
+        {
+          "id": 36526552495,
+          "title": "feat: add WebGPU surface-tension density raymarch",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 35 of Test, build WASM, and deploy Pages. feat: add WebGPU surface-tension density raymarch",
+          "branch": "main",
+          "time": "2026-09-29T05:31:14Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36526552495"
+        },
+        {
+          "id": 36526314163,
+          "title": "test: define WebGPU surface-tension raymarch contract",
+          "status": "completed",
+          "conclusion": "failure",
+          "status_label": "failed:  Run 34 of Test, build WASM, and deploy Pages. test: define WebGPU surface-tension raymarch contract",
+          "branch": "main",
+          "time": "2026-09-29T05:28:16Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36526314163"
+        },
+        {
           "id": 36524465567,
           "title": "feat: add WebGL2 ports for all examples3d modes",
           "status": "completed",
@@ -111,36 +141,6 @@
           "branch": "main",
           "time": "2026-09-29T05:04:29Z",
           "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36524465567"
-        },
-        {
-          "id": 36524363360,
-          "title": "test: define remaining WebGL2 examples3d pages",
-          "status": "completed",
-          "conclusion": "failure",
-          "status_label": "failed:  Run 32 of Test, build WASM, and deploy Pages. test: define remaining WebGL2 examples3d pages",
-          "branch": "main",
-          "time": "2026-09-29T05:03:09Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36524363360"
-        },
-        {
-          "id": 36523502205,
-          "title": "feat: add WebGL2 renderer for Salva 3D Basic",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 31 of Test, build WASM, and deploy Pages. feat: add WebGL2 renderer for Salva 3D Basic",
-          "branch": "main",
-          "time": "2026-09-29T04:51:45Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36523502205"
-        },
-        {
-          "id": 36523410726,
-          "title": "test: define WebGL2 3D particle sample contract",
-          "status": "completed",
-          "conclusion": "failure",
-          "status_label": "failed:  Run 30 of Test, build WASM, and deploy Pages. test: define WebGL2 3D particle sample contract",
-          "branch": "main",
-          "time": "2026-09-29T04:50:30Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36523410726"
         }
       ]
     },
@@ -371,5 +371,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-29T05:17:26Z"
+  "updated_at": "2026-09-29T05:33:47Z"
 }
