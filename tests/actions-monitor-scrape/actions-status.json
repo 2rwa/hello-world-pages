@@ -103,44 +103,44 @@
       "actions_url": "https://github.com/2rwa/sph-web-samples/actions",
       "runs": [
         {
-          "id": 36586577266,
-          "title": "feat: add three upstream DFSPH viscosity buckling scenes",
-          "status": "in_progress",
-          "conclusion": null,
-          "status_label": "currently running:  Run 35 of SPlisHSPlasH WASM build probe. feat: add three upstream DFSPH viscosity buckling scenes",
-          "branch": "main",
-          "time": "2026-09-29T14:58:11Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36586577266"
-        },
-        {
-          "id": 36586576958,
-          "title": "feat: add three upstream DFSPH viscosity buckling scenes",
-          "status": "in_progress",
-          "conclusion": null,
-          "status_label": "currently running:  Run 106 of Test, build WASM, and deploy Pages. feat: add three upstream DFSPH viscosity buckling scenes",
-          "branch": "main",
-          "time": "2026-09-29T14:58:11Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36586576958"
-        },
-        {
-          "id": 36585903907,
-          "title": "feat: add upstream Peer2016 IISPH buckling scene",
+          "id": 36588956301,
+          "title": "fix: declare surface tension diagnostics in wasm smoke",
           "status": "completed",
           "conclusion": "success",
-          "status_label": "completed successfully:  Run 34 of SPlisHSPlasH WASM build probe. feat: add upstream Peer2016 IISPH buckling scene",
+          "status_label": "completed successfully:  Run 110 of Test, build WASM, and deploy Pages. fix: declare surface tension diagnostics in wasm smoke",
           "branch": "main",
-          "time": "2026-09-29T14:52:34Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36585903907"
+          "time": "2026-09-29T15:16:40Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36588956301"
         },
         {
-          "id": 36585903705,
-          "title": "feat: add upstream Peer2016 IISPH buckling scene",
+          "id": 36588956291,
+          "title": "fix: declare surface tension diagnostics in wasm smoke",
           "status": "completed",
           "conclusion": "success",
-          "status_label": "completed successfully:  Run 105 of Test, build WASM, and deploy Pages. feat: add upstream Peer2016 IISPH buckling scene",
+          "status_label": "completed successfully:  Run 38 of SPlisHSPlasH WASM build probe. fix: declare surface tension diagnostics in wasm smoke",
           "branch": "main",
-          "time": "2026-09-29T14:52:33Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36585903705"
+          "time": "2026-09-29T15:16:40Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36588956291"
+        },
+        {
+          "id": 36588362254,
+          "title": "test: enable Zorilla Ritter surface tension in wasm",
+          "status": "completed",
+          "conclusion": "failure",
+          "status_label": "failed:  Run 109 of Test, build WASM, and deploy Pages. test: enable Zorilla Ritter surface tension in wasm",
+          "branch": "main",
+          "time": "2026-09-29T15:12:03Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36588362254"
+        },
+        {
+          "id": 36588362207,
+          "title": "test: enable Zorilla Ritter surface tension in wasm",
+          "status": "completed",
+          "conclusion": "failure",
+          "status_label": "failed:  Run 37 of SPlisHSPlasH WASM build probe. test: enable Zorilla Ritter surface tension in wasm",
+          "branch": "main",
+          "time": "2026-09-29T15:12:03Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36588362207"
         }
       ]
     },
@@ -371,5 +371,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-29T14:58:41Z"
+  "updated_at": "2026-09-29T15:21:18Z"
 }
