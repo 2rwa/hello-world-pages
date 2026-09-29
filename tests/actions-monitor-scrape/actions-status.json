@@ -103,44 +103,44 @@
       "actions_url": "https://github.com/2rwa/sph-web-samples/actions",
       "runs": [
         {
+          "id": 36564708268,
+          "title": "ci: cancel stale Pages runs during iteration",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 86 of Test, build WASM, and deploy Pages. ci: cancel stale Pages runs during iteration",
+          "branch": "main",
+          "time": "2026-09-29T11:54:55Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36564708268"
+        },
+        {
+          "id": 36564492204,
+          "title": "test: fix generic scene velocity direction assertion",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 21 of SPlisHSPlasH WASM build probe. test: fix generic scene velocity direction assertion",
+          "branch": "main",
+          "time": "2026-09-29T11:52:54Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36564492204"
+        },
+        {
+          "id": 36564492063,
+          "title": "test: fix generic scene velocity direction assertion",
+          "status": "completed",
+          "conclusion": "cancelled",
+          "status_label": "cancelled:  Run 85 of Test, build WASM, and deploy Pages. test: fix generic scene velocity direction assertion",
+          "branch": "main",
+          "time": "2026-09-29T11:52:54Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36564492063"
+        },
+        {
           "id": 36564295769,
           "title": "fix: declare generic boundary bridge before scene commit",
-          "status": "unknown",
-          "conclusion": null,
-          "status_label": "waiting for another serialized run to finish:  Run 84 of Test, build WASM, and deploy Pages. fix: declare generic boundary bridge before scene commit",
+          "status": "completed",
+          "conclusion": "failure",
+          "status_label": "failed:  Run 84 of Test, build WASM, and deploy Pages. fix: declare generic boundary bridge before scene commit",
           "branch": "main",
           "time": "2026-09-29T11:51:00Z",
           "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36564295769"
-        },
-        {
-          "id": 36564295752,
-          "title": "fix: declare generic boundary bridge before scene commit",
-          "status": "completed",
-          "conclusion": "failure",
-          "status_label": "failed:  Run 20 of SPlisHSPlasH WASM build probe. fix: declare generic boundary bridge before scene commit",
-          "branch": "main",
-          "time": "2026-09-29T11:51:00Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36564295752"
-        },
-        {
-          "id": 36564171605,
-          "title": "feat: build upstream WCSPH scene through generic wasm ABI",
-          "status": "in_progress",
-          "conclusion": null,
-          "status_label": "currently running:  Run 83 of Test, build WASM, and deploy Pages. feat: build upstream WCSPH scene through generic wasm ABI",
-          "branch": "main",
-          "time": "2026-09-29T11:49:50Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36564171605"
-        },
-        {
-          "id": 36564171597,
-          "title": "feat: build upstream WCSPH scene through generic wasm ABI",
-          "status": "completed",
-          "conclusion": "failure",
-          "status_label": "failed:  Run 19 of SPlisHSPlasH WASM build probe. feat: build upstream WCSPH scene through generic wasm ABI",
-          "branch": "main",
-          "time": "2026-09-29T11:49:50Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36564171597"
         }
       ]
     },
@@ -371,5 +371,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-29T11:52:47Z"
+  "updated_at": "2026-09-29T11:59:58Z"
 }
