@@ -105,9 +105,9 @@
         {
           "id": 36557744768,
           "title": "fix: densify Akinci2012 tank boundary sampling",
-          "status": "in_progress",
-          "conclusion": null,
-          "status_label": "currently running:  Run 12 of SPlisHSPlasH WASM build probe. fix: densify Akinci2012 tank boundary sampling",
+          "status": "completed",
+          "conclusion": "failure",
+          "status_label": "failed:  Run 12 of SPlisHSPlasH WASM build probe. fix: densify Akinci2012 tank boundary sampling",
           "branch": "main",
           "time": "2026-09-29T10:47:31Z",
           "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36557744768"
@@ -115,9 +115,9 @@
         {
           "id": 36557744740,
           "title": "fix: densify Akinci2012 tank boundary sampling",
-          "status": "unknown",
-          "conclusion": null,
-          "status_label": "waiting for another serialized run to finish:  Run 74 of Test, build WASM, and deploy Pages. fix: densify Akinci2012 tank boundary sampling",
+          "status": "completed",
+          "conclusion": "failure",
+          "status_label": "failed:  Run 74 of Test, build WASM, and deploy Pages. fix: densify Akinci2012 tank boundary sampling",
           "branch": "main",
           "time": "2026-09-29T10:47:31Z",
           "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36557744740"
@@ -125,9 +125,9 @@
         {
           "id": 36557505341,
           "title": "fix: preserve GitHub Pages base path for SPlisHSPlasH wasm",
-          "status": "in_progress",
-          "conclusion": null,
-          "status_label": "currently running:  Run 73 of Test, build WASM, and deploy Pages. fix: preserve GitHub Pages base path for SPlisHSPlasH wasm",
+          "status": "completed",
+          "conclusion": "failure",
+          "status_label": "failed:  Run 73 of Test, build WASM, and deploy Pages. fix: preserve GitHub Pages base path for SPlisHSPlasH wasm",
           "branch": "main",
           "time": "2026-09-29T10:45:12Z",
           "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36557505341"
@@ -371,5 +371,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-29T10:48:36Z"
+  "updated_at": "2026-09-29T10:57:01Z"
 }
