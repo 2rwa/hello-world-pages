@@ -150,34 +150,44 @@
       "actions_url": "https://github.com/2rwa/tmp-blender-52/actions",
       "runs": [
         {
-          "id": 36505174159,
-          "title": "fix: bootstrap Pages independently of rendering",
+          "id": 36507938449,
+          "title": "ci: keep baseline render trigger scoped to baseline",
           "status": "completed",
           "conclusion": "success",
-          "status_label": "completed successfully:  Run 1 of GitHub Pages. fix: bootstrap Pages independently of rendering",
+          "status_label": "completed successfully:  Run 6 of Blender 5.2 render. ci: keep baseline render trigger scoped to baseline",
           "branch": "main",
-          "time": "2026-09-29T00:52:13Z",
-          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36505174159"
+          "time": "2026-09-29T01:26:52Z",
+          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36507938449"
         },
         {
-          "id": 36504460093,
-          "title": "feat: publish Blender renders to Pages",
+          "id": 36507852112,
+          "title": "fix: use Blender 5.2 compositor node groups",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 5 of Blender 5.2 render. fix: use Blender 5.2 compositor node groups",
+          "branch": "main",
+          "time": "2026-09-29T01:25:48Z",
+          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36507852112"
+        },
+        {
+          "id": 36507852100,
+          "title": "fix: use Blender 5.2 compositor node groups",
           "status": "in_progress",
           "conclusion": null,
-          "status_label": "currently running:  Run 2 of Blender 5.2 render. feat: publish Blender renders to Pages",
+          "status_label": "currently running:  Run 5 of Blender 5.2 feature showcase. fix: use Blender 5.2 compositor node groups",
           "branch": "main",
-          "time": "2026-09-29T00:43:15Z",
-          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36504460093"
+          "time": "2026-09-29T01:25:48Z",
+          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36507852100"
         },
         {
-          "id": 36503669410,
-          "title": "feat: add Blender 5.2 render workflow",
+          "id": 36507575784,
+          "title": "fix: make showcase Blender wrappers self-contained",
           "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 1 of Blender 5.2 render. feat: add Blender 5.2 render workflow",
+          "conclusion": "cancelled",
+          "status_label": "cancelled:  Run 4 of Blender 5.2 feature showcase. fix: make showcase Blender wrappers self-contained",
           "branch": "main",
-          "time": "2026-09-29T00:33:18Z",
-          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36503669410"
+          "time": "2026-09-29T01:22:19Z",
+          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36507575784"
         }
       ]
     },
@@ -314,5 +324,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-29T00:59:17Z"
+  "updated_at": "2026-09-29T01:35:45Z"
 }
