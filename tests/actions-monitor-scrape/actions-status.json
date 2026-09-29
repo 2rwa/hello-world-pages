@@ -103,44 +103,44 @@
       "actions_url": "https://github.com/2rwa/sph-web-samples/actions",
       "runs": [
         {
-          "id": 36646936395,
-          "title": "test: allow PBD substep velocity roundoff",
+          "id": 36647526589,
+          "title": "test: probe PBD motor hinge in WASM",
           "status": "in_progress",
           "conclusion": null,
-          "status_label": "currently running:  Run 61 of SPlisHSPlasH WASM build probe. test: allow PBD substep velocity roundoff",
+          "status_label": "currently running:  Run 17 of SPlisHSPlasH PBD WASM compile probe. test: probe PBD motor hinge in WASM",
           "branch": "main",
-          "time": "2026-09-29T23:46:12Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36646936395"
+          "time": "2026-09-29T23:53:12Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36647526589"
         },
         {
-          "id": 36646936373,
-          "title": "test: allow PBD substep velocity roundoff",
-          "status": "unknown",
-          "conclusion": null,
-          "status_label": "waiting for another serialized run to finish:  Run 145 of Test, build WASM, and deploy Pages. test: allow PBD substep velocity roundoff",
-          "branch": "main",
-          "time": "2026-09-29T23:46:12Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36646936373"
-        },
-        {
-          "id": 36646936368,
-          "title": "test: allow PBD substep velocity roundoff",
-          "status": "in_progress",
-          "conclusion": null,
-          "status_label": "currently running:  Run 15 of SPlisHSPlasH PBD WASM compile probe. test: allow PBD substep velocity roundoff",
-          "branch": "main",
-          "time": "2026-09-29T23:46:12Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36646936368"
-        },
-        {
-          "id": 36646873682,
-          "title": "test: couple SPH through upstream PBD timestep",
+          "id": 36647526522,
+          "title": "test: probe PBD motor hinge in WASM",
           "status": "completed",
           "conclusion": "success",
-          "status_label": "completed successfully:  Run 60 of SPlisHSPlasH WASM build probe. test: couple SPH through upstream PBD timestep",
+          "status_label": "completed successfully:  Run 63 of SPlisHSPlasH WASM build probe. test: probe PBD motor hinge in WASM",
           "branch": "main",
-          "time": "2026-09-29T23:45:28Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36646873682"
+          "time": "2026-09-29T23:53:12Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36647526522"
+        },
+        {
+          "id": 36647526459,
+          "title": "test: probe PBD motor hinge in WASM",
+          "status": "in_progress",
+          "conclusion": null,
+          "status_label": "currently running:  Run 147 of Test, build WASM, and deploy Pages. test: probe PBD motor hinge in WASM",
+          "branch": "main",
+          "time": "2026-09-29T23:53:12Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36647526459"
+        },
+        {
+          "id": 36647207571,
+          "title": "fix: disambiguate PBD Simulation header guard",
+          "status": "completed",
+          "conclusion": "cancelled",
+          "status_label": "cancelled:  Run 146 of Test, build WASM, and deploy Pages. fix: disambiguate PBD Simulation header guard",
+          "branch": "main",
+          "time": "2026-09-29T23:49:25Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36647207571"
         }
       ]
     },
@@ -371,5 +371,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-29T23:47:18Z"
+  "updated_at": "2026-09-29T23:54:29Z"
 }
