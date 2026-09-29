@@ -103,44 +103,44 @@
       "actions_url": "https://github.com/2rwa/sph-web-samples/actions",
       "runs": [
         {
-          "id": 36588956301,
-          "title": "fix: declare surface tension diagnostics in wasm smoke",
+          "id": 36591078036,
+          "title": "docs: record surface tension browser coverage",
+          "status": "in_progress",
+          "conclusion": null,
+          "status_label": "currently running:  Run 114 of Test, build WASM, and deploy Pages. docs: record surface tension browser coverage",
+          "branch": "main",
+          "time": "2026-09-29T15:33:16Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36591078036"
+        },
+        {
+          "id": 36590644134,
+          "title": "feat: add ZR2020 break-dam surface scene",
           "status": "completed",
           "conclusion": "success",
-          "status_label": "completed successfully:  Run 110 of Test, build WASM, and deploy Pages. fix: declare surface tension diagnostics in wasm smoke",
+          "status_label": "completed successfully:  Run 113 of Test, build WASM, and deploy Pages. feat: add ZR2020 break-dam surface scene",
           "branch": "main",
-          "time": "2026-09-29T15:16:40Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36588956301"
+          "time": "2026-09-29T15:29:55Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36590644134"
         },
         {
-          "id": 36588956291,
-          "title": "fix: declare surface tension diagnostics in wasm smoke",
+          "id": 36590644077,
+          "title": "feat: add ZR2020 break-dam surface scene",
           "status": "completed",
           "conclusion": "success",
-          "status_label": "completed successfully:  Run 38 of SPlisHSPlasH WASM build probe. fix: declare surface tension diagnostics in wasm smoke",
+          "status_label": "completed successfully:  Run 40 of SPlisHSPlasH WASM build probe. feat: add ZR2020 break-dam surface scene",
           "branch": "main",
-          "time": "2026-09-29T15:16:40Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36588956291"
+          "time": "2026-09-29T15:29:55Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36590644077"
         },
         {
-          "id": 36588362254,
-          "title": "test: enable Zorilla Ritter surface tension in wasm",
+          "id": 36590097304,
+          "title": "feat: add ZR2020 double-droplet surface scene",
           "status": "completed",
-          "conclusion": "failure",
-          "status_label": "failed:  Run 109 of Test, build WASM, and deploy Pages. test: enable Zorilla Ritter surface tension in wasm",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 39 of SPlisHSPlasH WASM build probe. feat: add ZR2020 double-droplet surface scene",
           "branch": "main",
-          "time": "2026-09-29T15:12:03Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36588362254"
-        },
-        {
-          "id": 36588362207,
-          "title": "test: enable Zorilla Ritter surface tension in wasm",
-          "status": "completed",
-          "conclusion": "failure",
-          "status_label": "failed:  Run 37 of SPlisHSPlasH WASM build probe. test: enable Zorilla Ritter surface tension in wasm",
-          "branch": "main",
-          "time": "2026-09-29T15:12:03Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36588362207"
+          "time": "2026-09-29T15:25:38Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36590097304"
         }
       ]
     },
@@ -371,5 +371,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-29T15:21:18Z"
+  "updated_at": "2026-09-29T15:35:03Z"
 }
