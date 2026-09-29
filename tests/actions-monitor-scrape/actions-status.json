@@ -103,44 +103,44 @@
       "actions_url": "https://github.com/2rwa/sph-web-samples/actions",
       "runs": [
         {
-          "id": 36638777588,
-          "title": "test: sweep gravity-driven PBD fluid impact",
+          "id": 36640136189,
+          "title": "test: probe upstream PBD timestep in WASM",
           "status": "in_progress",
           "conclusion": null,
-          "status_label": "currently running:  Run 10 of SPlisHSPlasH PBD WASM compile probe. test: sweep gravity-driven PBD fluid impact",
+          "status_label": "currently running:  Run 11 of SPlisHSPlasH PBD WASM compile probe. test: probe upstream PBD timestep in WASM",
           "branch": "main",
-          "time": "2026-09-29T22:18:25Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36638777588"
+          "time": "2026-09-29T22:32:08Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36640136189"
         },
         {
-          "id": 36638777554,
-          "title": "test: sweep gravity-driven PBD fluid impact",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 55 of SPlisHSPlasH WASM build probe. test: sweep gravity-driven PBD fluid impact",
+          "id": 36640136133,
+          "title": "test: probe upstream PBD timestep in WASM",
+          "status": "unknown",
+          "conclusion": null,
+          "status_label": "waiting for another serialized run to finish:  Run 137 of Test, build WASM, and deploy Pages. test: probe upstream PBD timestep in WASM",
           "branch": "main",
-          "time": "2026-09-29T22:18:25Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36638777554"
+          "time": "2026-09-29T22:32:08Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36640136133"
         },
         {
-          "id": 36638777533,
-          "title": "test: sweep gravity-driven PBD fluid impact",
+          "id": 36640136020,
+          "title": "test: probe upstream PBD timestep in WASM",
           "status": "in_progress",
           "conclusion": null,
-          "status_label": "currently running:  Run 134 of Test, build WASM, and deploy Pages. test: sweep gravity-driven PBD fluid impact",
+          "status_label": "currently running:  Run 56 of SPlisHSPlasH WASM build probe. test: probe upstream PBD timestep in WASM",
           "branch": "main",
-          "time": "2026-09-29T22:18:25Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36638777533"
+          "time": "2026-09-29T22:32:08Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36640136020"
         },
         {
-          "id": 36638017094,
-          "title": "feat: add browser PBD two-way coupling demo",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 54 of SPlisHSPlasH WASM build probe. feat: add browser PBD two-way coupling demo",
+          "id": 36640008767,
+          "title": "docs: record browser PBD coupling milestone",
+          "status": "in_progress",
+          "conclusion": null,
+          "status_label": "currently running:  Run 136 of Test, build WASM, and deploy Pages. docs: record browser PBD coupling milestone",
           "branch": "main",
-          "time": "2026-09-29T22:10:57Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36638017094"
+          "time": "2026-09-29T22:30:49Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36640008767"
         }
       ]
     },
@@ -371,5 +371,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-29T22:20:11Z"
+  "updated_at": "2026-09-29T22:32:28Z"
 }
