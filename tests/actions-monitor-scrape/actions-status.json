@@ -103,6 +103,16 @@
       "actions_url": "https://github.com/2rwa/tmp-blender/actions",
       "runs": [
         {
+          "id": 36504337819,
+          "title": "Pages gallery",
+          "status": "completed",
+          "conclusion": "skipped",
+          "status_label": "skipped:  Run 36 of Pages gallery.",
+          "branch": null,
+          "time": "2026-09-29T00:41:44Z",
+          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36504337819"
+        },
+        {
           "id": 36492307754,
           "title": "ci: publish Blender fracture 3D result to Pages",
           "status": "completed",
@@ -115,9 +125,9 @@
         {
           "id": 36492297377,
           "title": "test: render extreme fracture case as Blender 3D CG",
-          "status": "in_progress",
-          "conclusion": null,
-          "status_label": "currently running:  Run 1 of SPH fracture 3D extreme. test: render extreme fracture case as Blender 3D CG",
+          "status": "completed",
+          "conclusion": "failure",
+          "status_label": "failed:  Run 1 of SPH fracture 3D extreme. test: render extreme fracture case as Blender 3D CG",
           "branch": "main",
           "time": "2026-09-28T22:25:28Z",
           "url": "https://github.com/2rwa/tmp-blender/actions/runs/36492297377"
@@ -131,16 +141,6 @@
           "branch": null,
           "time": "2026-09-28T20:11:54Z",
           "url": "https://github.com/2rwa/tmp-blender/actions/runs/36477481958"
-        },
-        {
-          "id": 36463442520,
-          "title": "Pages gallery",
-          "status": "completed",
-          "conclusion": "skipped",
-          "status_label": "skipped:  Run 33 of Pages gallery.",
-          "branch": null,
-          "time": "2026-09-28T18:11:31Z",
-          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36463442520"
         }
       ]
     },
@@ -148,7 +148,38 @@
       "name": "tmp-blender-52",
       "url": "https://github.com/2rwa/tmp-blender-52",
       "actions_url": "https://github.com/2rwa/tmp-blender-52/actions",
-      "runs": []
+      "runs": [
+        {
+          "id": 36505174159,
+          "title": "fix: bootstrap Pages independently of rendering",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 1 of GitHub Pages. fix: bootstrap Pages independently of rendering",
+          "branch": "main",
+          "time": "2026-09-29T00:52:13Z",
+          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36505174159"
+        },
+        {
+          "id": 36504460093,
+          "title": "feat: publish Blender renders to Pages",
+          "status": "in_progress",
+          "conclusion": null,
+          "status_label": "currently running:  Run 2 of Blender 5.2 render. feat: publish Blender renders to Pages",
+          "branch": "main",
+          "time": "2026-09-29T00:43:15Z",
+          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36504460093"
+        },
+        {
+          "id": 36503669410,
+          "title": "feat: add Blender 5.2 render workflow",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 1 of Blender 5.2 render. feat: add Blender 5.2 render workflow",
+          "branch": "main",
+          "time": "2026-09-29T00:33:18Z",
+          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36503669410"
+        }
+      ]
     },
     {
       "name": "tmp-blender-rigid-cloth",
@@ -283,5 +314,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-29T00:00:38Z"
+  "updated_at": "2026-09-29T00:59:17Z"
 }
