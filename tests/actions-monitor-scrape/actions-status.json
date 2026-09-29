@@ -103,44 +103,44 @@
       "actions_url": "https://github.com/2rwa/sph-web-samples/actions",
       "runs": [
         {
-          "id": 36521616731,
-          "title": "test: cover five Rapier coupling Pages variants",
+          "id": 36522760277,
+          "title": "test: cover official examples3d browser ports",
           "status": "completed",
           "conclusion": "success",
-          "status_label": "completed successfully:  Run 24 of Test, build WASM, and deploy Pages. test: cover five Rapier coupling Pages variants",
+          "status_label": "completed successfully:  Run 29 of Test, build WASM, and deploy Pages. test: cover official examples3d browser ports",
           "branch": "main",
-          "time": "2026-09-29T04:26:11Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36521616731"
+          "time": "2026-09-29T04:41:43Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36522760277"
         },
         {
-          "id": 36521558032,
-          "title": "feat: add five Rapier coupling Pages variants",
+          "id": 36522619958,
+          "title": "fix: convert 3D boundary samples for Rapier poses",
           "status": "completed",
           "conclusion": "success",
-          "status_label": "completed successfully:  Run 23 of Test, build WASM, and deploy Pages. feat: add five Rapier coupling Pages variants",
+          "status_label": "completed successfully:  Run 28 of Test, build WASM, and deploy Pages. fix: convert 3D boundary samples for Rapier poses",
           "branch": "main",
-          "time": "2026-09-29T04:25:25Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36521558032"
+          "time": "2026-09-29T04:39:49Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36522619958"
         },
         {
-          "id": 36521406165,
-          "title": "feat: implement Rapier-Salva two-way coupling variants",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 22 of Test, build WASM, and deploy Pages. feat: implement Rapier-Salva two-way coupling variants",
-          "branch": "main",
-          "time": "2026-09-29T04:23:24Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36521406165"
-        },
-        {
-          "id": 36521267283,
-          "title": "test: define five Rapier coupling variants",
+          "id": 36522570174,
+          "title": "feat: add Pages for all official Salva examples3d",
           "status": "completed",
           "conclusion": "failure",
-          "status_label": "failed:  Run 21 of Test, build WASM, and deploy Pages. test: define five Rapier coupling variants",
+          "status_label": "failed:  Run 27 of Test, build WASM, and deploy Pages. feat: add Pages for all official Salva examples3d",
           "branch": "main",
-          "time": "2026-09-29T04:21:31Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36521267283"
+          "time": "2026-09-29T04:39:08Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36522570174"
+        },
+        {
+          "id": 36522470454,
+          "title": "feat: implement six official Salva examples3d modes",
+          "status": "completed",
+          "conclusion": "failure",
+          "status_label": "failed:  Run 26 of Test, build WASM, and deploy Pages. feat: implement six official Salva examples3d modes",
+          "branch": "main",
+          "time": "2026-09-29T04:37:45Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36522470454"
         }
       ]
     },
@@ -371,5 +371,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-29T04:29:13Z"
+  "updated_at": "2026-09-29T04:47:34Z"
 }
