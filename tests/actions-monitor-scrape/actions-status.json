@@ -103,44 +103,44 @@
       "actions_url": "https://github.com/2rwa/sph-web-samples/actions",
       "runs": [
         {
-          "id": 36585495655,
-          "title": "feat: add upstream IISPH buckling scene to browser",
+          "id": 36586577266,
+          "title": "feat: add three upstream DFSPH viscosity buckling scenes",
           "status": "in_progress",
           "conclusion": null,
-          "status_label": "currently running:  Run 104 of Test, build WASM, and deploy Pages. feat: add upstream IISPH buckling scene to browser",
+          "status_label": "currently running:  Run 35 of SPlisHSPlasH WASM build probe. feat: add three upstream DFSPH viscosity buckling scenes",
           "branch": "main",
-          "time": "2026-09-29T14:49:00Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36585495655"
+          "time": "2026-09-29T14:58:11Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36586577266"
         },
         {
-          "id": 36585104169,
-          "title": "feat: add IISPH and Peer2015 viscosity wasm regression",
-          "status": "completed",
-          "conclusion": "cancelled",
-          "status_label": "cancelled:  Run 103 of Test, build WASM, and deploy Pages. feat: add IISPH and Peer2015 viscosity wasm regression",
+          "id": 36586576958,
+          "title": "feat: add three upstream DFSPH viscosity buckling scenes",
+          "status": "in_progress",
+          "conclusion": null,
+          "status_label": "currently running:  Run 106 of Test, build WASM, and deploy Pages. feat: add three upstream DFSPH viscosity buckling scenes",
           "branch": "main",
-          "time": "2026-09-29T14:45:51Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36585104169"
+          "time": "2026-09-29T14:58:11Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36586576958"
         },
         {
-          "id": 36585104160,
-          "title": "feat: add IISPH and Peer2015 viscosity wasm regression",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 33 of SPlisHSPlasH WASM build probe. feat: add IISPH and Peer2015 viscosity wasm regression",
-          "branch": "main",
-          "time": "2026-09-29T14:45:51Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36585104160"
-        },
-        {
-          "id": 36584598549,
-          "title": "feat: forward standard viscosity from upstream scene JSON",
+          "id": 36585903907,
+          "title": "feat: add upstream Peer2016 IISPH buckling scene",
           "status": "completed",
           "conclusion": "success",
-          "status_label": "completed successfully:  Run 32 of SPlisHSPlasH WASM build probe. feat: forward standard viscosity from upstream scene JSON",
+          "status_label": "completed successfully:  Run 34 of SPlisHSPlasH WASM build probe. feat: add upstream Peer2016 IISPH buckling scene",
           "branch": "main",
-          "time": "2026-09-29T14:41:52Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36584598549"
+          "time": "2026-09-29T14:52:34Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36585903907"
+        },
+        {
+          "id": 36585903705,
+          "title": "feat: add upstream Peer2016 IISPH buckling scene",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 105 of Test, build WASM, and deploy Pages. feat: add upstream Peer2016 IISPH buckling scene",
+          "branch": "main",
+          "time": "2026-09-29T14:52:33Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36585903705"
         }
       ]
     },
@@ -371,5 +371,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-29T14:49:25Z"
+  "updated_at": "2026-09-29T14:58:41Z"
 }
