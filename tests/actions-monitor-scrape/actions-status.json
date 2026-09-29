@@ -103,6 +103,26 @@
       "actions_url": "https://github.com/2rwa/sph-web-samples/actions",
       "runs": [
         {
+          "id": 36560712213,
+          "title": "ci: reuse compiled SPlisHSPlasH wasm artifacts",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 18 of SPlisHSPlasH WASM build probe. ci: reuse compiled SPlisHSPlasH wasm artifacts",
+          "branch": "main",
+          "time": "2026-09-29T11:16:26Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36560712213"
+        },
+        {
+          "id": 36560712060,
+          "title": "ci: reuse compiled SPlisHSPlasH wasm artifacts",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 80 of Test, build WASM, and deploy Pages. ci: reuse compiled SPlisHSPlasH wasm artifacts",
+          "branch": "main",
+          "time": "2026-09-29T11:16:26Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36560712060"
+        },
+        {
           "id": 36560253284,
           "title": "fix: reduce WCSPH dam break CFL timestep",
           "status": "completed",
@@ -121,26 +141,6 @@
           "branch": "main",
           "time": "2026-09-29T11:11:58Z",
           "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36560253245"
-        },
-        {
-          "id": 36559733390,
-          "title": "fix: match upstream WCSPH dam break parameters",
-          "status": "completed",
-          "conclusion": "failure",
-          "status_label": "failed:  Run 16 of SPlisHSPlasH WASM build probe. fix: match upstream WCSPH dam break parameters",
-          "branch": "main",
-          "time": "2026-09-29T11:06:55Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36559733390"
-        },
-        {
-          "id": 36559733292,
-          "title": "fix: match upstream WCSPH dam break parameters",
-          "status": "completed",
-          "conclusion": "failure",
-          "status_label": "failed:  Run 78 of Test, build WASM, and deploy Pages. fix: match upstream WCSPH dam break parameters",
-          "branch": "main",
-          "time": "2026-09-29T11:06:55Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36559733292"
         }
       ]
     },
@@ -371,5 +371,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-29T11:15:48Z"
+  "updated_at": "2026-09-29T11:30:25Z"
 }
