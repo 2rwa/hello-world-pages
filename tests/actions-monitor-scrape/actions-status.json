@@ -103,6 +103,26 @@
       "actions_url": "https://github.com/2rwa/sph-web-samples/actions",
       "runs": [
         {
+          "id": 36547763918,
+          "title": "fix: make wasm dependency patch idempotent",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 66 of Test, build WASM, and deploy Pages. fix: make wasm dependency patch idempotent",
+          "branch": "main",
+          "time": "2026-09-29T09:13:27Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36547763918"
+        },
+        {
+          "id": 36547763702,
+          "title": "fix: make wasm dependency patch idempotent",
+          "status": "completed",
+          "conclusion": "failure",
+          "status_label": "failed:  Run 5 of SPlisHSPlasH WASM build probe. fix: make wasm dependency patch idempotent",
+          "branch": "main",
+          "time": "2026-09-29T09:13:27Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36547763702"
+        },
+        {
           "id": 36545608703,
           "title": "fix: disable OpenMP in wasm external dependencies",
           "status": "completed",
@@ -121,26 +141,6 @@
           "branch": "main",
           "time": "2026-09-29T08:53:38Z",
           "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36545608700"
-        },
-        {
-          "id": 36544833558,
-          "title": "fix: build wasm external dependencies before link",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 64 of Test, build WASM, and deploy Pages. fix: build wasm external dependencies before link",
-          "branch": "main",
-          "time": "2026-09-29T08:46:14Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36544833558"
-        },
-        {
-          "id": 36544833524,
-          "title": "fix: build wasm external dependencies before link",
-          "status": "completed",
-          "conclusion": "failure",
-          "status_label": "failed:  Run 3 of SPlisHSPlasH WASM build probe. fix: build wasm external dependencies before link",
-          "branch": "main",
-          "time": "2026-09-29T08:46:14Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36544833524"
         }
       ]
     },
@@ -371,5 +371,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-29T08:59:48Z"
+  "updated_at": "2026-09-29T09:25:07Z"
 }
