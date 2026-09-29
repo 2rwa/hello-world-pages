@@ -103,44 +103,44 @@
       "actions_url": "https://github.com/2rwa/sph-web-samples/actions",
       "runs": [
         {
-          "id": 36592489616,
-          "title": "feat: add generic mesh Bender2019 wasm probe",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 41 of SPlisHSPlasH WASM build probe. feat: add generic mesh Bender2019 wasm probe",
-          "branch": "main",
-          "time": "2026-09-29T15:44:24Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36592489616"
-        },
-        {
-          "id": 36592489565,
-          "title": "feat: add generic mesh Bender2019 wasm probe",
+          "id": 36593815376,
+          "title": "refactor: version generic mesh Bender map cache keys",
           "status": "in_progress",
           "conclusion": null,
-          "status_label": "currently running:  Run 116 of Test, build WASM, and deploy Pages. feat: add generic mesh Bender2019 wasm probe",
+          "status_label": "currently running:  Run 119 of Test, build WASM, and deploy Pages. refactor: version generic mesh Bender map cache keys",
           "branch": "main",
-          "time": "2026-09-29T15:44:24Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36592489565"
+          "time": "2026-09-29T15:54:55Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36593815376"
         },
         {
-          "id": 36591986215,
-          "title": "docs: freeze 13-scene browser milestone",
+          "id": 36593815173,
+          "title": "refactor: version generic mesh Bender map cache keys",
           "status": "completed",
           "conclusion": "success",
-          "status_label": "completed successfully:  Run 115 of Test, build WASM, and deploy Pages. docs: freeze 13-scene browser milestone",
+          "status_label": "completed successfully:  Run 42 of SPlisHSPlasH WASM build probe. refactor: version generic mesh Bender map cache keys",
           "branch": "main",
-          "time": "2026-09-29T15:40:25Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36591986215"
+          "time": "2026-09-29T15:54:55Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36593815173"
         },
         {
-          "id": 36591078036,
-          "title": "docs: record surface tension browser coverage",
+          "id": 36593467513,
+          "title": "fix: update scene browser mesh boundary contract",
           "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 114 of Test, build WASM, and deploy Pages. docs: record surface tension browser coverage",
+          "conclusion": "cancelled",
+          "status_label": "cancelled:  Run 118 of Test, build WASM, and deploy Pages. fix: update scene browser mesh boundary contract",
           "branch": "main",
-          "time": "2026-09-29T15:33:16Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36591078036"
+          "time": "2026-09-29T15:52:09Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36593467513"
+        },
+        {
+          "id": 36592915317,
+          "title": "feat: run upstream covered-sphere scene with mesh Bender2019",
+          "status": "completed",
+          "conclusion": "failure",
+          "status_label": "failed:  Run 117 of Test, build WASM, and deploy Pages. feat: run upstream covered-sphere scene with mesh Bender2019",
+          "branch": "main",
+          "time": "2026-09-29T15:47:47Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36592915317"
         }
       ]
     },
@@ -371,5 +371,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-29T15:47:53Z"
+  "updated_at": "2026-09-29T15:57:10Z"
 }
