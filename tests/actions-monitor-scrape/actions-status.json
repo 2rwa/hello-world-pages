@@ -103,44 +103,44 @@
       "actions_url": "https://github.com/2rwa/sph-web-samples/actions",
       "runs": [
         {
-          "id": 36557744768,
-          "title": "fix: densify Akinci2012 tank boundary sampling",
+          "id": 36560253284,
+          "title": "fix: reduce WCSPH dam break CFL timestep",
           "status": "completed",
-          "conclusion": "failure",
-          "status_label": "failed:  Run 12 of SPlisHSPlasH WASM build probe. fix: densify Akinci2012 tank boundary sampling",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 17 of SPlisHSPlasH WASM build probe. fix: reduce WCSPH dam break CFL timestep",
           "branch": "main",
-          "time": "2026-09-29T10:47:31Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36557744768"
+          "time": "2026-09-29T11:11:58Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36560253284"
         },
         {
-          "id": 36557744740,
-          "title": "fix: densify Akinci2012 tank boundary sampling",
+          "id": 36560253245,
+          "title": "fix: reduce WCSPH dam break CFL timestep",
           "status": "completed",
-          "conclusion": "failure",
-          "status_label": "failed:  Run 74 of Test, build WASM, and deploy Pages. fix: densify Akinci2012 tank boundary sampling",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 79 of Test, build WASM, and deploy Pages. fix: reduce WCSPH dam break CFL timestep",
           "branch": "main",
-          "time": "2026-09-29T10:47:31Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36557744740"
+          "time": "2026-09-29T11:11:58Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36560253245"
         },
         {
-          "id": 36557505341,
-          "title": "fix: preserve GitHub Pages base path for SPlisHSPlasH wasm",
+          "id": 36559733390,
+          "title": "fix: match upstream WCSPH dam break parameters",
           "status": "completed",
           "conclusion": "failure",
-          "status_label": "failed:  Run 73 of Test, build WASM, and deploy Pages. fix: preserve GitHub Pages base path for SPlisHSPlasH wasm",
+          "status_label": "failed:  Run 16 of SPlisHSPlasH WASM build probe. fix: match upstream WCSPH dam break parameters",
           "branch": "main",
-          "time": "2026-09-29T10:45:12Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36557505341"
+          "time": "2026-09-29T11:06:55Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36559733390"
         },
         {
-          "id": 36557220030,
-          "title": "feat: add SPlisHSPlasH Akinci2012 dam break",
+          "id": 36559733292,
+          "title": "fix: match upstream WCSPH dam break parameters",
           "status": "completed",
           "conclusion": "failure",
-          "status_label": "failed:  Run 72 of Test, build WASM, and deploy Pages. feat: add SPlisHSPlasH Akinci2012 dam break",
+          "status_label": "failed:  Run 78 of Test, build WASM, and deploy Pages. fix: match upstream WCSPH dam break parameters",
           "branch": "main",
-          "time": "2026-09-29T10:42:31Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36557220030"
+          "time": "2026-09-29T11:06:55Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36559733292"
         }
       ]
     },
@@ -371,5 +371,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-29T10:57:01Z"
+  "updated_at": "2026-09-29T11:15:48Z"
 }
