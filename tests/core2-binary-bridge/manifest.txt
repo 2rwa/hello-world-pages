@@ -1,0 +1,5 @@
+source=dropbox:Sail ship.blend
+size_bytes=645876
+sha256=f9cf8bb0fc345b3851e9fd596fc75edf236b32309e1a6ce193e8c2a9b25aff78
+runner_name=core2-runner
+timestamp=2026-09-30T21:02:50+09:00
