@@ -197,6 +197,36 @@
       "actions_url": "https://github.com/2rwa/tmp-blender-52/actions",
       "runs": [
         {
+          "id": 36678881054,
+          "title": "chore: import Sail ship.blend from Dropbox via Actions",
+          "status": "completed",
+          "conclusion": "failure",
+          "status_label": "failed:  Run 2 of Test Dropbox binary download. chore: import Sail ship.blend from Dropbox via Actions",
+          "branch": "main",
+          "time": "2026-09-30T06:33:55Z",
+          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36678881054"
+        },
+        {
+          "id": 36678794419,
+          "title": "chore: add Dropbox import workflow",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 1 of Import Sail ship.blend from Dropbox. chore: add Dropbox import workflow",
+          "branch": "main",
+          "time": "2026-09-30T06:32:56Z",
+          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36678794419"
+        },
+        {
+          "id": 36678242982,
+          "title": "test: download Blender file from Dropbox in Actions",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 1 of Test Dropbox binary download. test: download Blender file from Dropbox in Actions",
+          "branch": "main",
+          "time": "2026-09-30T06:26:36Z",
+          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36678242982"
+        },
+        {
           "id": 36670754481,
           "title": "chore: verify GitHub connector blob commit path",
           "status": "completed",
@@ -205,36 +235,6 @@
           "branch": "main",
           "time": "2026-09-30T04:51:42Z",
           "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36670754481"
-        },
-        {
-          "id": 36670216070,
-          "title": "test: render three-frame ocean ship motion preview",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 1 of Ocean ship motion preview. test: render three-frame ocean ship motion preview",
-          "branch": "main",
-          "time": "2026-09-30T04:44:44Z",
-          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36670216070"
-        },
-        {
-          "id": 36670057662,
-          "title": "feat: float Quaternius sail ship on baked-wave ocean",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 1 of Ocean ship float preview. feat: float Quaternius sail ship on baked-wave ocean",
-          "branch": "main",
-          "time": "2026-09-30T04:42:38Z",
-          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36670057662"
-        },
-        {
-          "id": 36666284969,
-          "title": "fix: generate ocean bake PNGs with Blender image API",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 3 of Ocean 10-variant preview sweep. fix: generate ocean bake PNGs with Blender image API",
-          "branch": "main",
-          "time": "2026-09-30T03:51:36Z",
-          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36666284969"
         }
       ]
     },
@@ -371,5 +371,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-30T04:55:06Z"
+  "updated_at": "2026-09-30T06:37:45Z"
 }
