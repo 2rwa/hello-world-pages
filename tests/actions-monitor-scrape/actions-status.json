@@ -103,44 +103,44 @@
       "actions_url": "https://github.com/2rwa/sph-web-samples/actions",
       "runs": [
         {
-          "id": 36647526589,
-          "title": "test: probe PBD motor hinge in WASM",
-          "status": "in_progress",
-          "conclusion": null,
-          "status_label": "currently running:  Run 17 of SPlisHSPlasH PBD WASM compile probe. test: probe PBD motor hinge in WASM",
-          "branch": "main",
-          "time": "2026-09-29T23:53:12Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36647526589"
-        },
-        {
-          "id": 36647526522,
-          "title": "test: probe PBD motor hinge in WASM",
+          "id": 36647882141,
+          "title": "fix: expose GenericParameters to PBD motor probe",
           "status": "completed",
           "conclusion": "success",
-          "status_label": "completed successfully:  Run 63 of SPlisHSPlasH WASM build probe. test: probe PBD motor hinge in WASM",
+          "status_label": "completed successfully:  Run 64 of SPlisHSPlasH WASM build probe. fix: expose GenericParameters to PBD motor probe",
           "branch": "main",
-          "time": "2026-09-29T23:53:12Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36647526522"
+          "time": "2026-09-29T23:57:31Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36647882141"
         },
         {
-          "id": 36647526459,
-          "title": "test: probe PBD motor hinge in WASM",
-          "status": "in_progress",
-          "conclusion": null,
-          "status_label": "currently running:  Run 147 of Test, build WASM, and deploy Pages. test: probe PBD motor hinge in WASM",
+          "id": 36647882136,
+          "title": "fix: expose GenericParameters to PBD motor probe",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 18 of SPlisHSPlasH PBD WASM compile probe. fix: expose GenericParameters to PBD motor probe",
           "branch": "main",
-          "time": "2026-09-29T23:53:12Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36647526459"
+          "time": "2026-09-29T23:57:31Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36647882136"
         },
         {
-          "id": 36647207571,
-          "title": "fix: disambiguate PBD Simulation header guard",
+          "id": 36647882130,
+          "title": "fix: expose GenericParameters to PBD motor probe",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 149 of Test, build WASM, and deploy Pages. fix: expose GenericParameters to PBD motor probe",
+          "branch": "main",
+          "time": "2026-09-29T23:57:31Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36647882130"
+        },
+        {
+          "id": 36647682763,
+          "title": "feat: run PBD browser through upstream timestep",
           "status": "completed",
           "conclusion": "cancelled",
-          "status_label": "cancelled:  Run 146 of Test, build WASM, and deploy Pages. fix: disambiguate PBD Simulation header guard",
+          "status_label": "cancelled:  Run 148 of Test, build WASM, and deploy Pages. feat: run PBD browser through upstream timestep",
           "branch": "main",
-          "time": "2026-09-29T23:49:25Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36647207571"
+          "time": "2026-09-29T23:55:04Z",
+          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36647682763"
         }
       ]
     },
@@ -371,5 +371,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-29T23:54:29Z"
+  "updated_at": "2026-09-30T00:14:05Z"
 }
