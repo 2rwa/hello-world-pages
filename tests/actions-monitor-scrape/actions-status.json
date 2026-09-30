@@ -197,11 +197,31 @@
       "actions_url": "https://github.com/2rwa/tmp-blender-52/actions",
       "runs": [
         {
+          "id": 36670754481,
+          "title": "chore: verify GitHub connector blob commit path",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 2 of Ocean ship float preview. chore: verify GitHub connector blob commit path",
+          "branch": "main",
+          "time": "2026-09-30T04:51:42Z",
+          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36670754481"
+        },
+        {
+          "id": 36670216070,
+          "title": "test: render three-frame ocean ship motion preview",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 1 of Ocean ship motion preview. test: render three-frame ocean ship motion preview",
+          "branch": "main",
+          "time": "2026-09-30T04:44:44Z",
+          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36670216070"
+        },
+        {
           "id": 36670057662,
           "title": "feat: float Quaternius sail ship on baked-wave ocean",
-          "status": "in_progress",
-          "conclusion": null,
-          "status_label": "currently running:  Run 1 of Ocean ship float preview. feat: float Quaternius sail ship on baked-wave ocean",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 1 of Ocean ship float preview. feat: float Quaternius sail ship on baked-wave ocean",
           "branch": "main",
           "time": "2026-09-30T04:42:38Z",
           "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36670057662"
@@ -215,26 +235,6 @@
           "branch": "main",
           "time": "2026-09-30T03:51:36Z",
           "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36666284969"
-        },
-        {
-          "id": 36666187293,
-          "title": "fix: expand ocean sweep matrix expressions",
-          "status": "completed",
-          "conclusion": "failure",
-          "status_label": "failed:  Run 2 of Ocean 10-variant preview sweep. fix: expand ocean sweep matrix expressions",
-          "branch": "main",
-          "time": "2026-09-30T03:50:16Z",
-          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36666187293"
-        },
-        {
-          "id": 36666129641,
-          "title": "feat: add baked-texture ocean preview sweep",
-          "status": "completed",
-          "conclusion": "failure",
-          "status_label": "failed:  Run 1 of Ocean 10-variant preview sweep. feat: add baked-texture ocean preview sweep",
-          "branch": "main",
-          "time": "2026-09-30T03:49:28Z",
-          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36666129641"
         }
       ]
     },
@@ -371,5 +371,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-30T04:42:57Z"
+  "updated_at": "2026-09-30T04:55:06Z"
 }
