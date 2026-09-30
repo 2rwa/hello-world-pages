@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>Yokohama 3D Terrain — GSI DEM</title>
+<style>
+:root{--bg:#0a0e12;--panel:#111820;--line:#26313d;--text:#e8eef5;--muted:#93a1af;--accent:#7fc8ff;--bad:#ff7b72}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}body{min-height:100vh}.wrap{width:min(1200px,100%);margin:auto;padding:12px}.head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}.head h1{font-size:20px;margin:0 0 4px}.sub,.meta,.footer{font-size:12px;color:var(--muted)}.panel{border:1px solid var(--line);background:var(--panel);border-radius:12px}.viewer{position:relative;overflow:hidden;margin-top:10px;min-height:520px}.viewer canvas{display:block;width:100%;height:clamp(520px,72vw,760px);touch-action:none}.hud{position:absolute;left:10px;top:10px;max-width:min(460px,calc(100% - 20px));padding:9px 11px;border:1px solid rgba(255,255,255,.12);background:rgba(7,11,15,.78);backdrop-filter:blur(8px);border-radius:10px;font-size:12px;line-height:1.5}.hud strong{color:#fff}.hud .bad{color:var(--bad)}.tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px;padding:10px}.tools button,.tools input{font:inherit}.tools button{min-height:42px;border:1px solid var(--line);background:#17212b;color:var(--text);border-radius:9px;padding:8px 12px;cursor:pointer}.tools button.on{border-color:var(--accent);color:#bce1ff}.tools label{display:flex;align-items:center;gap:7px;font-size:13px}.tools input[type="range"]{width:min(250px,52vw)}.legend{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-left:auto;font-size:11px;color:var(--muted)}.sw{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-2px;margin-right:4px}.footer{margin:10px 2px 4px;line-height:1.6}.footer a{color:#bce1ff}.loading{position:absolute;inset:0;display:grid;place-items:center;background:linear-gradient(180deg,rgba(10,14,18,.75),rgba(10,14,18,.9));z-index:3}.loading[hidden]{display:none}.loadcard{width:min(420px,calc(100% - 32px));padding:18px;text-align:center}.bar{height:7px;background:#202b36;border-radius:99px;overflow:hidden;margin:12px 0 6px}.bar>div{height:100%;width:0;background:var(--accent);transition:width .15s}.error{color:var(--bad);white-space:pre-wrap}.kbd{padding:1px 5px;border:1px solid var(--line);border-radius:5px;background:#18212a;color:#cbd5df}
+@media(max-width:640px){.wrap{padding:8px}.viewer{min-height:480px}.viewer canvas{height:560px}.legend{width:100%;margin-left:0}.hud{font-size:11px}.head h1{font-size:18px}}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <div class="head">
+    <div>
+      <h1>横浜市周辺 — 3D Terrain</h1>
+      <div class="sub">国土地理院 DEM10B + 陰影起伏図をその場で読み込む軽量試作</div>
+    </div>
+    <div class="meta" id="stats">DEM待機中</div>
+  </div>
+
+  <section class="panel viewer" id="viewer" aria-label="横浜市周辺3D地形ビューア">
+    <div class="loading" id="loading">
+      <div class="panel loadcard">
+        <strong id="loadTitle">地形データを読み込み中...</strong>
+        <div class="bar"><div id="bar"></div></div>
+        <div class="meta" id="loadDetail">0 / 20 tiles</div>
+        <div class="error" id="loadError"></div>
+      </div>
+    </div>
+    <div class="hud">
+      <strong>操作:</strong> 左ドラッグ=回転 / 右ドラッグ=移動 / ホイール=ズーム<br>
+      範囲: 横浜市を中心に約40×32km。海岸線・市境はゲーム用に厳密化していません。
+    </div>
+  </section>
+
+  <section class="panel tools" aria-label="地形表示設定">
+    <label>高さ強調 <strong id="exValue">3.0×</strong><input id="exaggeration" type="range" min="1" max="8" step="0.5" value="3"></label>
+    <button type="button" id="rotateBtn" class="on">自動回転 ON</button>
+    <button type="button" id="wireBtn">ワイヤー OFF</button>
+    <button type="button" id="resetBtn">視点リセット</button>
+    <div class="legend">
+      <span><i class="sw" style="background:#31546b"></i>海</span>
+      <span><i class="sw" style="background:#66785d"></i>低地</span>
+      <span><i class="sw" style="background:#8a7655"></i>丘陵</span>
+      <span><i class="sw" style="background:#8d8983"></i>高地</span>
+    </div>
+  </section>
+
+  <div class="footer">
+    地形・陰影データ: <a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank" rel="noopener">国土地理院 地理院タイル</a>。標高タイルの各RGB値から標高(m)を復元しています。表示用メッシュは約120m間隔に間引いています。
+  </div>
+</main>
+
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.180.0/+esm';
+import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/controls/OrbitControls.js/+esm';
+
+const CFG={z:12,x0:3634,x1:3638,y0:1614,y1:1617,sampleStep:4,centerLat:35.46};
+const TILE=256;
+const tileCols=CFG.x1-CFG.x0+1;
+const tileRows=CFG.y1-CFG.y0+1;
+const samplesPerTile=TILE/CFG.sampleStep;
+const gridW=tileCols*samplesPerTile;
+const gridH=tileRows*samplesPerTile;
+const metersPerPixel=Math.cos(CFG.centerLat*Math.PI/180)*2*Math.PI*6378137/(TILE*Math.pow(2,CFG.z));
+const sampleMeters=metersPerPixel*CFG.sampleStep;
+const widthM=(gridW-1)*sampleMeters;
+const heightM=(gridH-1)*sampleMeters;
+
+const el=id=>document.getElementById(id);
+const viewer=el('viewer');
+const loading=el('loading');
+const loadTitle=el('loadTitle');
+const loadDetail=el('loadDetail');
+const loadError=el('loadError');
+const bar=el('bar');
+const stats=el('stats');
+const exaggeration=el('exaggeration');
+const exValue=el('exValue');
+const rotateBtn=el('rotateBtn');
+const wireBtn=el('wireBtn');
+const resetBtn=el('resetBtn');
+
+let renderer,scene,camera,controls,terrain,material,raf=0;
+let autoRotate=true,wire=false;
+
+function demHeight(r,g,b){
+  const x=65536*r+256*g+b;
+  if(x===8388608)return null;
+  return (x<8388608?x:x-16777216)*0.01;
+}
+
+function colorForHeight(h,shade){
+  if(h==null)return [49,84,107];
+  let base;
+  if(h<20)base=[102,120,92];
+  else if(h<70)base=[120,121,85];
+  else if(h<140)base=[138,118,84];
+  else base=[141,137,131];
+  const f=0.48+0.58*(shade/255);
+  return base.map(v=>Math.max(0,Math.min(255,Math.round(v*f))));
+}
+
+async function bitmapData(url){
+  const res=await fetch(url,{mode:'cors',cache:'force-cache'});
+  if(!res.ok)throw new Error(`${res.status} ${url}`);
+  const blob=await res.blob();
+  let bmp;
+  if('createImageBitmap' in window){
+    bmp=await createImageBitmap(blob);
+  }else{
+    const objectUrl=URL.createObjectURL(blob);
+    try{
+      const img=new Image();
+      img.src=objectUrl;
+      await img.decode();
+      bmp=img;
+    }finally{URL.revokeObjectURL(objectUrl);}
+  }
+  const c=document.createElement('canvas');
+  c.width=TILE;c.height=TILE;
+  const ctx=c.getContext('2d',{willReadFrequently:true});
+  ctx.drawImage(bmp,0,0);
+  if(bmp.close)bmp.close();
+  return ctx.getImageData(0,0,TILE,TILE);
+}
+
+function initThree(){
+  renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
+  renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));
+  renderer.outputColorSpace=THREE.SRGBColorSpace;
+  viewer.appendChild(renderer.domElement);
+
+  scene=new THREE.Scene();
+  scene.background=new THREE.Color(0x0a0f14);
+  scene.fog=new THREE.FogExp2(0x0a0f14,0.000018);
+
+  camera=new THREE.PerspectiveCamera(44,1,20,250000);
+  camera.up.set(0,0,1);
+  scene.add(camera);
+
+  controls=new OrbitControls(camera,renderer.domElement);
+  controls.enableDamping=true;
+  controls.dampingFactor=0.07;
+  controls.minDistance=3000;
+  controls.maxDistance=110000;
+  controls.maxPolarAngle=Math.PI*0.495;
+  controls.target.set(0,0,250);
+
+  scene.add(new THREE.HemisphereLight(0xcfe8ff,0x2a241b,1.25));
+  const sun=new THREE.DirectionalLight(0xffffff,1.55);
+  sun.position.set(-25000,-18000,40000);
+  scene.add(sun);
+
+  resetView();
+  resize();
+  addEventListener('resize',resize,{passive:true});
+}
+
+function resetView(){
+  camera.position.set(-27000,-34000,22000);
+  controls.target.set(0,0,300);
+  controls.update();
+}
+
+function resize(){
+  const r=viewer.getBoundingClientRect();
+  const h=renderer.domElement.clientHeight||560;
+  renderer.setSize(Math.max(1,r.width),Math.max(1,h),false);
+  camera.aspect=Math.max(1,r.width)/Math.max(1,h);
+  camera.updateProjectionMatrix();
+}
+
+async function buildTerrain(){
+  loading.hidden=false;
+  loadError.textContent='';
+  loadTitle.textContent='国土地理院の標高タイルを読み込み中...';
+  const heights=new Float32Array(gridW*gridH);
+  heights.fill(-3);
+  const textureCanvas=document.createElement('canvas');
+  textureCanvas.width=tileCols*TILE;
+  textureCanvas.height=tileRows*TILE;
+  const tx=textureCanvas.getContext('2d');
+  let done=0,min=Infinity,max=-Infinity,valid=0;
+  const total=tileCols*tileRows;
+
+  const jobs=[];
+  for(let ty=CFG.y0;ty<=CFG.y1;ty++)for(let txi=CFG.x0;txi<=CFG.x1;txi++){
+    jobs.push((async()=>{
+      const demUrl=`https://cyberjapandata.gsi.go.jp/xyz/dem_png/${CFG.z}/${txi}/${ty}.png`;
+      const shadeUrl=`https://cyberjapandata.gsi.go.jp/xyz/hillshademap/${CFG.z}/${txi}/${ty}.png`;
+      const [dem,shade]=await Promise.all([bitmapData(demUrl),bitmapData(shadeUrl)]);
+      const localX=txi-CFG.x0,localY=ty-CFG.y0;
+
+      const out=new ImageData(TILE,TILE);
+      for(let p=0;p<TILE*TILE;p++){
+        const i=p*4;
+        const h=demHeight(dem.data[i],dem.data[i+1],dem.data[i+2]);
+        const c=colorForHeight(h,shade.data[i]);
+        out.data[i]=c[0];out.data[i+1]=c[1];out.data[i+2]=c[2];out.data[i+3]=255;
+      }
+      tx.putImageData(out,localX*TILE,localY*TILE);
+
+      for(let sy=0;sy<samplesPerTile;sy++)for(let sx=0;sx<samplesPerTile;sx++){
+        const px=sx*CFG.sampleStep,py=sy*CFG.sampleStep;
+        const i=(py*TILE+px)*4;
+        const h=demHeight(dem.data[i],dem.data[i+1],dem.data[i+2]);
+        const gx=localX*samplesPerTile+sx;
+        const gy=localY*samplesPerTile+sy;
+        const gi=gy*gridW+gx;
+        if(h==null){heights[gi]=-3;}
+        else{
+          heights[gi]=h;
+          min=Math.min(min,h);max=Math.max(max,h);valid++;
+        }
+      }
+      done++;
+      const pct=Math.round(done/total*100);
+      bar.style.width=pct+'%';
+      loadDetail.textContent=`${done} / ${total} tiles (${pct}%)`;
+    })());
+  }
+  await Promise.all(jobs);
+
+  const geometry=new THREE.PlaneGeometry(widthM,heightM,gridW-1,gridH-1);
+  const pos=geometry.attributes.position;
+  for(let i=0;i<pos.count;i++)pos.setZ(i,heights[i]);
+  pos.needsUpdate=true;
+  geometry.computeVertexNormals();
+
+  const texture=new THREE.CanvasTexture(textureCanvas);
+  texture.colorSpace=THREE.SRGBColorSpace;
+  texture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
+  material=new THREE.MeshStandardMaterial({map:texture,roughness:0.95,metalness:0,side:THREE.DoubleSide});
+  terrain=new THREE.Mesh(geometry,material);
+  terrain.scale.z=Number(exaggeration.value);
+  scene.add(terrain);
+
+  const border=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.PlaneGeometry(widthM,heightM)),new THREE.LineBasicMaterial({color:0x5c7180,transparent:true,opacity:0.35}));
+  border.position.z=-4;
+  scene.add(border);
+
+  stats.textContent=`${gridW}×${gridH} mesh / 標高 ${min.toFixed(1)}–${max.toFixed(1)}m / 約${Math.round(sampleMeters)}m間隔`;
+  loading.hidden=true;
+}
+
+function animate(){
+  raf=requestAnimationFrame(animate);
+  if(autoRotate&&terrain)terrain.rotation.z+=0.00045;
+  controls.update();
+  renderer.render(scene,camera);
+}
+
+exaggeration.addEventListener('input',()=>{
+  const v=Number(exaggeration.value);
+  exValue.textContent=v.toFixed(1)+'×';
+  if(terrain)terrain.scale.z=v;
+});
+rotateBtn.addEventListener('click',()=>{
+  autoRotate=!autoRotate;
+  rotateBtn.textContent=`自動回転 ${autoRotate?'ON':'OFF'}`;
+  rotateBtn.classList.toggle('on',autoRotate);
+});
+wireBtn.addEventListener('click',()=>{
+  wire=!wire;
+  if(material)material.wireframe=wire;
+  wireBtn.textContent=`ワイヤー ${wire?'ON':'OFF'}`;
+  wireBtn.classList.toggle('on',wire);
+});
+resetBtn.addEventListener('click',resetView);
+
+try{
+  initThree();
+  animate();
+  await buildTerrain();
+}catch(err){
+  console.error(err);
+  loadTitle.textContent='読み込みに失敗しました';
+  loadError.textContent=String(err&&err.message?err.message:err);
+  loadDetail.textContent='ネットワーク/CORSまたはCDNの状態を確認してください';
+  bar.style.width='0%';
+}
+</script>
+</body>
+</html>
