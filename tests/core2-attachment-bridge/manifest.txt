@@ -1,0 +1,5 @@
+source=dropbox:20260928_000.mp3
+size_bytes=2818607
+sha256=9f7355de1e6ec71a1431088afd245bfda8d3df1a26d8b159dc52a6b4895781c1
+runner_name=core2-runner
+timestamp=2026-09-30T21:08:57+09:00
