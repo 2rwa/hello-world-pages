@@ -209,9 +209,9 @@
         {
           "id": 36659897818,
           "title": "fix: pass Backrooms variant through reusable render [full]",
-          "status": "in_progress",
-          "conclusion": null,
-          "status_label": "currently running:  Run 12 of Backrooms note reproduction. fix: pass Backrooms variant through reusable render [full]",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 12 of Backrooms note reproduction. fix: pass Backrooms variant through reusable render [full]",
           "branch": "main",
           "time": "2026-09-30T02:27:03Z",
           "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36659897818"
@@ -371,5 +371,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-30T02:54:40Z"
+  "updated_at": "2026-09-30T03:07:04Z"
 }
