@@ -197,6 +197,16 @@
       "actions_url": "https://github.com/2rwa/tmp-blender-52/actions",
       "runs": [
         {
+          "id": 36666129641,
+          "title": "feat: add baked-texture ocean preview sweep",
+          "status": "completed",
+          "conclusion": "failure",
+          "status_label": "failed:  Run 1 of Ocean 10-variant preview sweep. feat: add baked-texture ocean preview sweep",
+          "branch": "main",
+          "time": "2026-09-30T03:49:28Z",
+          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36666129641"
+        },
+        {
           "id": 36660435726,
           "title": "render: launch dedicated Backrooms v20 full sample",
           "status": "completed",
@@ -225,16 +235,6 @@
           "branch": "main",
           "time": "2026-09-30T02:27:03Z",
           "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36659897558"
-        },
-        {
-          "id": 36659827646,
-          "title": "render: Backrooms variant 20 at 640x360 for one second [full]",
-          "status": "completed",
-          "conclusion": "failure",
-          "status_label": "failed:  Run 11 of Backrooms note reproduction. render: Backrooms variant 20 at 640x360 for one second [full]",
-          "branch": null,
-          "time": "2026-09-30T02:26:07Z",
-          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36659827646"
         }
       ]
     },
@@ -371,5 +371,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-30T03:07:04Z"
+  "updated_at": "2026-09-30T03:50:07Z"
 }
