@@ -197,6 +197,16 @@
       "actions_url": "https://github.com/2rwa/tmp-blender-52/actions",
       "runs": [
         {
+          "id": 36789296977,
+          "title": "fix: decode GSI DEM PNG without Pillow",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 2 of Yokohama terrain low-res. fix: decode GSI DEM PNG without Pillow",
+          "branch": "main",
+          "time": "2026-09-30T23:06:13Z",
+          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36789296977"
+        },
+        {
           "id": 36788752431,
           "title": "feat: render Yokohama terrain from GSI DEM",
           "status": "completed",
@@ -225,16 +235,6 @@
           "branch": "main",
           "time": "2026-09-30T06:32:56Z",
           "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36678794419"
-        },
-        {
-          "id": 36678242982,
-          "title": "test: download Blender file from Dropbox in Actions",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 1 of Test Dropbox binary download. test: download Blender file from Dropbox in Actions",
-          "branch": "main",
-          "time": "2026-09-30T06:26:36Z",
-          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36678242982"
         }
       ]
     },
@@ -371,5 +371,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-30T23:03:16Z"
+  "updated_at": "2026-09-30T23:20:50Z"
 }
