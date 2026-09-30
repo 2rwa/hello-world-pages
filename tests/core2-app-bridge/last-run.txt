@@ -1,0 +1,6 @@
+GitHub App bridge commit test
+timestamp=2026-09-30T20:20:34+09:00
+runner_name=core2-runner
+source_repository=2rwa/bridge
+source_sha=349bba3e097d6572dbd5cbe8935f71ea9dc266f1
+app_slug=core2-runner
