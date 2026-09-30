@@ -197,6 +197,16 @@
       "actions_url": "https://github.com/2rwa/tmp-blender-52/actions",
       "runs": [
         {
+          "id": 36788752431,
+          "title": "feat: render Yokohama terrain from GSI DEM",
+          "status": "completed",
+          "conclusion": "failure",
+          "status_label": "failed:  Run 1 of Yokohama terrain low-res. feat: render Yokohama terrain from GSI DEM",
+          "branch": "main",
+          "time": "2026-09-30T23:00:22Z",
+          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36788752431"
+        },
+        {
           "id": 36678881054,
           "title": "chore: import Sail ship.blend from Dropbox via Actions",
           "status": "completed",
@@ -225,16 +235,6 @@
           "branch": "main",
           "time": "2026-09-30T06:26:36Z",
           "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36678242982"
-        },
-        {
-          "id": 36670754481,
-          "title": "chore: verify GitHub connector blob commit path",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 2 of Ocean ship float preview. chore: verify GitHub connector blob commit path",
-          "branch": "main",
-          "time": "2026-09-30T04:51:42Z",
-          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36670754481"
         }
       ]
     },
@@ -371,5 +371,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-30T06:37:45Z"
+  "updated_at": "2026-09-30T23:03:16Z"
 }
