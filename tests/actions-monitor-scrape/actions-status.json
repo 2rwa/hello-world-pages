@@ -197,44 +197,44 @@
       "actions_url": "https://github.com/2rwa/tmp-blender-52/actions",
       "runs": [
         {
-          "id": 36510151830,
-          "title": "fix: rebuild Pages after showcase publish",
+          "id": 36655610451,
+          "title": "fix: rerun Backrooms when shared Blender workflow changes",
           "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 2 of GitHub Pages. fix: rebuild Pages after showcase publish",
+          "conclusion": "failure",
+          "status_label": "failed:  Run 4 of Backrooms note reproduction. fix: rerun Backrooms when shared Blender workflow changes",
           "branch": "main",
-          "time": "2026-09-29T01:55:15Z",
-          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36510151830"
+          "time": "2026-09-30T01:32:31Z",
+          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36655610451"
         },
         {
-          "id": 36507938449,
-          "title": "ci: keep baseline render trigger scoped to baseline",
+          "id": 36655587373,
+          "title": "fix: expose Blender render as reusable workflow",
           "status": "completed",
           "conclusion": "success",
-          "status_label": "completed successfully:  Run 6 of Blender 5.2 render. ci: keep baseline render trigger scoped to baseline",
+          "status_label": "completed successfully:  Run 8 of Blender 5.2 render. fix: expose Blender render as reusable workflow",
           "branch": "main",
-          "time": "2026-09-29T01:26:52Z",
-          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36507938449"
+          "time": "2026-09-30T01:32:14Z",
+          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36655587373"
         },
         {
-          "id": 36507852112,
-          "title": "fix: use Blender 5.2 compositor node groups",
+          "id": 36655525425,
+          "title": "fix: reference reusable Blender workflow explicitly",
           "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 5 of Blender 5.2 render. fix: use Blender 5.2 compositor node groups",
-          "branch": "main",
-          "time": "2026-09-29T01:25:48Z",
-          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36507852112"
+          "conclusion": "failure",
+          "status_label": "failed:  Run 3 of Backrooms note reproduction. fix: reference reusable Blender workflow explicitly",
+          "branch": null,
+          "time": "2026-09-30T01:31:26Z",
+          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36655525425"
         },
         {
-          "id": 36507852100,
-          "title": "fix: use Blender 5.2 compositor node groups",
+          "id": 36655470622,
+          "title": "fix: call Backrooms reusable workflow without secret inheritance",
           "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 5 of Blender 5.2 feature showcase. fix: use Blender 5.2 compositor node groups",
-          "branch": "main",
-          "time": "2026-09-29T01:25:48Z",
-          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36507852100"
+          "conclusion": "failure",
+          "status_label": "failed:  Run 2 of Backrooms note reproduction. fix: call Backrooms reusable workflow without secret inheritance",
+          "branch": null,
+          "time": "2026-09-30T01:30:46Z",
+          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36655470622"
         }
       ]
     },
@@ -371,5 +371,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-30T00:14:05Z"
+  "updated_at": "2026-09-30T01:43:43Z"
 }
