@@ -1,0 +1,56 @@
+name: Check Yokohama terrain page
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'tests/yokohama-terrain/**'
+      - '.github/workflows/check-yokohama-terrain.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Static regression checks
+        run: |
+          set -euo pipefail
+          file=tests/yokohama-terrain/index.html
+          test -s "$file"
+          grep -q '左ドラッグ=回転' "$file"
+          grep -q '/xyz/dem_png/' "$file"
+          grep -q '/xyz/hillshademap/' "$file"
+          grep -q '国土地理院 地理院タイル' "$file"
+          grep -q 'terrain.scale.z' "$file"
+      - name: Check external DEM and JS dependencies
+        run: |
+          set -euo pipefail
+          curl --fail --retry 3 --retry-delay 2 --silent --show-error \
+            -o /tmp/dem.png \
+            'https://cyberjapandata.gsi.go.jp/xyz/dem_png/12/3636/1616.png'
+          curl --fail --retry 3 --retry-delay 2 --silent --show-error \
+            -o /tmp/shade.png \
+            'https://cyberjapandata.gsi.go.jp/xyz/hillshademap/12/3636/1616.png'
+          curl --fail --retry 3 --retry-delay 2 --silent --show-error \
+            -o /tmp/three.mjs \
+            'https://cdn.jsdelivr.net/npm/three@0.180.0/+esm'
+          test "$(wc -c < /tmp/dem.png)" -gt 100
+          test "$(wc -c < /tmp/shade.png)" -gt 100
+          test "$(wc -c < /tmp/three.mjs)" -gt 1000
+      - name: Check published page
+        run: |
+          set -euo pipefail
+          url='https://2rwa.github.io/hello-world-pages/tests/yokohama-terrain/'
+          for i in $(seq 1 12); do
+            if curl --fail --silent --show-error "$url" -o /tmp/page.html && grep -q 'Yokohama 3D Terrain' /tmp/page.html; then
+              echo "Published page is reachable"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo 'Published page did not become reachable in the check window' >&2
+          exit 1
