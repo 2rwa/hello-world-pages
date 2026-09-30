@@ -197,44 +197,44 @@
       "actions_url": "https://github.com/2rwa/tmp-blender-52/actions",
       "runs": [
         {
-          "id": 36657584832,
-          "title": "fix: iterate Backrooms at preview resolution before full render",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 8 of Backrooms note reproduction. fix: iterate Backrooms at preview resolution before full render",
+          "id": 36660435726,
+          "title": "render: launch dedicated Backrooms v20 full sample",
+          "status": "in_progress",
+          "conclusion": null,
+          "status_label": "currently running:  Run 1 of Backrooms Variant 20 Full Render. render: launch dedicated Backrooms v20 full sample",
           "branch": "main",
-          "time": "2026-09-30T01:57:50Z",
-          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36657584832"
+          "time": "2026-09-30T02:34:04Z",
+          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36660435726"
         },
         {
-          "id": 36657266820,
-          "title": "feat: gate Backrooms full render behind 320x180 preview",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 7 of Backrooms note reproduction. feat: gate Backrooms full render behind 320x180 preview",
+          "id": 36659897818,
+          "title": "fix: pass Backrooms variant through reusable render [full]",
+          "status": "unknown",
+          "conclusion": null,
+          "status_label": "waiting for another serialized run to finish:  Run 12 of Backrooms note reproduction. fix: pass Backrooms variant through reusable render [full]",
           "branch": "main",
-          "time": "2026-09-30T01:53:39Z",
-          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36657266820"
+          "time": "2026-09-30T02:27:03Z",
+          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36659897818"
         },
         {
-          "id": 36657266523,
-          "title": "feat: gate Backrooms full render behind 320x180 preview",
-          "status": "completed",
-          "conclusion": "cancelled",
-          "status_label": "cancelled:  Run 9 of Blender 5.2 render. feat: gate Backrooms full render behind 320x180 preview",
+          "id": 36659897558,
+          "title": "fix: pass Backrooms variant through reusable render [full]",
+          "status": "in_progress",
+          "conclusion": null,
+          "status_label": "currently running:  Run 11 of Blender 5.2 render. fix: pass Backrooms variant through reusable render [full]",
           "branch": "main",
-          "time": "2026-09-30T01:53:39Z",
-          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36657266523"
+          "time": "2026-09-30T02:27:03Z",
+          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36659897558"
         },
         {
-          "id": 36656936637,
-          "title": "fix: move Backrooms camera into corridor and validate depth",
+          "id": 36659827646,
+          "title": "render: Backrooms variant 20 at 640x360 for one second [full]",
           "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 6 of Backrooms note reproduction. fix: move Backrooms camera into corridor and validate depth",
-          "branch": "main",
-          "time": "2026-09-30T01:49:22Z",
-          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36656936637"
+          "conclusion": "failure",
+          "status_label": "failed:  Run 11 of Backrooms note reproduction. render: Backrooms variant 20 at 640x360 for one second [full]",
+          "branch": null,
+          "time": "2026-09-30T02:26:07Z",
+          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36659827646"
         }
       ]
     },
@@ -371,5 +371,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-30T02:05:08Z"
+  "updated_at": "2026-09-30T02:35:50Z"
 }
