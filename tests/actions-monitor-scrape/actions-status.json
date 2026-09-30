@@ -197,6 +197,26 @@
       "actions_url": "https://github.com/2rwa/tmp-blender-52/actions",
       "runs": [
         {
+          "id": 36666284969,
+          "title": "fix: generate ocean bake PNGs with Blender image API",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 3 of Ocean 10-variant preview sweep. fix: generate ocean bake PNGs with Blender image API",
+          "branch": "main",
+          "time": "2026-09-30T03:51:36Z",
+          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36666284969"
+        },
+        {
+          "id": 36666187293,
+          "title": "fix: expand ocean sweep matrix expressions",
+          "status": "completed",
+          "conclusion": "failure",
+          "status_label": "failed:  Run 2 of Ocean 10-variant preview sweep. fix: expand ocean sweep matrix expressions",
+          "branch": "main",
+          "time": "2026-09-30T03:50:16Z",
+          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36666187293"
+        },
+        {
           "id": 36666129641,
           "title": "feat: add baked-texture ocean preview sweep",
           "status": "completed",
@@ -215,26 +235,6 @@
           "branch": "main",
           "time": "2026-09-30T02:34:04Z",
           "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36660435726"
-        },
-        {
-          "id": 36659897818,
-          "title": "fix: pass Backrooms variant through reusable render [full]",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 12 of Backrooms note reproduction. fix: pass Backrooms variant through reusable render [full]",
-          "branch": "main",
-          "time": "2026-09-30T02:27:03Z",
-          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36659897818"
-        },
-        {
-          "id": 36659897558,
-          "title": "fix: pass Backrooms variant through reusable render [full]",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 11 of Blender 5.2 render. fix: pass Backrooms variant through reusable render [full]",
-          "branch": "main",
-          "time": "2026-09-30T02:27:03Z",
-          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36659897558"
         }
       ]
     },
@@ -371,5 +371,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-30T03:50:07Z"
+  "updated_at": "2026-09-30T03:58:52Z"
 }
