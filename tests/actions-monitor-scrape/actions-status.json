@@ -197,44 +197,44 @@
       "actions_url": "https://github.com/2rwa/tmp-blender-52/actions",
       "runs": [
         {
-          "id": 36655610451,
-          "title": "fix: rerun Backrooms when shared Blender workflow changes",
-          "status": "completed",
-          "conclusion": "failure",
-          "status_label": "failed:  Run 4 of Backrooms note reproduction. fix: rerun Backrooms when shared Blender workflow changes",
-          "branch": "main",
-          "time": "2026-09-30T01:32:31Z",
-          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36655610451"
-        },
-        {
-          "id": 36655587373,
-          "title": "fix: expose Blender render as reusable workflow",
+          "id": 36657584832,
+          "title": "fix: iterate Backrooms at preview resolution before full render",
           "status": "completed",
           "conclusion": "success",
-          "status_label": "completed successfully:  Run 8 of Blender 5.2 render. fix: expose Blender render as reusable workflow",
+          "status_label": "completed successfully:  Run 8 of Backrooms note reproduction. fix: iterate Backrooms at preview resolution before full render",
           "branch": "main",
-          "time": "2026-09-30T01:32:14Z",
-          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36655587373"
+          "time": "2026-09-30T01:57:50Z",
+          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36657584832"
         },
         {
-          "id": 36655525425,
-          "title": "fix: reference reusable Blender workflow explicitly",
+          "id": 36657266820,
+          "title": "feat: gate Backrooms full render behind 320x180 preview",
           "status": "completed",
-          "conclusion": "failure",
-          "status_label": "failed:  Run 3 of Backrooms note reproduction. fix: reference reusable Blender workflow explicitly",
-          "branch": null,
-          "time": "2026-09-30T01:31:26Z",
-          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36655525425"
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 7 of Backrooms note reproduction. feat: gate Backrooms full render behind 320x180 preview",
+          "branch": "main",
+          "time": "2026-09-30T01:53:39Z",
+          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36657266820"
         },
         {
-          "id": 36655470622,
-          "title": "fix: call Backrooms reusable workflow without secret inheritance",
+          "id": 36657266523,
+          "title": "feat: gate Backrooms full render behind 320x180 preview",
           "status": "completed",
-          "conclusion": "failure",
-          "status_label": "failed:  Run 2 of Backrooms note reproduction. fix: call Backrooms reusable workflow without secret inheritance",
-          "branch": null,
-          "time": "2026-09-30T01:30:46Z",
-          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36655470622"
+          "conclusion": "cancelled",
+          "status_label": "cancelled:  Run 9 of Blender 5.2 render. feat: gate Backrooms full render behind 320x180 preview",
+          "branch": "main",
+          "time": "2026-09-30T01:53:39Z",
+          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36657266523"
+        },
+        {
+          "id": 36656936637,
+          "title": "fix: move Backrooms camera into corridor and validate depth",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 6 of Backrooms note reproduction. fix: move Backrooms camera into corridor and validate depth",
+          "branch": "main",
+          "time": "2026-09-30T01:49:22Z",
+          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36656936637"
         }
       ]
     },
@@ -371,5 +371,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-30T01:43:43Z"
+  "updated_at": "2026-09-30T02:05:08Z"
 }
