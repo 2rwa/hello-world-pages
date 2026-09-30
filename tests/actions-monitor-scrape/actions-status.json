@@ -199,9 +199,9 @@
         {
           "id": 36660435726,
           "title": "render: launch dedicated Backrooms v20 full sample",
-          "status": "in_progress",
-          "conclusion": null,
-          "status_label": "currently running:  Run 1 of Backrooms Variant 20 Full Render. render: launch dedicated Backrooms v20 full sample",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 1 of Backrooms Variant 20 Full Render. render: launch dedicated Backrooms v20 full sample",
           "branch": "main",
           "time": "2026-09-30T02:34:04Z",
           "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36660435726"
@@ -209,9 +209,9 @@
         {
           "id": 36659897818,
           "title": "fix: pass Backrooms variant through reusable render [full]",
-          "status": "unknown",
+          "status": "in_progress",
           "conclusion": null,
-          "status_label": "waiting for another serialized run to finish:  Run 12 of Backrooms note reproduction. fix: pass Backrooms variant through reusable render [full]",
+          "status_label": "currently running:  Run 12 of Backrooms note reproduction. fix: pass Backrooms variant through reusable render [full]",
           "branch": "main",
           "time": "2026-09-30T02:27:03Z",
           "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36659897818"
@@ -219,9 +219,9 @@
         {
           "id": 36659897558,
           "title": "fix: pass Backrooms variant through reusable render [full]",
-          "status": "in_progress",
-          "conclusion": null,
-          "status_label": "currently running:  Run 11 of Blender 5.2 render. fix: pass Backrooms variant through reusable render [full]",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 11 of Blender 5.2 render. fix: pass Backrooms variant through reusable render [full]",
           "branch": "main",
           "time": "2026-09-30T02:27:03Z",
           "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36659897558"
@@ -371,5 +371,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-09-30T02:35:50Z"
+  "updated_at": "2026-09-30T02:54:40Z"
 }
