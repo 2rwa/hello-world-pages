@@ -16,7 +16,7 @@
   <div class="head">
     <div>
       <h1>横浜市周辺 — 3D Terrain</h1>
-      <div class="sub">国土地理院 DEM10B + 陰影起伏図をその場で読み込む軽量試作</div>
+      <div class="sub">国土地理院 DEM10B + 陰影起伏図。海面など404の標高タイルは海として扱う軽量試作</div>
     </div>
     <div class="meta" id="stats">DEM待機中</div>
   </div>
@@ -104,9 +104,12 @@ function colorForHeight(h,shade){
   return base.map(v=>Math.max(0,Math.min(255,Math.round(v*f))));
 }
 
-async function bitmapData(url){
+async function bitmapData(url,optional=false){
   const res=await fetch(url,{mode:'cors',cache:'force-cache'});
-  if(!res.ok)throw new Error(`${res.status} ${url}`);
+  if(!res.ok){
+    if(optional&&res.status===404)return null;
+    throw new Error(`${res.status} ${url}`);
+  }
   const blob=await res.blob();
   let bmp;
   if('createImageBitmap' in window){
@@ -184,7 +187,7 @@ async function buildTerrain(){
   textureCanvas.width=tileCols*TILE;
   textureCanvas.height=tileRows*TILE;
   const tx=textureCanvas.getContext('2d');
-  let done=0,min=Infinity,max=-Infinity,valid=0;
+  let done=0,min=Infinity,max=-Infinity,valid=0,missingDem=0;
   const total=tileCols*tileRows;
 
   const jobs=[];
@@ -192,14 +195,15 @@ async function buildTerrain(){
     jobs.push((async()=>{
       const demUrl=`https://cyberjapandata.gsi.go.jp/xyz/dem_png/${CFG.z}/${txi}/${ty}.png`;
       const shadeUrl=`https://cyberjapandata.gsi.go.jp/xyz/hillshademap/${CFG.z}/${txi}/${ty}.png`;
-      const [dem,shade]=await Promise.all([bitmapData(demUrl),bitmapData(shadeUrl)]);
+      const [dem,shade]=await Promise.all([bitmapData(demUrl,true),bitmapData(shadeUrl,true)]);
+      if(!dem)missingDem++;
       const localX=txi-CFG.x0,localY=ty-CFG.y0;
 
       const out=new ImageData(TILE,TILE);
       for(let p=0;p<TILE*TILE;p++){
         const i=p*4;
-        const h=demHeight(dem.data[i],dem.data[i+1],dem.data[i+2]);
-        const c=colorForHeight(h,shade.data[i]);
+        const h=dem?demHeight(dem.data[i],dem.data[i+1],dem.data[i+2]):null;
+        const c=colorForHeight(h,shade?shade.data[i]:190);
         out.data[i]=c[0];out.data[i+1]=c[1];out.data[i+2]=c[2];out.data[i+3]=255;
       }
       tx.putImageData(out,localX*TILE,localY*TILE);
@@ -207,7 +211,7 @@ async function buildTerrain(){
       for(let sy=0;sy<samplesPerTile;sy++)for(let sx=0;sx<samplesPerTile;sx++){
         const px=sx*CFG.sampleStep,py=sy*CFG.sampleStep;
         const i=(py*TILE+px)*4;
-        const h=demHeight(dem.data[i],dem.data[i+1],dem.data[i+2]);
+        const h=dem?demHeight(dem.data[i],dem.data[i+1],dem.data[i+2]):null;
         const gx=localX*samplesPerTile+sx;
         const gy=localY*samplesPerTile+sy;
         const gi=gy*gridW+gx;
@@ -243,7 +247,7 @@ async function buildTerrain(){
   border.position.z=-4;
   scene.add(border);
 
-  stats.textContent=`${gridW}×${gridH} mesh / 標高 ${min.toFixed(1)}–${max.toFixed(1)}m / 約${Math.round(sampleMeters)}m間隔`;
+  stats.textContent=`${gridW}×${gridH} mesh / 標高 ${min.toFixed(1)}–${max.toFixed(1)}m / 約${Math.round(sampleMeters)}m間隔 / DEMなし ${missingDem} tiles`;
   loading.hidden=true;
 }
 
