@@ -197,11 +197,21 @@
       "actions_url": "https://github.com/2rwa/tmp-blender-52/actions",
       "runs": [
         {
+          "id": 36808685863,
+          "title": "docs: expose Workbench benchmark in Pages",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 4 of GitHub Pages. docs: expose Workbench benchmark in Pages",
+          "branch": "main",
+          "time": "2026-10-01T03:02:53Z",
+          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36808685863"
+        },
+        {
           "id": 36808490379,
           "title": "feat: publish Workbench benchmark to Pages",
-          "status": "in_progress",
-          "conclusion": null,
-          "status_label": "currently running:  Run 2 of Yokohama Workbench speed test. feat: publish Workbench benchmark to Pages",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 2 of Yokohama Workbench speed test. feat: publish Workbench benchmark to Pages",
           "branch": "main",
           "time": "2026-10-01T03:00:27Z",
           "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36808490379"
@@ -225,16 +235,6 @@
           "branch": "main",
           "time": "2026-10-01T00:40:13Z",
           "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36797325116"
-        },
-        {
-          "id": 36797153866,
-          "title": "feat: animate Yokohama terrain from 1x to 32x",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 13 of Backrooms note reproduction. feat: animate Yokohama terrain from 1x to 32x",
-          "branch": "main",
-          "time": "2026-10-01T00:38:07Z",
-          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36797153866"
         }
       ]
     },
@@ -371,5 +371,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-10-01T03:01:12Z"
+  "updated_at": "2026-10-01T03:31:26Z"
 }
