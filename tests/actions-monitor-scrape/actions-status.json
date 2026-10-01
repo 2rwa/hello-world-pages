@@ -199,9 +199,9 @@
         {
           "id": 36891163409,
           "title": "feat: render 10s sail ship wireframe turntable with ffprobe validation",
-          "status": "in_progress",
-          "conclusion": null,
-          "status_label": "currently running:  Run 5 of Sail Ship Wireframe HD. feat: render 10s sail ship wireframe turntable with ffprobe validation",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 5 of Sail Ship Wireframe HD. feat: render 10s sail ship wireframe turntable with ffprobe validation",
           "branch": "main",
           "time": "2026-10-01T16:19:49Z",
           "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36891163409"
@@ -371,5 +371,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-10-01T16:29:51Z"
+  "updated_at": "2026-10-01T16:53:02Z"
 }
