@@ -197,6 +197,26 @@
       "actions_url": "https://github.com/2rwa/tmp-blender-52/actions",
       "runs": [
         {
+          "id": 36819783542,
+          "title": "fix: render wireframe as geometry in headless Workbench",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 2 of Yokohama Workbench wireframe. fix: render wireframe as geometry in headless Workbench",
+          "branch": "main",
+          "time": "2026-10-01T05:26:33Z",
+          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36819783542"
+        },
+        {
+          "id": 36819463132,
+          "title": "feat: add Yokohama Workbench wireframe preview",
+          "status": "completed",
+          "conclusion": "failure",
+          "status_label": "failed:  Run 1 of Yokohama Workbench wireframe. feat: add Yokohama Workbench wireframe preview",
+          "branch": "main",
+          "time": "2026-10-01T05:22:32Z",
+          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36819463132"
+        },
+        {
           "id": 36808685863,
           "title": "docs: expose Workbench benchmark in Pages",
           "status": "completed",
@@ -215,26 +235,6 @@
           "branch": "main",
           "time": "2026-10-01T03:00:27Z",
           "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36808490379"
-        },
-        {
-          "id": 36808023807,
-          "title": "test: benchmark Yokohama Workbench rendering",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 1 of Yokohama Workbench speed test. test: benchmark Yokohama Workbench rendering",
-          "branch": "main",
-          "time": "2026-10-01T02:54:26Z",
-          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36808023807"
-        },
-        {
-          "id": 36797325116,
-          "title": "fix: repair rise32 Python source newlines",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 2 of Yokohama terrain rise32. fix: repair rise32 Python source newlines",
-          "branch": "main",
-          "time": "2026-10-01T00:40:13Z",
-          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36797325116"
         }
       ]
     },
@@ -371,5 +371,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-10-01T03:31:26Z"
+  "updated_at": "2026-10-01T05:35:29Z"
 }
