@@ -199,9 +199,9 @@
         {
           "id": 36886877349,
           "title": "fix: fit full sail ship in HD wireframe frame",
-          "status": "in_progress",
-          "conclusion": null,
-          "status_label": "currently running:  Run 4 of Sail Ship Wireframe HD. fix: fit full sail ship in HD wireframe frame",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 4 of Sail Ship Wireframe HD. fix: fit full sail ship in HD wireframe frame",
           "branch": "main",
           "time": "2026-10-01T15:46:26Z",
           "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36886877349"
@@ -371,5 +371,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-10-01T15:46:52Z"
+  "updated_at": "2026-10-01T15:55:56Z"
 }
