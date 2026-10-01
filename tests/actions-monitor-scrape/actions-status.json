@@ -197,6 +197,26 @@
       "actions_url": "https://github.com/2rwa/tmp-blender-52/actions",
       "runs": [
         {
+          "id": 36821489661,
+          "title": "test: render Yokohama wireframe preview in 4K",
+          "status": "in_progress",
+          "conclusion": null,
+          "status_label": "currently running:  Run 1 of Yokohama Workbench wireframe 4K. test: render Yokohama wireframe preview in 4K",
+          "branch": "main",
+          "time": "2026-10-01T05:47:36Z",
+          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36821489661"
+        },
+        {
+          "id": 36820639869,
+          "title": "test: render Yokohama wireframe preview in HD",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 1 of Yokohama Workbench wireframe HD. test: render Yokohama wireframe preview in HD",
+          "branch": "main",
+          "time": "2026-10-01T05:37:11Z",
+          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36820639869"
+        },
+        {
           "id": 36819783542,
           "title": "fix: render wireframe as geometry in headless Workbench",
           "status": "completed",
@@ -215,26 +235,6 @@
           "branch": "main",
           "time": "2026-10-01T05:22:32Z",
           "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36819463132"
-        },
-        {
-          "id": 36808685863,
-          "title": "docs: expose Workbench benchmark in Pages",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 4 of GitHub Pages. docs: expose Workbench benchmark in Pages",
-          "branch": "main",
-          "time": "2026-10-01T03:02:53Z",
-          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36808685863"
-        },
-        {
-          "id": 36808490379,
-          "title": "feat: publish Workbench benchmark to Pages",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 2 of Yokohama Workbench speed test. feat: publish Workbench benchmark to Pages",
-          "branch": "main",
-          "time": "2026-10-01T03:00:27Z",
-          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36808490379"
         }
       ]
     },
@@ -371,5 +371,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-10-01T05:35:29Z"
+  "updated_at": "2026-10-01T05:48:11Z"
 }
