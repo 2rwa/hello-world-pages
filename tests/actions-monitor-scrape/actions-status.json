@@ -229,9 +229,9 @@
         {
           "id": 36885530239,
           "title": "feat: render bridged sail ship wireframe HD",
-          "status": "in_progress",
-          "conclusion": null,
-          "status_label": "currently running:  Run 1 of Sail Ship Wireframe HD. feat: render bridged sail ship wireframe HD",
+          "status": "completed",
+          "conclusion": "failure",
+          "status_label": "failed:  Run 1 of Sail Ship Wireframe HD. feat: render bridged sail ship wireframe HD",
           "branch": "main",
           "time": "2026-10-01T15:36:06Z",
           "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36885530239"
@@ -371,5 +371,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-10-01T15:55:56Z"
+  "updated_at": "2026-10-01T16:11:53Z"
 }
