@@ -197,6 +197,16 @@
       "actions_url": "https://github.com/2rwa/tmp-blender-52/actions",
       "runs": [
         {
+          "id": 36929479359,
+          "title": "fix: refresh Pages after sail ship renders",
+          "status": "in_progress",
+          "conclusion": null,
+          "status_label": "currently running:  Run 5 of GitHub Pages. fix: refresh Pages after sail ship renders",
+          "branch": "main",
+          "time": "2026-10-01T21:33:33Z",
+          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36929479359"
+        },
+        {
           "id": 36891163409,
           "title": "feat: render 10s sail ship wireframe turntable with ffprobe validation",
           "status": "completed",
@@ -225,16 +235,6 @@
           "branch": "main",
           "time": "2026-10-01T15:44:41Z",
           "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36886646699"
-        },
-        {
-          "id": 36886145101,
-          "title": "ci: publish sail ship HD still without ffmpeg",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 2 of Sail Ship Wireframe HD. ci: publish sail ship HD still without ffmpeg",
-          "branch": "main",
-          "time": "2026-10-01T15:40:44Z",
-          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36886145101"
         }
       ]
     },
@@ -371,5 +371,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-10-01T16:53:02Z"
+  "updated_at": "2026-10-01T21:34:00Z"
 }
