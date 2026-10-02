@@ -328,44 +328,44 @@
       "actions_url": "https://github.com/2rwa/tmp-music/actions",
       "runs": [
         {
+          "id": 37028472463,
+          "title": "Start Jugemu analysis with staged source",
+          "status": "unknown",
+          "conclusion": null,
+          "status_label": "waiting for another serialized run to finish:  Run 2 of Analyze Jugemu. Start Jugemu analysis with staged source",
+          "branch": "main",
+          "time": "2026-10-02T15:39:03Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37028472463"
+        },
+        {
+          "id": 37028301317,
+          "title": "Add Japanese rap analysis pipeline",
+          "status": "in_progress",
+          "conclusion": null,
+          "status_label": "currently running:  Run 1 of Analyze Jugemu. Add Japanese rap analysis pipeline",
+          "branch": "main",
+          "time": "2026-10-02T15:37:35Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37028301317"
+        },
+        {
+          "id": 37028301049,
+          "title": "Add Japanese rap analysis pipeline",
+          "status": "in_progress",
+          "conclusion": null,
+          "status_label": "currently running:  Run 5 of Analyze Whisper AO. Add Japanese rap analysis pipeline",
+          "branch": "main",
+          "time": "2026-10-02T15:37:34Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37028301049"
+        },
+        {
           "id": 37026834205,
           "title": "Fix analysis result write-back ordering",
-          "status": "queued",
-          "conclusion": null,
-          "status_label": "queued:  Run 4 of Analyze Whisper AO. Fix analysis result write-back ordering",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 4 of Analyze Whisper AO. Fix analysis result write-back ordering",
           "branch": "main",
           "time": "2026-10-02T15:25:09Z",
           "url": "https://github.com/2rwa/tmp-music/actions/runs/37026834205"
-        },
-        {
-          "id": 37026410251,
-          "title": "Pin PyAV below 19 for faster-whisper",
-          "status": "completed",
-          "conclusion": "failure",
-          "status_label": "failed:  Run 3 of Analyze Whisper AO. Pin PyAV below 19 for faster-whisper",
-          "branch": "main",
-          "time": "2026-10-02T15:21:34Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37026410251"
-        },
-        {
-          "id": 37026322596,
-          "title": "Pin PyAV below 19 for faster-whisper",
-          "status": "completed",
-          "conclusion": "failure",
-          "status_label": "failed:  Run 2 of Analyze Whisper AO. Pin PyAV below 19 for faster-whisper",
-          "branch": "main",
-          "time": "2026-10-02T15:20:50Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37026322596"
-        },
-        {
-          "id": 37025239269,
-          "title": "Add Whisper AO analysis workflow",
-          "status": "completed",
-          "conclusion": "failure",
-          "status_label": "failed:  Run 1 of Analyze Whisper AO. Add Whisper AO analysis workflow",
-          "branch": "main",
-          "time": "2026-10-02T15:11:44Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37025239269"
         }
       ]
     },
@@ -445,5 +445,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-10-02T15:25:41Z"
+  "updated_at": "2026-10-02T15:39:54Z"
 }
