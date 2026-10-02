@@ -1,0 +1,49 @@
+{
+  "model": "facebook/musicgen-small",
+  "seed_base": 20261002,
+  "model_load_seconds": 13.361,
+  "sample_rate": 32000,
+  "frame_rate": 50.0,
+  "peak_rss_mb": 3153.2,
+  "cases": [
+    {
+      "id": "jp-instrumental",
+      "title": "① 日本語プロンプト：伴奏のみ",
+      "prompt": "104 BPMの日本語ラップ向けファンク・ヒップホップ。乾いたドラム、シンコペーションしたベース、短いコードスタブ。強いアクセントと弱拍の圧縮感。ボーカルなし。",
+      "goal": "日本語の自然言語指示だけで音楽的内容を理解できるか",
+      "status": "success",
+      "wav": "jp-instrumental.wav",
+      "requested_seconds": 10,
+      "actual_seconds": 9.94,
+      "generate_wall_seconds": 49.201,
+      "realtime_factor": 4.95,
+      "wav_bytes": 636204
+    },
+    {
+      "id": "jp-vocal",
+      "title": "② 日本語プロンプト：日本語ラップ要求",
+      "prompt": "104 BPMの日本語ラップ。男性ボーカルが『あいのことばを びーとにのせて きょうもまちをあるいてく』と日本語ではっきりラップする。乾いたドラムとベース。歌ではなくリズミカルなラップ。",
+      "goal": "日本語ボーカルや日本語らしい発音が出るか",
+      "status": "success",
+      "wav": "jp-vocal.wav",
+      "requested_seconds": 10,
+      "actual_seconds": 9.94,
+      "generate_wall_seconds": 48.708,
+      "realtime_factor": 4.9,
+      "wav_bytes": 636204
+    },
+    {
+      "id": "en-vocal",
+      "title": "③ 英語プロンプト：同じ日本語ラップ要求",
+      "prompt": "104 BPM Japanese rap with a male vocalist clearly rapping the exact Japanese phrase 'あいのことばを びーとにのせて きょうもまちをあるいてく'. Dry drums and bass, rhythmic spoken rap rather than singing.",
+      "goal": "日本語指示そのものではなく、英語指示なら日本語ボーカルを誘導できるか",
+      "status": "success",
+      "wav": "en-vocal.wav",
+      "requested_seconds": 10,
+      "actual_seconds": 9.94,
+      "generate_wall_seconds": 50.33,
+      "realtime_factor": 5.063,
+      "wav_bytes": 636204
+    }
+  ]
+}

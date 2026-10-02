@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MusicGen Japanese test</title>
+<style>
+body{font-family:system-ui,sans-serif;max-width:1000px;margin:auto;padding:24px;background:#0c1015;color:#eef3f7}
+section{background:#151c24;border:1px solid #2c3743;border-radius:15px;padding:18px;margin:16px 0}
+audio{width:100%} .prompt{white-space:pre-wrap;background:#0a0e12;padding:12px;border-radius:9px;line-height:1.6}
+.meta{color:#9fb0bd} code{color:#9ee1ff}
+</style></head><body>
+<h1>MusicGen-small 日本語テスト</h1>
+<p><code>facebook/musicgen-small</code> / CPU / 10秒 × 3条件。まず日本語プロンプト理解と日本語ボーカル生成の可否だけを見る。</p>
+
+<section>
+  <h2>① 日本語プロンプト：伴奏のみ</h2>
+  <p><strong>目的:</strong> 日本語の自然言語指示だけで音楽的内容を理解できるか</p>
+  <p class="prompt">104 BPMの日本語ラップ向けファンク・ヒップホップ。乾いたドラム、シンコペーションしたベース、短いコードスタブ。強いアクセントと弱拍の圧縮感。ボーカルなし。</p>
+  <audio controls preload="metadata" src="jp-instrumental.wav"></audio>
+  <p class="meta">実WAV 9.94秒 / 生成 49.201秒 / RTF 4.95×</p>
+</section>
+<section>
+  <h2>② 日本語プロンプト：日本語ラップ要求</h2>
+  <p><strong>目的:</strong> 日本語ボーカルや日本語らしい発音が出るか</p>
+  <p class="prompt">104 BPMの日本語ラップ。男性ボーカルが『あいのことばを びーとにのせて きょうもまちをあるいてく』と日本語ではっきりラップする。乾いたドラムとベース。歌ではなくリズミカルなラップ。</p>
+  <audio controls preload="metadata" src="jp-vocal.wav"></audio>
+  <p class="meta">実WAV 9.94秒 / 生成 48.708秒 / RTF 4.9×</p>
+</section>
+<section>
+  <h2>③ 英語プロンプト：同じ日本語ラップ要求</h2>
+  <p><strong>目的:</strong> 日本語指示そのものではなく、英語指示なら日本語ボーカルを誘導できるか</p>
+  <p class="prompt">104 BPM Japanese rap with a male vocalist clearly rapping the exact Japanese phrase &#x27;あいのことばを びーとにのせて きょうもまちをあるいてく&#x27;. Dry drums and bass, rhythmic spoken rap rather than singing.</p>
+  <audio controls preload="metadata" src="en-vocal.wav"></audio>
+  <p class="meta">実WAV 9.94秒 / 生成 50.33秒 / RTF 5.063×</p>
+</section>
+<pre>{
+  &quot;model&quot;: &quot;facebook/musicgen-small&quot;,
+  &quot;seed_base&quot;: 20261002,
+  &quot;model_load_seconds&quot;: 13.361,
+  &quot;sample_rate&quot;: 32000,
+  &quot;frame_rate&quot;: 50.0,
+  &quot;peak_rss_mb&quot;: 3153.2,
+  &quot;cases&quot;: [
+    {
+      &quot;id&quot;: &quot;jp-instrumental&quot;,
+      &quot;title&quot;: &quot;① 日本語プロンプト：伴奏のみ&quot;,
+      &quot;prompt&quot;: &quot;104 BPMの日本語ラップ向けファンク・ヒップホップ。乾いたドラム、シンコペーションしたベース、短いコードスタブ。強いアクセントと弱拍の圧縮感。ボーカルなし。&quot;,
+      &quot;goal&quot;: &quot;日本語の自然言語指示だけで音楽的内容を理解できるか&quot;,
+      &quot;status&quot;: &quot;success&quot;,
+      &quot;wav&quot;: &quot;jp-instrumental.wav&quot;,
+      &quot;requested_seconds&quot;: 10,
+      &quot;actual_seconds&quot;: 9.94,
+      &quot;generate_wall_seconds&quot;: 49.201,
+      &quot;realtime_factor&quot;: 4.95,
+      &quot;wav_bytes&quot;: 636204
+    },
+    {
+      &quot;id&quot;: &quot;jp-vocal&quot;,
+      &quot;title&quot;: &quot;② 日本語プロンプト：日本語ラップ要求&quot;,
+      &quot;prompt&quot;: &quot;104 BPMの日本語ラップ。男性ボーカルが『あいのことばを びーとにのせて きょうもまちをあるいてく』と日本語ではっきりラップする。乾いたドラムとベース。歌ではなくリズミカルなラップ。&quot;,
+      &quot;goal&quot;: &quot;日本語ボーカルや日本語らしい発音が出るか&quot;,
+      &quot;status&quot;: &quot;success&quot;,
+      &quot;wav&quot;: &quot;jp-vocal.wav&quot;,
+      &quot;requested_seconds&quot;: 10,
+      &quot;actual_seconds&quot;: 9.94,
+      &quot;generate_wall_seconds&quot;: 48.708,
+      &quot;realtime_factor&quot;: 4.9,
+      &quot;wav_bytes&quot;: 636204
+    },
+    {
+      &quot;id&quot;: &quot;en-vocal&quot;,
+      &quot;title&quot;: &quot;③ 英語プロンプト：同じ日本語ラップ要求&quot;,
+      &quot;prompt&quot;: &quot;104 BPM Japanese rap with a male vocalist clearly rapping the exact Japanese phrase &#x27;あいのことばを びーとにのせて きょうもまちをあるいてく&#x27;. Dry drums and bass, rhythmic spoken rap rather than singing.&quot;,
+      &quot;goal&quot;: &quot;日本語指示そのものではなく、英語指示なら日本語ボーカルを誘導できるか&quot;,
+      &quot;status&quot;: &quot;success&quot;,
+      &quot;wav&quot;: &quot;en-vocal.wav&quot;,
+      &quot;requested_seconds&quot;: 10,
+      &quot;actual_seconds&quot;: 9.94,
+      &quot;generate_wall_seconds&quot;: 50.33,
+      &quot;realtime_factor&quot;: 5.063,
+      &quot;wav_bytes&quot;: 636204
+    }
+  ]
+}</pre>
+</body></html>
