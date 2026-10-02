@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MusicGen small CPU length test</title>
+<style>
+body{font-family:system-ui,sans-serif;max-width:1100px;margin:auto;padding:24px;background:#0c1015;color:#edf2f7}
+a{color:#8fd8ff} table{width:100%;border-collapse:collapse;margin:1rem 0 2rem}
+th,td{padding:.65rem;border-bottom:1px solid #2a3440;text-align:right}th:first-child,td:first-child{text-align:left}
+section{background:#141b23;border:1px solid #2b3540;border-radius:14px;padding:16px;margin:14px 0}
+audio{width:100%} pre{white-space:pre-wrap;overflow:auto;background:#090c10;padding:12px;border-radius:8px}
+.ok{color:#80e6a3} .ng{color:#ff9b9b} .muted{color:#9aabba}
+</style></head><body>
+<h1>MusicGen-small / GitHub Actions CPU length test</h1>
+<p class="muted">facebook/musicgen-small を GitHub-hosted ubuntu runner の CPU だけで生成。各ケースは最大25分で打ち切り。</p>
+<table><thead><tr><th>要求長</th><th>状態</th><th>実WAV長</th><th>生成時間</th><th>実時間比</th><th>Peak RSS</th><th>WAV</th></tr></thead>
+<tbody><tr><td>5s</td><td class='ok'>success</td><td>4.94 s</td><td>26.305 s</td><td>5.325×</td><td>3028.7 MB</td><td>309 KiB</td></tr><tr><td>10s</td><td class='ok'>success</td><td>9.94 s</td><td>54.643 s</td><td>5.497×</td><td>2947.6 MB</td><td>621 KiB</td></tr><tr><td>20s</td><td class='ok'>success</td><td>19.94 s</td><td>118.469 s</td><td>5.941×</td><td>3391.5 MB</td><td>1246 KiB</td></tr><tr><td>30s</td><td class='ok'>success</td><td>29.94 s</td><td>190.765 s</td><td>6.372×</td><td>3712.7 MB</td><td>1871 KiB</td></tr></tbody></table>
+<section><h2>5 秒要求</h2><audio controls preload='metadata' src='musicgen_5s.wav'></audio><pre>{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;model&quot;: &quot;facebook/musicgen-small&quot;,
+  &quot;prompt&quot;: &quot;Japanese funk hip-hop instrumental groove at 104 BPM, syncopated dry drums, electric bass, sparse chord stabs, clear rhythmic accents, no vocals&quot;,
+  &quot;requested_seconds&quot;: 5,
+  &quot;seed&quot;: 20261002,
+  &quot;max_new_tokens&quot;: 250,
+  &quot;frame_rate&quot;: 50.0,
+  &quot;sample_rate&quot;: 32000,
+  &quot;actual_seconds&quot;: 4.94,
+  &quot;generate_wall_seconds&quot;: 26.305,
+  &quot;total_wall_seconds&quot;: 36.218,
+  &quot;realtime_factor&quot;: 5.325,
+  &quot;peak_rss_mb&quot;: 3028.7,
+  &quot;wav_bytes&quot;: 316204,
+  &quot;wav_file&quot;: &quot;musicgen_5s.wav&quot;,
+  &quot;disk_free_gb_after&quot;: 82.33
+}</pre></section><section><h2>10 秒要求</h2><audio controls preload='metadata' src='musicgen_10s.wav'></audio><pre>{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;model&quot;: &quot;facebook/musicgen-small&quot;,
+  &quot;prompt&quot;: &quot;Japanese funk hip-hop instrumental groove at 104 BPM, syncopated dry drums, electric bass, sparse chord stabs, clear rhythmic accents, no vocals&quot;,
+  &quot;requested_seconds&quot;: 10,
+  &quot;seed&quot;: 20261002,
+  &quot;max_new_tokens&quot;: 500,
+  &quot;frame_rate&quot;: 50.0,
+  &quot;sample_rate&quot;: 32000,
+  &quot;actual_seconds&quot;: 9.94,
+  &quot;generate_wall_seconds&quot;: 54.643,
+  &quot;total_wall_seconds&quot;: 55.447,
+  &quot;realtime_factor&quot;: 5.497,
+  &quot;peak_rss_mb&quot;: 2947.6,
+  &quot;wav_bytes&quot;: 636204,
+  &quot;wav_file&quot;: &quot;musicgen_10s.wav&quot;,
+  &quot;disk_free_gb_after&quot;: 82.32
+}</pre></section><section><h2>20 秒要求</h2><audio controls preload='metadata' src='musicgen_20s.wav'></audio><pre>{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;model&quot;: &quot;facebook/musicgen-small&quot;,
+  &quot;prompt&quot;: &quot;Japanese funk hip-hop instrumental groove at 104 BPM, syncopated dry drums, electric bass, sparse chord stabs, clear rhythmic accents, no vocals&quot;,
+  &quot;requested_seconds&quot;: 20,
+  &quot;seed&quot;: 20261002,
+  &quot;max_new_tokens&quot;: 1000,
+  &quot;frame_rate&quot;: 50.0,
+  &quot;sample_rate&quot;: 32000,
+  &quot;actual_seconds&quot;: 19.94,
+  &quot;generate_wall_seconds&quot;: 118.469,
+  &quot;total_wall_seconds&quot;: 119.254,
+  &quot;realtime_factor&quot;: 5.941,
+  &quot;peak_rss_mb&quot;: 3391.5,
+  &quot;wav_bytes&quot;: 1276204,
+  &quot;wav_file&quot;: &quot;musicgen_20s.wav&quot;,
+  &quot;disk_free_gb_after&quot;: 82.32
+}</pre></section><section><h2>30 秒要求</h2><audio controls preload='metadata' src='musicgen_30s.wav'></audio><pre>{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;model&quot;: &quot;facebook/musicgen-small&quot;,
+  &quot;prompt&quot;: &quot;Japanese funk hip-hop instrumental groove at 104 BPM, syncopated dry drums, electric bass, sparse chord stabs, clear rhythmic accents, no vocals&quot;,
+  &quot;requested_seconds&quot;: 30,
+  &quot;seed&quot;: 20261002,
+  &quot;max_new_tokens&quot;: 1500,
+  &quot;frame_rate&quot;: 50.0,
+  &quot;sample_rate&quot;: 32000,
+  &quot;actual_seconds&quot;: 29.94,
+  &quot;generate_wall_seconds&quot;: 190.765,
+  &quot;total_wall_seconds&quot;: 191.612,
+  &quot;realtime_factor&quot;: 6.372,
+  &quot;peak_rss_mb&quot;: 3712.7,
+  &quot;wav_bytes&quot;: 1916204,
+  &quot;wav_file&quot;: &quot;musicgen_30s.wav&quot;,
+  &quot;disk_free_gb_after&quot;: 82.32
+}</pre></section>
+</body></html>

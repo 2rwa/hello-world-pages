@@ -1,0 +1,18 @@
+{
+  "status": "success",
+  "model": "facebook/musicgen-small",
+  "prompt": "Japanese funk hip-hop instrumental groove at 104 BPM, syncopated dry drums, electric bass, sparse chord stabs, clear rhythmic accents, no vocals",
+  "requested_seconds": 20,
+  "seed": 20261002,
+  "max_new_tokens": 1000,
+  "frame_rate": 50.0,
+  "sample_rate": 32000,
+  "actual_seconds": 19.94,
+  "generate_wall_seconds": 118.469,
+  "total_wall_seconds": 119.254,
+  "realtime_factor": 5.941,
+  "peak_rss_mb": 3391.5,
+  "wav_bytes": 1276204,
+  "wav_file": "musicgen_20s.wav",
+  "disk_free_gb_after": 82.32
+}
