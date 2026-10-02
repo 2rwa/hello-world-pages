@@ -1,0 +1,10 @@
+{
+  "speaker": "ずんだもん",
+  "style": "ノーマル",
+  "speaker_id": 3,
+  "channels": 1,
+  "sample_width_bytes": 2,
+  "sample_rate_hz": 24000,
+  "frames": 232192,
+  "duration_seconds": 9.675
+}
