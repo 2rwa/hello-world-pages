@@ -10,6 +10,8 @@ on:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 concurrency:
   group: voicevox-zundamon-test
@@ -19,6 +21,9 @@ jobs:
   synthesize:
     runs-on: ubuntu-latest
     timeout-minutes: 120
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -132,10 +137,22 @@ jobs:
             voicevox-zundamon-test/metadata.json
           if git diff --cached --quiet; then
             echo "No generated changes."
-            exit 0
+          else
+            git commit -m "test: generate Zundamon VOICEVOX sample"
+            git push origin HEAD:main
           fi
-          git commit -m "test: generate Zundamon VOICEVOX sample"
-          git push origin HEAD:main
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: "."
+
+      - name: Deploy Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
 
       - name: Engine log on failure
         if: failure()
