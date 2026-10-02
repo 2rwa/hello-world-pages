@@ -368,8 +368,25 @@
           "url": "https://github.com/2rwa/tmp-sho/actions/runs/36298800629"
         }
       ]
+    },
+    {
+      "name": "tmp-zunda",
+      "url": "https://github.com/2rwa/tmp-zunda",
+      "actions_url": "https://github.com/2rwa/tmp-zunda/actions",
+      "runs": [
+        {
+          "id": 36980585782,
+          "title": "test: add 120min haiku scale sweep",
+          "status": "in_progress",
+          "conclusion": null,
+          "status_label": "currently running:  Run 1 of Zundamon Haiku Scale 120min Sweep. test: add 120min haiku scale sweep",
+          "branch": "main",
+          "time": "2026-10-02T07:49:12Z",
+          "url": "https://github.com/2rwa/tmp-zunda/actions/runs/36980585782"
+        }
+      ]
     }
   ],
   "errors": [],
-  "updated_at": "2026-10-01T21:45:40Z"
+  "updated_at": "2026-10-02T07:51:43Z"
 }
