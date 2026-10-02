@@ -1,0 +1,98 @@
+name: ACE-Step lyrics CPU smoke test
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/ace-step-lyrics-cpu-test.yml"
+      - "tests/ace-step-lyrics/**"
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: ace-step-lyrics-cpu-test
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Rebase before generating
+        run: git pull --rebase origin main
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install uv
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+
+      - name: Clone ACE-Step 1.5
+        run: |
+          git clone --depth 1 https://github.com/ace-step/ACE-Step-1.5.git /tmp/ACE-Step-1.5
+          cd /tmp/ACE-Step-1.5
+          uv sync
+
+      - name: Generate English and Japanese lyric tests
+        env:
+          ACESTEP_INIT_LLM: "false"
+          ACESTEP_DEVICE: "cpu"
+          ACESTEP_DOWNLOAD_SOURCE: "huggingface"
+        run: |
+          rm -rf ace-step-lyrics-test
+          mkdir -p ace-step-lyrics-test
+          cd /tmp/ACE-Step-1.5
+          timeout --signal=TERM --kill-after=60s 6000s             uv run python "$GITHUB_WORKSPACE/tests/ace-step-lyrics/generate.py"               --output-dir "$GITHUB_WORKSPACE/ace-step-lyrics-test"
+
+      - name: Upload test files
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ace-step-lyrics-cpu-test
+          path: ace-step-lyrics-test/
+          if-no-files-found: warn
+
+      - name: Prepare Pages artifact
+        if: success()
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: "."
+
+      - name: Commit generated results
+        if: success()
+        shell: bash
+        run: |
+          set -e
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add ace-step-lyrics-test
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "test: ACE-Step English and Japanese lyric samples"
+          for attempt in 1 2 3; do
+            if git pull --rebase origin main && git push origin HEAD:main; then exit 0; fi
+            sleep 5
+          done
+          exit 1
+
+  deploy:
+    needs: generate
+    if: needs.generate.result == 'success'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
