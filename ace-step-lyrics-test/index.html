@@ -1,0 +1,74 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ACE-Step lyrics CPU test</title>
+<style>
+body{font-family:system-ui,sans-serif;max-width:900px;margin:auto;padding:24px;background:#0d1117;color:#e6edf3}
+section{border:1px solid #30363d;background:#161b22;padding:18px;border-radius:14px;margin:16px 0}
+audio{width:100%;margin:.5rem 0}pre{white-space:pre-wrap;background:#0d1117;padding:12px;border-radius:8px}
+.meta{color:#8b949e}.ng{color:#ff7b72}
+</style></head><body>
+<h1>ACE-Step 1.5: English vs Japanese lyrics</h1>
+<p>CPU-only / DiT direct lyric conditioning / 20 seconds / vocals requested from beat 1.</p>
+<section>
+<h2>English lyrics control</h2>
+<p><b>language:</b> en / <b>20s / 104 BPM / no intro</b></p>
+<pre>[Verse]
+I walk through the city with the beat in my feet
+Every word hits hard and every rhythm feels complete
+Keep moving forward while the night is shining bright
+Say it from the first beat, no intro, start tonight</pre>
+<audio controls preload="metadata" src="english/ef446c03-3a89-43d1-8916-2958ac4c49fb.wav"></audio>
+<p></p>
+<p class="meta">wall: 57.625s</p>
+</section><section>
+<h2>Japanese lyrics test</h2>
+<p><b>language:</b> ja / <b>20s / 104 BPM / no intro</b></p>
+<pre>[Verse]
+あいのことばを ビートにのせて
+きょうもまちを あるいてく
+つよいことばと よわいことばを
+リズムのなかで つないでく</pre>
+<audio controls preload="metadata" src="japanese/ff28b6f8-ab56-b392-9377-cfaf7eb36456.wav"></audio>
+<p></p>
+<p class="meta">wall: 52.086s</p>
+</section>
+<pre>{
+  &quot;model&quot;: &quot;ACE-Step 1.5 / acestep-v15-turbo&quot;,
+  &quot;device&quot;: &quot;cpu&quot;,
+  &quot;llm_enabled&quot;: false,
+  &quot;duration_per_case&quot;: 20,
+  &quot;bpm&quot;: 104,
+  &quot;model_init_seconds&quot;: 68.197,
+  &quot;peak_rss_mb&quot;: 14438.5,
+  &quot;cases&quot;: [
+    {
+      &quot;id&quot;: &quot;english&quot;,
+      &quot;title&quot;: &quot;English lyrics control&quot;,
+      &quot;language&quot;: &quot;en&quot;,
+      &quot;caption&quot;: &quot;Dry funk hip-hop groove, male rap-singing vocal starts immediately at 0 seconds, no intro, clear diction, sparse bass and drums&quot;,
+      &quot;lyrics&quot;: &quot;[Verse]\nI walk through the city with the beat in my feet\nEvery word hits hard and every rhythm feels complete\nKeep moving forward while the night is shining bright\nSay it from the first beat, no intro, start tonight&quot;,
+      &quot;duration&quot;: 20,
+      &quot;bpm&quot;: 104,
+      &quot;wall_seconds&quot;: 57.625,
+      &quot;success&quot;: true,
+      &quot;audio_files&quot;: [
+        &quot;english/ef446c03-3a89-43d1-8916-2958ac4c49fb.wav&quot;
+      ]
+    },
+    {
+      &quot;id&quot;: &quot;japanese&quot;,
+      &quot;title&quot;: &quot;Japanese lyrics test&quot;,
+      &quot;language&quot;: &quot;ja&quot;,
+      &quot;caption&quot;: &quot;Dry funk hip-hop groove, Japanese male rap-singing vocal starts immediately at 0 seconds, no intro, clear diction, sparse bass and drums&quot;,
+      &quot;lyrics&quot;: &quot;[Verse]\nあいのことばを ビートにのせて\nきょうもまちを あるいてく\nつよいことばと よわいことばを\nリズムのなかで つないでく&quot;,
+      &quot;duration&quot;: 20,
+      &quot;bpm&quot;: 104,
+      &quot;wall_seconds&quot;: 52.086,
+      &quot;success&quot;: true,
+      &quot;audio_files&quot;: [
+        &quot;japanese/ff28b6f8-ab56-b392-9377-cfaf7eb36456.wav&quot;
+      ]
+    }
+  ]
+}</pre>
+</body></html>

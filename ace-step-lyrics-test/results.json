@@ -1,0 +1,39 @@
+{
+  "model": "ACE-Step 1.5 / acestep-v15-turbo",
+  "device": "cpu",
+  "llm_enabled": false,
+  "duration_per_case": 20,
+  "bpm": 104,
+  "model_init_seconds": 68.197,
+  "peak_rss_mb": 14438.5,
+  "cases": [
+    {
+      "id": "english",
+      "title": "English lyrics control",
+      "language": "en",
+      "caption": "Dry funk hip-hop groove, male rap-singing vocal starts immediately at 0 seconds, no intro, clear diction, sparse bass and drums",
+      "lyrics": "[Verse]\nI walk through the city with the beat in my feet\nEvery word hits hard and every rhythm feels complete\nKeep moving forward while the night is shining bright\nSay it from the first beat, no intro, start tonight",
+      "duration": 20,
+      "bpm": 104,
+      "wall_seconds": 57.625,
+      "success": true,
+      "audio_files": [
+        "english/ef446c03-3a89-43d1-8916-2958ac4c49fb.wav"
+      ]
+    },
+    {
+      "id": "japanese",
+      "title": "Japanese lyrics test",
+      "language": "ja",
+      "caption": "Dry funk hip-hop groove, Japanese male rap-singing vocal starts immediately at 0 seconds, no intro, clear diction, sparse bass and drums",
+      "lyrics": "[Verse]\nあいのことばを ビートにのせて\nきょうもまちを あるいてく\nつよいことばと よわいことばを\nリズムのなかで つないでく",
+      "duration": 20,
+      "bpm": 104,
+      "wall_seconds": 52.086,
+      "success": true,
+      "audio_files": [
+        "japanese/ff28b6f8-ab56-b392-9377-cfaf7eb36456.wav"
+      ]
+    }
+  ]
+}
