@@ -326,7 +326,48 @@
       "name": "tmp-music",
       "url": "https://github.com/2rwa/tmp-music",
       "actions_url": "https://github.com/2rwa/tmp-music/actions",
-      "runs": []
+      "runs": [
+        {
+          "id": 37026834205,
+          "title": "Fix analysis result write-back ordering",
+          "status": "queued",
+          "conclusion": null,
+          "status_label": "queued:  Run 4 of Analyze Whisper AO. Fix analysis result write-back ordering",
+          "branch": "main",
+          "time": "2026-10-02T15:25:09Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37026834205"
+        },
+        {
+          "id": 37026410251,
+          "title": "Pin PyAV below 19 for faster-whisper",
+          "status": "completed",
+          "conclusion": "failure",
+          "status_label": "failed:  Run 3 of Analyze Whisper AO. Pin PyAV below 19 for faster-whisper",
+          "branch": "main",
+          "time": "2026-10-02T15:21:34Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37026410251"
+        },
+        {
+          "id": 37026322596,
+          "title": "Pin PyAV below 19 for faster-whisper",
+          "status": "completed",
+          "conclusion": "failure",
+          "status_label": "failed:  Run 2 of Analyze Whisper AO. Pin PyAV below 19 for faster-whisper",
+          "branch": "main",
+          "time": "2026-10-02T15:20:50Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37026322596"
+        },
+        {
+          "id": 37025239269,
+          "title": "Add Whisper AO analysis workflow",
+          "status": "completed",
+          "conclusion": "failure",
+          "status_label": "failed:  Run 1 of Analyze Whisper AO. Add Whisper AO analysis workflow",
+          "branch": "main",
+          "time": "2026-10-02T15:11:44Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37025239269"
+        }
+      ]
     },
     {
       "name": "tmp-sho",
@@ -404,5 +445,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-10-02T14:27:27Z"
+  "updated_at": "2026-10-02T15:25:41Z"
 }
