@@ -377,9 +377,9 @@
         {
           "id": 36980585782,
           "title": "test: add 120min haiku scale sweep",
-          "status": "in_progress",
-          "conclusion": null,
-          "status_label": "currently running:  Run 1 of Zundamon Haiku Scale 120min Sweep. test: add 120min haiku scale sweep",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 1 of Zundamon Haiku Scale 120min Sweep. test: add 120min haiku scale sweep",
           "branch": "main",
           "time": "2026-10-02T07:49:12Z",
           "url": "https://github.com/2rwa/tmp-zunda/actions/runs/36980585782"
@@ -388,5 +388,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-10-02T07:51:43Z"
+  "updated_at": "2026-10-02T09:21:43Z"
 }
