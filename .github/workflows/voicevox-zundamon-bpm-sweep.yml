@@ -1,0 +1,167 @@
+name: Zundamon Mora BPM Parameter Sweep
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/voicevox-zundamon-bpm-sweep.yml"
+      - "scripts/voicevox_mora_bpm_sweep.py"
+      - "voicevox-zundamon-bpm-test/source-text.txt"
+      - "voicevox-zundamon-bpm-test/index.html"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: voicevox-zundamon-bpm-sweep
+  cancel-in-progress: false
+
+jobs:
+  sweep:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Rebase before generation
+        run: git pull --rebase origin main
+
+      - name: Ensure ffmpeg
+        run: |
+          if ! command -v ffmpeg >/dev/null 2>&1 || ! command -v ffprobe >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y ffmpeg
+          fi
+          ffmpeg -version | head -n 1
+
+      - name: Pull VOICEVOX Engine
+        run: docker pull voicevox/voicevox_engine:cpu-latest
+
+      - name: Start VOICEVOX Engine
+        run: |
+          docker run --rm -d \
+            --name voicevox-zundamon-bpm \
+            -p 127.0.0.1:50021:50021 \
+            voicevox/voicevox_engine:cpu-latest
+
+          for i in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:50021/version; then
+              echo
+              exit 0
+            fi
+            sleep 2
+          done
+
+          docker logs voicevox-zundamon-bpm
+          exit 1
+
+      - name: Detect Zundamon normal style
+        id: speaker
+        run: |
+          curl -fsS http://127.0.0.1:50021/speakers > /tmp/speakers.json
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          speakers = json.load(open("/tmp/speakers.json", encoding="utf-8"))
+          z = next(s for s in speakers if s["name"] == "ずんだもん")
+          style = next((st for st in z["styles"] if st["name"] == "ノーマル"), z["styles"][0])
+          print(f"id={style['id']}")
+          print(f"style={style['name']}")
+          PY
+
+      - name: Create base audio query
+        run: |
+          curl -fsS -X POST \
+            "http://127.0.0.1:50021/audio_query?speaker=${{ steps.speaker.outputs.id }}" \
+            --get --data-urlencode text@voicevox-zundamon-bpm-test/source-text.txt \
+            > voicevox-zundamon-bpm-test/base-query.json
+
+      - name: Generate 360 rhythmic MP3 variants
+        run: |
+          rm -rf voicevox-zundamon-bpm-test/mp3
+          mkdir -p voicevox-zundamon-bpm-test/mp3
+          python3 scripts/voicevox_mora_bpm_sweep.py \
+            --base-query voicevox-zundamon-bpm-test/base-query.json \
+            --source-text voicevox-zundamon-bpm-test/source-text.txt \
+            --speaker "${{ steps.speaker.outputs.id }}" \
+            --style "${{ steps.speaker.outputs.style }}" \
+            --output voicevox-zundamon-bpm-test
+
+      - name: Validate sweep outputs
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          root = Path("voicevox-zundamon-bpm-test")
+          m = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
+          success = m["summary"]["success"]
+          expected = m["summary"]["expected"]
+          files = list((root / "mp3").glob("*.mp3"))
+          total_bytes = sum(p.stat().st_size for p in files)
+
+          print(f"expected={expected}")
+          print(f"success={success}")
+          print(f"failure={m['summary']['failure']}")
+          print(f"mp3_files={len(files)}")
+          print(f"total_bytes={total_bytes}")
+          print(f"elapsed_seconds={m['summary']['elapsed_seconds']}")
+
+          assert expected == 360, expected
+          assert success >= 324, f"success rate too low: {success}/{expected}"
+          assert len(files) == success, (len(files), success)
+          assert total_bytes > 100000, total_bytes
+          PY
+
+      - name: Upload full sweep artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: zundamon-mora-bpm-360-mp3
+          path: |
+            voicevox-zundamon-bpm-test/mp3/
+            voicevox-zundamon-bpm-test/manifest.json
+            voicevox-zundamon-bpm-test/summary.md
+            voicevox-zundamon-bpm-test/base-query.json
+          retention-days: 7
+
+      - name: Commit MP3 results to disposable repo
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git pull --rebase origin main
+          git add \
+            voicevox-zundamon-bpm-test/mp3 \
+            voicevox-zundamon-bpm-test/manifest.json \
+            voicevox-zundamon-bpm-test/summary.md \
+            voicevox-zundamon-bpm-test/base-query.json
+          if git diff --cached --quiet; then
+            echo "No generated changes."
+          else
+            git commit -m "test: add Zundamon 360-pattern mora BPM MP3 sweep"
+            git push origin HEAD:main
+          fi
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: "."
+
+      - name: Deploy Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Engine log on failure
+        if: failure()
+        run: docker logs voicevox-zundamon-bpm || true

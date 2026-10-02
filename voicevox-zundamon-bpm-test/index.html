@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ずんだもん モーラBPM 360パターン</title>
+  <style>
+    :root { color-scheme: light dark; font-family: system-ui, sans-serif; }
+    body { max-width: 980px; margin: 2rem auto; padding: 0 1rem; line-height: 1.55; }
+    .panel { border: 1px solid #8886; border-radius: 14px; padding: 1rem; margin: 1rem 0; }
+    .filters { display: grid; grid-template-columns: repeat(auto-fit,minmax(150px,1fr)); gap: .75rem; }
+    label { display: grid; gap: .25rem; }
+    select { font: inherit; padding: .45rem; }
+    audio { width: 100%; margin: 1rem 0; }
+    pre { white-space: pre-wrap; overflow-wrap: anywhere; background:#8882; padding:.8rem; border-radius:8px; }
+    .small { opacity:.75; font-size:.9rem; }
+  </style>
+</head>
+<body>
+  <h1>ずんだもん モーラBPM 360パターン</h1>
+  <p>VOICEVOX のモーラ長とピッチを直接変更し、BPM / 密度 / swing / pitch pattern を総当たりした実験です。</p>
+
+  <div class="panel">
+    <div class="filters">
+      <label>BPM<select id="bpm"></select></label>
+      <label>モーラ密度<select id="grid"></select></label>
+      <label>Swing<select id="swing"></select></label>
+      <label>Pitch<select id="pitch"></select></label>
+    </div>
+    <audio id="player" controls></audio>
+    <div id="now"></div>
+  </div>
+
+  <div class="panel">
+    <strong>生成サマリ</strong>
+    <pre id="summary">manifest.json を読み込み中…</pre>
+  </div>
+
+  <p class="small">クレジット: VOICEVOX:ずんだもん</p>
+
+<script>
+(async () => {
+  const m = await fetch("./manifest.json").then(r => r.json());
+  const byId = id => document.getElementById(id);
+  const unique = (k) => [...new Set(m.variants.map(v => String(v[k])))];
+
+  const values = {
+    bpm: unique("bpm"),
+    grid: unique("grid"),
+    swing: unique("swing"),
+    pitch: unique("pitch_pattern")
+  };
+
+  for (const [id, vals] of Object.entries(values)) {
+    const s = byId(id);
+    vals.forEach(v => {
+      const o = document.createElement("option");
+      o.value = v; o.textContent = v; s.appendChild(o);
+    });
+    s.addEventListener("change", choose);
+  }
+
+  function choose() {
+    const v = m.variants.find(x =>
+      String(x.bpm) === byId("bpm").value &&
+      x.grid === byId("grid").value &&
+      String(x.swing) === byId("swing").value &&
+      x.pitch_pattern === byId("pitch").value
+    );
+    if (!v) return;
+    byId("player").src = v.file;
+    byId("now").textContent =
+      v.id + " / " + v.duration_seconds + " sec / " +
+      Math.round(v.size_bytes / 1024) + " KiB";
+  }
+
+  byId("summary").textContent = JSON.stringify({
+    source_text: m.source_text,
+    summary: m.summary,
+    parameter_space: m.parameter_space
+  }, null, 2);
+
+  choose();
+})().catch(e => {
+  document.getElementById("summary").textContent = "まだ生成中、または生成失敗: " + e;
+});
+</script>
+</body>
+</html>
