@@ -1,0 +1,1 @@
+こんにちは。ずんだもんなのだ。GitHub Actions から、VOICEVOX で音声合成しているのだ。\n

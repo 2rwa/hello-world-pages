@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>VOICEVOX ずんだもん Actions test</title>
+  <style>
+    :root { color-scheme: light dark; font-family: system-ui, sans-serif; }
+    body { max-width: 760px; margin: 3rem auto; padding: 0 1rem; line-height: 1.65; }
+    .card { border: 1px solid #8886; border-radius: 16px; padding: 1.25rem; }
+    audio { width: 100%; margin: 1rem 0; }
+    code, pre { background: #8882; border-radius: 6px; }
+    pre { padding: 1rem; overflow: auto; }
+  </style>
+</head>
+<body>
+  <h1>VOICEVOX ずんだもん / GitHub Actions test</h1>
+  <div class="card">
+    <p>GitHub Actions の Ubuntu CPU runner 上で VOICEVOX Engine を起動し、ずんだもん（ノーマル）を自動検出して生成した WAV です。</p>
+    <audio controls src="./zundamon.wav"></audio>
+    <p><strong>生成テキスト:</strong> <span id="source">読み込み中…</span></p>
+    <p><a href="./query.json">audio_query JSON</a> / <a href="./metadata.json">metadata JSON</a></p>
+    <pre id="metadata">metadata.json を読み込み中…</pre>
+    <p>クレジット: VOICEVOX:ずんだもん</p>
+  </div>
+  <script>
+    Promise.all([
+      fetch("./source-text.txt").then(r => r.text()),
+      fetch("./metadata.json").then(r => r.ok ? r.json() : Promise.reject())
+    ]).then(([text, meta]) => {
+      document.getElementById("source").textContent = text.trim();
+      document.getElementById("metadata").textContent = JSON.stringify(meta, null, 2);
+    }).catch(() => {
+      document.getElementById("metadata").textContent =
+        "Actions がまだ生成中、または生成前です。";
+      fetch("./source-text.txt").then(r => r.text()).then(text => {
+        document.getElementById("source").textContent = text.trim();
+      });
+    });
+  </script>
+</body>
+</html>
