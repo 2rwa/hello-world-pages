@@ -375,6 +375,16 @@
       "actions_url": "https://github.com/2rwa/tmp-zunda/actions",
       "runs": [
         {
+          "id": 36991729055,
+          "title": "feat: add Pages A/B comparison UI",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 1 of Deploy GitHub Pages. feat: add Pages A/B comparison UI",
+          "branch": "main",
+          "time": "2026-10-02T09:46:39Z",
+          "url": "https://github.com/2rwa/tmp-zunda/actions/runs/36991729055"
+        },
+        {
           "id": 36980585782,
           "title": "test: add 120min haiku scale sweep",
           "status": "completed",
@@ -388,5 +398,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-10-02T09:21:43Z"
+  "updated_at": "2026-10-02T09:49:24Z"
 }
