@@ -1,0 +1,110 @@
+name: MusicGen small CPU length test
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/musicgen-small-cpu-test.yml"
+      - "tests/musicgen-small/**"
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: musicgen-small-cpu-test
+  cancel-in-progress: false
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Rebase before generating
+        run: git pull --rebase origin main
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install CPU dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install "transformers>=4.45,<5" sentencepiece scipy psutil
+
+      - name: Generate 5, 10, 20, 30 second samples
+        shell: bash
+        run: |
+          set -u
+          mkdir -p musicgen-small-test
+          for seconds in 5 10 20 30; do
+            echo "::group::MusicGen ${seconds}s"
+            start="$(date +%s)"
+            set +e
+            timeout --signal=TERM --kill-after=30s 1500s               python tests/musicgen-small/generate_one.py                 --seconds "$seconds"                 --output-dir musicgen-small-test
+            code=$?
+            set -e
+            end="$(date +%s)"
+            if [ ! -f "musicgen-small-test/result_${seconds}.json" ]; then
+              python tests/musicgen-small/write_failure.py                 --seconds "$seconds"                 --exit-code "$code"                 --elapsed "$((end-start))"                 --output-dir musicgen-small-test
+            fi
+            echo "::endgroup::"
+          done
+
+      - name: Build benchmark page
+        run: python tests/musicgen-small/build_page.py musicgen-small-test
+
+      - name: Upload benchmark files
+        uses: actions/upload-artifact@v4
+        with:
+          name: musicgen-small-cpu-results
+          path: musicgen-small-test/
+          if-no-files-found: error
+
+      - name: Prepare Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: "."
+
+      - name: Commit generated benchmark results
+        shell: bash
+        run: |
+          set -e
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add musicgen-small-test
+          if git diff --cached --quiet; then
+            echo "No generated changes to commit."
+            exit 0
+          fi
+          git commit -m "test: MusicGen small CPU duration benchmark"
+          for attempt in 1 2 3; do
+            if git pull --rebase origin main && git push origin HEAD:main; then
+              exit 0
+            fi
+            echo "Push attempt ${attempt} failed; retrying..."
+            sleep 5
+          done
+          exit 1
+
+  deploy:
+    needs: benchmark
+    if: always() && needs.benchmark.result == 'success'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy generated benchmark to Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
