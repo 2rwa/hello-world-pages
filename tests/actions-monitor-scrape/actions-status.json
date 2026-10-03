@@ -328,6 +328,36 @@
       "actions_url": "https://github.com/2rwa/tmp-music/actions",
       "runs": [
         {
+          "id": 37109977373,
+          "title": "M6 Pages smoke",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 2 of M6 Pages smoke.",
+          "branch": null,
+          "time": "2026-10-03T08:31:11Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37109977373"
+        },
+        {
+          "id": 37109952778,
+          "title": "Fix GitHub Pages deployment (#9)",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 1 of Deploy GitHub Pages. Fix GitHub Pages deployment (#9)",
+          "branch": "main",
+          "time": "2026-10-03T08:30:48Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37109952778"
+        },
+        {
+          "id": 37109458698,
+          "title": "Finalize M6 Pages landing (#8)",
+          "status": "completed",
+          "conclusion": "failure",
+          "status_label": "failed:  Run 1 of M6 Pages smoke. Finalize M6 Pages landing (#8)",
+          "branch": "main",
+          "time": "2026-10-03T08:22:04Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37109458698"
+        },
+        {
           "id": 37109153026,
           "title": "Fix M2 comparison race and publish M6 status (#7)",
           "status": "completed",
@@ -336,36 +366,6 @@
           "branch": "main",
           "time": "2026-10-03T08:16:34Z",
           "url": "https://github.com/2rwa/tmp-music/actions/runs/37109153026"
-        },
-        {
-          "id": 37109152979,
-          "title": "Fix M2 comparison race and publish M6 status (#7)",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 49 of Analysis cheap CI. Fix M2 comparison race and publish M6 status (#7)",
-          "branch": "main",
-          "time": "2026-10-03T08:16:34Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37109152979"
-        },
-        {
-          "id": 37109120777,
-          "title": "Fix M2 comparison race and publish M6 status",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 48 of Analysis cheap CI. Fix M2 comparison race and publish M6 status",
-          "branch": "fix/m2-compare-and-publish-m6-status-20261003",
-          "time": "2026-10-03T08:16:00Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37109120777"
-        },
-        {
-          "id": 37106744254,
-          "title": "Milestone 6 voice quality",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 13 of Milestone 6 voice quality.",
-          "branch": null,
-          "time": "2026-10-03T07:33:34Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37106744254"
         }
       ]
     },
@@ -445,5 +445,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-10-03T08:17:14Z"
+  "updated_at": "2026-10-03T08:36:34Z"
 }
