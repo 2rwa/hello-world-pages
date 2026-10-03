@@ -328,44 +328,44 @@
       "actions_url": "https://github.com/2rwa/tmp-music/actions",
       "runs": [
         {
-          "id": 37091037891,
-          "title": "Milestone 5 forced alignment",
-          "status": "completed",
-          "conclusion": "failure",
-          "status_label": "failed:  Run 2 of Milestone 5 forced alignment.",
-          "branch": null,
-          "time": "2026-10-03T02:47:54Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37091037891"
-        },
-        {
-          "id": 37091037845,
+          "id": 37094712193,
           "title": "Milestone 4 cycle ASR",
           "status": "completed",
           "conclusion": "success",
-          "status_label": "completed successfully:  Run 6 of Milestone 4 cycle ASR.",
+          "status_label": "completed successfully:  Run 8 of Milestone 4 cycle ASR.",
           "branch": null,
-          "time": "2026-10-03T02:47:54Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37091037845"
+          "time": "2026-10-03T03:53:52Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37094712193"
         },
         {
-          "id": 37090985313,
-          "title": "Fix MFA alignment environment dependency check",
+          "id": 37094712184,
+          "title": "Milestone 5 forced alignment",
           "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 8 of Milestone 3 structure smoke. Fix MFA alignment environment dependency check",
-          "branch": "main",
-          "time": "2026-10-03T02:46:51Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37090985313"
+          "conclusion": "failure",
+          "status_label": "failed:  Run 4 of Milestone 5 forced alignment.",
+          "branch": null,
+          "time": "2026-10-03T03:53:52Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37094712184"
         },
         {
-          "id": 37090985309,
-          "title": "Fix MFA alignment environment dependency check",
+          "id": 37094641392,
+          "title": "Surface MFA diagnostics in Actions logs",
           "status": "completed",
           "conclusion": "success",
-          "status_label": "completed successfully:  Run 17 of Analysis cheap CI. Fix MFA alignment environment dependency check",
+          "status_label": "completed successfully:  Run 10 of Milestone 3 structure smoke. Surface MFA diagnostics in Actions logs",
           "branch": "main",
-          "time": "2026-10-03T02:46:51Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37090985309"
+          "time": "2026-10-03T03:52:36Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37094641392"
+        },
+        {
+          "id": 37094641320,
+          "title": "Surface MFA diagnostics in Actions logs",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 21 of Analysis cheap CI. Surface MFA diagnostics in Actions logs",
+          "branch": "main",
+          "time": "2026-10-03T03:52:36Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37094641320"
         }
       ]
     },
@@ -445,5 +445,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-10-03T03:04:05Z"
+  "updated_at": "2026-10-03T04:00:13Z"
 }
