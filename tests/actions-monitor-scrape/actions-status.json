@@ -328,44 +328,44 @@
       "actions_url": "https://github.com/2rwa/tmp-music/actions",
       "runs": [
         {
-          "id": 37078500802,
-          "title": "Recover and fix Jugemu result write-back",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 3 of Analyze Jugemu. Recover and fix Jugemu result write-back",
+          "id": 37084031038,
+          "title": "Add Milestone 2 mix pitch workflow",
+          "status": "in_progress",
+          "conclusion": null,
+          "status_label": "currently running:  Run 1 of Milestone 2 mix pitch. Add Milestone 2 mix pitch workflow",
           "branch": "main",
-          "time": "2026-10-02T23:38:04Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37078500802"
+          "time": "2026-10-03T00:55:02Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37084031038"
         },
         {
-          "id": 37078500749,
-          "title": "Recover and fix Jugemu result write-back",
+          "id": 37084031010,
+          "title": "Add Milestone 2 mix pitch workflow",
           "status": "completed",
           "conclusion": "success",
-          "status_label": "completed successfully:  Run 1 of Recover Jugemu artifacts. Recover and fix Jugemu result write-back",
+          "status_label": "completed successfully:  Run 4 of Analysis cheap CI. Add Milestone 2 mix pitch workflow",
           "branch": "main",
-          "time": "2026-10-02T23:38:04Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37078500749"
+          "time": "2026-10-03T00:55:02Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37084031010"
         },
         {
-          "id": 37078268041,
-          "title": "Recover and fix Whisper AO result write-back",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 1 of Recover Whisper AO artifacts. Recover and fix Whisper AO result write-back",
+          "id": 37084031007,
+          "title": "Add Milestone 2 mix pitch workflow",
+          "status": "in_progress",
+          "conclusion": null,
+          "status_label": "currently running:  Run 2 of Milestone 2 Demucs separation. Add Milestone 2 mix pitch workflow",
           "branch": "main",
-          "time": "2026-10-02T23:35:03Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37078268041"
+          "time": "2026-10-03T00:55:02Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37084031007"
         },
         {
-          "id": 37078267882,
-          "title": "Recover and fix Whisper AO result write-back",
+          "id": 37083721840,
+          "title": "Test Demucs common CLI mapping",
           "status": "completed",
           "conclusion": "success",
-          "status_label": "completed successfully:  Run 6 of Analyze Whisper AO. Recover and fix Whisper AO result write-back",
+          "status_label": "completed successfully:  Run 3 of Analysis cheap CI. Test Demucs common CLI mapping",
           "branch": "main",
-          "time": "2026-10-02T23:35:02Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37078267882"
+          "time": "2026-10-03T00:50:23Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37083721840"
         }
       ]
     },
@@ -445,5 +445,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-10-02T23:47:16Z"
+  "updated_at": "2026-10-03T00:58:27Z"
 }
