@@ -328,44 +328,44 @@
       "actions_url": "https://github.com/2rwa/tmp-music/actions",
       "runs": [
         {
-          "id": 37098551676,
-          "title": "Milestone 6 voice quality",
+          "id": 37100875568,
+          "title": "Complete M6 voice-quality measurements",
           "status": "completed",
-          "conclusion": "failure",
-          "status_label": "failed:  Run 3 of Milestone 6 voice quality.",
-          "branch": null,
-          "time": "2026-10-03T05:02:57Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37098551676"
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 32 of Analysis cheap CI. Complete M6 voice-quality measurements",
+          "branch": "feat/m6-complete-20261003",
+          "time": "2026-10-03T05:45:57Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37100875568"
         },
         {
-          "id": 37098551594,
-          "title": "Milestone 2 pitch comparison",
+          "id": 37100875558,
+          "title": "Complete M6 voice-quality measurements",
           "status": "completed",
-          "conclusion": "failure",
-          "status_label": "failed:  Run 6 of Milestone 2 pitch comparison.",
-          "branch": null,
-          "time": "2026-10-03T05:02:57Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37098551594"
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 6 of Milestone 6 voice quality. Complete M6 voice-quality measurements",
+          "branch": "feat/m6-complete-20261003",
+          "time": "2026-10-03T05:45:57Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37100875558"
         },
         {
-          "id": 37097936639,
-          "title": "Milestone 2 pitch comparison",
+          "id": 37100875549,
+          "title": "Complete M6 voice-quality measurements",
           "status": "completed",
-          "conclusion": "failure",
-          "status_label": "failed:  Run 5 of Milestone 2 pitch comparison.",
-          "branch": null,
-          "time": "2026-10-03T04:51:43Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37097936639"
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 4 of Praat CPPS smoke. Complete M6 voice-quality measurements",
+          "branch": "feat/m6-complete-20261003",
+          "time": "2026-10-03T05:45:57Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37100875549"
         },
         {
-          "id": 37097936629,
-          "title": "Milestone 6 voice quality",
+          "id": 37100872808,
+          "title": "TEMP allow PR M6 validation run",
           "status": "completed",
-          "conclusion": "failure",
-          "status_label": "failed:  Run 2 of Milestone 6 voice quality.",
-          "branch": null,
-          "time": "2026-10-03T04:51:43Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37097936629"
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 5 of Milestone 6 voice quality. TEMP allow PR M6 validation run",
+          "branch": "feat/m6-complete-20261003",
+          "time": "2026-10-03T05:45:55Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37100872808"
         }
       ]
     },
@@ -445,5 +445,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-10-03T05:04:47Z"
+  "updated_at": "2026-10-03T05:48:27Z"
 }
