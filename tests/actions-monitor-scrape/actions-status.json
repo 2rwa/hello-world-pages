@@ -328,44 +328,44 @@
       "actions_url": "https://github.com/2rwa/tmp-music/actions",
       "runs": [
         {
-          "id": 37100875568,
+          "id": 37101518276,
           "title": "Complete M6 voice-quality measurements",
           "status": "completed",
           "conclusion": "success",
-          "status_label": "completed successfully:  Run 32 of Analysis cheap CI. Complete M6 voice-quality measurements",
+          "status_label": "completed successfully:  Run 40 of Analysis cheap CI. Complete M6 voice-quality measurements",
           "branch": "feat/m6-complete-20261003",
-          "time": "2026-10-03T05:45:57Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37100875568"
+          "time": "2026-10-03T05:58:10Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37101518276"
         },
         {
-          "id": 37100875558,
+          "id": 37101518236,
           "title": "Complete M6 voice-quality measurements",
           "status": "completed",
           "conclusion": "success",
-          "status_label": "completed successfully:  Run 6 of Milestone 6 voice quality. Complete M6 voice-quality measurements",
+          "status_label": "completed successfully:  Run 12 of Praat CPPS smoke. Complete M6 voice-quality measurements",
           "branch": "feat/m6-complete-20261003",
-          "time": "2026-10-03T05:45:57Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37100875558"
+          "time": "2026-10-03T05:58:10Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37101518236"
         },
         {
-          "id": 37100875549,
+          "id": 37101512989,
           "title": "Complete M6 voice-quality measurements",
           "status": "completed",
           "conclusion": "success",
-          "status_label": "completed successfully:  Run 4 of Praat CPPS smoke. Complete M6 voice-quality measurements",
+          "status_label": "completed successfully:  Run 39 of Analysis cheap CI. Complete M6 voice-quality measurements",
           "branch": "feat/m6-complete-20261003",
-          "time": "2026-10-03T05:45:57Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37100875549"
+          "time": "2026-10-03T05:58:03Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37101512989"
         },
         {
-          "id": 37100872808,
-          "title": "TEMP allow PR M6 validation run",
+          "id": 37101512988,
+          "title": "Complete M6 voice-quality measurements",
           "status": "completed",
           "conclusion": "success",
-          "status_label": "completed successfully:  Run 5 of Milestone 6 voice quality. TEMP allow PR M6 validation run",
+          "status_label": "completed successfully:  Run 11 of Praat CPPS smoke. Complete M6 voice-quality measurements",
           "branch": "feat/m6-complete-20261003",
-          "time": "2026-10-03T05:45:55Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37100872808"
+          "time": "2026-10-03T05:58:03Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37101512988"
         }
       ]
     },
@@ -445,5 +445,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-10-03T05:48:27Z"
+  "updated_at": "2026-10-03T05:59:44Z"
 }
