@@ -328,44 +328,44 @@
       "actions_url": "https://github.com/2rwa/tmp-music/actions",
       "runs": [
         {
-          "id": 37104332010,
-          "title": "Add Chichinu Fiija M6 holdout validation (#5)",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 45 of Analysis cheap CI. Add Chichinu Fiija M6 holdout validation (#5)",
-          "branch": "main",
-          "time": "2026-10-03T06:49:55Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37104332010"
-        },
-        {
-          "id": 37104331999,
-          "title": "Add Chichinu Fiija M6 holdout validation (#5)",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 1 of M6 holdout acoustic validation. Add Chichinu Fiija M6 holdout validation (#5)",
-          "branch": "main",
-          "time": "2026-10-03T06:49:55Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37104331999"
-        },
-        {
-          "id": 37104283103,
-          "title": "Add Chichinu Fiija M6 holdout validation",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 44 of Analysis cheap CI. Add Chichinu Fiija M6 holdout validation",
-          "branch": "test/chichinu-fiija-holdout-20261003",
-          "time": "2026-10-03T06:49:00Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37104283103"
-        },
-        {
-          "id": 37102868087,
-          "title": "Milestone 6 voice quality",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 12 of Milestone 6 voice quality.",
+          "id": 37105726302,
+          "title": "Milestone 2 vocal pitch",
+          "status": "in_progress",
+          "conclusion": null,
+          "status_label": "currently running:  Run 8 of Milestone 2 vocal pitch.",
           "branch": null,
-          "time": "2026-10-03T06:23:02Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37102868087"
+          "time": "2026-10-03T07:15:07Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37105726302"
+        },
+        {
+          "id": 37105533830,
+          "title": "Filter low-confidence M6 pitch movement candidates (#6)",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 9 of Milestone 2 Demucs separation. Filter low-confidence M6 pitch movement candidates (#6)",
+          "branch": "main",
+          "time": "2026-10-03T07:11:34Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37105533830"
+        },
+        {
+          "id": 37105533803,
+          "title": "Filter low-confidence M6 pitch movement candidates (#6)",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 47 of Analysis cheap CI. Filter low-confidence M6 pitch movement candidates (#6)",
+          "branch": "main",
+          "time": "2026-10-03T07:11:34Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37105533803"
+        },
+        {
+          "id": 37105533801,
+          "title": "Filter low-confidence M6 pitch movement candidates (#6)",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 2 of M6 holdout acoustic validation. Filter low-confidence M6 pitch movement candidates (#6)",
+          "branch": "main",
+          "time": "2026-10-03T07:11:34Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37105533801"
         }
       ]
     },
@@ -445,5 +445,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-10-03T07:04:17Z"
+  "updated_at": "2026-10-03T07:28:38Z"
 }
