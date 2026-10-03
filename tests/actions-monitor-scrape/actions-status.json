@@ -328,11 +328,31 @@
       "actions_url": "https://github.com/2rwa/tmp-music/actions",
       "runs": [
         {
+          "id": 37106744254,
+          "title": "Milestone 6 voice quality",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 13 of Milestone 6 voice quality.",
+          "branch": null,
+          "time": "2026-10-03T07:33:34Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37106744254"
+        },
+        {
+          "id": 37106744214,
+          "title": "Milestone 2 pitch comparison",
+          "status": "completed",
+          "conclusion": "failure",
+          "status_label": "failed:  Run 9 of Milestone 2 pitch comparison.",
+          "branch": null,
+          "time": "2026-10-03T07:33:34Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37106744214"
+        },
+        {
           "id": 37105726302,
           "title": "Milestone 2 vocal pitch",
-          "status": "in_progress",
-          "conclusion": null,
-          "status_label": "currently running:  Run 8 of Milestone 2 vocal pitch.",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 8 of Milestone 2 vocal pitch.",
           "branch": null,
           "time": "2026-10-03T07:15:07Z",
           "url": "https://github.com/2rwa/tmp-music/actions/runs/37105726302"
@@ -346,26 +366,6 @@
           "branch": "main",
           "time": "2026-10-03T07:11:34Z",
           "url": "https://github.com/2rwa/tmp-music/actions/runs/37105533830"
-        },
-        {
-          "id": 37105533803,
-          "title": "Filter low-confidence M6 pitch movement candidates (#6)",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 47 of Analysis cheap CI. Filter low-confidence M6 pitch movement candidates (#6)",
-          "branch": "main",
-          "time": "2026-10-03T07:11:34Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37105533803"
-        },
-        {
-          "id": 37105533801,
-          "title": "Filter low-confidence M6 pitch movement candidates (#6)",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 2 of M6 holdout acoustic validation. Filter low-confidence M6 pitch movement candidates (#6)",
-          "branch": "main",
-          "time": "2026-10-03T07:11:34Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37105533801"
         }
       ]
     },
@@ -445,5 +445,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-10-03T07:28:38Z"
+  "updated_at": "2026-10-03T07:45:54Z"
 }
