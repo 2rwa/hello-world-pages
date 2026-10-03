@@ -328,6 +328,36 @@
       "actions_url": "https://github.com/2rwa/tmp-music/actions",
       "runs": [
         {
+          "id": 37109153026,
+          "title": "Fix M2 comparison race and publish M6 status (#7)",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 10 of Milestone 2 pitch comparison. Fix M2 comparison race and publish M6 status (#7)",
+          "branch": "main",
+          "time": "2026-10-03T08:16:34Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37109153026"
+        },
+        {
+          "id": 37109152979,
+          "title": "Fix M2 comparison race and publish M6 status (#7)",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 49 of Analysis cheap CI. Fix M2 comparison race and publish M6 status (#7)",
+          "branch": "main",
+          "time": "2026-10-03T08:16:34Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37109152979"
+        },
+        {
+          "id": 37109120777,
+          "title": "Fix M2 comparison race and publish M6 status",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 48 of Analysis cheap CI. Fix M2 comparison race and publish M6 status",
+          "branch": "fix/m2-compare-and-publish-m6-status-20261003",
+          "time": "2026-10-03T08:16:00Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37109120777"
+        },
+        {
           "id": 37106744254,
           "title": "Milestone 6 voice quality",
           "status": "completed",
@@ -336,36 +366,6 @@
           "branch": null,
           "time": "2026-10-03T07:33:34Z",
           "url": "https://github.com/2rwa/tmp-music/actions/runs/37106744254"
-        },
-        {
-          "id": 37106744214,
-          "title": "Milestone 2 pitch comparison",
-          "status": "completed",
-          "conclusion": "failure",
-          "status_label": "failed:  Run 9 of Milestone 2 pitch comparison.",
-          "branch": null,
-          "time": "2026-10-03T07:33:34Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37106744214"
-        },
-        {
-          "id": 37105726302,
-          "title": "Milestone 2 vocal pitch",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 8 of Milestone 2 vocal pitch.",
-          "branch": null,
-          "time": "2026-10-03T07:15:07Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37105726302"
-        },
-        {
-          "id": 37105533830,
-          "title": "Filter low-confidence M6 pitch movement candidates (#6)",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 9 of Milestone 2 Demucs separation. Filter low-confidence M6 pitch movement candidates (#6)",
-          "branch": "main",
-          "time": "2026-10-03T07:11:34Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37105533830"
         }
       ]
     },
@@ -445,5 +445,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-10-03T07:45:54Z"
+  "updated_at": "2026-10-03T08:17:14Z"
 }
