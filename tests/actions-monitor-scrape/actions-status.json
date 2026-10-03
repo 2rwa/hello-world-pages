@@ -328,6 +328,26 @@
       "actions_url": "https://github.com/2rwa/tmp-music/actions",
       "runs": [
         {
+          "id": 37098551676,
+          "title": "Milestone 6 voice quality",
+          "status": "completed",
+          "conclusion": "failure",
+          "status_label": "failed:  Run 3 of Milestone 6 voice quality.",
+          "branch": null,
+          "time": "2026-10-03T05:02:57Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37098551676"
+        },
+        {
+          "id": 37098551594,
+          "title": "Milestone 2 pitch comparison",
+          "status": "completed",
+          "conclusion": "failure",
+          "status_label": "failed:  Run 6 of Milestone 2 pitch comparison.",
+          "branch": null,
+          "time": "2026-10-03T05:02:57Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37098551594"
+        },
+        {
           "id": 37097936639,
           "title": "Milestone 2 pitch comparison",
           "status": "completed",
@@ -346,26 +366,6 @@
           "branch": null,
           "time": "2026-10-03T04:51:43Z",
           "url": "https://github.com/2rwa/tmp-music/actions/runs/37097936629"
-        },
-        {
-          "id": 37097828231,
-          "title": "Milestone 2 pitch comparison",
-          "status": "completed",
-          "conclusion": "failure",
-          "status_label": "failed:  Run 4 of Milestone 2 pitch comparison.",
-          "branch": null,
-          "time": "2026-10-03T04:49:45Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37097828231"
-        },
-        {
-          "id": 37097828210,
-          "title": "Milestone 6 voice quality",
-          "status": "completed",
-          "conclusion": "failure",
-          "status_label": "failed:  Run 1 of Milestone 6 voice quality.",
-          "branch": null,
-          "time": "2026-10-03T04:49:45Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37097828210"
         }
       ]
     },
@@ -445,5 +445,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-10-03T04:54:31Z"
+  "updated_at": "2026-10-03T05:04:47Z"
 }
