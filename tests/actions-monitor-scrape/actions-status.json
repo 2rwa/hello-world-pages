@@ -328,44 +328,44 @@
       "actions_url": "https://github.com/2rwa/tmp-music/actions",
       "runs": [
         {
-          "id": 37095819286,
+          "id": 37097371871,
           "title": "Milestone 4 cycle ASR",
           "status": "completed",
           "conclusion": "success",
-          "status_label": "completed successfully:  Run 10 of Milestone 4 cycle ASR.",
+          "status_label": "completed successfully:  Run 12 of Milestone 4 cycle ASR.",
           "branch": null,
-          "time": "2026-10-03T04:13:24Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37095819286"
+          "time": "2026-10-03T04:41:22Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37097371871"
         },
         {
-          "id": 37095819243,
+          "id": 37097371836,
           "title": "Milestone 5 forced alignment",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 6 of Milestone 5 forced alignment.",
+          "status": "in_progress",
+          "conclusion": null,
+          "status_label": "currently running:  Run 8 of Milestone 5 forced alignment.",
           "branch": null,
-          "time": "2026-10-03T04:13:24Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37095819243"
+          "time": "2026-10-03T04:41:22Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37097371836"
         },
         {
-          "id": 37095711905,
-          "title": "Guard Japanese mora projection with phone support",
+          "id": 37097290629,
+          "title": "Integrate calibrated Praat metrics into M6",
           "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 12 of Milestone 3 structure smoke. Guard Japanese mora projection with phone support",
+          "conclusion": "failure",
+          "status_label": "failed:  Run 26 of Analysis cheap CI. Integrate calibrated Praat metrics into M6",
           "branch": "main",
-          "time": "2026-10-03T04:11:31Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37095711905"
+          "time": "2026-10-03T04:39:58Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37097290629"
         },
         {
-          "id": 37095711885,
-          "title": "Guard Japanese mora projection with phone support",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 23 of Analysis cheap CI. Guard Japanese mora projection with phone support",
+          "id": 37097290624,
+          "title": "Integrate calibrated Praat metrics into M6",
+          "status": "in_progress",
+          "conclusion": null,
+          "status_label": "currently running:  Run 6 of Milestone 2 Demucs separation. Integrate calibrated Praat metrics into M6",
           "branch": "main",
-          "time": "2026-10-03T04:11:31Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37095711885"
+          "time": "2026-10-03T04:39:58Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37097290624"
         }
       ]
     },
@@ -445,5 +445,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-10-03T04:26:23Z"
+  "updated_at": "2026-10-03T04:43:45Z"
 }
