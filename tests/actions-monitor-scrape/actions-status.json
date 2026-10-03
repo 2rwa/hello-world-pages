@@ -328,6 +328,36 @@
       "actions_url": "https://github.com/2rwa/tmp-music/actions",
       "runs": [
         {
+          "id": 37104332010,
+          "title": "Add Chichinu Fiija M6 holdout validation (#5)",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 45 of Analysis cheap CI. Add Chichinu Fiija M6 holdout validation (#5)",
+          "branch": "main",
+          "time": "2026-10-03T06:49:55Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37104332010"
+        },
+        {
+          "id": 37104331999,
+          "title": "Add Chichinu Fiija M6 holdout validation (#5)",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 1 of M6 holdout acoustic validation. Add Chichinu Fiija M6 holdout validation (#5)",
+          "branch": "main",
+          "time": "2026-10-03T06:49:55Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37104331999"
+        },
+        {
+          "id": 37104283103,
+          "title": "Add Chichinu Fiija M6 holdout validation",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 44 of Analysis cheap CI. Add Chichinu Fiija M6 holdout validation",
+          "branch": "test/chichinu-fiija-holdout-20261003",
+          "time": "2026-10-03T06:49:00Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37104283103"
+        },
+        {
           "id": 37102868087,
           "title": "Milestone 6 voice quality",
           "status": "completed",
@@ -336,36 +366,6 @@
           "branch": null,
           "time": "2026-10-03T06:23:02Z",
           "url": "https://github.com/2rwa/tmp-music/actions/runs/37102868087"
-        },
-        {
-          "id": 37102868037,
-          "title": "Milestone 2 pitch comparison",
-          "status": "completed",
-          "conclusion": "failure",
-          "status_label": "failed:  Run 8 of Milestone 2 pitch comparison.",
-          "branch": null,
-          "time": "2026-10-03T06:23:02Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37102868037"
-        },
-        {
-          "id": 37101867256,
-          "title": "Milestone 2 vocal pitch",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 7 of Milestone 2 vocal pitch.",
-          "branch": null,
-          "time": "2026-10-03T06:04:45Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37101867256"
-        },
-        {
-          "id": 37101763995,
-          "title": "Milestone 5 forced alignment",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 10 of Milestone 5 forced alignment.",
-          "branch": null,
-          "time": "2026-10-03T06:02:49Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37101763995"
         }
       ]
     },
@@ -445,5 +445,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-10-03T06:34:41Z"
+  "updated_at": "2026-10-03T07:04:17Z"
 }
