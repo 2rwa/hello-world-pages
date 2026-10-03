@@ -328,6 +328,26 @@
       "actions_url": "https://github.com/2rwa/tmp-music/actions",
       "runs": [
         {
+          "id": 37115993787,
+          "title": "Add M6 Level 2 continuous time-series analysis",
+          "status": "queued",
+          "conclusion": null,
+          "status_label": "queued:  Run 57 of Analysis cheap CI. Add M6 Level 2 continuous time-series analysis",
+          "branch": "feat/m6-level2-timeseries-20261003",
+          "time": "2026-10-03T10:18:44Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37115993787"
+        },
+        {
+          "id": 37115880737,
+          "title": "Add M6 Level 2 continuous time-series analysis",
+          "status": "completed",
+          "conclusion": "failure",
+          "status_label": "failed:  Run 56 of Analysis cheap CI. Add M6 Level 2 continuous time-series analysis",
+          "branch": "feat/m6-level2-timeseries-20261003",
+          "time": "2026-10-03T10:16:40Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37115880737"
+        },
+        {
           "id": 37114351832,
           "title": "M6 Pages smoke",
           "status": "completed",
@@ -346,26 +366,6 @@
           "branch": "main",
           "time": "2026-10-03T09:49:23Z",
           "url": "https://github.com/2rwa/tmp-music/actions/runs/37114335048"
-        },
-        {
-          "id": 37114240742,
-          "title": "Deploy GitHub Pages",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 3 of Deploy GitHub Pages.",
-          "branch": "main",
-          "time": "2026-10-03T09:47:37Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37114240742"
-        },
-        {
-          "id": 37114232660,
-          "title": "Dispatch Pages after timeline export (#12)",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 3 of Export M6 timeline snapshot. Dispatch Pages after timeline export (#12)",
-          "branch": "main",
-          "time": "2026-10-03T09:47:28Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37114232660"
         }
       ]
     },
@@ -445,5 +445,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-10-03T09:52:01Z"
+  "updated_at": "2026-10-03T10:18:47Z"
 }
