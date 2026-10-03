@@ -328,44 +328,44 @@
       "actions_url": "https://github.com/2rwa/tmp-music/actions",
       "runs": [
         {
-          "id": 37116722140,
-          "title": "Deploy GitHub Pages",
+          "id": 37133535340,
+          "title": "M6 Pages smoke",
           "status": "completed",
           "conclusion": "success",
-          "status_label": "completed successfully:  Run 6 of Deploy GitHub Pages.",
-          "branch": "main",
-          "time": "2026-10-03T10:31:59Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37116722140"
+          "status_label": "completed successfully:  Run 6 of M6 Pages smoke.",
+          "branch": null,
+          "time": "2026-10-03T15:31:22Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37133535340"
         },
         {
-          "id": 37116225112,
-          "title": "Optimize M6 Level 2 autocorrelation (#15)",
+          "id": 37133511811,
+          "title": "Finalize M1-M6 records (#16)",
           "status": "completed",
           "conclusion": "success",
-          "status_label": "completed successfully:  Run 60 of Analysis cheap CI. Optimize M6 Level 2 autocorrelation (#15)",
+          "status_label": "completed successfully:  Run 7 of Deploy GitHub Pages. Finalize M1-M6 records (#16)",
           "branch": "main",
-          "time": "2026-10-03T10:22:49Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37116225112"
+          "time": "2026-10-03T15:30:58Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37133511811"
         },
         {
-          "id": 37116225090,
-          "title": "Optimize M6 Level 2 autocorrelation (#15)",
+          "id": 37133511787,
+          "title": "Finalize M1-M6 records (#16)",
           "status": "completed",
           "conclusion": "success",
-          "status_label": "completed successfully:  Run 2 of M6 Level 2 time series. Optimize M6 Level 2 autocorrelation (#15)",
+          "status_label": "completed successfully:  Run 62 of Analysis cheap CI. Finalize M1-M6 records (#16)",
           "branch": "main",
-          "time": "2026-10-03T10:22:49Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37116225090"
+          "time": "2026-10-03T15:30:57Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37133511787"
         },
         {
-          "id": 37116183540,
-          "title": "Optimize M6 Level 2 autocorrelation",
+          "id": 37133470771,
+          "title": "Finalize M1-M6 project records",
           "status": "completed",
           "conclusion": "success",
-          "status_label": "completed successfully:  Run 59 of Analysis cheap CI. Optimize M6 Level 2 autocorrelation",
-          "branch": "perf/m6-level2-autocorr-20261003",
-          "time": "2026-10-03T10:22:06Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37116183540"
+          "status_label": "completed successfully:  Run 61 of Analysis cheap CI. Finalize M1-M6 project records",
+          "branch": "docs/finalize-m1-m6-records-20261004",
+          "time": "2026-10-03T15:30:19Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37133470771"
         }
       ]
     },
@@ -445,5 +445,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-10-03T10:34:03Z"
+  "updated_at": "2026-10-03T15:49:40Z"
 }
