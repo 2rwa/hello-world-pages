@@ -328,44 +328,44 @@
       "actions_url": "https://github.com/2rwa/tmp-music/actions",
       "runs": [
         {
-          "id": 37211113733,
+          "id": 37215304501,
+          "title": "build: add reproducible Section AI model materializer",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 1 of Materialize Section AI model. build: add reproducible Section AI model materializer",
+          "branch": "main",
+          "time": "2026-10-04T16:02:52Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37215304501"
+        },
+        {
+          "id": 37214872243,
+          "title": "test: run Section AI parity against production module",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 14 of Section AI ONNX probe. test: run Section AI parity against production module",
+          "branch": "main",
+          "time": "2026-10-04T15:56:09Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37214872243"
+        },
+        {
+          "id": 37214781711,
           "title": "M6 Pages smoke",
           "status": "completed",
           "conclusion": "success",
-          "status_label": "completed successfully:  Run 41 of M6 Pages smoke.",
+          "status_label": "completed successfully:  Run 48 of M6 Pages smoke.",
           "branch": null,
-          "time": "2026-10-04T14:56:19Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37211113733"
+          "time": "2026-10-04T15:54:44Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37214781711"
         },
         {
-          "id": 37211113717,
+          "id": 37214781642,
           "title": "Structure Cutter Lab Pages smoke",
           "status": "completed",
           "conclusion": "success",
-          "status_label": "completed successfully:  Run 4 of Structure Cutter Lab Pages smoke.",
+          "status_label": "completed successfully:  Run 11 of Structure Cutter Lab Pages smoke.",
           "branch": null,
-          "time": "2026-10-04T14:56:19Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37211113717"
-        },
-        {
-          "id": 37211056764,
-          "title": "docs: record repetition regression coverage",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 44 of Deploy GitHub Pages. docs: record repetition regression coverage",
-          "branch": "main",
-          "time": "2026-10-04T14:55:23Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37211056764"
-        },
-        {
-          "id": 37211056763,
-          "title": "docs: record repetition regression coverage",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 5 of Structure Cutter Lab CI. docs: record repetition regression coverage",
-          "branch": "main",
-          "time": "2026-10-04T14:55:23Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37211056763"
+          "time": "2026-10-04T15:54:44Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37214781642"
         }
       ]
     },
@@ -445,5 +445,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-10-04T14:59:40Z"
+  "updated_at": "2026-10-04T16:36:44Z"
 }
