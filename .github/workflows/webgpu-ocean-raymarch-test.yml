@@ -1,0 +1,38 @@
+name: WebGPU Ocean Raymarch CI
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'webgpu-ocean-raymarch/**'
+      - 'tests/webgpu-ocean-ci.mjs'
+      - '.github/workflows/webgpu-ocean-raymarch-test.yml'
+
+jobs:
+  webgpu-ocean:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Browser version
+        run: google-chrome --version || google-chrome-stable --version || chromium --version
+      - name: Serve Pages tree
+        run: |
+          python3 -m http.server 8000 --bind 127.0.0.1 > /tmp/webgpu-ocean-http.log 2>&1 &
+          echo $! > /tmp/webgpu-ocean-http.pid
+      - name: Static JavaScript syntax check
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          source = Path('webgpu-ocean-raymarch/index.html').read_text()
+          begin = source.index('<script type="module">') + len('<script type="module">')
+          end = source.index('</script>', begin)
+          Path('/tmp/webgpu-ocean-app.mjs').write_text(source[begin:end])
+          PY
+          node --check /tmp/webgpu-ocean-app.mjs
+          node --check tests/webgpu-ocean-ci.mjs
+      - name: WebGPU compile, render, submit and readback
+        run: node tests/webgpu-ocean-ci.mjs

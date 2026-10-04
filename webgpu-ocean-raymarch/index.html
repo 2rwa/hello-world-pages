@@ -1,0 +1,466 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>WebGPU Raymarched Ocean</title>
+<style>
+  :root { color-scheme: dark; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+  * { box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: #111511; color: #f0eee5; }
+  canvas { width: 100%; height: 100%; display: block; touch-action: none; }
+  .panel { position: fixed; left: 14px; top: 14px; width: min(340px, calc(100vw - 28px)); padding: 14px; border: 1px solid rgba(240,238,229,.16); border-radius: 16px; background: rgba(20,24,20,.72); backdrop-filter: blur(12px); box-shadow: 0 16px 50px rgba(0,0,0,.28); }
+  .title { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+  h1 { font-size: 16px; margin: 0; letter-spacing: .02em; font-weight: 650; }
+  .status { font: 11px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace; color: #d9d4bf; opacity: .86; }
+  .controls { display: grid; gap: 9px; }
+  label { display: grid; grid-template-columns: 92px 1fr 40px; align-items: center; gap: 8px; font-size: 12px; color: #e4dfd1; }
+  input[type=range] { width: 100%; accent-color: #c5aa63; }
+  output { font: 11px/1 ui-monospace, SFMono-Regular, Menlo, monospace; text-align: right; color: #d7cda9; }
+  .row { display: flex; gap: 8px; margin-top: 10px; }
+  button { appearance: none; border: 1px solid rgba(240,238,229,.18); background: rgba(240,238,229,.07); color: #f0eee5; border-radius: 10px; padding: 7px 10px; font-size: 12px; cursor: pointer; }
+  button:hover { background: rgba(240,238,229,.12); }
+  .hint { margin-top: 9px; font-size: 11px; line-height: 1.5; color: #bdb9aa; }
+  .error { color: #ffb4a5; white-space: pre-wrap; }
+  @media (max-width: 600px) { .panel { top: auto; bottom: 12px; } .hint { display: none; } }
+</style>
+</head>
+<body>
+<canvas id="gpuCanvas" aria-label="WebGPUで描画したレイマーチ海面"></canvas>
+<section class="panel">
+  <div class="title"><h1>Raymarched Ocean</h1><span id="status" class="status">boot</span></div>
+  <div class="controls">
+    <label>Sea state <input id="sea" type="range" min="0.2" max="2.2" step="0.01" value="1.0"><output id="seaOut">1.00</output></label>
+    <label>Choppiness <input id="chop" type="range" min="0.2" max="2.0" step="0.01" value="1.0"><output id="chopOut">1.00</output></label>
+    <label>Sun height <input id="sun" type="range" min="0.05" max="0.95" step="0.01" value="0.34"><output id="sunOut">0.34</output></label>
+    <label>Resolution <input id="quality" type="range" min="0.45" max="1" step="0.05" value="0.80"><output id="qualityOut">0.80</output></label>
+  </div>
+  <div class="row"><button id="pause">Pause</button><button id="reset">Reset camera</button></div>
+  <div class="hint">Drag: look around · Wheel: camera height. The ocean surface is a height field; intersection uses sign-change detection + bisection rather than sphere tracing.</div>
+</section>
+<script type="module">
+const canvasElement = document.querySelector('#gpuCanvas');
+const statusElement = document.querySelector('#status');
+const ciMode = new URLSearchParams(location.search).has('ci');
+const stage = (name) => {
+  document.documentElement.dataset.webgpuTest = name;
+  statusElement.textContent = name;
+};
+const fail = (errorValue) => {
+  const message = errorValue instanceof Error ? (errorValue.stack || errorValue.message) : String(errorValue);
+  document.documentElement.dataset.webgpuTest = 'failed';
+  document.documentElement.dataset.webgpuError = message.slice(0, 1000);
+  statusElement.textContent = 'failed';
+  statusElement.classList.add('error');
+  console.error(errorValue);
+};
+stage('script-start');
+
+const shaderCode = /* wgsl */`
+struct UniformBlock {
+  timingResolution: vec4f,
+  cameraState: vec4f,
+  oceanState: vec4f,
+  sunState: vec4f,
+}
+
+@group(0) @binding(0) var<uniform> uniforms: UniformBlock;
+
+struct VertexOutput {
+  @builtin(position) clipPosition: vec4f,
+}
+
+@vertex
+fn vertexMain(@builtin(vertex_index) vertexIndex: u32) -> VertexOutput {
+  var outputValue: VertexOutput;
+  var fullScreenPosition = vec2f(0.0, 0.0);
+  if (vertexIndex == 0u) {
+    fullScreenPosition = vec2f(-1.0, -1.0);
+  } else if (vertexIndex == 1u) {
+    fullScreenPosition = vec2f(3.0, -1.0);
+  } else {
+    fullScreenPosition = vec2f(-1.0, 3.0);
+  }
+  outputValue.clipPosition = vec4f(fullScreenPosition, 0.0, 1.0);
+  return outputValue;
+}
+
+fn saturateValue(inputValue: f32) -> f32 {
+  return clamp(inputValue, 0.0, 1.0);
+}
+
+fn easedValue(inputValue: f32) -> f32 {
+  let clampedValue = saturateValue(inputValue);
+  return clampedValue * clampedValue * (3.0 - 2.0 * clampedValue);
+}
+
+fn blendColor(colorA: vec3f, colorB: vec3f, blendFactor: f32) -> vec3f {
+  return colorA * (1.0 - blendFactor) + colorB * blendFactor;
+}
+
+fn waveHeight(positionXZ: vec2f, timeValue: f32) -> f32 {
+  let seaStrength = uniforms.oceanState.x;
+  let chopStrength = uniforms.oceanState.y;
+  var heightValue = 0.0;
+
+  let directionA = normalize(vec2f(1.0, 0.28));
+  let directionB = normalize(vec2f(-0.42, 1.0));
+  let directionC = normalize(vec2f(0.72, -0.68));
+  let directionD = normalize(vec2f(-0.92, -0.24));
+  let directionE = normalize(vec2f(0.18, 0.98));
+
+  heightValue += sin(dot(positionXZ, directionA) * 0.34 + timeValue * 0.72) * 0.54;
+  heightValue += sin(dot(positionXZ, directionB) * 0.53 + timeValue * 0.93 + 1.7) * 0.31;
+  heightValue += sin(dot(positionXZ, directionC) * 0.91 + timeValue * 1.18 + 4.1) * 0.16;
+  heightValue += sin(dot(positionXZ, directionD) * 1.73 + timeValue * 1.62 + 2.4) * 0.075 * chopStrength;
+  heightValue += sin(dot(positionXZ, directionE) * 3.10 + timeValue * 2.15 + sin(positionXZ.x * 0.23)) * 0.035 * chopStrength;
+
+  let crossingValue = sin(positionXZ.x * 1.35 + timeValue * 1.27) * sin(positionXZ.y * 1.08 - timeValue * 1.11);
+  heightValue += crossingValue * 0.055 * chopStrength;
+  return heightValue * seaStrength;
+}
+
+fn oceanNormal(positionXZ: vec2f, timeValue: f32) -> vec3f {
+  let sampleDistance = 0.045;
+  let leftHeight = waveHeight(positionXZ - vec2f(sampleDistance, 0.0), timeValue);
+  let rightHeight = waveHeight(positionXZ + vec2f(sampleDistance, 0.0), timeValue);
+  let backHeight = waveHeight(positionXZ - vec2f(0.0, sampleDistance), timeValue);
+  let frontHeight = waveHeight(positionXZ + vec2f(0.0, sampleDistance), timeValue);
+  let slopeX = (leftHeight - rightHeight) / (2.0 * sampleDistance);
+  let slopeZ = (backHeight - frontHeight) / (2.0 * sampleDistance);
+  return normalize(vec3f(slopeX, 1.0, slopeZ));
+}
+
+fn skyColor(rayDirection: vec3f, sunDirection: vec3f) -> vec3f {
+  let horizonAmount = pow(saturateValue(1.0 - max(rayDirection.y, 0.0)), 2.2);
+  let upperSky = vec3f(0.18, 0.31, 0.39);
+  let horizonSky = vec3f(0.78, 0.72, 0.59);
+  var colorValue = blendColor(upperSky, horizonSky, horizonAmount);
+
+  let sunAlignment = max(dot(rayDirection, sunDirection), 0.0);
+  let sunDisc = pow(sunAlignment, 900.0);
+  let sunGlow = pow(sunAlignment, 18.0) * 0.22;
+  colorValue += vec3f(1.0, 0.73, 0.38) * sunGlow;
+  colorValue += vec3f(1.0, 0.90, 0.67) * sunDisc * 7.0;
+  return colorValue;
+}
+
+fn intersectOcean(rayOrigin: vec3f, rayDirection: vec3f, timeValue: f32) -> vec2f {
+  var previousDistance = 0.08;
+  var previousPosition = rayOrigin + rayDirection * previousDistance;
+  var previousField = previousPosition.y - waveHeight(previousPosition.xz, timeValue);
+
+  var hitDistance = -1.0;
+  var travelDistance = previousDistance;
+  for (var stepIndex = 0; stepIndex < 128; stepIndex = stepIndex + 1) {
+    let stepLength = clamp(0.12 + travelDistance * 0.017, 0.12, 1.6);
+    travelDistance += stepLength;
+    if (travelDistance > 180.0) {
+      break;
+    }
+    let samplePosition = rayOrigin + rayDirection * travelDistance;
+    let fieldValue = samplePosition.y - waveHeight(samplePosition.xz, timeValue);
+    if (fieldValue <= 0.0 && previousField > 0.0) {
+      var lowerDistance = previousDistance;
+      var upperDistance = travelDistance;
+      for (var refineIndex = 0; refineIndex < 9; refineIndex = refineIndex + 1) {
+        let middleDistance = (lowerDistance + upperDistance) * 0.5;
+        let middlePosition = rayOrigin + rayDirection * middleDistance;
+        let middleField = middlePosition.y - waveHeight(middlePosition.xz, timeValue);
+        if (middleField > 0.0) {
+          lowerDistance = middleDistance;
+        } else {
+          upperDistance = middleDistance;
+        }
+      }
+      hitDistance = (lowerDistance + upperDistance) * 0.5;
+      break;
+    }
+    previousDistance = travelDistance;
+    previousField = fieldValue;
+  }
+  return vec2f(hitDistance, travelDistance);
+}
+
+fn cameraRay(screenPosition: vec2f, yawValue: f32, pitchValue: f32) -> vec3f {
+  let cosineYaw = cos(yawValue);
+  let sineYaw = sin(yawValue);
+  let cosinePitch = cos(pitchValue);
+  let sinePitch = sin(pitchValue);
+  let forwardVector = normalize(vec3f(sineYaw * cosinePitch, sinePitch, cosineYaw * cosinePitch));
+  let rightVector = normalize(vec3f(cosineYaw, 0.0, -sineYaw));
+  let upVector = normalize(cross(rightVector, forwardVector));
+  return normalize(forwardVector + rightVector * screenPosition.x + upVector * screenPosition.y);
+}
+
+@fragment
+fn fragmentMain(@builtin(position) fragmentPosition: vec4f) -> @location(0) vec4f {
+  let resolutionValue = uniforms.timingResolution.yz;
+  var screenPosition = (fragmentPosition.xy / resolutionValue) * 2.0 - vec2f(1.0, 1.0);
+  screenPosition.y = -screenPosition.y;
+  screenPosition.x *= resolutionValue.x / resolutionValue.y;
+  screenPosition *= 0.72;
+
+  let timeValue = uniforms.timingResolution.x;
+  let yawValue = uniforms.cameraState.x;
+  let pitchValue = uniforms.cameraState.y;
+  let cameraHeight = uniforms.cameraState.z;
+  let rayOrigin = vec3f(0.0, cameraHeight, -2.0);
+  let rayDirection = cameraRay(screenPosition, yawValue, pitchValue);
+
+  let sunHeight = uniforms.sunState.x;
+  let sunAzimuth = uniforms.sunState.y;
+  let sunDirection = normalize(vec3f(cos(sunAzimuth) * sqrt(max(1.0 - sunHeight * sunHeight, 0.0)), sunHeight, sin(sunAzimuth) * sqrt(max(1.0 - sunHeight * sunHeight, 0.0))));
+
+  if (rayDirection.y >= 0.18) {
+    let backgroundColor = skyColor(rayDirection, sunDirection);
+    return vec4f(backgroundColor, 1.0);
+  }
+
+  let hitInfo = intersectOcean(rayOrigin, rayDirection, timeValue);
+  if (hitInfo.x < 0.0) {
+    let backgroundColor = skyColor(rayDirection, sunDirection);
+    return vec4f(backgroundColor, 1.0);
+  }
+
+  let surfacePosition = rayOrigin + rayDirection * hitInfo.x;
+  let surfaceNormal = oceanNormal(surfacePosition.xz, timeValue);
+  let reflectedDirection = reflect(rayDirection, surfaceNormal);
+  let reflectedSky = skyColor(reflectedDirection, sunDirection);
+
+  let viewFacing = saturateValue(dot(-rayDirection, surfaceNormal));
+  let fresnelValue = 0.020 + 0.980 * pow(1.0 - viewFacing, 5.0);
+  let depthTint = blendColor(vec3f(0.006, 0.055, 0.058), vec3f(0.015, 0.16, 0.15), saturateValue(surfaceNormal.y));
+  let distanceHaze = easedValue(hitInfo.x / 150.0);
+  var oceanColor = blendColor(depthTint, reflectedSky, fresnelValue * 0.93 + 0.04);
+
+  let slopeAmount = 1.0 - surfaceNormal.y;
+  let crestHeight = waveHeight(surfacePosition.xz, timeValue);
+  let foamBase = saturateValue((slopeAmount - 0.16) * 4.8 + (crestHeight - 0.52) * 1.1);
+  let foamAmount = foamBase * foamBase * (0.25 + 0.75 * uniforms.oceanState.y);
+  oceanColor = blendColor(oceanColor, vec3f(0.82, 0.84, 0.77), foamAmount * 0.46);
+
+  let reflectedSun = pow(max(dot(reflectedDirection, sunDirection), 0.0), 110.0);
+  oceanColor += vec3f(1.0, 0.76, 0.41) * reflectedSun * 2.3;
+  oceanColor = blendColor(oceanColor, skyColor(rayDirection, sunDirection), distanceHaze * 0.52);
+
+  let exposureColor = vec3f(1.0, 1.0, 1.0) - exp(-oceanColor * 1.25);
+  let gammaColor = pow(exposureColor, vec3f(0.4545, 0.4545, 0.4545));
+  return vec4f(gammaColor, 1.0);
+}
+`;
+
+async function startApp() {
+  if (!navigator.gpu) throw new Error('WebGPU is not available in this browser.');
+  stage('request-adapter');
+  const gpuAdapter = await navigator.gpu.requestAdapter({ powerPreference: 'high-performance' });
+  if (!gpuAdapter) throw new Error('requestAdapter() returned null.');
+  stage('request-device');
+  const gpuDevice = await gpuAdapter.requestDevice();
+  gpuDevice.lost.then((lostInfo) => {
+    console.error('device.lost', lostInfo.reason, lostInfo.message);
+    if (document.documentElement.dataset.webgpuTest !== 'ok') fail(new Error(`device lost: ${lostInfo.reason}: ${lostInfo.message}`));
+  });
+
+  const shaderModule = gpuDevice.createShaderModule({ code: shaderCode });
+  stage('shader-compilation-info');
+  const compilationInfo = await shaderModule.getCompilationInfo();
+  const compilationErrors = compilationInfo.messages.filter((entry) => entry.type === 'error');
+  if (compilationErrors.length) throw new Error(compilationErrors.map((entry) => `${entry.lineNum}:${entry.linePos} ${entry.message}`).join('\n'));
+
+  const preferredFormat = navigator.gpu.getPreferredCanvasFormat();
+  const uniformBuffer = gpuDevice.createBuffer({
+    size: 64,
+    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+  });
+  const bindGroupLayout = gpuDevice.createBindGroupLayout({
+    entries: [{ binding: 0, visibility: GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } }],
+  });
+  const pipelineLayout = gpuDevice.createPipelineLayout({ bindGroupLayouts: [bindGroupLayout] });
+  stage('create-pipeline');
+  gpuDevice.pushErrorScope('validation');
+  const renderPipeline = await gpuDevice.createRenderPipelineAsync({
+    layout: pipelineLayout,
+    vertex: { module: shaderModule, entryPoint: 'vertexMain' },
+    fragment: { module: shaderModule, entryPoint: 'fragmentMain', targets: [{ format: preferredFormat }] },
+    primitive: { topology: 'triangle-list' },
+  });
+  const bindGroup = gpuDevice.createBindGroup({
+    layout: bindGroupLayout,
+    entries: [{ binding: 0, resource: { buffer: uniformBuffer } }],
+  });
+
+  const parameters = {
+    sea: 1.0,
+    chop: 1.0,
+    sun: 0.34,
+    quality: 0.80,
+    yaw: 0.0,
+    pitch: -0.18,
+    height: 4.2,
+    paused: false,
+  };
+
+  const writeUniforms = (timeSeconds, widthValue, heightValue) => {
+    const dataValues = new Float32Array(16);
+    dataValues.set([timeSeconds, widthValue, heightValue, 0.0], 0);
+    dataValues.set([parameters.yaw, parameters.pitch, parameters.height, 0.0], 4);
+    dataValues.set([parameters.sea, parameters.chop, 0.0, 0.0], 8);
+    dataValues.set([parameters.sun, -0.82, 0.0, 0.0], 12);
+    gpuDevice.queue.writeBuffer(uniformBuffer, 0, dataValues);
+  };
+
+  const encodeRenderPass = (textureView, widthValue, heightValue, timeSeconds, commandEncoder) => {
+    writeUniforms(timeSeconds, widthValue, heightValue);
+    const renderPass = commandEncoder.beginRenderPass({
+      colorAttachments: [{ view: textureView, clearValue: { r: 0.02, g: 0.025, b: 0.02, a: 1.0 }, loadOp: 'clear', storeOp: 'store' }],
+    });
+    renderPass.setPipeline(renderPipeline);
+    renderPass.setBindGroup(0, bindGroup);
+    renderPass.draw(3);
+    renderPass.end();
+  };
+
+  if (ciMode) {
+    const ciWidth = 64;
+    const ciHeight = 64;
+    const offscreenTexture = gpuDevice.createTexture({
+      size: [ciWidth, ciHeight, 1],
+      format: preferredFormat,
+      usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC,
+    });
+    const bytesPerRow = 256;
+    const readbackBuffer = gpuDevice.createBuffer({
+      size: bytesPerRow * ciHeight,
+      usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
+    });
+    stage('validation-scope');
+    const commandEncoder = gpuDevice.createCommandEncoder();
+    encodeRenderPass(offscreenTexture.createView(), ciWidth, ciHeight, 1.25, commandEncoder);
+    commandEncoder.copyTextureToBuffer(
+      { texture: offscreenTexture },
+      { buffer: readbackBuffer, bytesPerRow, rowsPerImage: ciHeight },
+      [ciWidth, ciHeight, 1],
+    );
+    gpuDevice.queue.submit([commandEncoder.finish()]);
+    stage('submitted-work-wait');
+    await gpuDevice.queue.onSubmittedWorkDone();
+    const validationError = await gpuDevice.popErrorScope();
+    if (validationError) throw validationError;
+    await readbackBuffer.mapAsync(GPUMapMode.READ);
+    const mappedBytes = new Uint8Array(readbackBuffer.getMappedRange());
+    const centerOffset = 32 * bytesPerRow + 32 * 4;
+    const pixelSum = mappedBytes[centerOffset] + mappedBytes[centerOffset + 1] + mappedBytes[centerOffset + 2] + mappedBytes[centerOffset + 3];
+    readbackBuffer.unmap();
+    if (pixelSum === 0) throw new Error('Readback pixel is unexpectedly zero.');
+    document.documentElement.dataset.webgpuPixelSum = String(pixelSum);
+    stage('ok');
+    return;
+  }
+
+  const canvasContext = canvasElement.getContext('webgpu');
+  if (!canvasContext) throw new Error('Could not obtain a WebGPU canvas context.');
+  let canvasWidth = 1;
+  let canvasHeight = 1;
+  let configured = false;
+  let renderTime = 0;
+  let previousFrameTime = performance.now();
+  let fpsAccumulator = 0;
+  let fpsFrames = 0;
+  let fpsDisplay = 0;
+
+  const configureCanvas = () => {
+    const devicePixelRatioValue = Math.min(devicePixelRatio || 1, 2);
+    const displayWidth = Math.max(1, Math.floor(canvasElement.clientWidth * devicePixelRatioValue * parameters.quality));
+    const displayHeight = Math.max(1, Math.floor(canvasElement.clientHeight * devicePixelRatioValue * parameters.quality));
+    if (displayWidth === canvasWidth && displayHeight === canvasHeight && configured) return;
+    canvasWidth = displayWidth;
+    canvasHeight = displayHeight;
+    canvasElement.width = canvasWidth;
+    canvasElement.height = canvasHeight;
+    canvasContext.configure({ device: gpuDevice, format: preferredFormat, alphaMode: 'opaque' });
+    configured = true;
+  };
+
+  const frame = (frameTime) => {
+    configureCanvas();
+    const deltaSeconds = Math.min((frameTime - previousFrameTime) / 1000, 0.1);
+    previousFrameTime = frameTime;
+    if (!parameters.paused) renderTime += deltaSeconds;
+    const commandEncoder = gpuDevice.createCommandEncoder();
+    encodeRenderPass(canvasContext.getCurrentTexture().createView(), canvasWidth, canvasHeight, renderTime, commandEncoder);
+    gpuDevice.queue.submit([commandEncoder.finish()]);
+
+    fpsAccumulator += deltaSeconds;
+    fpsFrames += 1;
+    if (fpsAccumulator >= 0.5) {
+      fpsDisplay = Math.round(fpsFrames / fpsAccumulator);
+      fpsAccumulator = 0;
+      fpsFrames = 0;
+      statusElement.textContent = `${fpsDisplay} fps · ${canvasWidth}×${canvasHeight}`;
+    }
+    requestAnimationFrame(frame);
+  };
+
+  const ranges = [
+    ['sea', 'seaOut', 'sea'],
+    ['chop', 'chopOut', 'chop'],
+    ['sun', 'sunOut', 'sun'],
+    ['quality', 'qualityOut', 'quality'],
+  ];
+  for (const [inputId, outputId, parameterName] of ranges) {
+    const inputElement = document.getElementById(inputId);
+    const outputElement = document.getElementById(outputId);
+    inputElement.addEventListener('input', () => {
+      parameters[parameterName] = Number(inputElement.value);
+      outputElement.value = parameters[parameterName].toFixed(2);
+      if (parameterName === 'quality') configured = false;
+    });
+  }
+
+  document.getElementById('pause').addEventListener('click', (event) => {
+    parameters.paused = !parameters.paused;
+    event.currentTarget.textContent = parameters.paused ? 'Resume' : 'Pause';
+  });
+  document.getElementById('reset').addEventListener('click', () => {
+    parameters.yaw = 0.0;
+    parameters.pitch = -0.18;
+    parameters.height = 4.2;
+  });
+
+  let dragging = false;
+  let previousX = 0;
+  let previousY = 0;
+  canvasElement.addEventListener('pointerdown', (event) => {
+    dragging = true;
+    previousX = event.clientX;
+    previousY = event.clientY;
+    canvasElement.setPointerCapture(event.pointerId);
+  });
+  canvasElement.addEventListener('pointermove', (event) => {
+    if (!dragging) return;
+    parameters.yaw -= (event.clientX - previousX) * 0.004;
+    parameters.pitch = Math.max(-0.62, Math.min(0.10, parameters.pitch + (event.clientY - previousY) * 0.003));
+    previousX = event.clientX;
+    previousY = event.clientY;
+  });
+  canvasElement.addEventListener('pointerup', () => { dragging = false; });
+  canvasElement.addEventListener('pointercancel', () => { dragging = false; });
+  canvasElement.addEventListener('wheel', (event) => {
+    event.preventDefault();
+    parameters.height = Math.max(0.8, Math.min(18.0, parameters.height + event.deltaY * 0.008));
+  }, { passive: false });
+
+  const initialValidationError = await gpuDevice.popErrorScope();
+  if (initialValidationError) throw initialValidationError;
+  stage('ok');
+  requestAnimationFrame((timeValue) => {
+    previousFrameTime = timeValue;
+    requestAnimationFrame(frame);
+  });
+}
+
+startApp().catch(fail);
+</script>
+</body>
+</html>
