@@ -206,3 +206,18 @@ Whitewater is also no longer only an instantaneous fragment-shader classificatio
 - injection: breaker source integrated with frame delta time
 
 The render pass reads this persistent state and combines it with a smaller instantaneous crest term. This keeps clear tropical water transparent between breakers while allowing recently broken waves to remain visibly aerated for several seconds.
+
+
+## Phase 2.7: dedicated local high-resolution short-wave grid
+
+The first multi-band version exposed an important sampling problem: a 960 m domain at 225 samples is about 4.3 m per cell, while the explicit short-wave band reaches wavelengths around 1 m. Sampling those slopes on the coarse grid aliases them.
+
+The short band is now evaluated on a separate **321 x 321 local grid covering 140 m**, about 0.44 m per cell. The tile is centered over the visible beach/shallow-water region and softly fades at its edges.
+
+This creates a real scale separation:
+
+- 225 x 225 / 960 m: long waves, displacement, broad ocean
+- 321 x 321 / 140 m: short-wave optical slopes near the beach
+- outside the local tile: unresolved short-wave slope variance returns to the Cox–Munk-derived BRDF roughness
+
+The local tile therefore does not abruptly remove short-wave energy; it changes representation from explicit slopes back to statistical reflection.

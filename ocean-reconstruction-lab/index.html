@@ -84,6 +84,7 @@ struct SimulationUniforms {
   timingGrid: vec4f,
   domainCenter: vec4f,
   shorelineData: vec4f,
+  fineGrid: vec4f,
 }
 
 @group(0) @binding(0) var<storage, read> waveComponents: array<WaveComponent>;
@@ -164,27 +165,8 @@ fn computeSurface(@builtin(global_invocation_id) invocationId: vec3u) {
     slopeZValue += -componentPrimary.w * componentPrimary.y * sineValue;
   }
 
-  var fineHeightValue = 0.0;
-  var fineSlopeXValue = 0.0;
-  var fineSlopeZValue = 0.0;
-  let fineStartIndex = componentCount;
-  for (var fineIndex = 0u; fineIndex < fineComponentCount; fineIndex = fineIndex + 1u) {
-    let componentPrimary = waveComponents[fineStartIndex + fineIndex].primary;
-    let phaseOffset = waveComponents[fineStartIndex + fineIndex].secondary.x;
-    let spatialPhase =
-      componentPrimary.x * worldX +
-      componentPrimary.y * worldZ -
-      componentPrimary.z * simulationTime +
-      phaseOffset;
-    let sineValue = sin(spatialPhase);
-    fineHeightValue += componentPrimary.w * cos(spatialPhase);
-    fineSlopeXValue += -componentPrimary.w * componentPrimary.x * sineValue;
-    fineSlopeZValue += -componentPrimary.w * componentPrimary.y * sineValue;
-  }
-
   let linearIndex = invocationId.y * gridCount + invocationId.x;
   surfaceSamples[linearIndex].value = vec4f(heightValue, slopeXValue, slopeZValue, 1.0);
-  fineSurfaceSamples[linearIndex].value = vec4f(fineHeightValue, fineSlopeXValue, fineSlopeZValue, 1.0);
 
   let worldXZ = vec2f(worldX, worldZ);
   let seabedHeightValue = computeSeabedHeight(worldXZ);
@@ -203,8 +185,9 @@ fn computeSurface(@builtin(global_invocation_id) invocationId: vec3u) {
   let crestFactor =
     smoothstep(0.06, max(targetSignificantHeight * 0.48, 0.12), surfaceHeight);
   let combinedSteepness =
-    length(vec2f(slopeXValue, slopeZValue)) * shallowDamping * shoalingBand +
-    length(vec2f(fineSlopeXValue, fineSlopeZValue)) * 0.28;
+    length(vec2f(slopeXValue, slopeZValue)) *
+    shallowDamping *
+    shoalingBand;
   let steepnessFactor = smoothstep(0.08, 0.30, combinedSteepness);
   let breakerSource =
     depthBreaker *
@@ -219,6 +202,50 @@ fn computeSurface(@builtin(global_invocation_id) invocationId: vec3u) {
     clamp(max(decayedFoam, injectedFoam), 0.0, 1.0),
     breakerSource,
     meanDepth,
+    1.0
+  );
+}
+
+@compute @workgroup_size(8, 8)
+fn computeFineSurface(@builtin(global_invocation_id) invocationId: vec3u) {
+  let fineGridCount = u32(simulationUniforms.fineGrid.x + 0.5);
+  if (invocationId.x >= fineGridCount || invocationId.y >= fineGridCount) {
+    return;
+  }
+
+  let denominator = max(f32(fineGridCount - 1u), 1.0);
+  let normalizedX = f32(invocationId.x) / denominator - 0.5;
+  let normalizedZ = f32(invocationId.y) / denominator - 0.5;
+  let fineDomainSize = simulationUniforms.fineGrid.y;
+  let worldX = simulationUniforms.fineGrid.z + normalizedX * fineDomainSize;
+  let worldZ = simulationUniforms.fineGrid.w + normalizedZ * fineDomainSize;
+  let simulationTime = simulationUniforms.timingGrid.x;
+  let baseComponentCount = u32(simulationUniforms.timingGrid.w + 0.5);
+  let fineComponentCount = u32(simulationUniforms.domainCenter.z + 0.5);
+
+  var fineHeightValue = 0.0;
+  var fineSlopeXValue = 0.0;
+  var fineSlopeZValue = 0.0;
+
+  for (var fineIndex = 0u; fineIndex < fineComponentCount; fineIndex = fineIndex + 1u) {
+    let componentPrimary = waveComponents[baseComponentCount + fineIndex].primary;
+    let phaseOffset = waveComponents[baseComponentCount + fineIndex].secondary.x;
+    let spatialPhase =
+      componentPrimary.x * worldX +
+      componentPrimary.y * worldZ -
+      componentPrimary.z * simulationTime +
+      phaseOffset;
+    let sineValue = sin(spatialPhase);
+    fineHeightValue += componentPrimary.w * cos(spatialPhase);
+    fineSlopeXValue += -componentPrimary.w * componentPrimary.x * sineValue;
+    fineSlopeZValue += -componentPrimary.w * componentPrimary.y * sineValue;
+  }
+
+  let linearIndex = invocationId.y * fineGridCount + invocationId.x;
+  fineSurfaceSamples[linearIndex].value = vec4f(
+    fineHeightValue,
+    fineSlopeXValue,
+    fineSlopeZValue,
     1.0
   );
 }
@@ -248,6 +275,7 @@ struct RenderUniforms {
   opticsGrid: vec4f,
   shorelineParams: vec4f,
   seaStateParams: vec4f,
+  fineGridParams: vec4f,
 }
 
 @group(0) @binding(0) var<uniform> renderUniforms: RenderUniforms;
@@ -447,18 +475,44 @@ fn surfaceSampleAt(worldXZ: vec2f, gridOffset: vec2i) -> vec4f {
   return surfaceSamples[linearIndex].value;
 }
 
+fn fineGridCoverage(worldXZ: vec2f) -> f32 {
+  let fineDomainSize = renderUniforms.fineGridParams.y;
+  let fineCenter = renderUniforms.fineGridParams.zw;
+  let localCoordinate = (worldXZ - fineCenter) / fineDomainSize + vec2f(0.5);
+  let edgeDistance = min(
+    min(localCoordinate.x, 1.0 - localCoordinate.x),
+    min(localCoordinate.y, 1.0 - localCoordinate.y)
+  );
+  return smoothstep(0.0, 0.075, edgeDistance);
+}
+
 fn fineSurfaceSampleAt(worldXZ: vec2f, gridOffset: vec2i) -> vec4f {
-  let gridCount = i32(renderUniforms.opticsGrid.z + 0.5);
-  let lastIndex = gridCount - 1;
-  let domainSize = renderUniforms.opticsGrid.w;
-  let normalizedX = clamp(worldXZ.x / domainSize + 0.5, 0.0, 1.0);
-  let normalizedZ = clamp((worldXZ.y - 180.0) / domainSize + 0.5, 0.0, 1.0);
-  let baseX = i32(normalizedX * f32(lastIndex) + 0.5);
-  let baseZ = i32(normalizedZ * f32(lastIndex) + 0.5);
+  let fineGridCount = i32(renderUniforms.fineGridParams.x + 0.5);
+  let lastIndex = fineGridCount - 1;
+  let fineDomainSize = renderUniforms.fineGridParams.y;
+  let fineCenter = renderUniforms.fineGridParams.zw;
+  let localCoordinate = (worldXZ - fineCenter) / fineDomainSize + vec2f(0.5);
+
+  if (
+    localCoordinate.x <= 0.0 || localCoordinate.x >= 1.0 ||
+    localCoordinate.y <= 0.0 || localCoordinate.y >= 1.0
+  ) {
+    return vec4f(0.0);
+  }
+
+  let baseX = i32(localCoordinate.x * f32(lastIndex) + 0.5);
+  let baseZ = i32(localCoordinate.y * f32(lastIndex) + 0.5);
   let sampleX = clamp(baseX + gridOffset.x, 0, lastIndex);
   let sampleZ = clamp(baseZ + gridOffset.y, 0, lastIndex);
-  let linearIndex = u32(sampleZ * gridCount + sampleX);
-  return fineSurfaceSamples[linearIndex].value;
+  let linearIndex = u32(sampleZ * fineGridCount + sampleX);
+  let edgeWeight = fineGridCoverage(worldXZ);
+  let fineValue = fineSurfaceSamples[linearIndex].value;
+  return vec4f(
+    fineValue.x * edgeWeight,
+    fineValue.y * edgeWeight,
+    fineValue.z * edgeWeight,
+    edgeWeight
+  );
 }
 
 fn combinedOpticalSurfaceAt(worldXZ: vec2f, gridOffset: vec2i) -> vec4f {
@@ -584,9 +638,8 @@ fn oceanVertex(@builtin(vertex_index) vertexIndex: u32) -> OceanVertexOutput {
   let surfaceHeight = surfaceValue.x * waveMultiplier;
   let worldPositionValue = vec3f(worldX, surfaceHeight, worldZ);
   let linearIndex = zIndex * gridCount + xIndex;
-  let fineValue = fineSurfaceSamples[linearIndex].value;
-  let cameraDistance = distance(renderUniforms.cameraPosition.xyz, worldPositionValue);
-  let fineNormalWeight = 1.0 - smoothstep(180.0, 620.0, cameraDistance);
+  let fineValue = fineSurfaceSampleAt(vec2f(worldX, worldZ), vec2i(0, 0));
+  let fineNormalWeight = fineValue.w;
   let combinedSlopeX =
     surfaceValue.y * waveMultiplier +
     fineValue.y * fineNormalWeight;
@@ -751,7 +804,11 @@ fn oceanFragment(inputValue: OceanVertexOutput) -> @location(0) vec4f {
   let normalLight = max(dot(surfaceNormal, lightDirection), 0.0);
   let normalHalf = max(dot(surfaceNormal, halfVector), 0.0);
   let viewHalf = max(dot(viewDirection, halfVector), 0.0);
-  let baseRoughness = clamp(renderUniforms.opticsGrid.x, 0.025, 0.28);
+  let residualRoughness = clamp(renderUniforms.opticsGrid.x, 0.025, 0.28);
+  let fullStatisticalRoughness = clamp(renderUniforms.seaStateParams.z, 0.025, 0.28);
+  let fineCoverage = fineGridCoverage(inputValue.worldPosition.xz);
+  let baseRoughness =
+    mix(fullStatisticalRoughness, residualRoughness, fineCoverage);
   let shallowGlitter = 1.0 - smoothstep(0.45, 5.0, verticalDepth);
   let clearWaterRoughness =
     mix(baseRoughness, max(baseRoughness * 0.72, 0.026), shallowGlitter);
@@ -792,6 +849,10 @@ const G = 9.81;
 const GRID_COUNT = 225;
 const DOMAIN_SIZE = 960;
 const DOMAIN_CENTER_Z = 180;
+const FINE_GRID_COUNT = 321;
+const FINE_DOMAIN_SIZE = 140;
+const FINE_CENTER_X = -10;
+const FINE_CENTER_Z = -85;
 const FREQ_BINS = 14;
 const DIR_BINS = 8;
 const FINE_FREQ_BINS = 9;
@@ -1192,7 +1253,7 @@ async function initialize() {
     usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
   });
   const fineSurfaceBuffer = device.createBuffer({
-    size: GRID_COUNT * GRID_COUNT * 16,
+    size: FINE_GRID_COUNT * FINE_GRID_COUNT * 16,
     usage: GPUBufferUsage.STORAGE,
   });
   const foamBuffer = device.createBuffer({
@@ -1200,11 +1261,11 @@ async function initialize() {
     usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
   });
   const simulationUniformBuffer = device.createBuffer({
-    size: 48,
+    size: 64,
     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
   });
   const renderUniformBuffer = device.createBuffer({
-    size: 208,
+    size: 224,
     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
   });
   const indexData = createIndexData(GRID_COUNT);
@@ -1239,6 +1300,10 @@ async function initialize() {
   const computePipeline = await device.createComputePipelineAsync({
     layout: device.createPipelineLayout({ bindGroupLayouts: [computeBindGroupLayout] }),
     compute: { module: computeModule, entryPoint: 'computeSurface' },
+  });
+  const fineComputePipeline = await device.createComputePipelineAsync({
+    layout: device.createPipelineLayout({ bindGroupLayouts: [computeBindGroupLayout] }),
+    compute: { module: computeModule, entryPoint: 'computeFineSurface' },
   });
 
   let outputFormat;
@@ -1506,7 +1571,7 @@ async function initialize() {
     cameraHeight = Math.max(1.4, Math.min(24, cameraHeight + event.deltaY * 0.008));
   }, { passive: false });
 
-  const renderUniformData = new Float32Array(52);
+  const renderUniformData = new Float32Array(56);
   function writeRenderUniforms() {
     const aspectRatio = canvasWidth / canvasHeight;
     const fovRadians = 54 * Math.PI / 180;
@@ -1548,13 +1613,18 @@ async function initialize() {
       0.028,
       Math.min(0.16, Math.sqrt(residualSlopeVariance) * 0.48)
     );
+    const fullStatisticalRoughness = Math.max(
+      0.035,
+      Math.min(0.18, Math.sqrt(totalCoxMunkSlopeVariance) * 0.48)
+    );
     renderUniformData.set([microRoughness, 1.0, GRID_COUNT, DOMAIN_SIZE], 40);
     renderUniformData.set([controls.clarity, controls.beachSlope, -145.0, controls.caustics], 44);
-    renderUniformData.set([targetHsCurrent, controls.whitewater, 0.0, 0.0], 48);
+    renderUniformData.set([targetHsCurrent, controls.whitewater, fullStatisticalRoughness, 0.0], 48);
+    renderUniformData.set([FINE_GRID_COUNT, FINE_DOMAIN_SIZE, FINE_CENTER_X, FINE_CENTER_Z], 52);
     device.queue.writeBuffer(renderUniformBuffer, 0, renderUniformData);
   }
 
-  const simulationUniformArrayBuffer = new ArrayBuffer(48);
+  const simulationUniformArrayBuffer = new ArrayBuffer(64);
   const simulationFloatView = new Float32Array(simulationUniformArrayBuffer);
   function writeSimulationUniforms(simulationTime, deltaSeconds) {
     simulationFloatView.fill(0);
@@ -1569,6 +1639,10 @@ async function initialize() {
     simulationFloatView[9] = -145.0;
     simulationFloatView[10] = targetHsCurrent;
     simulationFloatView[11] = deltaSeconds;
+    simulationFloatView[12] = FINE_GRID_COUNT;
+    simulationFloatView[13] = FINE_DOMAIN_SIZE;
+    simulationFloatView[14] = FINE_CENTER_X;
+    simulationFloatView[15] = FINE_CENTER_Z;
     device.queue.writeBuffer(simulationUniformBuffer, 0, simulationUniformArrayBuffer);
   }
 
@@ -1648,6 +1722,11 @@ async function initialize() {
     computePass.setPipeline(computePipeline);
     computePass.setBindGroup(0, computeBindGroup);
     computePass.dispatchWorkgroups(Math.ceil(GRID_COUNT / 8), Math.ceil(GRID_COUNT / 8));
+    computePass.setPipeline(fineComputePipeline);
+    computePass.dispatchWorkgroups(
+      Math.ceil(FINE_GRID_COUNT / 8),
+      Math.ceil(FINE_GRID_COUNT / 8)
+    );
     computePass.end();
 
     // Pass 1: render physically continuous dry beach / submerged seabed into an offscreen scene texture.
@@ -1767,6 +1846,7 @@ async function initialize() {
     document.documentElement.dataset.multiBandOcean = 'fine-slope-spectrum';
     document.documentElement.dataset.waveDirection = 'shoreward-minus-z';
     document.documentElement.dataset.foamState = 'persistent-decay';
+    document.documentElement.dataset.fineGrid = '321x321-140m';
     stage('ok');
     return;
   }
@@ -1827,6 +1907,7 @@ async function initialize() {
   document.documentElement.dataset.multiBandOcean = 'fine-slope-spectrum';
   document.documentElement.dataset.waveDirection = 'shoreward-minus-z';
   document.documentElement.dataset.foamState = 'persistent-decay';
+  document.documentElement.dataset.fineGrid = '321x321-140m';
   stage('running');
   requestAnimationFrame(frame);
 }
