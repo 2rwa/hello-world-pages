@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-<title>WebGPU Raymarched Ocean</title>
+<title>WebGPU Raymarched Shoreline</title>
 <style>
   :root { color-scheme: dark; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
   * { box-sizing: border-box; }
@@ -28,15 +28,16 @@
 <body>
 <canvas id="gpuCanvas" aria-label="WebGPUで描画したレイマーチ海面"></canvas>
 <section class="panel">
-  <div class="title"><h1>Raymarched Ocean</h1><span id="status" class="status">boot</span></div>
+  <div class="title"><h1>Raymarched Shoreline</h1><span id="status" class="status">boot</span></div>
   <div class="controls">
     <label>Sea state <input id="sea" type="range" min="0.2" max="2.2" step="0.01" value="1.0"><output id="seaOut">1.00</output></label>
     <label>Choppiness <input id="chop" type="range" min="0.2" max="2.0" step="0.01" value="1.0"><output id="chopOut">1.00</output></label>
+    <label>Water clarity <input id="clarity" type="range" min="0.40" max="2.50" step="0.05" value="1.35"><output id="clarityOut">1.35</output></label>
     <label>Sun height <input id="sun" type="range" min="0.05" max="0.95" step="0.01" value="0.34"><output id="sunOut">0.34</output></label>
     <label>Resolution <input id="quality" type="range" min="0.45" max="1" step="0.05" value="0.80"><output id="qualityOut">0.80</output></label>
   </div>
   <div class="row"><button id="pause">Pause</button><button id="reset">Reset camera</button></div>
-  <div class="hint">Drag: look around · Wheel: camera height. The ocean surface is a height field; intersection uses sign-change detection + bisection rather than sphere tracing.</div>
+  <div class="hint">Drag: look around · Wheel: camera height. Sand and water are separate height fields. Rays hit dry beach directly; after a water hit, a refracted ray continues through the water to the sandy bottom.</div>
 </section>
 <script type="module">
 const canvasElement = document.querySelector('#gpuCanvas');
@@ -98,6 +99,25 @@ fn blendColor(colorA: vec3f, colorB: vec3f, blendFactor: f32) -> vec3f {
   return colorA * (1.0 - blendFactor) + colorB * blendFactor;
 }
 
+
+fn beachTerrainHeight(positionXZ: vec2f) -> f32 {
+  let coastlineWobble =
+      sin(positionXZ.x * 0.18) * 0.55 +
+      sin(positionXZ.x * 0.47 + 1.7) * 0.18;
+  let shoreCoordinate = positionXZ.y + coastlineWobble;
+  let broadSlope = -0.60 - shoreCoordinate * 0.22;
+  let duneShape =
+      sin(positionXZ.x * 0.24 + positionXZ.y * 0.07) * 0.10 +
+      sin(positionXZ.x * 0.83 - positionXZ.y * 0.18 + 0.8) * 0.025;
+  let sandRipple = sin(positionXZ.x * 2.3 + sin(positionXZ.y * 0.70)) * 0.018;
+  return broadSlope + duneShape + sandRipple;
+}
+
+fn shorelineWaterFactor(positionXZ: vec2f) -> f32 {
+  let localDepth = -beachTerrainHeight(positionXZ);
+  return smoothstep(0.02, 0.85, localDepth);
+}
+
 fn waveHeight(positionXZ: vec2f, timeValue: f32) -> f32 {
   let seaStrength = uniforms.oceanState.x;
   let chopStrength = uniforms.oceanState.y;
@@ -117,7 +137,7 @@ fn waveHeight(positionXZ: vec2f, timeValue: f32) -> f32 {
 
   let crossingValue = sin(positionXZ.x * 1.35 + timeValue * 1.27) * sin(positionXZ.y * 1.08 - timeValue * 1.11);
   heightValue += crossingValue * 0.055 * chopStrength;
-  return heightValue * seaStrength;
+  return heightValue * seaStrength * shorelineWaterFactor(positionXZ);
 }
 
 fn oceanNormal(positionXZ: vec2f, timeValue: f32) -> vec3f {
@@ -129,6 +149,76 @@ fn oceanNormal(positionXZ: vec2f, timeValue: f32) -> vec3f {
   let slopeX = (leftHeight - rightHeight) / (2.0 * sampleDistance);
   let slopeZ = (backHeight - frontHeight) / (2.0 * sampleDistance);
   return normalize(vec3f(slopeX, 1.0, slopeZ));
+}
+
+
+fn beachNormal(positionXZ: vec2f) -> vec3f {
+  let sampleDistance = 0.06;
+  let leftHeight = beachTerrainHeight(positionXZ - vec2f(sampleDistance, 0.0));
+  let rightHeight = beachTerrainHeight(positionXZ + vec2f(sampleDistance, 0.0));
+  let backHeight = beachTerrainHeight(positionXZ - vec2f(0.0, sampleDistance));
+  let frontHeight = beachTerrainHeight(positionXZ + vec2f(0.0, sampleDistance));
+  let slopeX = (leftHeight - rightHeight) / (2.0 * sampleDistance);
+  let slopeZ = (backHeight - frontHeight) / (2.0 * sampleDistance);
+  return normalize(vec3f(slopeX, 1.0, slopeZ));
+}
+
+fn sandBaseColor(positionXZ: vec2f, terrainHeight: f32) -> vec3f {
+  let ripplePattern =
+      0.5 + 0.5 * sin(positionXZ.x * 2.8 + sin(positionXZ.y * 0.62) * 1.4);
+  let fineVariation =
+      0.5 + 0.5 * sin(positionXZ.x * 0.41 + positionXZ.y * 0.29 + 1.3);
+  let drySand = vec3f(0.78, 0.66, 0.46);
+  let paleSand = vec3f(0.91, 0.82, 0.62);
+  let wetSand = vec3f(0.42, 0.36, 0.27);
+  var sandValue = blendColor(drySand, paleSand, ripplePattern * 0.28 + fineVariation * 0.10);
+  let wetAmount = 1.0 - smoothstep(0.06, 0.72, abs(terrainHeight));
+  sandValue = blendColor(sandValue, wetSand, wetAmount * 0.55);
+  return sandValue;
+}
+
+fn intersectBeach(rayOrigin: vec3f, rayDirection: vec3f) -> f32 {
+  var previousDistance = 0.05;
+  var previousPosition = rayOrigin + rayDirection * previousDistance;
+  var previousField = previousPosition.y - beachTerrainHeight(previousPosition.xz);
+  var hitDistance = -1.0;
+  var travelDistance = previousDistance;
+
+  for (var stepIndex = 0; stepIndex < 160; stepIndex = stepIndex + 1) {
+    let stepLength = clamp(0.10 + travelDistance * 0.014, 0.10, 1.5);
+    travelDistance += stepLength;
+    if (travelDistance > 220.0) {
+      break;
+    }
+    let samplePosition = rayOrigin + rayDirection * travelDistance;
+    let fieldValue = samplePosition.y - beachTerrainHeight(samplePosition.xz);
+    if (fieldValue <= 0.0 && previousField > 0.0) {
+      var lowerDistance = previousDistance;
+      var upperDistance = travelDistance;
+      for (var refineIndex = 0; refineIndex < 9; refineIndex = refineIndex + 1) {
+        let middleDistance = (lowerDistance + upperDistance) * 0.5;
+        let middlePosition = rayOrigin + rayDirection * middleDistance;
+        let middleField = middlePosition.y - beachTerrainHeight(middlePosition.xz);
+        if (middleField > 0.0) {
+          lowerDistance = middleDistance;
+        } else {
+          upperDistance = middleDistance;
+        }
+      }
+      hitDistance = (lowerDistance + upperDistance) * 0.5;
+      break;
+    }
+    previousDistance = travelDistance;
+    previousField = fieldValue;
+  }
+  return hitDistance;
+}
+
+fn litSandColor(surfacePosition: vec3f, surfaceNormal: vec3f, sunDirection: vec3f) -> vec3f {
+  let baseColor = sandBaseColor(surfacePosition.xz, surfacePosition.y);
+  let sunDiffuse = max(dot(surfaceNormal, sunDirection), 0.0);
+  let skyFill = 0.38 + 0.18 * surfaceNormal.y;
+  return baseColor * (skyFill + sunDiffuse * 0.62);
 }
 
 fn skyColor(rayDirection: vec3f, sunDirection: vec3f) -> vec3f {
@@ -189,7 +279,7 @@ fn cameraRay(screenPosition: vec2f, yawValue: f32, pitchValue: f32) -> vec3f {
   let sinePitch = sin(pitchValue);
   let forwardVector = normalize(vec3f(sineYaw * cosinePitch, sinePitch, cosineYaw * cosinePitch));
   let rightVector = normalize(vec3f(cosineYaw, 0.0, -sineYaw));
-  let upVector = normalize(cross(rightVector, forwardVector));
+  let upVector = normalize(cross(forwardVector, rightVector));
   return normalize(forwardVector + rightVector * screenPosition.x + upVector * screenPosition.y);
 }
 
@@ -205,46 +295,93 @@ fn fragmentMain(@builtin(position) fragmentPosition: vec4f) -> @location(0) vec4
   let yawValue = uniforms.cameraState.x;
   let pitchValue = uniforms.cameraState.y;
   let cameraHeight = uniforms.cameraState.z;
-  let rayOrigin = vec3f(0.0, cameraHeight, -2.0);
+  let rayOrigin = vec3f(0.0, cameraHeight, -10.0);
   let rayDirection = cameraRay(screenPosition, yawValue, pitchValue);
 
   let sunHeight = uniforms.sunState.x;
   let sunAzimuth = uniforms.sunState.y;
-  let sunDirection = normalize(vec3f(cos(sunAzimuth) * sqrt(max(1.0 - sunHeight * sunHeight, 0.0)), sunHeight, sin(sunAzimuth) * sqrt(max(1.0 - sunHeight * sunHeight, 0.0))));
+  let sunHorizontal = sqrt(max(1.0 - sunHeight * sunHeight, 0.0));
+  let sunDirection = normalize(vec3f(cos(sunAzimuth) * sunHorizontal, sunHeight, sin(sunAzimuth) * sunHorizontal));
 
   if (rayDirection.y >= 0.18) {
     let backgroundColor = skyColor(rayDirection, sunDirection);
     return vec4f(backgroundColor, 1.0);
   }
 
-  let hitInfo = intersectOcean(rayOrigin, rayDirection, timeValue);
-  if (hitInfo.x < 0.0) {
+  let beachHitDistance = intersectBeach(rayOrigin, rayDirection);
+  let waterHitInfo = intersectOcean(rayOrigin, rayDirection, timeValue);
+  let waterHitDistance = waterHitInfo.x;
+
+  if (beachHitDistance > 0.0 && (waterHitDistance < 0.0 || beachHitDistance < waterHitDistance)) {
+    let beachPosition = rayOrigin + rayDirection * beachHitDistance;
+    let beachSurfaceNormal = beachNormal(beachPosition.xz);
+    var beachColor = litSandColor(beachPosition, beachSurfaceNormal, sunDirection);
+    let shoreDarkening = 1.0 - smoothstep(0.02, 0.48, abs(beachPosition.y));
+    beachColor *= 1.0 - shoreDarkening * 0.18;
+    let beachHaze = easedValue(beachHitDistance / 155.0);
+    beachColor = blendColor(beachColor, skyColor(rayDirection, sunDirection), beachHaze * 0.34);
+    let beachExposure = vec3f(1.0, 1.0, 1.0) - exp(-beachColor * 1.18);
+    let beachGamma = pow(beachExposure, vec3f(0.4545, 0.4545, 0.4545));
+    return vec4f(beachGamma, 1.0);
+  }
+
+  if (waterHitDistance < 0.0) {
     let backgroundColor = skyColor(rayDirection, sunDirection);
     return vec4f(backgroundColor, 1.0);
   }
 
-  let surfacePosition = rayOrigin + rayDirection * hitInfo.x;
+  let surfacePosition = rayOrigin + rayDirection * waterHitDistance;
   let surfaceNormal = oceanNormal(surfacePosition.xz, timeValue);
   let reflectedDirection = reflect(rayDirection, surfaceNormal);
   let reflectedSky = skyColor(reflectedDirection, sunDirection);
 
+  let refractedDirectionRaw = refract(rayDirection, surfaceNormal, 1.0 / 1.333);
+  let refractedDirection = normalize(refractedDirectionRaw);
+  let underwaterOrigin = surfacePosition - surfaceNormal * 0.035;
+  let bottomHitDistance = intersectBeach(underwaterOrigin, refractedDirection);
+
+  var transmittedColor = vec3f(0.008, 0.105, 0.115);
+  var underwaterPathLength = 12.0;
+  var shorelineFoam = 0.0;
+  if (bottomHitDistance > 0.0) {
+    underwaterPathLength = bottomHitDistance;
+    let bottomPosition = underwaterOrigin + refractedDirection * bottomHitDistance;
+    let bottomSurfaceNormal = beachNormal(bottomPosition.xz);
+    var bottomColor = litSandColor(bottomPosition, bottomSurfaceNormal, sunDirection);
+    let causticPattern =
+        0.5 + 0.5 * sin(bottomPosition.x * 2.8 + timeValue * 1.7 + sin(bottomPosition.z * 1.2)) *
+                    sin(bottomPosition.z * 2.1 - timeValue * 1.25);
+    bottomColor *= 0.82 + causticPattern * 0.26;
+
+    let clarityValue = max(uniforms.oceanState.z, 0.20);
+    let absorption = vec3f(0.72, 0.24, 0.10) / clarityValue;
+    let transmittance = exp(-absorption * underwaterPathLength);
+    let scatterColor = vec3f(0.012, 0.16, 0.17);
+    transmittedColor = bottomColor * transmittance + scatterColor * (vec3f(1.0, 1.0, 1.0) - transmittance);
+
+    let shallowAmount = 1.0 - smoothstep(0.18, 0.78, underwaterPathLength);
+    let foamStripe = 0.55 + 0.45 * sin(surfacePosition.x * 3.2 + surfacePosition.z * 1.4 - timeValue * 2.4);
+    shorelineFoam = shallowAmount * saturateValue(foamStripe * 0.85 + 0.15);
+  }
+
   let viewFacing = saturateValue(dot(-rayDirection, surfaceNormal));
   let fresnelValue = 0.020 + 0.980 * pow(1.0 - viewFacing, 5.0);
-  let depthTint = blendColor(vec3f(0.006, 0.055, 0.058), vec3f(0.015, 0.16, 0.15), saturateValue(surfaceNormal.y));
-  let distanceHaze = easedValue(hitInfo.x / 150.0);
-  var oceanColor = blendColor(depthTint, reflectedSky, fresnelValue * 0.93 + 0.04);
+  let reflectionAmount = saturateValue(0.045 + fresnelValue * 0.92);
+  var oceanColor = blendColor(transmittedColor, reflectedSky, reflectionAmount);
 
   let slopeAmount = 1.0 - surfaceNormal.y;
   let crestHeight = waveHeight(surfacePosition.xz, timeValue);
-  let foamBase = saturateValue((slopeAmount - 0.16) * 4.8 + (crestHeight - 0.52) * 1.1);
-  let foamAmount = foamBase * foamBase * (0.25 + 0.75 * uniforms.oceanState.y);
-  oceanColor = blendColor(oceanColor, vec3f(0.82, 0.84, 0.77), foamAmount * 0.46);
+  let crestFoamBase = saturateValue((slopeAmount - 0.14) * 5.2 + (crestHeight - 0.42) * 1.2);
+  let crestFoam = crestFoamBase * crestFoamBase * (0.20 + 0.80 * uniforms.oceanState.y);
+  let totalFoam = saturateValue(crestFoam * 0.34 + shorelineFoam * 0.62);
+  oceanColor = blendColor(oceanColor, vec3f(0.88, 0.89, 0.82), totalFoam);
 
-  let reflectedSun = pow(max(dot(reflectedDirection, sunDirection), 0.0), 110.0);
-  oceanColor += vec3f(1.0, 0.76, 0.41) * reflectedSun * 2.3;
-  oceanColor = blendColor(oceanColor, skyColor(rayDirection, sunDirection), distanceHaze * 0.52);
+  let reflectedSun = pow(max(dot(reflectedDirection, sunDirection), 0.0), 120.0);
+  oceanColor += vec3f(1.0, 0.76, 0.41) * reflectedSun * 2.1;
+  let distanceHaze = easedValue(waterHitDistance / 150.0);
+  oceanColor = blendColor(oceanColor, skyColor(rayDirection, sunDirection), distanceHaze * 0.46);
 
-  let exposureColor = vec3f(1.0, 1.0, 1.0) - exp(-oceanColor * 1.25);
+  let exposureColor = vec3f(1.0, 1.0, 1.0) - exp(-oceanColor * 1.22);
   let gammaColor = pow(exposureColor, vec3f(0.4545, 0.4545, 0.4545));
   return vec4f(gammaColor, 1.0);
 }
@@ -295,9 +432,10 @@ async function startApp() {
     chop: 1.0,
     sun: 0.34,
     quality: 0.80,
+    clarity: 1.35,
     yaw: 0.0,
-    pitch: -0.18,
-    height: 4.2,
+    pitch: -0.14,
+    height: 3.4,
     paused: false,
   };
 
@@ -305,7 +443,7 @@ async function startApp() {
     const dataValues = new Float32Array(16);
     dataValues.set([timeSeconds, widthValue, heightValue, 0.0], 0);
     dataValues.set([parameters.yaw, parameters.pitch, parameters.height, 0.0], 4);
-    dataValues.set([parameters.sea, parameters.chop, 0.0, 0.0], 8);
+    dataValues.set([parameters.sea, parameters.chop, parameters.clarity, 0.0], 8);
     dataValues.set([parameters.sun, -0.82, 0.0, 0.0], 12);
     gpuDevice.queue.writeBuffer(uniformBuffer, 0, dataValues);
   };
@@ -405,6 +543,7 @@ async function startApp() {
   const ranges = [
     ['sea', 'seaOut', 'sea'],
     ['chop', 'chopOut', 'chop'],
+    ['clarity', 'clarityOut', 'clarity'],
     ['sun', 'sunOut', 'sun'],
     ['quality', 'qualityOut', 'quality'],
   ];
@@ -424,8 +563,8 @@ async function startApp() {
   });
   document.getElementById('reset').addEventListener('click', () => {
     parameters.yaw = 0.0;
-    parameters.pitch = -0.18;
-    parameters.height = 4.2;
+    parameters.pitch = -0.14;
+    parameters.height = 3.4;
   });
 
   let dragging = false;
