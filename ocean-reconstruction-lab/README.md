@@ -133,3 +133,15 @@ The water pass then uses:
 - shared depth so dry beach geometry correctly occludes water behind it
 
 The shoreline is therefore geometry, not an alpha mask, and the sand seen through shallow water is the same terrain that continues onto the dry beach.
+
+
+## Phase 2.1: surface-derived caustics
+
+The submerged sand pass now reads the simulated GPU surface slope field. For neighboring surface samples it refracts the solar direction from air into water and projects those rays to the local seabed elevation. The 2x2 Jacobian determinant of that refracted footprint estimates local ray convergence/divergence:
+
+- determinant < 1: rays converge, irradiance rises
+- determinant > 1: rays diverge, irradiance falls
+
+The result is depth-attenuated and bounded before modulating the submerged sand. This produces animated caustic focusing from the actual spectral wave field rather than from a tiled caustic texture or procedural noise.
+
+Shallow-water sun glitter also uses a slightly lower microfacet roughness than deeper water, while retaining the same Fresnel/microfacet optical model.

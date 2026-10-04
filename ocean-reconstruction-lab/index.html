@@ -47,6 +47,7 @@
     <label>Spread s <input id="spread" type="range" min="3" max="35" step="1" value="14"><output id="spreadOut">14</output></label>
     <label>Clarity <input id="clarity" type="range" min="0.45" max="2.2" step="0.05" value="1.20"><output id="clarityOut">1.20</output></label>
     <label>Beach slope <input id="beachSlope" type="range" min="0.012" max="0.060" step="0.002" value="0.038"><output id="beachSlopeOut">0.038</output></label>
+    <label>Caustics <input id="caustics" type="range" min="0" max="1.8" step="0.05" value="1.00"><output id="causticsOut">1.00</output></label>
   </div>
   <div class="metrics">
     <div class="metric"><b id="targetHs">—</b><span>target Hs</span></div>
@@ -56,7 +57,7 @@
   </div>
   <canvas id="spectrum" width="720" height="164"></canvas>
   <div class="legend"><span>solid: total target spectrum</span><span>thin: wind + swell</span></div>
-  <div class="hint">Drag = view direction · wheel = camera height. Dry beach and submerged sand are one continuous terrain. Clarity controls spectral attenuation; shallow water remains transparent while deeper water shifts toward blue-green.</div>
+  <div class="hint">Drag = view direction · wheel = camera height. Dry beach and submerged sand are one continuous terrain. Clarity controls spectral attenuation. Caustics are computed from convergence of sun rays refracted by the simulated spectral surface; no caustic texture is used.</div>
 </section>
 
 <script id="computeShader" type="x-shader/wgsl">
@@ -308,6 +309,63 @@ fn seabedVertex(@builtin(vertex_index) vertexIndex: u32) -> SeabedVertexOutput {
   return outputValue;
 }
 
+fn surfaceSampleAt(worldXZ: vec2f, gridOffset: vec2i) -> vec4f {
+  let gridCount = i32(renderUniforms.opticsGrid.z + 0.5);
+  let lastIndex = gridCount - 1;
+  let domainSize = renderUniforms.opticsGrid.w;
+  let normalizedX = clamp(worldXZ.x / domainSize + 0.5, 0.0, 1.0);
+  let normalizedZ = clamp((worldXZ.y - 180.0) / domainSize + 0.5, 0.0, 1.0);
+  let baseX = i32(normalizedX * f32(lastIndex) + 0.5);
+  let baseZ = i32(normalizedZ * f32(lastIndex) + 0.5);
+  let sampleX = clamp(baseX + gridOffset.x, 0, lastIndex);
+  let sampleZ = clamp(baseZ + gridOffset.y, 0, lastIndex);
+  let linearIndex = u32(sampleZ * gridCount + sampleX);
+  return surfaceSamples[linearIndex].value;
+}
+
+fn refractedSunFootprint(surfaceXZ: vec2f, surfaceValue: vec4f, targetHeight: f32) -> vec2f {
+  let surfaceNormal = normalize(vec3f(-surfaceValue.y, 1.0, -surfaceValue.z));
+  let lightTravelDirection = -normalize(renderUniforms.sunDirection.xyz);
+  let waterDirection = normalize(refract(lightTravelDirection, surfaceNormal, 1.0 / 1.333));
+  let downwardY = min(waterDirection.y, -0.035);
+  let travelDistance = max((targetHeight - surfaceValue.x) / downwardY, 0.0);
+  return surfaceXZ + waterDirection.xz * travelDistance;
+}
+
+fn causticGainAt(worldPositionValue: vec3f) -> f32 {
+  if (worldPositionValue.y >= -0.04) {
+    return 1.0;
+  }
+
+  let gridCount = max(renderUniforms.opticsGrid.z, 2.0);
+  let cellSize = renderUniforms.opticsGrid.w / (gridCount - 1.0);
+  let worldXZ = worldPositionValue.xz;
+
+  let sampleLeft = surfaceSampleAt(worldXZ, vec2i(-1, 0));
+  let sampleRight = surfaceSampleAt(worldXZ, vec2i(1, 0));
+  let sampleBack = surfaceSampleAt(worldXZ, vec2i(0, -1));
+  let sampleFront = surfaceSampleAt(worldXZ, vec2i(0, 1));
+
+  let footprintLeft = refractedSunFootprint(worldXZ - vec2f(cellSize, 0.0), sampleLeft, worldPositionValue.y);
+  let footprintRight = refractedSunFootprint(worldXZ + vec2f(cellSize, 0.0), sampleRight, worldPositionValue.y);
+  let footprintBack = refractedSunFootprint(worldXZ - vec2f(0.0, cellSize), sampleBack, worldPositionValue.y);
+  let footprintFront = refractedSunFootprint(worldXZ + vec2f(0.0, cellSize), sampleFront, worldPositionValue.y);
+
+  let derivativeX = (footprintRight - footprintLeft) / max(2.0 * cellSize, 0.001);
+  let derivativeZ = (footprintFront - footprintBack) / max(2.0 * cellSize, 0.001);
+  let jacobianDeterminant = abs(
+    derivativeX.x * derivativeZ.y -
+    derivativeX.y * derivativeZ.x
+  );
+
+  let rawFocus = clamp(1.0 / max(jacobianDeterminant, 0.30), 0.62, 3.25);
+  let waterDepth = -worldPositionValue.y;
+  let depthFade = exp(-waterDepth * 0.105);
+  let sunVisibility = smoothstep(0.15, 0.58, renderUniforms.sunDirection.y);
+  let userStrength = max(renderUniforms.shorelineParams.w, 0.0);
+  return 1.0 + (rawFocus - 1.0) * depthFade * sunVisibility * userStrength;
+}
+
 @fragment
 fn seabedFragment(inputValue: SeabedVertexOutput) -> @location(0) vec4f {
   let lightDirection = normalize(renderUniforms.sunDirection.xyz);
@@ -316,6 +374,14 @@ fn seabedFragment(inputValue: SeabedVertexOutput) -> @location(0) vec4f {
   let skyFill = 0.45 + 0.25 * max(normalValue.y, 0.0);
   var sandColorValue = sandReflectance(inputValue.worldPosition);
   sandColorValue *= skyFill + diffuseLight * 0.62;
+
+  if (inputValue.worldPosition.y < -0.04) {
+    let causticGain = causticGainAt(inputValue.worldPosition);
+    let boundedGain = clamp(causticGain, 0.72, 2.55);
+    sandColorValue *= boundedGain;
+    let causticHighlight = max(boundedGain - 1.0, 0.0);
+    sandColorValue += vec3f(0.95, 0.88, 0.68) * causticHighlight * 0.075;
+  }
 
   let distanceValue = distance(renderUniforms.cameraPosition.xyz, inputValue.worldPosition);
   let hazeAmount = saturateValue((distanceValue - 360.0) / 720.0);
@@ -471,7 +537,9 @@ fn oceanFragment(inputValue: OceanVertexOutput) -> @location(0) vec4f {
   let normalLight = max(dot(surfaceNormal, lightDirection), 0.0);
   let normalHalf = max(dot(surfaceNormal, halfVector), 0.0);
   let viewHalf = max(dot(viewDirection, halfVector), 0.0);
-  let roughnessValue = clamp(renderUniforms.opticsGrid.x, 0.025, 0.28);
+  let baseRoughness = clamp(renderUniforms.opticsGrid.x, 0.025, 0.28);
+  let shallowGlitter = 1.0 - smoothstep(0.45, 5.0, verticalDepth);
+  let roughnessValue = mix(baseRoughness, max(baseRoughness * 0.72, 0.026), shallowGlitter);
   let alphaSquared = roughnessValue * roughnessValue * roughnessValue * roughnessValue;
   let denominatorTerm = normalHalf * normalHalf * (alphaSquared - 1.0) + 1.0;
   let distributionTerm = alphaSquared / max(3.14159265 * denominatorTerm * denominatorTerm, 0.00001);
@@ -845,7 +913,7 @@ async function initialize() {
   const renderBindGroupLayout = device.createBindGroupLayout({
     entries: [
       { binding: 0, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
-      { binding: 1, visibility: GPUShaderStage.VERTEX, buffer: { type: 'read-only-storage' } },
+      { binding: 1, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, buffer: { type: 'read-only-storage' } },
       { binding: 2, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
       { binding: 3, visibility: GPUShaderStage.FRAGMENT, sampler: { type: 'filtering' } },
     ],
@@ -944,6 +1012,7 @@ async function initialize() {
     spread: Number(document.getElementById('spread').value),
     clarity: Number(document.getElementById('clarity').value),
     beachSlope: Number(document.getElementById('beachSlope').value),
+    caustics: Number(document.getElementById('caustics').value),
   };
 
   let componentCount = 0;
@@ -990,7 +1059,7 @@ async function initialize() {
   const controlSpecs = [
     ['windHs', 2], ['windTp', 1], ['windU10', 1], ['windDir', 0],
     ['swellHs', 2], ['swellTp', 1], ['swellDir', 0], ['depth', 0],
-    ['gamma', 1], ['spread', 0], ['clarity', 2], ['beachSlope', 3],
+    ['gamma', 1], ['spread', 0], ['clarity', 2], ['beachSlope', 3], ['caustics', 2],
   ];
   for (const [controlId, digits] of controlSpecs) {
     const input = document.getElementById(controlId);
@@ -1117,7 +1186,7 @@ async function initialize() {
     const coxMunkSlopeVariance = 0.003 + 0.00512 * controls.windU10;
     const microRoughness = Math.max(0.035, Math.min(0.18, Math.sqrt(coxMunkSlopeVariance) * 0.48));
     renderUniformData.set([microRoughness, 1.0, GRID_COUNT, DOMAIN_SIZE], 40);
-    renderUniformData.set([controls.clarity, controls.beachSlope, -145.0, 0.0], 44);
+    renderUniformData.set([controls.clarity, controls.beachSlope, -145.0, controls.caustics], 44);
     device.queue.writeBuffer(renderUniformBuffer, 0, renderUniformData);
   }
 
@@ -1322,7 +1391,7 @@ async function initialize() {
     document.documentElement.dataset.beerLambert = 'true';
     document.documentElement.dataset.sceneRefraction = 'true';
     document.documentElement.dataset.refractedSeabedTrace = '14x5';
-  document.documentElement.dataset.refractedSeabedTrace = '14x5';
+    document.documentElement.dataset.surfaceCaustics = 'jacobian';
     stage('ok');
     return;
   }
@@ -1371,6 +1440,8 @@ async function initialize() {
   document.documentElement.dataset.whiteSandBathymetry = 'true';
   document.documentElement.dataset.beerLambert = 'true';
   document.documentElement.dataset.sceneRefraction = 'true';
+  document.documentElement.dataset.refractedSeabedTrace = '14x5';
+  document.documentElement.dataset.surfaceCaustics = 'jacobian';
   stage('running');
   requestAnimationFrame(frame);
 }
