@@ -977,6 +977,7 @@ async function initialize() {
 
     await readbackBuffer.mapAsync(GPUMapMode.READ);
     const pixelBytes = new Uint8Array(readbackBuffer.getMappedRange());
+    const pixelCopy = new Uint8Array(pixelBytes);
     let checksum = 0;
     let nonFlatCount = 0;
     let previous = pixelBytes[0];
@@ -1003,7 +1004,7 @@ async function initialize() {
     previewCanvas.style.imageRendering = 'auto';
     const previewContext = previewCanvas.getContext('2d');
     const packedPixels = new Uint8ClampedArray(canvasWidth * canvasHeight * 4);
-    packedPixels.set(pixelBytes.subarray(0, packedPixels.length));
+    packedPixels.set(pixelCopy.subarray(0, packedPixels.length));
     previewContext.putImageData(new ImageData(packedPixels, canvasWidth, canvasHeight), 0, 0);
     document.body.prepend(previewCanvas);
 
