@@ -76,15 +76,58 @@ struct FineSurfaceSample {
   value: vec4f,
 }
 
+struct FoamSample {
+  value: vec4f,
+}
+
 struct SimulationUniforms {
   timingGrid: vec4f,
   domainCenter: vec4f,
+  shorelineData: vec4f,
 }
 
 @group(0) @binding(0) var<storage, read> waveComponents: array<WaveComponent>;
 @group(0) @binding(1) var<storage, read_write> surfaceSamples: array<SurfaceSample>;
 @group(0) @binding(2) var<uniform> simulationUniforms: SimulationUniforms;
 @group(0) @binding(3) var<storage, read_write> fineSurfaceSamples: array<FineSurfaceSample>;
+@group(0) @binding(4) var<storage, read_write> foamSamples: array<FoamSample>;
+
+fn computeSeabedHeight(worldXZ: vec2f) -> f32 {
+  let slopeValue = simulationUniforms.shorelineData.x;
+  let shoreCenterBase = simulationUniforms.shorelineData.y;
+  let shoreCenter =
+    shoreCenterBase +
+    sin(worldXZ.x * 0.010) * 11.0 +
+    sin(worldXZ.x * 0.027 + 1.2) * 4.0;
+  let offshoreDistance = worldXZ.y - shoreCenter;
+
+  var heightValue = 0.0;
+  if (offshoreDistance < 0.0) {
+    let landDistance = -offshoreDistance;
+    heightValue = landDistance * slopeValue * 0.82;
+  } else {
+    let shelfDepth = offshoreDistance * slopeValue;
+    let shelfFlatten = 1.0 - exp(-offshoreDistance / 260.0);
+    heightValue = -shelfDepth * (0.74 + 0.26 * shelfFlatten);
+  }
+
+  let broadSand =
+    sin(worldXZ.x * 0.023 + worldXZ.y * 0.009) * 0.10 +
+    sin(worldXZ.x * 0.071 - worldXZ.y * 0.017 + 0.9) * 0.045;
+  let rippleEnvelope = clamp((-heightValue + 0.25) / 5.0, 0.0, 1.0);
+  let sandRipple =
+    sin(worldXZ.x * 0.34 + sin(worldXZ.y * 0.045) * 1.7) *
+    0.035 * rippleEnvelope;
+
+  let sandbarCenter = 118.0 + 24.0 * sin(worldXZ.x * 0.008 + 0.6);
+  let sandbarDistance = (offshoreDistance - sandbarCenter) / 58.0;
+  let sandbarLift =
+    exp(-sandbarDistance * sandbarDistance) *
+    0.72 *
+    smoothstep(18.0, 70.0, offshoreDistance);
+
+  return heightValue + broadSand + sandRipple + sandbarLift;
+}
 
 @compute @workgroup_size(8, 8)
 fn computeSurface(@builtin(global_invocation_id) invocationId: vec3u) {
@@ -142,6 +185,42 @@ fn computeSurface(@builtin(global_invocation_id) invocationId: vec3u) {
   let linearIndex = invocationId.y * gridCount + invocationId.x;
   surfaceSamples[linearIndex].value = vec4f(heightValue, slopeXValue, slopeZValue, 1.0);
   fineSurfaceSamples[linearIndex].value = vec4f(fineHeightValue, fineSlopeXValue, fineSlopeZValue, 1.0);
+
+  let worldXZ = vec2f(worldX, worldZ);
+  let seabedHeightValue = computeSeabedHeight(worldXZ);
+  let meanDepth = max(-seabedHeightValue, 0.0);
+  let shallowDamping = smoothstep(0.10, 1.30, meanDepth);
+  let shoalingBand = 1.0 + 0.16 * exp(-pow((meanDepth - 2.2) / 1.6, 2.0));
+  let surfaceHeight = heightValue * shallowDamping * shoalingBand;
+  let targetSignificantHeight = max(simulationUniforms.shorelineData.z, 0.05);
+  let depthLimitedRatio =
+    targetSignificantHeight * shoalingBand /
+    max(meanDepth, 0.12);
+  let wetEnough = smoothstep(0.10, 0.36, meanDepth);
+  let depthBreaker =
+    smoothstep(0.58, 0.82, depthLimitedRatio) *
+    wetEnough;
+  let crestFactor =
+    smoothstep(0.06, max(targetSignificantHeight * 0.48, 0.12), surfaceHeight);
+  let combinedSteepness =
+    length(vec2f(slopeXValue, slopeZValue)) * shallowDamping * shoalingBand +
+    length(vec2f(fineSlopeXValue, fineSlopeZValue)) * 0.28;
+  let steepnessFactor = smoothstep(0.08, 0.30, combinedSteepness);
+  let breakerSource =
+    depthBreaker *
+    clamp(crestFactor * 0.76 + steepnessFactor * 0.44, 0.0, 1.0);
+
+  let deltaSeconds = clamp(simulationUniforms.shorelineData.w, 0.0, 0.05);
+  let previousFoam = foamSamples[linearIndex].value.x;
+  let decayedFoam = previousFoam * exp(-deltaSeconds / 4.2);
+  let injectedFoam =
+    1.0 - (1.0 - decayedFoam) * exp(-breakerSource * deltaSeconds * 5.8);
+  foamSamples[linearIndex].value = vec4f(
+    clamp(max(decayedFoam, injectedFoam), 0.0, 1.0),
+    breakerSource,
+    meanDepth,
+    1.0
+  );
 }
 </script>
 
@@ -151,6 +230,10 @@ struct SurfaceSample {
 }
 
 struct FineSurfaceSample {
+  value: vec4f,
+}
+
+struct FoamSample {
   value: vec4f,
 }
 
@@ -172,6 +255,7 @@ struct RenderUniforms {
 @group(0) @binding(2) var sceneColorTexture: texture_2d<f32>;
 @group(0) @binding(3) var sceneColorSampler: sampler;
 @group(0) @binding(4) var<storage, read> fineSurfaceSamples: array<FineSurfaceSample>;
+@group(0) @binding(5) var<storage, read> foamSamples: array<FoamSample>;
 
 struct OceanVertexOutput {
   @builtin(position) clipPosition: vec4f,
@@ -179,6 +263,7 @@ struct OceanVertexOutput {
   @location(1) worldNormal: vec3f,
   @location(2) seabedHeightValue: f32,
   @location(3) breakerPotential: f32,
+  @location(4) persistentFoam: f32,
 }
 
 struct SeabedVertexOutput {
@@ -520,7 +605,7 @@ fn oceanVertex(@builtin(vertex_index) vertexIndex: u32) -> OceanVertexOutput {
     max(meanDepth, 0.12);
   let depthBreaker =
     smoothstep(0.58, 0.82, depthLimitedRatio) *
-    (1.0 - smoothstep(0.08, 0.22, meanDepth));
+    smoothstep(0.10, 0.36, meanDepth);
   let crestFactor =
     smoothstep(0.06, max(targetSignificantHeight * 0.48, 0.12), surfaceHeight);
   let slopeMagnitude =
@@ -537,6 +622,7 @@ fn oceanVertex(@builtin(vertex_index) vertexIndex: u32) -> OceanVertexOutput {
   outputValue.worldNormal = worldNormalValue;
   outputValue.seabedHeightValue = seabedHeightAtVertex;
   outputValue.breakerPotential = breakerPotential;
+  outputValue.persistentFoam = foamSamples[linearIndex].value.x;
   return outputValue;
 }
 
@@ -592,9 +678,17 @@ fn oceanFragment(inputValue: OceanVertexOutput) -> @location(0) vec4f {
   let lightDirection = normalize(renderUniforms.sunDirection.xyz);
   let reflectedDirection = reflect(-viewDirection, surfaceNormal);
   let whitewaterStrength = max(renderUniforms.seaStateParams.y, 0.0);
+  let instantaneousFoam =
+    smoothstep(0.48, 0.90, inputValue.breakerPotential);
+  let persistentCoverage =
+    smoothstep(0.08, 0.72, inputValue.persistentFoam);
   let foamCoverage =
-    smoothstep(0.38, 0.86, inputValue.breakerPotential) *
-    clamp(whitewaterStrength, 0.0, 1.5);
+    clamp(
+      max(persistentCoverage, instantaneousFoam * 0.55) *
+      whitewaterStrength,
+      0.0,
+      1.5
+    );
 
   let normalView = max(dot(surfaceNormal, viewDirection), 0.001);
   let eta = 1.0 / 1.333;
@@ -889,7 +983,7 @@ function buildSystemComponents(systemConfig, depthValue, gammaValue, spreadPeak,
       const binEnergy = oneDimensionalEnergy * frequencyStep * normalizedDirectionalWeight * directionStep;
       const amplitudeValue = Math.sqrt(Math.max(2 * binEnergy, 0));
       const kx = Math.sin(propagationAngle) * waveNumberMagnitude;
-      const kz = Math.cos(propagationAngle) * waveNumberMagnitude;
+      const kz = -Math.cos(propagationAngle) * waveNumberMagnitude;
       const phaseValue = hashPhase(
         frequencyIndex * DIR_BINS + directionIndex,
         phaseOffset
@@ -954,7 +1048,7 @@ function buildFineSlopeComponents(systemConfig, depthValue, gammaValue, spreadPe
       provisionalSlopeVariance += slopeVarianceContribution;
       provisional.push({
         kx: Math.sin(propagationAngle) * waveNumberMagnitude,
-        kz: Math.cos(propagationAngle) * waveNumberMagnitude,
+        kz: -Math.cos(propagationAngle) * waveNumberMagnitude,
         omega: angularFrequency,
         amplitude: amplitudeValue,
         phase: hashPhase(
@@ -1101,8 +1195,12 @@ async function initialize() {
     size: GRID_COUNT * GRID_COUNT * 16,
     usage: GPUBufferUsage.STORAGE,
   });
+  const foamBuffer = device.createBuffer({
+    size: GRID_COUNT * GRID_COUNT * 16,
+    usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+  });
   const simulationUniformBuffer = device.createBuffer({
-    size: 32,
+    size: 48,
     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
   });
   const renderUniformBuffer = device.createBuffer({
@@ -1122,6 +1220,7 @@ async function initialize() {
       { binding: 1, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'storage' } },
       { binding: 2, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'uniform' } },
       { binding: 3, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'storage' } },
+      { binding: 4, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'storage' } },
     ],
   });
   const renderBindGroupLayout = device.createBindGroupLayout({
@@ -1131,6 +1230,7 @@ async function initialize() {
       { binding: 2, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
       { binding: 3, visibility: GPUShaderStage.FRAGMENT, sampler: { type: 'filtering' } },
       { binding: 4, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, buffer: { type: 'read-only-storage' } },
+      { binding: 5, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, buffer: { type: 'read-only-storage' } },
     ],
   });
 
@@ -1189,6 +1289,7 @@ async function initialize() {
       { binding: 1, resource: { buffer: surfaceBuffer } },
       { binding: 2, resource: { buffer: simulationUniformBuffer } },
       { binding: 3, resource: { buffer: fineSurfaceBuffer } },
+      { binding: 4, resource: { buffer: foamBuffer } },
     ],
   });
   let renderBindGroup = null;
@@ -1211,6 +1312,7 @@ async function initialize() {
       { binding: 2, resource: placeholderTexture.createView() },
       { binding: 3, resource: sceneColorSampler },
       { binding: 4, resource: { buffer: fineSurfaceBuffer } },
+      { binding: 5, resource: { buffer: foamBuffer } },
     ],
   });
 
@@ -1366,10 +1468,16 @@ async function initialize() {
         { binding: 2, resource: sceneColorTexture.createView() },
         { binding: 3, resource: sceneColorSampler },
         { binding: 4, resource: { buffer: fineSurfaceBuffer } },
+        { binding: 5, resource: { buffer: foamBuffer } },
       ],
     });
   }
   configureOutput();
+  device.queue.writeBuffer(
+    foamBuffer,
+    0,
+    new Float32Array(GRID_COUNT * GRID_COUNT * 4)
+  );
 
   let cameraHeight = 7.5;
   let cameraYaw = 0.055;
@@ -1446,9 +1554,9 @@ async function initialize() {
     device.queue.writeBuffer(renderUniformBuffer, 0, renderUniformData);
   }
 
-  const simulationUniformArrayBuffer = new ArrayBuffer(32);
+  const simulationUniformArrayBuffer = new ArrayBuffer(48);
   const simulationFloatView = new Float32Array(simulationUniformArrayBuffer);
-  function writeSimulationUniforms(simulationTime) {
+  function writeSimulationUniforms(simulationTime, deltaSeconds) {
     simulationFloatView.fill(0);
     simulationFloatView[0] = simulationTime;
     simulationFloatView[1] = GRID_COUNT;
@@ -1457,6 +1565,10 @@ async function initialize() {
     simulationFloatView[4] = 0;
     simulationFloatView[5] = DOMAIN_CENTER_Z;
     simulationFloatView[6] = fineComponentCount;
+    simulationFloatView[8] = controls.beachSlope;
+    simulationFloatView[9] = -145.0;
+    simulationFloatView[10] = targetHsCurrent;
+    simulationFloatView[11] = deltaSeconds;
     device.queue.writeBuffer(simulationUniformBuffer, 0, simulationUniformArrayBuffer);
   }
 
@@ -1526,8 +1638,8 @@ async function initialize() {
     }
   }
 
-  function encodeFrame(simulationTime, outputView) {
-    writeSimulationUniforms(simulationTime);
+  function encodeFrame(simulationTime, deltaSeconds, outputView) {
+    writeSimulationUniforms(simulationTime, deltaSeconds);
     writeRenderUniforms();
 
     const commandEncoder = device.createCommandEncoder();
@@ -1591,7 +1703,7 @@ async function initialize() {
     stage('validation-scope');
     device.pushErrorScope('validation');
     const outputView = ciColorTexture.createView();
-    const frameEncoding = encodeFrame(6.25, outputView);
+    const frameEncoding = encodeFrame(6.25, 1 / 60, outputView);
     const encoder = frameEncoding.commandEncoder;
     const bytesPerRow = 1024;
     const readbackBuffer = device.createBuffer({
@@ -1653,6 +1765,8 @@ async function initialize() {
     document.documentElement.dataset.underwaterSolarPath = 'refracted-beer';
     document.documentElement.dataset.whitewaterModel = 'depth-limited-crest';
     document.documentElement.dataset.multiBandOcean = 'fine-slope-spectrum';
+    document.documentElement.dataset.waveDirection = 'shoreward-minus-z';
+    document.documentElement.dataset.foamState = 'persistent-decay';
     stage('ok');
     return;
   }
@@ -1675,7 +1789,11 @@ async function initialize() {
     simulationTime += deltaSeconds;
 
     device.pushErrorScope('validation');
-    const frameEncoding = encodeFrame(simulationTime, canvasContext.getCurrentTexture().createView());
+    const frameEncoding = encodeFrame(
+      simulationTime,
+      deltaSeconds,
+      canvasContext.getCurrentTexture().createView()
+    );
     device.queue.submit([frameEncoding.commandEncoder.finish()]);
     if (frameEncoding.buoySampleTime !== null) {
       finishBuoyReadback(frameEncoding.buoySampleTime);
@@ -1707,6 +1825,8 @@ async function initialize() {
   document.documentElement.dataset.underwaterSolarPath = 'refracted-beer';
   document.documentElement.dataset.whitewaterModel = 'depth-limited-crest';
   document.documentElement.dataset.multiBandOcean = 'fine-slope-spectrum';
+  document.documentElement.dataset.waveDirection = 'shoreward-minus-z';
+  document.documentElement.dataset.foamState = 'persistent-decay';
   stage('running');
   requestAnimationFrame(frame);
 }

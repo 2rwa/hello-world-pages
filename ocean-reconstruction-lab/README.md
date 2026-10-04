@@ -192,3 +192,17 @@ The target resolved short-wave slope variance is a controlled fraction of the Co
 - unresolved residual Cox–Munk variance → microfacet BRDF roughness
 
 The short band does **not** displace geometry. It fades out of the explicit normal field with distance, while its unresolved energy remains represented statistically by the BRDF. This is the first near/mid/far transition toward geometry → normal statistics → BRDF statistics.
+
+
+## Phase 2.6: shoreward propagation and persistent foam state
+
+The beach coordinate system is now explicit: increasing offshore distance is +Z, so a UI direction of 0 degrees propagates waves toward the beach in -Z. The previous sign made the default sea travel offshore.
+
+Whitewater is also no longer only an instantaneous fragment-shader classification. A dedicated GPU storage field is updated every simulation step:
+
+- source: local depth-limited breaker condition + positive crest + steepness
+- memory: previous foam coverage
+- decay: exponential lifetime of about 4.2 s
+- injection: breaker source integrated with frame delta time
+
+The render pass reads this persistent state and combines it with a smaller instantaneous crest term. This keeps clear tropical water transparent between breakers while allowing recently broken waves to remain visibly aerated for several seconds.
