@@ -328,6 +328,36 @@
       "actions_url": "https://github.com/2rwa/tmp-music/actions",
       "runs": [
         {
+          "id": 37179595504,
+          "title": "M6 Pages smoke",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 32 of M6 Pages smoke.",
+          "branch": null,
+          "time": "2026-10-04T05:20:16Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37179595504"
+        },
+        {
+          "id": 37179550941,
+          "title": "test: add browser HTDemucs probe",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 36 of Deploy GitHub Pages. test: add browser HTDemucs probe",
+          "branch": "main",
+          "time": "2026-10-04T05:19:20Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37179550941"
+        },
+        {
+          "id": 37179386529,
+          "title": "fix: harden Jules HTDemucs browser probe",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 1 of HTDemucs Probe Branch CI. fix: harden Jules HTDemucs browser probe",
+          "branch": "feat/vocal-htdemucs-probe-9642815210966188773",
+          "time": "2026-10-04T05:16:02Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37179386529"
+        },
+        {
           "id": 37178934613,
           "title": "M6 Pages smoke",
           "status": "completed",
@@ -336,36 +366,6 @@
           "branch": null,
           "time": "2026-10-04T05:06:38Z",
           "url": "https://github.com/2rwa/tmp-music/actions/runs/37178934613"
-        },
-        {
-          "id": 37178894688,
-          "title": "test: add stem dominance map",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 35 of Deploy GitHub Pages. test: add stem dominance map",
-          "branch": "main",
-          "time": "2026-10-04T05:05:49Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37178894688"
-        },
-        {
-          "id": 37178621380,
-          "title": "M6 Pages smoke",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 30 of M6 Pages smoke.",
-          "branch": null,
-          "time": "2026-10-04T05:00:21Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37178621380"
-        },
-        {
-          "id": 37178583720,
-          "title": "test: make inspector browser selftest deterministic",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 34 of Deploy GitHub Pages. test: make inspector browser selftest deterministic",
-          "branch": "main",
-          "time": "2026-10-04T04:59:40Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37178583720"
         }
       ]
     },
@@ -445,5 +445,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-10-04T05:11:27Z"
+  "updated_at": "2026-10-04T07:10:23Z"
 }
