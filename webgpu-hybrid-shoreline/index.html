@@ -390,7 +390,70 @@ async function init() {
   let elapsedWindow = 0;
   let frameWindow = 0;
 
-  renderer.setAnimationLoop(async () => {
+  window.__hybridShoreline = {
+    renderer,
+    camera,
+    scene,
+    water,
+    uniforms: { clarityUniform, refractionUniform, raymarchUniform, waveScaleUniform }
+  };
+
+  if (ciMode) {
+    stage('ci-offscreen-render');
+
+    const ciWidth = 256;
+    const ciHeight = 160;
+    const ciTarget = new THREE.RenderTarget(ciWidth, ciHeight, {
+      type: THREE.UnsignedByteType,
+      depthBuffer: true
+    });
+
+    renderer.setRenderTarget(ciTarget);
+    renderer.render(scene, camera);
+
+    if (renderer.backend?.device?.queue?.onSubmittedWorkDone) {
+      await renderer.backend.device.queue.onSubmittedWorkDone();
+      root.dataset.gpuQueue = 'done';
+    }
+
+    stage('ci-readback');
+    const pixelData = await renderer.readRenderTargetPixelsAsync(ciTarget, 0, 0, ciWidth, ciHeight);
+    let pixelChecksum = 0;
+    const stride = Math.max(4, Math.floor(pixelData.length / 4096));
+    for (let byteIndex = 0; byteIndex < pixelData.length; byteIndex += stride) {
+      pixelChecksum = (pixelChecksum + Number(pixelData[byteIndex])) % 1000000007;
+    }
+
+    root.dataset.pixelLength = String(pixelData.length);
+    root.dataset.pixelChecksum = String(pixelChecksum);
+    root.dataset.frameCount = '1';
+
+    if (pixelData.length < ciWidth * ciHeight * 4 || pixelChecksum === 0) {
+      throw new Error(`Offscreen Three.js readback invalid: length=${pixelData.length}, checksum=${pixelChecksum}`);
+    }
+
+    const previewCanvas = document.createElement('canvas');
+    previewCanvas.width = ciWidth;
+    previewCanvas.height = ciHeight;
+    previewCanvas.style.position = 'fixed';
+    previewCanvas.style.inset = '0';
+    previewCanvas.style.width = '100vw';
+    previewCanvas.style.height = '100vh';
+    previewCanvas.style.zIndex = '0';
+    previewCanvas.style.objectFit = 'cover';
+    const previewContext = previewCanvas.getContext('2d');
+    const packedLength = ciWidth * ciHeight * 4;
+    const packedPixels = new Uint8ClampedArray(packedLength);
+    packedPixels.set(new Uint8Array(pixelData.buffer, pixelData.byteOffset, Math.min(packedLength, pixelData.byteLength)));
+    previewContext.putImageData(new ImageData(packedPixels, ciWidth, ciHeight), 0, 0);
+    document.body.prepend(previewCanvas);
+
+    ciTarget.dispose();
+    stage('ok');
+    return;
+  }
+
+  renderer.setAnimationLoop(() => {
     timer.update();
     const delta = Math.min(timer.getDelta(), 0.05);
     controls.update();
@@ -406,14 +469,10 @@ async function init() {
     root.dataset.frameCount = String(frameCount);
 
     if (frameCount === 3) {
-      if (renderer.backend?.device?.queue?.onSubmittedWorkDone) {
-        await renderer.backend.device.queue.onSubmittedWorkDone();
-        root.dataset.gpuQueue = 'done';
-      }
       stage('ok');
     }
 
-    if (!ciMode && elapsedWindow > 0.65) {
+    if (elapsedWindow > 0.65) {
       const fps = Math.round(frameWindow / Math.max(elapsedWindow, 0.001));
       statusElement.textContent = `${fps} fps · ${backendName}`;
       elapsedWindow = 0;
@@ -426,14 +485,6 @@ async function init() {
     camera.updateProjectionMatrix();
     renderer.setSize(innerWidth, innerHeight);
   });
-
-  window.__hybridShoreline = {
-    renderer,
-    camera,
-    scene,
-    water,
-    uniforms: { clarityUniform, refractionUniform, raymarchUniform, waveScaleUniform }
-  };
 }
 
 init().catch(fail);

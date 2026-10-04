@@ -117,7 +117,9 @@ try {
         rasterScene: document.documentElement.dataset.rasterScene || '',
         depthRefraction: document.documentElement.dataset.depthRefraction || '',
         selectiveRaymarch: document.documentElement.dataset.selectiveRaymarch || '',
-        uiRevision: Number(document.documentElement.dataset.uiRevision || 0)
+        uiRevision: Number(document.documentElement.dataset.uiRevision || 0),
+        pixelLength: Number(document.documentElement.dataset.pixelLength || 0),
+        pixelChecksum: Number(document.documentElement.dataset.pixelChecksum || 0)
       })`,
       returnByValue: true,
     });
@@ -127,7 +129,7 @@ try {
       finalState = JSON.parse(raw);
       if (pollIndex % 8 === 0) console.log('state', finalState);
       if (finalState.stage === 'failed') throw new Error(finalState.error || 'Page reported failure');
-      if (finalState.stage === 'ok' && finalState.frameCount >= 3) break;
+      if (finalState.stage === 'ok' && finalState.frameCount >= 1) break;
     }
     await sleep(250);
   }
@@ -137,6 +139,9 @@ try {
   }
   if (!finalState.backend.toLowerCase().includes('webgpu')) throw new Error(`Unexpected backend: ${finalState.backend}`);
   if (finalState.gpuQueue !== 'done') throw new Error('GPU queue completion was not observed');
+  if (finalState.pixelLength < 256 * 160 * 4 || finalState.pixelChecksum === 0) {
+    throw new Error(`Three.js offscreen readback invalid: ${JSON.stringify(finalState)}`);
+  }
   if (finalState.rasterScene !== 'true' || finalState.depthRefraction !== 'true') throw new Error('Hybrid raster/depth flags missing');
   if (finalState.selectiveRaymarch !== '12-step-volume') throw new Error('Selective raymarch marker missing');
 
