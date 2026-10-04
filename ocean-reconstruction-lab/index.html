@@ -35,18 +35,18 @@
   <div class="title"><h1>Ocean Reconstruction Lab / Phase 2</h1><span id="status">boot</span></div>
   <div class="sub">Spectral ocean + continuous white-sand bathymetry. The seabed is rendered first; the water samples it through depth-dependent refraction, Fresnel reflection and Beer–Lambert attenuation. No decorative water noise or foam texture.</div>
   <div class="grid">
-    <label>Wind Hs <input id="windHs" type="range" min="0.2" max="4.0" step="0.05" value="1.35"><output id="windHsOut">1.35</output></label>
-    <label>Wind Tp <input id="windTp" type="range" min="3.5" max="12" step="0.1" value="7.2"><output id="windTpOut">7.2</output></label>
-    <label>U10 <input id="windU10" type="range" min="2" max="22" step="0.5" value="8.5"><output id="windU10Out">8.5</output></label>
+    <label>Wind Hs <input id="windHs" type="range" min="0.2" max="4.0" step="0.05" value="0.55"><output id="windHsOut">0.55</output></label>
+    <label>Wind Tp <input id="windTp" type="range" min="3.5" max="12" step="0.1" value="5.5"><output id="windTpOut">5.5</output></label>
+    <label>U10 <input id="windU10" type="range" min="2" max="22" step="0.5" value="5.5"><output id="windU10Out">5.5</output></label>
     <label>Wind dir <input id="windDir" type="range" min="-70" max="70" step="1" value="8"><output id="windDirOut">8</output></label>
-    <label>Swell Hs <input id="swellHs" type="range" min="0" max="2.5" step="0.05" value="0.65"><output id="swellHsOut">0.65</output></label>
-    <label>Swell Tp <input id="swellTp" type="range" min="7" max="18" step="0.1" value="11.6"><output id="swellTpOut">11.6</output></label>
+    <label>Swell Hs <input id="swellHs" type="range" min="0" max="2.5" step="0.05" value="0.35"><output id="swellHsOut">0.35</output></label>
+    <label>Swell Tp <input id="swellTp" type="range" min="7" max="18" step="0.1" value="10.5"><output id="swellTpOut">10.5</output></label>
     <label>Swell dir <input id="swellDir" type="range" min="-80" max="80" step="1" value="-22"><output id="swellDirOut">-22</output></label>
-    <label>Depth <input id="depth" type="range" min="8" max="180" step="1" value="65"><output id="depthOut">65</output></label>
+    <label>Depth <input id="depth" type="range" min="8" max="180" step="1" value="35"><output id="depthOut">35</output></label>
     <label>Gamma <input id="gamma" type="range" min="1" max="7" step="0.1" value="3.3"><output id="gammaOut">3.3</output></label>
     <label>Spread s <input id="spread" type="range" min="3" max="35" step="1" value="14"><output id="spreadOut">14</output></label>
-    <label>Clarity <input id="clarity" type="range" min="0.45" max="2.2" step="0.05" value="1.35"><output id="clarityOut">1.35</output></label>
-    <label>Beach slope <input id="beachSlope" type="range" min="0.012" max="0.060" step="0.002" value="0.030"><output id="beachSlopeOut">0.030</output></label>
+    <label>Clarity <input id="clarity" type="range" min="0.45" max="2.2" step="0.05" value="1.60"><output id="clarityOut">1.60</output></label>
+    <label>Beach slope <input id="beachSlope" type="range" min="0.012" max="0.060" step="0.002" value="0.022"><output id="beachSlopeOut">0.022</output></label>
   </div>
   <div class="metrics">
     <div class="metric"><b id="targetHs">—</b><span>target Hs</span></div>
@@ -350,6 +350,46 @@ fn oceanVertex(@builtin(vertex_index) vertexIndex: u32) -> OceanVertexOutput {
   return outputValue;
 }
 
+fn traceRefractedSeabed(rayOrigin: vec3f, rayDirection: vec3f, maxDistance: f32) -> vec4f {
+  var previousDistance = 0.015;
+  var previousPosition = rayOrigin + rayDirection * previousDistance;
+  var previousField = previousPosition.y - seabedHeight(previousPosition.xz);
+  var hitDistance = -1.0;
+  var currentDistance = previousDistance;
+
+  for (var stepIndex = 0; stepIndex < 14; stepIndex = stepIndex + 1) {
+    currentDistance = maxDistance * (f32(stepIndex + 1) / 14.0);
+    let currentPosition = rayOrigin + rayDirection * currentDistance;
+    let currentField = currentPosition.y - seabedHeight(currentPosition.xz);
+
+    if (currentField <= 0.0 && previousField > 0.0) {
+      var lowerDistance = previousDistance;
+      var upperDistance = currentDistance;
+      for (var refineIndex = 0; refineIndex < 5; refineIndex = refineIndex + 1) {
+        let middleDistance = (lowerDistance + upperDistance) * 0.5;
+        let middlePosition = rayOrigin + rayDirection * middleDistance;
+        let middleField = middlePosition.y - seabedHeight(middlePosition.xz);
+        if (middleField > 0.0) {
+          lowerDistance = middleDistance;
+        } else {
+          upperDistance = middleDistance;
+        }
+      }
+      hitDistance = (lowerDistance + upperDistance) * 0.5;
+      break;
+    }
+
+    previousDistance = currentDistance;
+    previousField = currentField;
+  }
+
+  if (hitDistance > 0.0) {
+    let hitPosition = rayOrigin + rayDirection * hitDistance;
+    return vec4f(hitPosition, hitDistance);
+  }
+  return vec4f(rayOrigin + rayDirection * maxDistance, -1.0);
+}
+
 @fragment
 fn oceanFragment(inputValue: OceanVertexOutput) -> @location(0) vec4f {
   let verticalDepth = inputValue.worldPosition.y - inputValue.seabedHeightValue;
@@ -375,18 +415,31 @@ fn oceanFragment(inputValue: OceanVertexOutput) -> @location(0) vec4f {
     vec2f(0.0),
     vec2f(1.0)
   );
-  let refractionStrength =
-    min(verticalDepth, 8.0) *
-    (0.00045 + (1.0 - normalView) * 0.0011);
-  let refractionOffset = vec2f(
-    surfaceNormal.x,
-    -surfaceNormal.z
-  ) * refractionStrength;
-  let refractedUV = clamp(
-    screenUV + refractionOffset,
-    vec2f(0.002),
-    vec2f(0.998)
+
+  let incidentDirection = -viewDirection;
+  let refractedDirection = normalize(refract(incidentDirection, surfaceNormal, eta));
+  let refractedOrigin = inputValue.worldPosition - surfaceNormal * 0.02;
+  let estimatedTraceDistance =
+    verticalDepth / max(-refractedDirection.y, 0.08) * 1.35 + 0.5;
+  let seabedTrace = traceRefractedSeabed(
+    refractedOrigin,
+    refractedDirection,
+    min(estimatedTraceDistance, 42.0)
   );
+
+  var refractedUV = screenUV;
+  var tracedOpticalPath = opticalPath;
+  if (seabedTrace.w > 0.0) {
+    let projectedHit = renderUniforms.viewProjection * vec4f(seabedTrace.xyz, 1.0);
+    let projectedNdc = projectedHit.xy / max(projectedHit.w, 0.0001);
+    refractedUV = clamp(
+      vec2f(projectedNdc.x * 0.5 + 0.5, -projectedNdc.y * 0.5 + 0.5),
+      vec2f(0.002),
+      vec2f(0.998)
+    );
+    tracedOpticalPath = seabedTrace.w;
+  }
+
   let backgroundColor = textureSampleLevel(
     sceneColorTexture,
     sceneColorSampler,
@@ -395,13 +448,13 @@ fn oceanFragment(inputValue: OceanVertexOutput) -> @location(0) vec4f {
   ).rgb;
 
   let clarityValue = max(renderUniforms.shorelineParams.x, 0.25);
-  let absorptionCoefficient = vec3f(0.145, 0.040, 0.018) / clarityValue;
-  let transmittance = exp(-absorptionCoefficient * opticalPath);
-  let inScatterColor = vec3f(0.015, 0.235, 0.255);
+  let absorptionCoefficient = vec3f(0.175, 0.043, 0.016) / clarityValue;
+  let transmittance = exp(-absorptionCoefficient * tracedOpticalPath);
+  let inScatterColor = vec3f(0.012, 0.255, 0.285);
   let scatterAmount = vec3f(1.0) - transmittance;
   let transmittedColor =
     backgroundColor * transmittance +
-    inScatterColor * scatterAmount * 0.42;
+    inScatterColor * scatterAmount * 0.52;
 
   let reflectedSky = skyRadiance(reflectedDirection);
   var surfaceColor = mix(transmittedColor, reflectedSky, fresnelValue);
@@ -992,9 +1045,9 @@ async function initialize() {
   }
   configureOutput();
 
-  let cameraHeight = 13.0;
-  let cameraYaw = 0;
-  let cameraPitch = -0.115;
+  let cameraHeight = 7.5;
+  let cameraYaw = 0.055;
+  let cameraPitch = -0.060;
   let dragging = false;
   let previousPointerX = 0;
   let previousPointerY = 0;
@@ -1030,7 +1083,7 @@ async function initialize() {
     ]);
     const right = normalize3(cross3([0, 1, 0], forward));
     const correctedUp = normalize3(cross3(forward, right));
-    const eye = [0, cameraHeight, -210];
+    const eye = [-24, cameraHeight, -168];
     const center = [eye[0] + forward[0], eye[1] + forward[1], eye[2] + forward[2]];
     const viewMatrix = lookAt(eye, center, [0, 1, 0]);
     const projectionMatrix = perspectiveZO(fovRadians, aspectRatio, 0.15, 1800);
@@ -1041,7 +1094,7 @@ async function initialize() {
     renderUniformData.set([eye[0], eye[1], eye[2], 1], 16);
 
     const sunAzimuth = -0.72;
-    const sunElevation = 0.27;
+    const sunElevation = 0.82;
     const sunDirection = normalize3([
       Math.sin(sunAzimuth) * Math.cos(sunElevation),
       Math.sin(sunElevation),
@@ -1056,7 +1109,7 @@ async function initialize() {
     const coxMunkSlopeVariance = 0.003 + 0.00512 * controls.windU10;
     const microRoughness = Math.max(0.035, Math.min(0.18, Math.sqrt(coxMunkSlopeVariance) * 0.48));
     renderUniformData.set([microRoughness, 1.0, GRID_COUNT, DOMAIN_SIZE], 40);
-    renderUniformData.set([controls.clarity, controls.beachSlope, -82.0, 0.0], 44);
+    renderUniformData.set([controls.clarity, controls.beachSlope, -145.0, 0.0], 44);
     device.queue.writeBuffer(renderUniformBuffer, 0, renderUniformData);
   }
 
@@ -1260,6 +1313,8 @@ async function initialize() {
     document.documentElement.dataset.whiteSandBathymetry = 'true';
     document.documentElement.dataset.beerLambert = 'true';
     document.documentElement.dataset.sceneRefraction = 'true';
+    document.documentElement.dataset.refractedSeabedTrace = '14x5';
+  document.documentElement.dataset.refractedSeabedTrace = '14x5';
     stage('ok');
     return;
   }
