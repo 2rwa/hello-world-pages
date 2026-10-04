@@ -852,6 +852,20 @@ async function initialize() {
     addressModeU: 'clamp-to-edge',
     addressModeV: 'clamp-to-edge',
   });
+  const placeholderTexture = device.createTexture({
+    size: [1, 1, 1],
+    format: 'rgba8unorm',
+    usage: GPUTextureUsage.TEXTURE_BINDING,
+  });
+  const sceneRenderBindGroup = device.createBindGroup({
+    layout: renderBindGroupLayout,
+    entries: [
+      { binding: 0, resource: { buffer: renderUniformBuffer } },
+      { binding: 1, resource: { buffer: surfaceBuffer } },
+      { binding: 2, resource: placeholderTexture.createView() },
+      { binding: 3, resource: sceneColorSampler },
+    ],
+  });
 
   const pipelineError = await device.popErrorScope();
   if (pipelineError) throw pipelineError;
@@ -1152,7 +1166,7 @@ async function initialize() {
         depthStoreOp: 'store',
       },
     });
-    scenePass.setBindGroup(0, renderBindGroup);
+    scenePass.setBindGroup(0, sceneRenderBindGroup);
     scenePass.setPipeline(skyPipeline);
     scenePass.draw(3);
     scenePass.setPipeline(seabedPipeline);
