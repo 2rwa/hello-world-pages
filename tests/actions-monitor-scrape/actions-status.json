@@ -328,44 +328,44 @@
       "actions_url": "https://github.com/2rwa/tmp-music/actions",
       "runs": [
         {
-          "id": 37170897197,
+          "id": 37173875560,
           "title": "M6 Pages smoke",
           "status": "completed",
           "conclusion": "success",
-          "status_label": "completed successfully:  Run 18 of M6 Pages smoke.",
+          "status_label": "completed successfully:  Run 21 of M6 Pages smoke.",
           "branch": null,
-          "time": "2026-10-04T02:23:20Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37170897197"
+          "time": "2026-10-04T03:22:07Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37173875560"
         },
         {
-          "id": 37170876506,
-          "title": "feat: add Segment Window interval selection app",
+          "id": 37173856314,
+          "title": "fix: make Segment Forest regression portable",
           "status": "completed",
           "conclusion": "success",
-          "status_label": "completed successfully:  Run 78 of Analysis cheap CI. feat: add Segment Window interval selection app",
+          "status_label": "completed successfully:  Run 81 of Analysis cheap CI. fix: make Segment Forest regression portable",
           "branch": "main",
-          "time": "2026-10-04T02:22:58Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37170876506"
+          "time": "2026-10-04T03:21:42Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37173856314"
         },
         {
-          "id": 37170876474,
-          "title": "feat: add Segment Window interval selection app",
+          "id": 37173856306,
+          "title": "fix: make Segment Forest regression portable",
           "status": "completed",
           "conclusion": "success",
-          "status_label": "completed successfully:  Run 22 of Deploy GitHub Pages. feat: add Segment Window interval selection app",
+          "status_label": "completed successfully:  Run 25 of Deploy GitHub Pages. fix: make Segment Forest regression portable",
           "branch": "main",
-          "time": "2026-10-04T02:22:58Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37170876474"
+          "time": "2026-10-04T03:21:42Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37173856306"
         },
         {
-          "id": 37170793914,
+          "id": 37173744761,
           "title": "M6 Pages smoke",
           "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 17 of M6 Pages smoke.",
+          "conclusion": "skipped",
+          "status_label": "skipped:  Run 20 of M6 Pages smoke.",
           "branch": null,
-          "time": "2026-10-04T02:21:16Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37170793914"
+          "time": "2026-10-04T03:19:30Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37173744761"
         }
       ]
     },
@@ -445,5 +445,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-10-04T02:26:24Z"
+  "updated_at": "2026-10-04T03:30:53Z"
 }
