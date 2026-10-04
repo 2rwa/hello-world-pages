@@ -257,3 +257,17 @@ The UI also reports the peak-wave propagation angle at 2 m depth. Together with 
 - wavelength shortening
 - shoaling amplification
 - refraction toward the shore normal
+
+
+## Phase 2.10: crest run-up and persistent wet sand
+
+The mean shoreline is no longer a hard boundary. Long-wave synthesis receives a small run-up depth budget proportional to significant wave height, allowing positive crests to continue slightly above mean sea level. The actual water surface is still clipped against the real sand elevation, so only a crest that rises above the beach is visible.
+
+The existing GPU whitewater state now also stores shoreline wetness:
+
+- water coverage injects wetness
+- wetness decays over roughly 11 seconds
+- exposed recently wetted sand becomes darker
+- a narrow dielectric-like sun reflection is added to wet sand
+
+This joins the dry beach, swash zone, transparent shallows and deeper water without a painted shoreline mask.

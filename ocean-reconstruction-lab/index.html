@@ -195,6 +195,10 @@ fn computeSurface(@builtin(global_invocation_id) invocationId: vec3u) {
   let worldXZ = vec2f(worldX, worldZ);
   let seabedHeightValue = computeSeabedHeight(worldXZ);
   let meanDepth = max(-seabedHeightValue, 0.0);
+  let targetSignificantHeight = max(simulationUniforms.shorelineData.z, 0.05);
+  let runupAllowance = targetSignificantHeight * 0.38;
+  let hydrodynamicDepth =
+    max(-seabedHeightValue + runupAllowance, 0.0);
 
   let rawGradient = seabedGradient(worldXZ);
   let gradientLength = length(rawGradient);
@@ -204,7 +208,7 @@ fn computeSurface(@builtin(global_invocation_id) invocationId: vec3u) {
     gradientLength > 0.0001
   );
   let shoreTangent = vec2f(-shorewardNormal.y, shorewardNormal.x);
-  let wetFactor = smoothstep(0.10, 0.85, meanDepth);
+  let wetFactor = smoothstep(0.015, 0.72, hydrodynamicDepth);
 
   var heightValue = 0.0;
   var slopeXValue = 0.0;
@@ -226,7 +230,7 @@ fn computeSurface(@builtin(global_invocation_id) invocationId: vec3u) {
 
     let localPhysics = lookupWavePhysics(
       physicsSlot,
-      max(meanDepth, simulationUniforms.physicsParams.x)
+      max(hydrodynamicDepth, simulationUniforms.physicsParams.x)
     );
     let localWaveNumber = max(localPhysics.x, 0.00001);
     let localPhaseVelocity = max(localPhysics.y, 0.001);
@@ -251,8 +255,7 @@ fn computeSurface(@builtin(global_invocation_id) invocationId: vec3u) {
       max(localGroupVelocity * localCos, 0.001);
     let rawShoaling = clamp(sqrt(max(fluxRatio, 0.05)), 0.62, 2.15);
 
-    let targetSignificantHeight = max(simulationUniforms.shorelineData.z, 0.05);
-    let breakerLimit = 0.78 * max(meanDepth, 0.08);
+    let breakerLimit = 0.78 * max(hydrodynamicDepth, 0.08);
     let predictedSignificantHeight = targetSignificantHeight * rawShoaling;
     let breakerAmplitudeScale = min(
       1.0,
@@ -293,13 +296,12 @@ fn computeSurface(@builtin(global_invocation_id) invocationId: vec3u) {
   );
 
   let surfaceHeight = heightValue;
-  let targetSignificantHeight = max(simulationUniforms.shorelineData.z, 0.05);
   let localSignificantHeight =
     targetSignificantHeight * representativeShoaling;
   let depthLimitedRatio =
     localSignificantHeight /
-    max(meanDepth, 0.12);
-  let wetEnough = smoothstep(0.10, 0.36, meanDepth);
+    max(hydrodynamicDepth, 0.12);
+  let wetEnough = smoothstep(0.035, 0.30, hydrodynamicDepth);
   let depthBreaker =
     smoothstep(0.58, 0.82, depthLimitedRatio) *
     wetEnough;
@@ -312,15 +314,26 @@ fn computeSurface(@builtin(global_invocation_id) invocationId: vec3u) {
     clamp(crestFactor * 0.76 + steepnessFactor * 0.44, 0.0, 1.0);
 
   let deltaSeconds = clamp(simulationUniforms.shorelineData.w, 0.0, 0.05);
-  let previousFoam = foamSamples[linearIndex].value.x;
+  let previousState = foamSamples[linearIndex].value;
+  let previousFoam = previousState.x;
+  let previousWetness = previousState.w;
   let decayedFoam = previousFoam * exp(-deltaSeconds / 4.2);
   let injectedFoam =
     1.0 - (1.0 - decayedFoam) * exp(-breakerSource * deltaSeconds * 5.8);
+
+  let instantaneousWaterThickness = surfaceHeight - seabedHeightValue;
+  let waterCoverage =
+    smoothstep(-0.015, 0.065, instantaneousWaterThickness) *
+    smoothstep(0.005, 0.20, hydrodynamicDepth);
+  let decayedWetness = previousWetness * exp(-deltaSeconds / 11.0);
+  let injectedWetness =
+    1.0 - (1.0 - decayedWetness) * exp(-waterCoverage * deltaSeconds * 11.0);
+
   foamSamples[linearIndex].value = vec4f(
     clamp(max(decayedFoam, injectedFoam), 0.0, 1.0),
     breakerSource,
-    meanDepth,
-    1.0
+    hydrodynamicDepth,
+    clamp(max(decayedWetness, injectedWetness), 0.0, 1.0)
   );
 }
 
@@ -596,6 +609,18 @@ fn surfaceSampleAt(worldXZ: vec2f, gridOffset: vec2i) -> vec4f {
   return surfaceSamples[linearIndex].value;
 }
 
+fn coarseFoamSampleAt(worldXZ: vec2f) -> vec4f {
+  let gridCount = i32(renderUniforms.opticsGrid.z + 0.5);
+  let lastIndex = gridCount - 1;
+  let domainSize = renderUniforms.opticsGrid.w;
+  let normalizedX = clamp(worldXZ.x / domainSize + 0.5, 0.0, 1.0);
+  let normalizedZ = clamp((worldXZ.y - 180.0) / domainSize + 0.5, 0.0, 1.0);
+  let xIndex = clamp(i32(normalizedX * f32(lastIndex) + 0.5), 0, lastIndex);
+  let zIndex = clamp(i32(normalizedZ * f32(lastIndex) + 0.5), 0, lastIndex);
+  let linearIndex = u32(zIndex * gridCount + xIndex);
+  return foamSamples[linearIndex].value;
+}
+
 fn fineGridCoverage(worldXZ: vec2f) -> f32 {
   let fineDomainSize = renderUniforms.fineGridParams.y;
   let fineCenter = renderUniforms.fineGridParams.zw;
@@ -730,6 +755,23 @@ fn seabedFragment(inputValue: SeabedVertexOutput) -> @location(0) vec4f {
   } else {
     let skyFill = 0.45 + 0.25 * max(normalValue.y, 0.0);
     sandColorValue *= skyFill + diffuseLight * 0.62;
+
+    let shorelineState = coarseFoamSampleAt(inputValue.worldPosition.xz);
+    let dynamicWetness =
+      shorelineState.w *
+      (1.0 - smoothstep(0.0, 0.42, inputValue.worldPosition.y));
+    sandColorValue *= mix(1.0, 0.58, dynamicWetness);
+
+    let viewDirection =
+      normalize(renderUniforms.cameraPosition.xyz - inputValue.worldPosition);
+    let reflectedSun = reflect(-lightDirection, normalValue);
+    let wetSpecular =
+      pow(max(dot(reflectedSun, viewDirection), 0.0), 72.0) *
+      dynamicWetness;
+    sandColorValue +=
+      vec3f(1.0, 0.84, 0.58) *
+      wetSpecular *
+      0.32;
   }
 
   let distanceValue = distance(renderUniforms.cameraPosition.xyz, inputValue.worldPosition);
@@ -2103,6 +2145,7 @@ async function initialize() {
     document.documentElement.dataset.fineGrid = '321x321-140m';
     document.documentElement.dataset.coastalWavePhysics = 'snell-groupvelocity-lut';
     document.documentElement.dataset.defaultComposition = 'waterline-diagonal';
+    document.documentElement.dataset.shoreRunup = 'crest-driven-wetness';
     stage('ok');
     return;
   }
@@ -2166,6 +2209,7 @@ async function initialize() {
   document.documentElement.dataset.fineGrid = '321x321-140m';
   document.documentElement.dataset.coastalWavePhysics = 'snell-groupvelocity-lut';
   document.documentElement.dataset.defaultComposition = 'waterline-diagonal';
+  document.documentElement.dataset.shoreRunup = 'crest-driven-wetness';
   stage('running');
   requestAnimationFrame(frame);
 }
