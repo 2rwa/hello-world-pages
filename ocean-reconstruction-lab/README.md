@@ -179,3 +179,16 @@ The shader combines:
 - instantaneous surface steepness
 
 Only locations that are shallow enough and currently carry a crest/steep surface receive an aerated-water coverage. That coverage increases roughness and shifts the local radiance toward highly scattering whitewater, while the surrounding water remains transparent and continues to use refraction + Beer–Lambert transport.
+
+
+## Phase 2.5: multi-band short-wave slope spectrum
+
+A second spectral band now covers approximately 0.46–1.34 Hz. It is generated from the wind-sea JONSWAP tail and directional spreading but normalized by a target **slope variance** rather than by significant wave height.
+
+The target resolved short-wave slope variance is a controlled fraction of the Cox–Munk wind-speed slope variance. This avoids inventing an arbitrary normal-map strength:
+
+- long/coarse band → actual displaced surface height and long-wave slopes
+- short band → resolved optical slopes for normals, sun glitter, caustics and breaking steepness
+- unresolved residual Cox–Munk variance → microfacet BRDF roughness
+
+The short band does **not** displace geometry. It fades out of the explicit normal field with distance, while its unresolved energy remains represented statistically by the BRDF. This is the first near/mid/far transition toward geometry → normal statistics → BRDF statistics.

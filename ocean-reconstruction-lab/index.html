@@ -49,6 +49,7 @@
     <label>Beach slope <input id="beachSlope" type="range" min="0.012" max="0.060" step="0.002" value="0.038"><output id="beachSlopeOut">0.038</output></label>
     <label>Caustics <input id="caustics" type="range" min="0" max="1.8" step="0.05" value="1.00"><output id="causticsOut">1.00</output></label>
     <label>Whitewater <input id="whitewater" type="range" min="0" max="1.5" step="0.05" value="0.55"><output id="whitewaterOut">0.55</output></label>
+    <label>Short band <input id="shortBand" type="range" min="0" max="1.6" step="0.05" value="1.00"><output id="shortBandOut">1.00</output></label>
   </div>
   <div class="metrics">
     <div class="metric"><b id="targetHs">—</b><span>target Hs</span></div>
@@ -71,6 +72,10 @@ struct SurfaceSample {
   value: vec4f,
 }
 
+struct FineSurfaceSample {
+  value: vec4f,
+}
+
 struct SimulationUniforms {
   timingGrid: vec4f,
   domainCenter: vec4f,
@@ -79,6 +84,7 @@ struct SimulationUniforms {
 @group(0) @binding(0) var<storage, read> waveComponents: array<WaveComponent>;
 @group(0) @binding(1) var<storage, read_write> surfaceSamples: array<SurfaceSample>;
 @group(0) @binding(2) var<uniform> simulationUniforms: SimulationUniforms;
+@group(0) @binding(3) var<storage, read_write> fineSurfaceSamples: array<FineSurfaceSample>;
 
 @compute @workgroup_size(8, 8)
 fn computeSurface(@builtin(global_invocation_id) invocationId: vec3u) {
@@ -94,6 +100,7 @@ fn computeSurface(@builtin(global_invocation_id) invocationId: vec3u) {
   let worldZ = simulationUniforms.domainCenter.y + normalizedZ * simulationUniforms.timingGrid.z;
   let simulationTime = simulationUniforms.timingGrid.x;
   let componentCount = u32(simulationUniforms.timingGrid.w + 0.5);
+  let fineComponentCount = u32(simulationUniforms.domainCenter.z + 0.5);
 
   var heightValue = 0.0;
   var slopeXValue = 0.0;
@@ -114,13 +121,36 @@ fn computeSurface(@builtin(global_invocation_id) invocationId: vec3u) {
     slopeZValue += -componentPrimary.w * componentPrimary.y * sineValue;
   }
 
+  var fineHeightValue = 0.0;
+  var fineSlopeXValue = 0.0;
+  var fineSlopeZValue = 0.0;
+  let fineStartIndex = componentCount;
+  for (var fineIndex = 0u; fineIndex < fineComponentCount; fineIndex = fineIndex + 1u) {
+    let componentPrimary = waveComponents[fineStartIndex + fineIndex].primary;
+    let phaseOffset = waveComponents[fineStartIndex + fineIndex].secondary.x;
+    let spatialPhase =
+      componentPrimary.x * worldX +
+      componentPrimary.y * worldZ -
+      componentPrimary.z * simulationTime +
+      phaseOffset;
+    let sineValue = sin(spatialPhase);
+    fineHeightValue += componentPrimary.w * cos(spatialPhase);
+    fineSlopeXValue += -componentPrimary.w * componentPrimary.x * sineValue;
+    fineSlopeZValue += -componentPrimary.w * componentPrimary.y * sineValue;
+  }
+
   let linearIndex = invocationId.y * gridCount + invocationId.x;
   surfaceSamples[linearIndex].value = vec4f(heightValue, slopeXValue, slopeZValue, 1.0);
+  fineSurfaceSamples[linearIndex].value = vec4f(fineHeightValue, fineSlopeXValue, fineSlopeZValue, 1.0);
 }
 </script>
 
 <script id="renderShader" type="x-shader/wgsl">
 struct SurfaceSample {
+  value: vec4f,
+}
+
+struct FineSurfaceSample {
   value: vec4f,
 }
 
@@ -141,6 +171,7 @@ struct RenderUniforms {
 @group(0) @binding(1) var<storage, read> surfaceSamples: array<SurfaceSample>;
 @group(0) @binding(2) var sceneColorTexture: texture_2d<f32>;
 @group(0) @binding(3) var sceneColorSampler: sampler;
+@group(0) @binding(4) var<storage, read> fineSurfaceSamples: array<FineSurfaceSample>;
 
 struct OceanVertexOutput {
   @builtin(position) clipPosition: vec4f,
@@ -331,6 +362,31 @@ fn surfaceSampleAt(worldXZ: vec2f, gridOffset: vec2i) -> vec4f {
   return surfaceSamples[linearIndex].value;
 }
 
+fn fineSurfaceSampleAt(worldXZ: vec2f, gridOffset: vec2i) -> vec4f {
+  let gridCount = i32(renderUniforms.opticsGrid.z + 0.5);
+  let lastIndex = gridCount - 1;
+  let domainSize = renderUniforms.opticsGrid.w;
+  let normalizedX = clamp(worldXZ.x / domainSize + 0.5, 0.0, 1.0);
+  let normalizedZ = clamp((worldXZ.y - 180.0) / domainSize + 0.5, 0.0, 1.0);
+  let baseX = i32(normalizedX * f32(lastIndex) + 0.5);
+  let baseZ = i32(normalizedZ * f32(lastIndex) + 0.5);
+  let sampleX = clamp(baseX + gridOffset.x, 0, lastIndex);
+  let sampleZ = clamp(baseZ + gridOffset.y, 0, lastIndex);
+  let linearIndex = u32(sampleZ * gridCount + sampleX);
+  return fineSurfaceSamples[linearIndex].value;
+}
+
+fn combinedOpticalSurfaceAt(worldXZ: vec2f, gridOffset: vec2i) -> vec4f {
+  let coarseValue = surfaceSampleAt(worldXZ, gridOffset);
+  let fineValue = fineSurfaceSampleAt(worldXZ, gridOffset);
+  return vec4f(
+    coarseValue.x,
+    coarseValue.y + fineValue.y,
+    coarseValue.z + fineValue.z,
+    1.0
+  );
+}
+
 fn refractedSunFootprint(surfaceXZ: vec2f, surfaceValue: vec4f, targetHeight: f32) -> vec2f {
   let surfaceNormal = normalize(vec3f(-surfaceValue.y, 1.0, -surfaceValue.z));
   let lightTravelDirection = -normalize(renderUniforms.sunDirection.xyz);
@@ -349,10 +405,10 @@ fn causticGainAt(worldPositionValue: vec3f) -> f32 {
   let cellSize = renderUniforms.opticsGrid.w / (gridCount - 1.0);
   let worldXZ = worldPositionValue.xz;
 
-  let sampleLeft = surfaceSampleAt(worldXZ, vec2i(-1, 0));
-  let sampleRight = surfaceSampleAt(worldXZ, vec2i(1, 0));
-  let sampleBack = surfaceSampleAt(worldXZ, vec2i(0, -1));
-  let sampleFront = surfaceSampleAt(worldXZ, vec2i(0, 1));
+  let sampleLeft = combinedOpticalSurfaceAt(worldXZ, vec2i(-1, 0));
+  let sampleRight = combinedOpticalSurfaceAt(worldXZ, vec2i(1, 0));
+  let sampleBack = combinedOpticalSurfaceAt(worldXZ, vec2i(0, -1));
+  let sampleFront = combinedOpticalSurfaceAt(worldXZ, vec2i(0, 1));
 
   let footprintLeft = refractedSunFootprint(worldXZ - vec2f(cellSize, 0.0), sampleLeft, worldPositionValue.y);
   let footprintRight = refractedSunFootprint(worldXZ + vec2f(cellSize, 0.0), sampleRight, worldPositionValue.y);
@@ -382,7 +438,7 @@ fn seabedFragment(inputValue: SeabedVertexOutput) -> @location(0) vec4f {
   var sandColorValue = sandReflectance(inputValue.worldPosition);
 
   if (inputValue.worldPosition.y < -0.04) {
-    let localSurface = surfaceSampleAt(inputValue.worldPosition.xz, vec2i(0, 0));
+    let localSurface = combinedOpticalSurfaceAt(inputValue.worldPosition.xz, vec2i(0, 0));
     let localSurfaceNormal = normalize(vec3f(-localSurface.y, 1.0, -localSurface.z));
     let solarTravelDirection = normalize(refract(
       -lightDirection,
@@ -442,10 +498,20 @@ fn oceanVertex(@builtin(vertex_index) vertexIndex: u32) -> OceanVertexOutput {
   let waveMultiplier = shallowDamping * shoalingBand;
   let surfaceHeight = surfaceValue.x * waveMultiplier;
   let worldPositionValue = vec3f(worldX, surfaceHeight, worldZ);
+  let linearIndex = zIndex * gridCount + xIndex;
+  let fineValue = fineSurfaceSamples[linearIndex].value;
+  let cameraDistance = distance(renderUniforms.cameraPosition.xyz, worldPositionValue);
+  let fineNormalWeight = 1.0 - smoothstep(180.0, 620.0, cameraDistance);
+  let combinedSlopeX =
+    surfaceValue.y * waveMultiplier +
+    fineValue.y * fineNormalWeight;
+  let combinedSlopeZ =
+    surfaceValue.z * waveMultiplier +
+    fineValue.z * fineNormalWeight;
   let worldNormalValue = normalize(vec3f(
-    -surfaceValue.y * waveMultiplier,
+    -combinedSlopeX,
     1.0,
-    -surfaceValue.z * waveMultiplier
+    -combinedSlopeZ
   ));
 
   let targetSignificantHeight = max(renderUniforms.seaStateParams.x, 0.05);
@@ -457,7 +523,9 @@ fn oceanVertex(@builtin(vertex_index) vertexIndex: u32) -> OceanVertexOutput {
     (1.0 - smoothstep(0.08, 0.22, meanDepth));
   let crestFactor =
     smoothstep(0.06, max(targetSignificantHeight * 0.48, 0.12), surfaceHeight);
-  let slopeMagnitude = length(surfaceValue.yz) * waveMultiplier;
+  let slopeMagnitude =
+    length(surfaceValue.yz) * waveMultiplier +
+    length(fineValue.yz) * 0.28;
   let steepnessFactor = smoothstep(0.08, 0.30, slopeMagnitude);
   let breakerPotential =
     depthBreaker *
@@ -632,7 +700,11 @@ const DOMAIN_SIZE = 960;
 const DOMAIN_CENTER_Z = 180;
 const FREQ_BINS = 14;
 const DIR_BINS = 8;
-const MAX_COMPONENTS = FREQ_BINS * DIR_BINS * 2;
+const FINE_FREQ_BINS = 9;
+const FINE_DIR_BINS = 8;
+const MAX_BASE_COMPONENTS = FREQ_BINS * DIR_BINS * 2;
+const MAX_FINE_COMPONENTS = FINE_FREQ_BINS * FINE_DIR_BINS;
+const MAX_COMPONENTS = MAX_BASE_COMPONENTS + MAX_FINE_COMPONENTS;
 const canvas = document.getElementById('gpuCanvas');
 const statusElement = document.getElementById('status');
 const ciMode = new URLSearchParams(location.search).has('ci');
@@ -835,6 +907,83 @@ function buildSystemComponents(systemConfig, depthValue, gammaValue, spreadPeak,
   return { components, spectrum };
 }
 
+function buildFineSlopeComponents(systemConfig, depthValue, gammaValue, spreadPeak, windSpeed, detailScale) {
+  const minimumFrequency = 0.46;
+  const maximumFrequency = 1.34;
+  const frequencyStep = (maximumFrequency - minimumFrequency) / FINE_FREQ_BINS;
+  const directionStep = Math.PI / FINE_DIR_BINS;
+  const directionStart = -Math.PI * 0.5;
+  const meanDirection = systemConfig.directionDegrees * Math.PI / 180;
+  const provisional = [];
+  let provisionalSlopeVariance = 0;
+
+  for (let frequencyIndex = 0; frequencyIndex < FINE_FREQ_BINS; frequencyIndex += 1) {
+    const frequencyValue = minimumFrequency + (frequencyIndex + 0.5) * frequencyStep;
+    const rawEnergy = jonswapShape(frequencyValue, systemConfig.tp, gammaValue, depthValue);
+    const peakFrequency = 1 / systemConfig.tp;
+    const frequencyRatio = frequencyValue / peakFrequency;
+    const spreadingExponent = Math.max(
+      1.0,
+      Math.min(80, spreadPeak * Math.pow(Math.max(frequencyRatio, 1), -2.5))
+    );
+
+    const directionalWeights = [];
+    let directionalIntegral = 0;
+    for (let directionIndex = 0; directionIndex < FINE_DIR_BINS; directionIndex += 1) {
+      const offsetAngle = directionStart + (directionIndex + 0.5) * directionStep;
+      const cosineBase = Math.max(Math.cos(offsetAngle * 0.5), 0);
+      const weightValue = Math.pow(cosineBase, 2 * spreadingExponent);
+      directionalWeights.push(weightValue);
+      directionalIntegral += weightValue * directionStep;
+    }
+
+    const angularFrequency = frequencyValue * Math.PI * 2;
+    const waveNumberMagnitude = solveWaveNumber(angularFrequency, depthValue);
+
+    for (let directionIndex = 0; directionIndex < FINE_DIR_BINS; directionIndex += 1) {
+      const offsetAngle = directionStart + (directionIndex + 0.5) * directionStep;
+      const propagationAngle = wrapAngle(meanDirection + offsetAngle);
+      const directionalWeight =
+        directionalWeights[directionIndex] / Math.max(directionalIntegral, 1e-12);
+      const binEnergy = rawEnergy * frequencyStep * directionalWeight * directionStep;
+      const amplitudeValue = Math.sqrt(Math.max(2 * binEnergy, 0));
+      const slopeVarianceContribution =
+        0.5 * amplitudeValue * amplitudeValue *
+        waveNumberMagnitude * waveNumberMagnitude;
+
+      provisionalSlopeVariance += slopeVarianceContribution;
+      provisional.push({
+        kx: Math.sin(propagationAngle) * waveNumberMagnitude,
+        kz: Math.cos(propagationAngle) * waveNumberMagnitude,
+        omega: angularFrequency,
+        amplitude: amplitudeValue,
+        phase: hashPhase(
+          frequencyIndex * FINE_DIR_BINS + directionIndex,
+          19
+        ),
+      });
+    }
+  }
+
+  const coxMunkVariance = Math.max(0.003 + 0.00512 * windSpeed, 0.003);
+  const resolvedSlopeTarget =
+    coxMunkVariance *
+    0.22 *
+    Math.max(detailScale, 0) *
+    Math.max(detailScale, 0);
+  const amplitudeScale =
+    Math.sqrt(resolvedSlopeTarget / Math.max(provisionalSlopeVariance, 1e-12));
+
+  return {
+    components: provisional.map((component) => ({
+      ...component,
+      amplitude: component.amplitude * amplitudeScale,
+    })),
+    resolvedSlopeVariance: resolvedSlopeTarget,
+    totalSlopeVariance: coxMunkVariance,
+  };
+}
+
 function combineSpectrumForChart(windSpectrum, swellSpectrum) {
   const points = [];
   for (let index = 0; index < 160; index += 1) {
@@ -948,6 +1097,10 @@ async function initialize() {
     size: GRID_COUNT * GRID_COUNT * 16,
     usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
   });
+  const fineSurfaceBuffer = device.createBuffer({
+    size: GRID_COUNT * GRID_COUNT * 16,
+    usage: GPUBufferUsage.STORAGE,
+  });
   const simulationUniformBuffer = device.createBuffer({
     size: 32,
     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
@@ -968,6 +1121,7 @@ async function initialize() {
       { binding: 0, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'read-only-storage' } },
       { binding: 1, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'storage' } },
       { binding: 2, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'uniform' } },
+      { binding: 3, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'storage' } },
     ],
   });
   const renderBindGroupLayout = device.createBindGroupLayout({
@@ -976,6 +1130,7 @@ async function initialize() {
       { binding: 1, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, buffer: { type: 'read-only-storage' } },
       { binding: 2, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
       { binding: 3, visibility: GPUShaderStage.FRAGMENT, sampler: { type: 'filtering' } },
+      { binding: 4, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, buffer: { type: 'read-only-storage' } },
     ],
   });
 
@@ -1033,6 +1188,7 @@ async function initialize() {
       { binding: 0, resource: { buffer: waveBuffer } },
       { binding: 1, resource: { buffer: surfaceBuffer } },
       { binding: 2, resource: { buffer: simulationUniformBuffer } },
+      { binding: 3, resource: { buffer: fineSurfaceBuffer } },
     ],
   });
   let renderBindGroup = null;
@@ -1054,6 +1210,7 @@ async function initialize() {
       { binding: 1, resource: { buffer: surfaceBuffer } },
       { binding: 2, resource: placeholderTexture.createView() },
       { binding: 3, resource: sceneColorSampler },
+      { binding: 4, resource: { buffer: fineSurfaceBuffer } },
     ],
   });
 
@@ -1075,9 +1232,13 @@ async function initialize() {
     beachSlope: Number(document.getElementById('beachSlope').value),
     caustics: Number(document.getElementById('caustics').value),
     whitewater: Number(document.getElementById('whitewater').value),
+    shortBand: Number(document.getElementById('shortBand').value),
   };
 
   let componentCount = 0;
+  let fineComponentCount = 0;
+  let resolvedFineSlopeVariance = 0;
+  let totalCoxMunkSlopeVariance = 0.03;
   let chartPoints = [];
   let targetHsCurrent = 0.65;
 
@@ -1097,11 +1258,33 @@ async function initialize() {
       7
     );
     const allComponents = [...windResult.components, ...swellResult.components];
-    componentCount = Math.min(allComponents.length, MAX_COMPONENTS);
+    componentCount = Math.min(allComponents.length, MAX_BASE_COMPONENTS);
+
+    const fineResult = buildFineSlopeComponents(
+      { hs: controls.windHs, tp: controls.windTp, directionDegrees: controls.windDir },
+      controls.depth,
+      controls.gamma,
+      controls.spread,
+      controls.windU10,
+      controls.shortBand
+    );
+    fineComponentCount = Math.min(fineResult.components.length, MAX_FINE_COMPONENTS);
+    resolvedFineSlopeVariance = fineResult.resolvedSlopeVariance;
+    totalCoxMunkSlopeVariance = fineResult.totalSlopeVariance;
+
     const waveData = new Float32Array(MAX_COMPONENTS * 8);
     for (let index = 0; index < componentCount; index += 1) {
       const component = allComponents[index];
       const offset = index * 8;
+      waveData[offset] = component.kx;
+      waveData[offset + 1] = component.kz;
+      waveData[offset + 2] = component.omega;
+      waveData[offset + 3] = component.amplitude;
+      waveData[offset + 4] = component.phase;
+    }
+    for (let index = 0; index < fineComponentCount; index += 1) {
+      const component = fineResult.components[index];
+      const offset = (componentCount + index) * 8;
       waveData[offset] = component.kx;
       waveData[offset + 1] = component.kz;
       waveData[offset + 2] = component.omega;
@@ -1116,6 +1299,7 @@ async function initialize() {
     targetHsCurrent = targetHsValue;
     document.getElementById('targetHs').textContent = targetHsValue.toFixed(2) + ' m';
     document.documentElement.dataset.componentCount = String(componentCount);
+    document.documentElement.dataset.fineComponentCount = String(fineComponentCount);
     document.documentElement.dataset.targetHs = targetHsValue.toFixed(4);
   }
   rebuildSpectrum();
@@ -1123,7 +1307,7 @@ async function initialize() {
   const controlSpecs = [
     ['windHs', 2], ['windTp', 1], ['windU10', 1], ['windDir', 0],
     ['swellHs', 2], ['swellTp', 1], ['swellDir', 0], ['depth', 0],
-    ['gamma', 1], ['spread', 0], ['clarity', 2], ['beachSlope', 3], ['caustics', 2], ['whitewater', 2],
+    ['gamma', 1], ['spread', 0], ['clarity', 2], ['beachSlope', 3], ['caustics', 2], ['whitewater', 2], ['shortBand', 2],
   ];
   for (const [controlId, digits] of controlSpecs) {
     const input = document.getElementById(controlId);
@@ -1181,6 +1365,7 @@ async function initialize() {
         { binding: 1, resource: { buffer: surfaceBuffer } },
         { binding: 2, resource: sceneColorTexture.createView() },
         { binding: 3, resource: sceneColorSampler },
+        { binding: 4, resource: { buffer: fineSurfaceBuffer } },
       ],
     });
   }
@@ -1247,8 +1432,14 @@ async function initialize() {
     renderUniformData.set([correctedUp[0], correctedUp[1], correctedUp[2], 0], 32);
     renderUniformData.set([canvasWidth, canvasHeight, Math.tan(fovRadians * 0.5), aspectRatio], 36);
 
-    const coxMunkSlopeVariance = 0.003 + 0.00512 * controls.windU10;
-    const microRoughness = Math.max(0.035, Math.min(0.18, Math.sqrt(coxMunkSlopeVariance) * 0.48));
+    const residualSlopeVariance = Math.max(
+      totalCoxMunkSlopeVariance - resolvedFineSlopeVariance,
+      0.0015
+    );
+    const microRoughness = Math.max(
+      0.028,
+      Math.min(0.16, Math.sqrt(residualSlopeVariance) * 0.48)
+    );
     renderUniformData.set([microRoughness, 1.0, GRID_COUNT, DOMAIN_SIZE], 40);
     renderUniformData.set([controls.clarity, controls.beachSlope, -145.0, controls.caustics], 44);
     renderUniformData.set([targetHsCurrent, controls.whitewater, 0.0, 0.0], 48);
@@ -1265,6 +1456,7 @@ async function initialize() {
     simulationFloatView[3] = componentCount;
     simulationFloatView[4] = 0;
     simulationFloatView[5] = DOMAIN_CENTER_Z;
+    simulationFloatView[6] = fineComponentCount;
     device.queue.writeBuffer(simulationUniformBuffer, 0, simulationUniformArrayBuffer);
   }
 
@@ -1460,6 +1652,7 @@ async function initialize() {
     document.documentElement.dataset.linearHdrTransport = 'rgba16float';
     document.documentElement.dataset.underwaterSolarPath = 'refracted-beer';
     document.documentElement.dataset.whitewaterModel = 'depth-limited-crest';
+    document.documentElement.dataset.multiBandOcean = 'fine-slope-spectrum';
     stage('ok');
     return;
   }
@@ -1513,6 +1706,7 @@ async function initialize() {
   document.documentElement.dataset.linearHdrTransport = 'rgba16float';
   document.documentElement.dataset.underwaterSolarPath = 'refracted-beer';
   document.documentElement.dataset.whitewaterModel = 'depth-limited-crest';
+  document.documentElement.dataset.multiBandOcean = 'fine-slope-spectrum';
   stage('running');
   requestAnimationFrame(frame);
 }
