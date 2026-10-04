@@ -58,6 +58,7 @@
     <div class="metric"><b id="fps">—</b><span>fps</span></div>
     <div class="metric"><b id="shoreLambda">—</b><span>λ @ 2m</span></div>
     <div class="metric"><b id="shoreKs">—</b><span>Ks @ 2m</span></div>
+    <div class="metric"><b id="shoreAngle">—</b><span>θ @ 2m</span></div>
   </div>
   <canvas id="spectrum" width="720" height="164"></canvas>
   <div class="legend"><span>solid: total target spectrum</span><span>thin: wind + swell</span></div>
@@ -1702,12 +1703,18 @@ async function initialize() {
     const shoreLambda = Math.PI * 2 / shallowWaveNumber;
     document.getElementById('shoreLambda').textContent =
       shoreLambda.toFixed(1) + ' m';
+    const shoreAngleDegrees =
+      Math.asin(shallowSin) * 180 / Math.PI;
     document.getElementById('shoreKs').textContent =
       shoreKs.toFixed(2);
+    document.getElementById('shoreAngle').textContent =
+      shoreAngleDegrees.toFixed(1) + '°';
     document.documentElement.dataset.shoreLambda =
       shoreLambda.toFixed(4);
     document.documentElement.dataset.shoreKs =
       shoreKs.toFixed(4);
+    document.documentElement.dataset.shoreAngle =
+      shoreAngleDegrees.toFixed(4);
     document.documentElement.dataset.componentCount = String(componentCount);
     document.documentElement.dataset.fineComponentCount = String(fineComponentCount);
     document.documentElement.dataset.targetHs = targetHsValue.toFixed(4);
@@ -1787,9 +1794,9 @@ async function initialize() {
     new Float32Array(GRID_COUNT * GRID_COUNT * 4)
   );
 
-  let cameraHeight = 7.5;
-  let cameraYaw = 0.055;
-  let cameraPitch = -0.060;
+  let cameraHeight = 5.3;
+  let cameraYaw = 0.22;
+  let cameraPitch = -0.038;
   let dragging = false;
   let previousPointerX = 0;
   let previousPointerY = 0;
@@ -1811,7 +1818,7 @@ async function initialize() {
   canvas.addEventListener('pointercancel', () => { dragging = false; });
   canvas.addEventListener('wheel', (event) => {
     event.preventDefault();
-    cameraHeight = Math.max(1.4, Math.min(24, cameraHeight + event.deltaY * 0.008));
+    cameraHeight = Math.max(1.2, Math.min(24, cameraHeight + event.deltaY * 0.008));
   }, { passive: false });
 
   const renderUniformData = new Float32Array(56);
@@ -1825,7 +1832,7 @@ async function initialize() {
     ]);
     const right = normalize3(cross3([0, 1, 0], forward));
     const correctedUp = normalize3(cross3(forward, right));
-    const eye = [-24, cameraHeight, -168];
+    const eye = [-38, cameraHeight, -154];
     const center = [eye[0] + forward[0], eye[1] + forward[1], eye[2] + forward[2]];
     const viewMatrix = lookAt(eye, center, [0, 1, 0]);
     const projectionMatrix = perspectiveZO(fovRadians, aspectRatio, 0.15, 1800);
@@ -2095,6 +2102,7 @@ async function initialize() {
     document.documentElement.dataset.foamState = 'persistent-decay';
     document.documentElement.dataset.fineGrid = '321x321-140m';
     document.documentElement.dataset.coastalWavePhysics = 'snell-groupvelocity-lut';
+    document.documentElement.dataset.defaultComposition = 'waterline-diagonal';
     stage('ok');
     return;
   }
@@ -2157,6 +2165,7 @@ async function initialize() {
   document.documentElement.dataset.foamState = 'persistent-decay';
   document.documentElement.dataset.fineGrid = '321x321-140m';
   document.documentElement.dataset.coastalWavePhysics = 'snell-groupvelocity-lut';
+  document.documentElement.dataset.defaultComposition = 'waterline-diagonal';
   stage('running');
   requestAnimationFrame(frame);
 }

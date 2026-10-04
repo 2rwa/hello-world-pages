@@ -246,3 +246,14 @@ Each spectral component carries its reference-depth phase and group velocity. At
 The old hand-authored shoaling bump is removed from rendering, so the same transformed spectral surface now drives geometry, normals, breaker detection, refraction and caustics.
 
 The UI also reports the wind-sea peak wavelength and shoaling coefficient at 2 m depth, making shallow-water transformation measurable rather than purely visual.
+
+
+## Phase 2.9: tropical shoreline composition and refraction metric
+
+The default camera is moved from well back on dry sand to roughly human height at the waterline, looking diagonally across the shallows. The goal is now explicit in the default frame: dry white beach remains visible, but the dominant subject is transparent water over submerged sand.
+
+The UI also reports the peak-wave propagation angle at 2 m depth. Together with lambda @ 2 m and Ks @ 2 m, the browser exposes three numerical shallow-water checks:
+
+- wavelength shortening
+- shoaling amplification
+- refraction toward the shore normal
