@@ -197,44 +197,44 @@
       "actions_url": "https://github.com/2rwa/tmp-blender-52/actions",
       "runs": [
         {
-          "id": 37195569059,
-          "title": "fix: reduce tropical coast exposure",
+          "id": 37200248718,
+          "title": "test: add 10-way tropical coast diagnostic sweep",
           "status": "completed",
           "conclusion": "success",
-          "status_label": "completed successfully:  Run 2 of Tropical resort coast still. fix: reduce tropical coast exposure",
+          "status_label": "completed successfully:  Run 1 of Tropical coast 10-way diagnostic sweep. test: add 10-way tropical coast diagnostic sweep",
           "branch": "main",
-          "time": "2026-10-04T10:30:15Z",
-          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/37195569059"
+          "time": "2026-10-04T11:53:30Z",
+          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/37200248718"
         },
         {
-          "id": 37195334500,
-          "title": "feat: add tropical resort coast Cycles still",
+          "id": 37199868321,
+          "title": "chore: publish pass 4 diagnostic render",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 6 of Tropical resort coast still. chore: publish pass 4 diagnostic render",
+          "branch": "main",
+          "time": "2026-10-04T11:46:33Z",
+          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/37199868321"
+        },
+        {
+          "id": 37199586542,
+          "title": "feat: deepen lagoon detail and guard dark bands",
           "status": "completed",
           "conclusion": "failure",
-          "status_label": "failed:  Run 1 of Tropical resort coast still. feat: add tropical resort coast Cycles still",
+          "status_label": "failed:  Run 5 of Tropical resort coast still. feat: deepen lagoon detail and guard dark bands",
           "branch": "main",
-          "time": "2026-10-04T10:25:47Z",
-          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/37195334500"
+          "time": "2026-10-04T11:41:26Z",
+          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/37199586542"
         },
         {
-          "id": 37195334412,
-          "title": "feat: add tropical resort coast Cycles still",
+          "id": 37198862335,
+          "title": "feat: rebuild tropical water surface pass 3",
           "status": "completed",
           "conclusion": "success",
-          "status_label": "completed successfully:  Run 14 of Blender 5.2 render. feat: add tropical resort coast Cycles still",
+          "status_label": "completed successfully:  Run 4 of Tropical resort coast still. feat: rebuild tropical water surface pass 3",
           "branch": "main",
-          "time": "2026-10-04T10:25:46Z",
-          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/37195334412"
-        },
-        {
-          "id": 37195334329,
-          "title": "feat: add tropical resort coast Cycles still",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 6 of GitHub Pages. feat: add tropical resort coast Cycles still",
-          "branch": "main",
-          "time": "2026-10-04T10:25:46Z",
-          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/37195334329"
+          "time": "2026-10-04T11:28:34Z",
+          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/37198862335"
         }
       ]
     },
@@ -445,5 +445,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-10-04T11:06:25Z"
+  "updated_at": "2026-10-04T13:10:52Z"
 }
