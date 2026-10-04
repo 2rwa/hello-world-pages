@@ -145,3 +145,10 @@ The submerged sand pass now reads the simulated GPU surface slope field. For nei
 The result is depth-attenuated and bounded before modulating the submerged sand. This produces animated caustic focusing from the actual spectral wave field rather than from a tiled caustic texture or procedural noise.
 
 Shallow-water sun glitter also uses a slightly lower microfacet roughness than deeper water, while retaining the same Fresnel/microfacet optical model.
+
+
+## Phase 2.2: linear HDR optical transport
+
+The scene prepass now renders sky and sand into an `rgba16float` linear-radiance texture. Refraction, Beer–Lambert attenuation, in-scattering and caustic modulation therefore operate in linear space. ACES-style tone mapping and display gamma are applied exactly once, after optical transport.
+
+This removes the previous double tone-map / gamma-space attenuation error and makes shallow white sand, turquoise water and deeper blue-green water separate through transport rather than through arbitrary color overlays.

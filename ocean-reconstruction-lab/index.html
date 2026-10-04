@@ -260,20 +260,23 @@ fn skyVertex(@builtin(vertex_index) vertexIndex: u32) -> @builtin(position) vec4
   return vec4f(clipCoordinate, 1.0, 1.0);
 }
 
-@fragment
-fn skyFragment(@builtin(position) fragmentPosition: vec4f) -> @location(0) vec4f {
+fn cameraRayFromFragment(fragmentPosition: vec4f) -> vec3f {
   let screenSize = renderUniforms.screenProjection.xy;
   var normalizedCoordinate = fragmentPosition.xy / screenSize * 2.0 - vec2f(1.0, 1.0);
   normalizedCoordinate.y = -normalizedCoordinate.y;
   let tangentHalfFov = renderUniforms.screenProjection.z;
   let aspectRatio = renderUniforms.screenProjection.w;
-  let rayDirection = normalize(
+  return normalize(
     renderUniforms.cameraForward.xyz +
     renderUniforms.cameraRight.xyz * normalizedCoordinate.x * tangentHalfFov * aspectRatio +
     renderUniforms.cameraUp.xyz * normalizedCoordinate.y * tangentHalfFov
   );
-  let outputColor = toneMapAces(skyRadiance(rayDirection));
-  return vec4f(pow(outputColor, vec3f(0.4545)), 1.0);
+}
+
+@fragment
+fn skySceneFragment(@builtin(position) fragmentPosition: vec4f) -> @location(0) vec4f {
+  let rayDirection = cameraRayFromFragment(fragmentPosition);
+  return vec4f(skyRadiance(rayDirection), 1.0);
 }
 
 @fragment
@@ -283,7 +286,9 @@ fn compositeFragment(@builtin(position) fragmentPosition: vec4f) -> @location(0)
     vec2f(0.0),
     vec2f(1.0)
   );
-  return textureSampleLevel(sceneColorTexture, sceneColorSampler, screenUV, 0.0);
+  let linearSceneColor = textureSampleLevel(sceneColorTexture, sceneColorSampler, screenUV, 0.0).rgb;
+  let mappedColor = toneMapAces(linearSceneColor);
+  return vec4f(pow(mappedColor, vec3f(0.4545)), 1.0);
 }
 
 @vertex
@@ -387,8 +392,7 @@ fn seabedFragment(inputValue: SeabedVertexOutput) -> @location(0) vec4f {
   let hazeAmount = saturateValue((distanceValue - 360.0) / 720.0);
   sandColorValue = mix(sandColorValue, vec3f(0.53, 0.62, 0.61), hazeAmount * 0.34);
 
-  let mappedColor = toneMapAces(sandColorValue);
-  return vec4f(pow(mappedColor, vec3f(0.4545)), 1.0);
+  return vec4f(max(sandColorValue, vec3f(0.0)), 1.0);
 }
 
 @vertex
@@ -927,6 +931,7 @@ async function initialize() {
   });
 
   let outputFormat;
+  const sceneColorFormat = 'rgba16float';
   let canvasContext = null;
   if (ciMode) {
     outputFormat = 'rgba8unorm';
@@ -940,14 +945,14 @@ async function initialize() {
   const skyPipeline = await device.createRenderPipelineAsync({
     layout: sharedPipelineLayout,
     vertex: { module: renderModule, entryPoint: 'skyVertex' },
-    fragment: { module: renderModule, entryPoint: 'skyFragment', targets: [{ format: outputFormat }] },
+    fragment: { module: renderModule, entryPoint: 'skySceneFragment', targets: [{ format: sceneColorFormat }] },
     primitive: { topology: 'triangle-list' },
     depthStencil: { format: 'depth24plus', depthWriteEnabled: false, depthCompare: 'always' },
   });
   const seabedPipeline = await device.createRenderPipelineAsync({
     layout: sharedPipelineLayout,
     vertex: { module: renderModule, entryPoint: 'seabedVertex' },
-    fragment: { module: renderModule, entryPoint: 'seabedFragment', targets: [{ format: outputFormat }] },
+    fragment: { module: renderModule, entryPoint: 'seabedFragment', targets: [{ format: sceneColorFormat }] },
     primitive: { topology: 'triangle-list', cullMode: 'none' },
     depthStencil: { format: 'depth24plus', depthWriteEnabled: true, depthCompare: 'less' },
   });
@@ -1107,7 +1112,7 @@ async function initialize() {
     });
     sceneColorTexture = device.createTexture({
       size: [canvasWidth, canvasHeight, 1],
-      format: outputFormat,
+      format: sceneColorFormat,
       usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
     });
     renderBindGroup = device.createBindGroup({
@@ -1285,7 +1290,7 @@ async function initialize() {
     const scenePass = commandEncoder.beginRenderPass({
       colorAttachments: [{
         view: sceneColorTexture.createView(),
-        clearValue: { r: 0.12, g: 0.22, b: 0.30, a: 1 },
+        clearValue: { r: 0.04, g: 0.08, b: 0.12, a: 1 },
         loadOp: 'clear',
         storeOp: 'store',
       }],
@@ -1392,6 +1397,7 @@ async function initialize() {
     document.documentElement.dataset.sceneRefraction = 'true';
     document.documentElement.dataset.refractedSeabedTrace = '14x5';
     document.documentElement.dataset.surfaceCaustics = 'jacobian';
+    document.documentElement.dataset.linearHdrTransport = 'rgba16float';
     stage('ok');
     return;
   }
@@ -1442,6 +1448,7 @@ async function initialize() {
   document.documentElement.dataset.sceneRefraction = 'true';
   document.documentElement.dataset.refractedSeabedTrace = '14x5';
   document.documentElement.dataset.surfaceCaustics = 'jacobian';
+  document.documentElement.dataset.linearHdrTransport = 'rgba16float';
   stage('running');
   requestAnimationFrame(frame);
 }
