@@ -328,44 +328,44 @@
       "actions_url": "https://github.com/2rwa/tmp-music/actions",
       "runs": [
         {
-          "id": 37179595504,
+          "id": 37211113733,
           "title": "M6 Pages smoke",
           "status": "completed",
           "conclusion": "success",
-          "status_label": "completed successfully:  Run 32 of M6 Pages smoke.",
+          "status_label": "completed successfully:  Run 41 of M6 Pages smoke.",
           "branch": null,
-          "time": "2026-10-04T05:20:16Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37179595504"
+          "time": "2026-10-04T14:56:19Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37211113733"
         },
         {
-          "id": 37179550941,
-          "title": "test: add browser HTDemucs probe",
+          "id": 37211113717,
+          "title": "Structure Cutter Lab Pages smoke",
           "status": "completed",
           "conclusion": "success",
-          "status_label": "completed successfully:  Run 36 of Deploy GitHub Pages. test: add browser HTDemucs probe",
+          "status_label": "completed successfully:  Run 4 of Structure Cutter Lab Pages smoke.",
+          "branch": null,
+          "time": "2026-10-04T14:56:19Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37211113717"
+        },
+        {
+          "id": 37211056764,
+          "title": "docs: record repetition regression coverage",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 44 of Deploy GitHub Pages. docs: record repetition regression coverage",
           "branch": "main",
-          "time": "2026-10-04T05:19:20Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37179550941"
+          "time": "2026-10-04T14:55:23Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37211056764"
         },
         {
-          "id": 37179386529,
-          "title": "fix: harden Jules HTDemucs browser probe",
+          "id": 37211056763,
+          "title": "docs: record repetition regression coverage",
           "status": "completed",
           "conclusion": "success",
-          "status_label": "completed successfully:  Run 1 of HTDemucs Probe Branch CI. fix: harden Jules HTDemucs browser probe",
-          "branch": "feat/vocal-htdemucs-probe-9642815210966188773",
-          "time": "2026-10-04T05:16:02Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37179386529"
-        },
-        {
-          "id": 37178934613,
-          "title": "M6 Pages smoke",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 31 of M6 Pages smoke.",
-          "branch": null,
-          "time": "2026-10-04T05:06:38Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37178934613"
+          "status_label": "completed successfully:  Run 5 of Structure Cutter Lab CI. docs: record repetition regression coverage",
+          "branch": "main",
+          "time": "2026-10-04T14:55:23Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37211056763"
         }
       ]
     },
@@ -445,5 +445,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-10-04T13:10:52Z"
+  "updated_at": "2026-10-04T14:59:40Z"
 }
