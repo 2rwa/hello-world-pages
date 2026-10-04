@@ -328,44 +328,44 @@
       "actions_url": "https://github.com/2rwa/tmp-music/actions",
       "runs": [
         {
-          "id": 37173875560,
+          "id": 37178934613,
           "title": "M6 Pages smoke",
           "status": "completed",
           "conclusion": "success",
-          "status_label": "completed successfully:  Run 21 of M6 Pages smoke.",
+          "status_label": "completed successfully:  Run 31 of M6 Pages smoke.",
           "branch": null,
-          "time": "2026-10-04T03:22:07Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37173875560"
+          "time": "2026-10-04T05:06:38Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37178934613"
         },
         {
-          "id": 37173856314,
-          "title": "fix: make Segment Forest regression portable",
+          "id": 37178894688,
+          "title": "test: add stem dominance map",
           "status": "completed",
           "conclusion": "success",
-          "status_label": "completed successfully:  Run 81 of Analysis cheap CI. fix: make Segment Forest regression portable",
+          "status_label": "completed successfully:  Run 35 of Deploy GitHub Pages. test: add stem dominance map",
           "branch": "main",
-          "time": "2026-10-04T03:21:42Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37173856314"
+          "time": "2026-10-04T05:05:49Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37178894688"
         },
         {
-          "id": 37173856306,
-          "title": "fix: make Segment Forest regression portable",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 25 of Deploy GitHub Pages. fix: make Segment Forest regression portable",
-          "branch": "main",
-          "time": "2026-10-04T03:21:42Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37173856306"
-        },
-        {
-          "id": 37173744761,
+          "id": 37178621380,
           "title": "M6 Pages smoke",
           "status": "completed",
-          "conclusion": "skipped",
-          "status_label": "skipped:  Run 20 of M6 Pages smoke.",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 30 of M6 Pages smoke.",
           "branch": null,
-          "time": "2026-10-04T03:19:30Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37173744761"
+          "time": "2026-10-04T05:00:21Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37178621380"
+        },
+        {
+          "id": 37178583720,
+          "title": "test: make inspector browser selftest deterministic",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 34 of Deploy GitHub Pages. test: make inspector browser selftest deterministic",
+          "branch": "main",
+          "time": "2026-10-04T04:59:40Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37178583720"
         }
       ]
     },
@@ -445,5 +445,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-10-04T03:30:53Z"
+  "updated_at": "2026-10-04T05:11:27Z"
 }
