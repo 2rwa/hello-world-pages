@@ -48,6 +48,7 @@
     <label>Clarity <input id="clarity" type="range" min="0.45" max="2.2" step="0.05" value="1.20"><output id="clarityOut">1.20</output></label>
     <label>Beach slope <input id="beachSlope" type="range" min="0.012" max="0.060" step="0.002" value="0.038"><output id="beachSlopeOut">0.038</output></label>
     <label>Caustics <input id="caustics" type="range" min="0" max="1.8" step="0.05" value="1.00"><output id="causticsOut">1.00</output></label>
+    <label>Whitewater <input id="whitewater" type="range" min="0" max="1.5" step="0.05" value="0.55"><output id="whitewaterOut">0.55</output></label>
   </div>
   <div class="metrics">
     <div class="metric"><b id="targetHs">—</b><span>target Hs</span></div>
@@ -133,6 +134,7 @@ struct RenderUniforms {
   screenProjection: vec4f,
   opticsGrid: vec4f,
   shorelineParams: vec4f,
+  seaStateParams: vec4f,
 }
 
 @group(0) @binding(0) var<uniform> renderUniforms: RenderUniforms;
@@ -145,6 +147,7 @@ struct OceanVertexOutput {
   @location(0) worldPosition: vec3f,
   @location(1) worldNormal: vec3f,
   @location(2) seabedHeightValue: f32,
+  @location(3) breakerPotential: f32,
 }
 
 struct SeabedVertexOutput {
@@ -445,11 +448,27 @@ fn oceanVertex(@builtin(vertex_index) vertexIndex: u32) -> OceanVertexOutput {
     -surfaceValue.z * waveMultiplier
   ));
 
+  let targetSignificantHeight = max(renderUniforms.seaStateParams.x, 0.05);
+  let depthLimitedRatio =
+    targetSignificantHeight * shoalingBand /
+    max(meanDepth, 0.12);
+  let depthBreaker =
+    smoothstep(0.58, 0.82, depthLimitedRatio) *
+    (1.0 - smoothstep(0.08, 0.22, meanDepth));
+  let crestFactor =
+    smoothstep(0.06, max(targetSignificantHeight * 0.48, 0.12), surfaceHeight);
+  let slopeMagnitude = length(surfaceValue.yz) * waveMultiplier;
+  let steepnessFactor = smoothstep(0.08, 0.30, slopeMagnitude);
+  let breakerPotential =
+    depthBreaker *
+    clamp(crestFactor * 0.76 + steepnessFactor * 0.44, 0.0, 1.0);
+
   var outputValue: OceanVertexOutput;
   outputValue.clipPosition = renderUniforms.viewProjection * vec4f(worldPositionValue, 1.0);
   outputValue.worldPosition = worldPositionValue;
   outputValue.worldNormal = worldNormalValue;
   outputValue.seabedHeightValue = seabedHeightAtVertex;
+  outputValue.breakerPotential = breakerPotential;
   return outputValue;
 }
 
@@ -504,6 +523,10 @@ fn oceanFragment(inputValue: OceanVertexOutput) -> @location(0) vec4f {
   let viewDirection = normalize(renderUniforms.cameraPosition.xyz - inputValue.worldPosition);
   let lightDirection = normalize(renderUniforms.sunDirection.xyz);
   let reflectedDirection = reflect(-viewDirection, surfaceNormal);
+  let whitewaterStrength = max(renderUniforms.seaStateParams.y, 0.0);
+  let foamCoverage =
+    smoothstep(0.38, 0.86, inputValue.breakerPotential) *
+    clamp(whitewaterStrength, 0.0, 1.5);
 
   let normalView = max(dot(surfaceNormal, viewDirection), 0.001);
   let eta = 1.0 / 1.333;
@@ -568,7 +591,10 @@ fn oceanFragment(inputValue: OceanVertexOutput) -> @location(0) vec4f {
   let viewHalf = max(dot(viewDirection, halfVector), 0.0);
   let baseRoughness = clamp(renderUniforms.opticsGrid.x, 0.025, 0.28);
   let shallowGlitter = 1.0 - smoothstep(0.45, 5.0, verticalDepth);
-  let roughnessValue = mix(baseRoughness, max(baseRoughness * 0.72, 0.026), shallowGlitter);
+  let clearWaterRoughness =
+    mix(baseRoughness, max(baseRoughness * 0.72, 0.026), shallowGlitter);
+  let roughnessValue =
+    mix(clearWaterRoughness, 0.24, clamp(foamCoverage, 0.0, 1.0));
   let alphaSquared = roughnessValue * roughnessValue * roughnessValue * roughnessValue;
   let denominatorTerm = normalHalf * normalHalf * (alphaSquared - 1.0) + 1.0;
   let distributionTerm = alphaSquared / max(3.14159265 * denominatorTerm * denominatorTerm, 0.00001);
@@ -580,6 +606,11 @@ fn oceanFragment(inputValue: OceanVertexOutput) -> @location(0) vec4f {
     distributionTerm * fresnelSun * geometryView * geometryLight /
     max(4.0 * normalView * max(normalLight, 0.001), 0.001);
   surfaceColor += vec3f(7.7, 6.0, 3.8) * sunSpecular * normalLight;
+
+  let aeratedWater = vec3f(0.73, 0.82, 0.80);
+  let boundedFoam = clamp(foamCoverage, 0.0, 0.72);
+  surfaceColor = mix(surfaceColor, aeratedWater, boundedFoam);
+  surfaceColor += vec3f(0.18, 0.22, 0.20) * boundedFoam * normalLight * 0.28;
 
   let shallowHighlight = 1.0 - smoothstep(0.25, 3.8, verticalDepth);
   surfaceColor += vec3f(0.025, 0.075, 0.055) * shallowHighlight * 0.35;
@@ -922,7 +953,7 @@ async function initialize() {
     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
   });
   const renderUniformBuffer = device.createBuffer({
-    size: 192,
+    size: 208,
     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
   });
   const indexData = createIndexData(GRID_COUNT);
@@ -1043,10 +1074,12 @@ async function initialize() {
     clarity: Number(document.getElementById('clarity').value),
     beachSlope: Number(document.getElementById('beachSlope').value),
     caustics: Number(document.getElementById('caustics').value),
+    whitewater: Number(document.getElementById('whitewater').value),
   };
 
   let componentCount = 0;
   let chartPoints = [];
+  let targetHsCurrent = 0.65;
 
   function rebuildSpectrum() {
     const windResult = buildSystemComponents(
@@ -1080,6 +1113,7 @@ async function initialize() {
     drawSpectrum(chartPoints);
 
     const targetHsValue = Math.sqrt(controls.windHs * controls.windHs + controls.swellHs * controls.swellHs);
+    targetHsCurrent = targetHsValue;
     document.getElementById('targetHs').textContent = targetHsValue.toFixed(2) + ' m';
     document.documentElement.dataset.componentCount = String(componentCount);
     document.documentElement.dataset.targetHs = targetHsValue.toFixed(4);
@@ -1089,7 +1123,7 @@ async function initialize() {
   const controlSpecs = [
     ['windHs', 2], ['windTp', 1], ['windU10', 1], ['windDir', 0],
     ['swellHs', 2], ['swellTp', 1], ['swellDir', 0], ['depth', 0],
-    ['gamma', 1], ['spread', 0], ['clarity', 2], ['beachSlope', 3], ['caustics', 2],
+    ['gamma', 1], ['spread', 0], ['clarity', 2], ['beachSlope', 3], ['caustics', 2], ['whitewater', 2],
   ];
   for (const [controlId, digits] of controlSpecs) {
     const input = document.getElementById(controlId);
@@ -1179,7 +1213,7 @@ async function initialize() {
     cameraHeight = Math.max(1.4, Math.min(24, cameraHeight + event.deltaY * 0.008));
   }, { passive: false });
 
-  const renderUniformData = new Float32Array(48);
+  const renderUniformData = new Float32Array(52);
   function writeRenderUniforms() {
     const aspectRatio = canvasWidth / canvasHeight;
     const fovRadians = 54 * Math.PI / 180;
@@ -1217,6 +1251,7 @@ async function initialize() {
     const microRoughness = Math.max(0.035, Math.min(0.18, Math.sqrt(coxMunkSlopeVariance) * 0.48));
     renderUniformData.set([microRoughness, 1.0, GRID_COUNT, DOMAIN_SIZE], 40);
     renderUniformData.set([controls.clarity, controls.beachSlope, -145.0, controls.caustics], 44);
+    renderUniformData.set([targetHsCurrent, controls.whitewater, 0.0, 0.0], 48);
     device.queue.writeBuffer(renderUniformBuffer, 0, renderUniformData);
   }
 
@@ -1424,6 +1459,7 @@ async function initialize() {
     document.documentElement.dataset.surfaceCaustics = 'jacobian';
     document.documentElement.dataset.linearHdrTransport = 'rgba16float';
     document.documentElement.dataset.underwaterSolarPath = 'refracted-beer';
+    document.documentElement.dataset.whitewaterModel = 'depth-limited-crest';
     stage('ok');
     return;
   }
@@ -1476,6 +1512,7 @@ async function initialize() {
   document.documentElement.dataset.surfaceCaustics = 'jacobian';
   document.documentElement.dataset.linearHdrTransport = 'rgba16float';
   document.documentElement.dataset.underwaterSolarPath = 'refracted-beer';
+  document.documentElement.dataset.whitewaterModel = 'depth-limited-crest';
   stage('running');
   requestAnimationFrame(frame);
 }

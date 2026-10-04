@@ -164,3 +164,18 @@ The water therefore attenuates light twice in the physically expected places:
 2. seabed → refracted viewing path → camera
 
 Caustic gain modulates the transmitted direct component, so focusing stays tied to the actual incident solar energy rather than becoming an arbitrary emissive pattern.
+
+
+## Phase 2.4: depth-limited breaking / whitewater
+
+Whitewater is now a separate optical state derived from the simulated surface rather than a shoreline texture.
+
+The shader combines:
+
+- local mean water depth from bathymetry
+- target significant wave height
+- the common depth-limited breaker idea that waves become unstable as H/h approaches the breaker range
+- instantaneous positive crest elevation
+- instantaneous surface steepness
+
+Only locations that are shallow enough and currently carry a crest/steep surface receive an aerated-water coverage. That coverage increases roughness and shifts the local radiance toward highly scattering whitewater, while the surrounding water remains transparent and continues to use refraction + Beer–Lambert transport.
