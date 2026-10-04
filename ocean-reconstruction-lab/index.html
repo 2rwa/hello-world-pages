@@ -456,7 +456,9 @@ function stage(name) {
 }
 
 function fail(errorValue) {
-  const message = errorValue instanceof Error ? (errorValue.stack || errorValue.message) : String(errorValue);
+  const message = errorValue instanceof Error
+    ? (errorValue.stack || errorValue.message)
+    : (errorValue && errorValue.message ? errorValue.message : String(errorValue));
   document.documentElement.dataset.testStage = 'failed';
   document.documentElement.dataset.error = message.slice(0, 1400);
   statusElement.textContent = 'failed';
@@ -1204,7 +1206,7 @@ async function initialize() {
     stage('submitted-work-wait');
     await device.queue.onSubmittedWorkDone();
     const validationError = await device.popErrorScope();
-    if (validationError) throw validationError;
+    if (validationError) throw new Error('WebGPU validation: ' + (validationError.message || String(validationError)));
 
     await readbackBuffer.mapAsync(GPUMapMode.READ);
     const pixelBytes = new Uint8Array(readbackBuffer.getMappedRange());
