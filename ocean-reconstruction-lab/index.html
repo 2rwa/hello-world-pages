@@ -881,33 +881,37 @@ async function initialize() {
     }
   }
 
-  async function scheduleBuoyReadback(simulationTime, commandEncoder) {
-    if (ciMode || buoyReadPending || simulationTime - lastBuoyReadTime < 0.16) return;
+  function encodeBuoyReadbackCopy(simulationTime, commandEncoder) {
+    if (ciMode || buoyReadPending || simulationTime - lastBuoyReadTime < 0.16) return null;
     commandEncoder.copyBufferToBuffer(surfaceBuffer, centerIndex * 16, buoyReadback, 0, 16);
     buoyReadPending = true;
     lastBuoyReadTime = simulationTime;
-    device.queue.onSubmittedWorkDone().then(async () => {
-      try {
-        await buoyReadback.mapAsync(GPUMapMode.READ);
-        const mapped = new Float32Array(buoyReadback.getMappedRange().slice(0));
-        buoyReadback.unmap();
-        const heightValue = mapped[0];
-        const previousSample = buoySamples[buoySamples.length - 1];
-        if (previousSample && previousSample.height < 0 && heightValue >= 0) {
-          const fraction = -previousSample.height / Math.max(heightValue - previousSample.height, 1e-6);
-          upwardCrossings.push(previousSample.time + fraction * (simulationTime - previousSample.time));
-          if (upwardCrossings.length > 24) upwardCrossings.shift();
-        }
-        buoySamples.push({ time: simulationTime, height: heightValue });
-        const minimumTime = simulationTime - 48;
-        while (buoySamples.length && buoySamples[0].time < minimumTime) buoySamples.shift();
-        updateBuoyMetrics();
-      } catch (errorValue) {
-        console.warn('buoy readback', errorValue);
-      } finally {
-        buoyReadPending = false;
+    return simulationTime;
+  }
+
+  async function finishBuoyReadback(sampleTime) {
+    if (sampleTime === null) return;
+    try {
+      await device.queue.onSubmittedWorkDone();
+      await buoyReadback.mapAsync(GPUMapMode.READ);
+      const mapped = new Float32Array(buoyReadback.getMappedRange().slice(0));
+      buoyReadback.unmap();
+      const heightValue = mapped[0];
+      const previousSample = buoySamples[buoySamples.length - 1];
+      if (previousSample && previousSample.height < 0 && heightValue >= 0) {
+        const fraction = -previousSample.height / Math.max(heightValue - previousSample.height, 1e-6);
+        upwardCrossings.push(previousSample.time + fraction * (sampleTime - previousSample.time));
+        if (upwardCrossings.length > 24) upwardCrossings.shift();
       }
-    });
+      buoySamples.push({ time: sampleTime, height: heightValue });
+      const minimumTime = sampleTime - 48;
+      while (buoySamples.length && buoySamples[0].time < minimumTime) buoySamples.shift();
+      updateBuoyMetrics();
+    } catch (errorValue) {
+      console.warn('buoy readback', errorValue);
+    } finally {
+      buoyReadPending = false;
+    }
   }
 
   function encodeFrame(simulationTime, outputView) {
@@ -944,15 +948,16 @@ async function initialize() {
     renderPass.drawIndexed(indexData.length);
     renderPass.end();
 
-    scheduleBuoyReadback(simulationTime, commandEncoder);
-    return commandEncoder;
+    const buoySampleTime = encodeBuoyReadbackCopy(simulationTime, commandEncoder);
+    return { commandEncoder, buoySampleTime };
   }
 
   if (ciMode) {
     stage('validation-scope');
     device.pushErrorScope('validation');
     const outputView = ciColorTexture.createView();
-    const encoder = encodeFrame(6.25, outputView);
+    const frameEncoding = encodeFrame(6.25, outputView);
+    const encoder = frameEncoding.commandEncoder;
     const bytesPerRow = 1024;
     const readbackBuffer = device.createBuffer({
       size: bytesPerRow * canvasHeight,
@@ -986,6 +991,22 @@ async function initialize() {
     document.documentElement.dataset.gpuQueue = 'done';
     document.documentElement.dataset.componentCount = String(componentCount);
     if (checksum === 0 || nonFlatCount < 10) throw new Error('GPU readback looked flat or empty');
+
+    const previewCanvas = document.createElement('canvas');
+    previewCanvas.width = canvasWidth;
+    previewCanvas.height = canvasHeight;
+    previewCanvas.style.position = 'fixed';
+    previewCanvas.style.inset = '0';
+    previewCanvas.style.width = '100vw';
+    previewCanvas.style.height = '100vh';
+    previewCanvas.style.zIndex = '1';
+    previewCanvas.style.imageRendering = 'auto';
+    const previewContext = previewCanvas.getContext('2d');
+    const packedPixels = new Uint8ClampedArray(canvasWidth * canvasHeight * 4);
+    packedPixels.set(pixelBytes.subarray(0, packedPixels.length));
+    previewContext.putImageData(new ImageData(packedPixels, canvasWidth, canvasHeight), 0, 0);
+    document.body.prepend(previewCanvas);
+
     stage('ok');
     return;
   }
@@ -1008,8 +1029,11 @@ async function initialize() {
     simulationTime += deltaSeconds;
 
     device.pushErrorScope('validation');
-    const encoder = encodeFrame(simulationTime, canvasContext.getCurrentTexture().createView());
-    device.queue.submit([encoder.finish()]);
+    const frameEncoding = encodeFrame(simulationTime, canvasContext.getCurrentTexture().createView());
+    device.queue.submit([frameEncoding.commandEncoder.finish()]);
+    if (frameEncoding.buoySampleTime !== null) {
+      finishBuoyReadback(frameEncoding.buoySampleTime);
+    }
     device.popErrorScope().then((errorValue) => {
       if (errorValue) fail(errorValue);
     });

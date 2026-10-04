@@ -123,6 +123,13 @@ try {
   if (!state.targetHs) throw new Error('Target Hs metadata missing');
 
   console.log('validated', state);
+  await sleep(250);
+  const screenshot = await cdp.send('Page.captureScreenshot', { format: 'png', fromSurface: true });
+  const screenshotBytes = Buffer.from(screenshot.data, 'base64');
+  fs.mkdirSync('artifacts', { recursive: true });
+  fs.writeFileSync('artifacts/ocean-reconstruction-lab-ci.png', screenshotBytes);
+  console.log('Screenshot bytes:', screenshotBytes.length);
+  if (screenshotBytes.length < 15000) throw new Error('Screenshot unexpectedly small');
   cdp.socket.close();
 } catch (errorValue) {
   console.error(errorValue);
