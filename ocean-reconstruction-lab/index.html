@@ -827,6 +827,7 @@ async function initialize() {
     vertex: { module: renderModule, entryPoint: 'skyVertex' },
     fragment: { module: renderModule, entryPoint: 'compositeFragment', targets: [{ format: outputFormat }] },
     primitive: { topology: 'triangle-list' },
+    depthStencil: { format: 'depth24plus', depthWriteEnabled: false, depthCompare: 'always' },
   });
   const oceanPipeline = await device.createRenderPipelineAsync({
     layout: sharedPipelineLayout,
