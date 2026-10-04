@@ -104,7 +104,7 @@ try {
   let state = null;
   for (let pollIndex = 0; pollIndex < 160; pollIndex += 1) {
     const result = await cdp.send('Runtime.evaluate', {
-      expression: "JSON.stringify({stage:document.documentElement.dataset.testStage||'',error:document.documentElement.dataset.error||'',checksum:Number(document.documentElement.dataset.pixelChecksum||0),nonFlat:Number(document.documentElement.dataset.nonFlatCount||0),components:Number(document.documentElement.dataset.componentCount||0),queue:document.documentElement.dataset.gpuQueue||'',targetHs:document.documentElement.dataset.targetHs||'',phase:document.documentElement.dataset.oceanPhase||'',bathymetry:document.documentElement.dataset.whiteSandBathymetry||'',beer:document.documentElement.dataset.beerLambert||'',refraction:document.documentElement.dataset.sceneRefraction||'',caustics:document.documentElement.dataset.surfaceCaustics||'',linearHdr:document.documentElement.dataset.linearHdrTransport||''})",
+      expression: "JSON.stringify({stage:document.documentElement.dataset.testStage||'',error:document.documentElement.dataset.error||'',checksum:Number(document.documentElement.dataset.pixelChecksum||0),nonFlat:Number(document.documentElement.dataset.nonFlatCount||0),components:Number(document.documentElement.dataset.componentCount||0),queue:document.documentElement.dataset.gpuQueue||'',targetHs:document.documentElement.dataset.targetHs||'',phase:document.documentElement.dataset.oceanPhase||'',bathymetry:document.documentElement.dataset.whiteSandBathymetry||'',beer:document.documentElement.dataset.beerLambert||'',refraction:document.documentElement.dataset.sceneRefraction||'',caustics:document.documentElement.dataset.surfaceCaustics||'',linearHdr:document.documentElement.dataset.linearHdrTransport||'',solarPath:document.documentElement.dataset.underwaterSolarPath||''})",
       returnByValue: true,
     });
     if (result.result?.value) {
@@ -121,7 +121,7 @@ try {
   if (state.components < 200) throw new Error('Unexpected spectral component count: ' + state.components);
   if (state.checksum === 0 || state.nonFlat < 10) throw new Error('GPU image readback is flat or empty');
   if (!state.targetHs) throw new Error('Target Hs metadata missing');
-  if (state.phase !== '2' || state.bathymetry !== 'true' || state.beer !== 'true' || state.refraction !== 'true' || state.caustics !== 'jacobian' || state.linearHdr !== 'rgba16float') {
+  if (state.phase !== '2' || state.bathymetry !== 'true' || state.beer !== 'true' || state.refraction !== 'true' || state.caustics !== 'jacobian' || state.linearHdr !== 'rgba16float' || state.solarPath !== 'refracted-beer') {
     throw new Error('Phase 2 optical/bathymetry markers missing: ' + JSON.stringify(state));
   }
 

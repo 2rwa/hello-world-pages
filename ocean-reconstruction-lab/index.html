@@ -376,16 +376,41 @@ fn seabedFragment(inputValue: SeabedVertexOutput) -> @location(0) vec4f {
   let lightDirection = normalize(renderUniforms.sunDirection.xyz);
   let normalValue = normalize(inputValue.worldNormal);
   let diffuseLight = max(dot(normalValue, lightDirection), 0.0);
-  let skyFill = 0.45 + 0.25 * max(normalValue.y, 0.0);
   var sandColorValue = sandReflectance(inputValue.worldPosition);
-  sandColorValue *= skyFill + diffuseLight * 0.62;
 
   if (inputValue.worldPosition.y < -0.04) {
+    let localSurface = surfaceSampleAt(inputValue.worldPosition.xz, vec2i(0, 0));
+    let localSurfaceNormal = normalize(vec3f(-localSurface.y, 1.0, -localSurface.z));
+    let solarTravelDirection = normalize(refract(
+      -lightDirection,
+      localSurfaceNormal,
+      1.0 / 1.333
+    ));
+    let waterDepth = max(localSurface.x - inputValue.worldPosition.y, 0.0);
+    let solarPathLength = waterDepth / max(-solarTravelDirection.y, 0.12);
+    let clarityValue = max(renderUniforms.shorelineParams.x, 0.25);
+    let waterAbsorption = vec3f(0.240, 0.055, 0.018) / clarityValue;
+    let solarTransmittance = exp(-waterAbsorption * solarPathLength);
+
+    let underwaterAmbient = vec3f(0.23, 0.31, 0.34);
+    let directSun =
+      solarTransmittance *
+      diffuseLight *
+      0.82;
+    sandColorValue *= underwaterAmbient + directSun;
+
     let causticGain = causticGainAt(inputValue.worldPosition);
     let boundedGain = clamp(causticGain, 0.72, 2.55);
     sandColorValue *= boundedGain;
     let causticHighlight = max(boundedGain - 1.0, 0.0);
-    sandColorValue += vec3f(0.95, 0.88, 0.68) * causticHighlight * 0.075;
+    sandColorValue +=
+      solarTransmittance *
+      vec3f(1.00, 0.91, 0.72) *
+      causticHighlight *
+      0.10;
+  } else {
+    let skyFill = 0.45 + 0.25 * max(normalValue.y, 0.0);
+    sandColorValue *= skyFill + diffuseLight * 0.62;
   }
 
   let distanceValue = distance(renderUniforms.cameraPosition.xyz, inputValue.worldPosition);
@@ -1398,6 +1423,7 @@ async function initialize() {
     document.documentElement.dataset.refractedSeabedTrace = '14x5';
     document.documentElement.dataset.surfaceCaustics = 'jacobian';
     document.documentElement.dataset.linearHdrTransport = 'rgba16float';
+    document.documentElement.dataset.underwaterSolarPath = 'refracted-beer';
     stage('ok');
     return;
   }
@@ -1449,6 +1475,7 @@ async function initialize() {
   document.documentElement.dataset.refractedSeabedTrace = '14x5';
   document.documentElement.dataset.surfaceCaustics = 'jacobian';
   document.documentElement.dataset.linearHdrTransport = 'rgba16float';
+  document.documentElement.dataset.underwaterSolarPath = 'refracted-beer';
   stage('running');
   requestAnimationFrame(frame);
 }

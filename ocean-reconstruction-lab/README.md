@@ -152,3 +152,15 @@ Shallow-water sun glitter also uses a slightly lower microfacet roughness than d
 The scene prepass now renders sky and sand into an `rgba16float` linear-radiance texture. Refraction, Beer–Lambert attenuation, in-scattering and caustic modulation therefore operate in linear space. ACES-style tone mapping and display gamma are applied exactly once, after optical transport.
 
 This removes the previous double tone-map / gamma-space attenuation error and makes shallow white sand, turquoise water and deeper blue-green water separate through transport rather than through arbitrary color overlays.
+
+
+## Phase 2.3: refracted solar path to the seabed
+
+Submerged sand lighting now includes the incoming light path, not only the camera/view path. The solar direction is refracted at the local simulated water normal, the optical path to the seabed is estimated, and the same wavelength-dependent absorption coefficients are applied to direct sunlight before the sand BRDF is evaluated.
+
+The water therefore attenuates light twice in the physically expected places:
+
+1. sun → refracted water column → seabed
+2. seabed → refracted viewing path → camera
+
+Caustic gain modulates the transmitted direct component, so focusing stays tied to the actual incident solar energy rather than becoming an arbitrary emissive pattern.
