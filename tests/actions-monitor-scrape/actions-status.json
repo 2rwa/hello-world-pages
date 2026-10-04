@@ -197,44 +197,44 @@
       "actions_url": "https://github.com/2rwa/tmp-blender-52/actions",
       "runs": [
         {
-          "id": 36929479359,
-          "title": "fix: refresh Pages after sail ship renders",
+          "id": 37195569059,
+          "title": "fix: reduce tropical coast exposure",
           "status": "completed",
           "conclusion": "success",
-          "status_label": "completed successfully:  Run 5 of GitHub Pages. fix: refresh Pages after sail ship renders",
+          "status_label": "completed successfully:  Run 2 of Tropical resort coast still. fix: reduce tropical coast exposure",
           "branch": "main",
-          "time": "2026-10-01T21:33:33Z",
-          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36929479359"
+          "time": "2026-10-04T10:30:15Z",
+          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/37195569059"
         },
         {
-          "id": 36891163409,
-          "title": "feat: render 10s sail ship wireframe turntable with ffprobe validation",
+          "id": 37195334500,
+          "title": "feat: add tropical resort coast Cycles still",
           "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 5 of Sail Ship Wireframe HD. feat: render 10s sail ship wireframe turntable with ffprobe validation",
+          "conclusion": "failure",
+          "status_label": "failed:  Run 1 of Tropical resort coast still. feat: add tropical resort coast Cycles still",
           "branch": "main",
-          "time": "2026-10-01T16:19:49Z",
-          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36891163409"
+          "time": "2026-10-04T10:25:47Z",
+          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/37195334500"
         },
         {
-          "id": 36886877349,
-          "title": "fix: fit full sail ship in HD wireframe frame",
+          "id": 37195334412,
+          "title": "feat: add tropical resort coast Cycles still",
           "status": "completed",
           "conclusion": "success",
-          "status_label": "completed successfully:  Run 4 of Sail Ship Wireframe HD. fix: fit full sail ship in HD wireframe frame",
+          "status_label": "completed successfully:  Run 14 of Blender 5.2 render. feat: add tropical resort coast Cycles still",
           "branch": "main",
-          "time": "2026-10-01T15:46:26Z",
-          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36886877349"
+          "time": "2026-10-04T10:25:46Z",
+          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/37195334412"
         },
         {
-          "id": 36886646699,
-          "title": "fix: render sail ship wireframe as geometry",
+          "id": 37195334329,
+          "title": "feat: add tropical resort coast Cycles still",
           "status": "completed",
           "conclusion": "success",
-          "status_label": "completed successfully:  Run 3 of Sail Ship Wireframe HD. fix: render sail ship wireframe as geometry",
+          "status_label": "completed successfully:  Run 6 of GitHub Pages. feat: add tropical resort coast Cycles still",
           "branch": "main",
-          "time": "2026-10-01T15:44:41Z",
-          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/36886646699"
+          "time": "2026-10-04T10:25:46Z",
+          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/37195334329"
         }
       ]
     },
@@ -445,5 +445,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-10-04T07:10:23Z"
+  "updated_at": "2026-10-04T11:06:25Z"
 }
