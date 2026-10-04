@@ -32,8 +32,8 @@
 <body>
 <canvas id="gpuCanvas"></canvas>
 <section class="panel">
-  <div class="title"><h1>Ocean Reconstruction Lab / Phase 1</h1><span id="status">boot</span></div>
-  <div class="sub">JONSWAP/TMA directional spectrum → WebGPU compute surface. No rocks, no foam texture, no procedural “water noise”. Wind sea and swell are independent stochastic wave systems.</div>
+  <div class="title"><h1>Ocean Reconstruction Lab / Phase 2</h1><span id="status">boot</span></div>
+  <div class="sub">Spectral ocean + continuous white-sand bathymetry. The seabed is rendered first; the water samples it through depth-dependent refraction, Fresnel reflection and Beer–Lambert attenuation. No decorative water noise or foam texture.</div>
   <div class="grid">
     <label>Wind Hs <input id="windHs" type="range" min="0.2" max="4.0" step="0.05" value="1.35"><output id="windHsOut">1.35</output></label>
     <label>Wind Tp <input id="windTp" type="range" min="3.5" max="12" step="0.1" value="7.2"><output id="windTpOut">7.2</output></label>
@@ -45,6 +45,8 @@
     <label>Depth <input id="depth" type="range" min="8" max="180" step="1" value="65"><output id="depthOut">65</output></label>
     <label>Gamma <input id="gamma" type="range" min="1" max="7" step="0.1" value="3.3"><output id="gammaOut">3.3</output></label>
     <label>Spread s <input id="spread" type="range" min="3" max="35" step="1" value="14"><output id="spreadOut">14</output></label>
+    <label>Clarity <input id="clarity" type="range" min="0.45" max="2.2" step="0.05" value="1.35"><output id="clarityOut">1.35</output></label>
+    <label>Beach slope <input id="beachSlope" type="range" min="0.012" max="0.060" step="0.002" value="0.030"><output id="beachSlopeOut">0.030</output></label>
   </div>
   <div class="metrics">
     <div class="metric"><b id="targetHs">—</b><span>target Hs</span></div>
@@ -54,7 +56,7 @@
   </div>
   <canvas id="spectrum" width="720" height="164"></canvas>
   <div class="legend"><span>solid: total target spectrum</span><span>thin: wind + swell</span></div>
-  <div class="hint">Drag = view direction · wheel = camera height. The virtual buoy reads back the center GPU surface sample; after enough samples, Hs and zero-upcrossing period are estimated from the generated field.</div>
+  <div class="hint">Drag = view direction · wheel = camera height. Dry beach and submerged sand are one continuous terrain. Clarity controls spectral attenuation; shallow water remains transparent while deeper water shifts toward blue-green.</div>
 </section>
 
 <script id="computeShader" type="x-shader/wgsl">
@@ -129,12 +131,22 @@ struct RenderUniforms {
   cameraUp: vec4f,
   screenProjection: vec4f,
   opticsGrid: vec4f,
+  shorelineParams: vec4f,
 }
 
 @group(0) @binding(0) var<uniform> renderUniforms: RenderUniforms;
 @group(0) @binding(1) var<storage, read> surfaceSamples: array<SurfaceSample>;
+@group(0) @binding(2) var sceneColorTexture: texture_2d<f32>;
+@group(0) @binding(3) var sceneColorSampler: sampler;
 
 struct OceanVertexOutput {
+  @builtin(position) clipPosition: vec4f,
+  @location(0) worldPosition: vec3f,
+  @location(1) worldNormal: vec3f,
+  @location(2) seabedHeightValue: f32,
+}
+
+struct SeabedVertexOutput {
   @builtin(position) clipPosition: vec4f,
   @location(0) worldPosition: vec3f,
   @location(1) worldNormal: vec3f,
@@ -154,22 +166,78 @@ fn toneMapAces(inputColor: vec3f) -> vec3f {
 fn skyRadiance(rayDirection: vec3f) -> vec3f {
   let upAmount = max(rayDirection.y, 0.0);
   let horizonAmount = exp(-abs(rayDirection.y) * 5.2);
-  let zenithColor = vec3f(0.11, 0.29, 0.48);
-  let horizonColor = vec3f(0.62, 0.72, 0.76);
+  let zenithColor = vec3f(0.10, 0.30, 0.51);
+  let horizonColor = vec3f(0.67, 0.78, 0.80);
   var skyValue = horizonColor * horizonAmount + zenithColor * (1.0 - horizonAmount);
-  skyValue += vec3f(0.11, 0.15, 0.17) * pow(upAmount, 0.45);
+  skyValue += vec3f(0.12, 0.17, 0.19) * pow(upAmount, 0.45);
 
   let sunAlignment = max(dot(rayDirection, normalize(renderUniforms.sunDirection.xyz)), 0.0);
-  let sunDisk = pow(sunAlignment, 1700.0);
-  let sunHalo = pow(sunAlignment, 18.0);
-  skyValue += vec3f(1.0, 0.78, 0.48) * sunHalo * 0.18;
-  skyValue += vec3f(7.0, 5.4, 3.1) * sunDisk;
-
-  if (rayDirection.y < 0.0) {
-    let belowHorizon = saturateValue(-rayDirection.y * 5.0);
-    skyValue = skyValue * (1.0 - belowHorizon) + vec3f(0.055, 0.095, 0.115) * belowHorizon;
-  }
+  let sunDisk = pow(sunAlignment, 1800.0);
+  let sunHalo = pow(sunAlignment, 20.0);
+  skyValue += vec3f(1.0, 0.80, 0.52) * sunHalo * 0.16;
+  skyValue += vec3f(8.0, 6.1, 3.7) * sunDisk;
   return skyValue;
+}
+
+fn seabedHeight(worldXZ: vec2f) -> f32 {
+  let shoreCenter =
+    renderUniforms.shorelineParams.z +
+    sin(worldXZ.x * 0.010) * 11.0 +
+    sin(worldXZ.x * 0.027 + 1.2) * 4.0;
+  let offshoreDistance = worldXZ.y - shoreCenter;
+  let slopeValue = renderUniforms.shorelineParams.y;
+
+  var heightValue = 0.0;
+  if (offshoreDistance < 0.0) {
+    let landDistance = -offshoreDistance;
+    heightValue = landDistance * slopeValue * 0.82;
+  } else {
+    let shelfDepth = offshoreDistance * slopeValue;
+    let shelfFlatten = 1.0 - exp(-offshoreDistance / 260.0);
+    heightValue = -shelfDepth * (0.74 + 0.26 * shelfFlatten);
+  }
+
+  let broadSand =
+    sin(worldXZ.x * 0.023 + worldXZ.y * 0.009) * 0.10 +
+    sin(worldXZ.x * 0.071 - worldXZ.y * 0.017 + 0.9) * 0.045;
+  let rippleEnvelope = saturateValue((-heightValue + 0.25) / 5.0);
+  let sandRipple =
+    sin(worldXZ.x * 0.34 + sin(worldXZ.y * 0.045) * 1.7) *
+    0.035 * rippleEnvelope;
+  return heightValue + broadSand + sandRipple;
+}
+
+fn seabedNormal(worldXZ: vec2f) -> vec3f {
+  let sampleDistance = 0.45;
+  let heightLeft = seabedHeight(worldXZ - vec2f(sampleDistance, 0.0));
+  let heightRight = seabedHeight(worldXZ + vec2f(sampleDistance, 0.0));
+  let heightBack = seabedHeight(worldXZ - vec2f(0.0, sampleDistance));
+  let heightFront = seabedHeight(worldXZ + vec2f(0.0, sampleDistance));
+  return normalize(vec3f(
+    (heightLeft - heightRight) / (2.0 * sampleDistance),
+    1.0,
+    (heightBack - heightFront) / (2.0 * sampleDistance)
+  ));
+}
+
+fn sandReflectance(worldPositionValue: vec3f) -> vec3f {
+  let drySand = vec3f(0.84, 0.75, 0.56);
+  let paleSand = vec3f(0.93, 0.86, 0.68);
+  let wetSand = vec3f(0.58, 0.49, 0.36);
+  let underwaterSand = vec3f(0.78, 0.72, 0.58);
+
+  let macroVariation =
+    0.5 + 0.5 * sin(worldPositionValue.x * 0.052 + worldPositionValue.z * 0.031);
+  var sandValue = mix(drySand, paleSand, 0.22 + macroVariation * 0.22);
+
+  if (worldPositionValue.y < 0.0) {
+    let wetDepth = saturateValue(-worldPositionValue.y / 0.45);
+    sandValue = mix(wetSand, underwaterSand, wetDepth);
+  } else {
+    let wetShore = 1.0 - smoothstep(0.10, 0.70, worldPositionValue.y);
+    sandValue = mix(sandValue, wetSand, wetShore * 0.52);
+  }
+  return sandValue;
 }
 
 @vertex
@@ -199,6 +267,56 @@ fn skyFragment(@builtin(position) fragmentPosition: vec4f) -> @location(0) vec4f
   return vec4f(pow(outputColor, vec3f(0.4545)), 1.0);
 }
 
+@fragment
+fn compositeFragment(@builtin(position) fragmentPosition: vec4f) -> @location(0) vec4f {
+  let screenUV = clamp(
+    fragmentPosition.xy / renderUniforms.screenProjection.xy,
+    vec2f(0.0),
+    vec2f(1.0)
+  );
+  return textureSampleLevel(sceneColorTexture, sceneColorSampler, screenUV, 0.0);
+}
+
+@vertex
+fn seabedVertex(@builtin(vertex_index) vertexIndex: u32) -> SeabedVertexOutput {
+  let gridCount = u32(renderUniforms.opticsGrid.z + 0.5);
+  let gridDenominator = max(f32(gridCount - 1u), 1.0);
+  let xIndex = vertexIndex % gridCount;
+  let zIndex = vertexIndex / gridCount;
+  let normalizedX = f32(xIndex) / gridDenominator - 0.5;
+  let normalizedZ = f32(zIndex) / gridDenominator - 0.5;
+  let domainSize = renderUniforms.opticsGrid.w;
+  let worldXZ = vec2f(
+    normalizedX * domainSize,
+    180.0 + normalizedZ * domainSize
+  );
+  let heightValue = seabedHeight(worldXZ);
+  let worldPositionValue = vec3f(worldXZ.x, heightValue, worldXZ.y);
+
+  var outputValue: SeabedVertexOutput;
+  outputValue.clipPosition = renderUniforms.viewProjection * vec4f(worldPositionValue, 1.0);
+  outputValue.worldPosition = worldPositionValue;
+  outputValue.worldNormal = seabedNormal(worldXZ);
+  return outputValue;
+}
+
+@fragment
+fn seabedFragment(inputValue: SeabedVertexOutput) -> @location(0) vec4f {
+  let lightDirection = normalize(renderUniforms.sunDirection.xyz);
+  let normalValue = normalize(inputValue.worldNormal);
+  let diffuseLight = max(dot(normalValue, lightDirection), 0.0);
+  let skyFill = 0.45 + 0.25 * max(normalValue.y, 0.0);
+  var sandColorValue = sandReflectance(inputValue.worldPosition);
+  sandColorValue *= skyFill + diffuseLight * 0.62;
+
+  let distanceValue = distance(renderUniforms.cameraPosition.xyz, inputValue.worldPosition);
+  let hazeAmount = saturateValue((distanceValue - 360.0) / 720.0);
+  sandColorValue = mix(sandColorValue, vec3f(0.53, 0.62, 0.61), hazeAmount * 0.34);
+
+  let mappedColor = toneMapAces(sandColorValue);
+  return vec4f(pow(mappedColor, vec3f(0.4545)), 1.0);
+}
+
 @vertex
 fn oceanVertex(@builtin(vertex_index) vertexIndex: u32) -> OceanVertexOutput {
   let gridCount = u32(renderUniforms.opticsGrid.z + 0.5);
@@ -210,33 +328,83 @@ fn oceanVertex(@builtin(vertex_index) vertexIndex: u32) -> OceanVertexOutput {
   let domainSize = renderUniforms.opticsGrid.w;
   let worldX = normalizedX * domainSize;
   let worldZ = 180.0 + normalizedZ * domainSize;
+  let seabedHeightAtVertex = seabedHeight(vec2f(worldX, worldZ));
+  let meanDepth = max(-seabedHeightAtVertex, 0.0);
+  let shallowDamping = smoothstep(0.10, 1.30, meanDepth);
+  let shoalingBand = 1.0 + 0.16 * exp(-pow((meanDepth - 2.2) / 1.6, 2.0));
   let surfaceValue = surfaceSamples[vertexIndex].value;
-  let worldPositionValue = vec3f(worldX, surfaceValue.x, worldZ);
-  let worldNormalValue = normalize(vec3f(-surfaceValue.y, 1.0, -surfaceValue.z));
+  let waveMultiplier = shallowDamping * shoalingBand;
+  let surfaceHeight = surfaceValue.x * waveMultiplier;
+  let worldPositionValue = vec3f(worldX, surfaceHeight, worldZ);
+  let worldNormalValue = normalize(vec3f(
+    -surfaceValue.y * waveMultiplier,
+    1.0,
+    -surfaceValue.z * waveMultiplier
+  ));
 
   var outputValue: OceanVertexOutput;
   outputValue.clipPosition = renderUniforms.viewProjection * vec4f(worldPositionValue, 1.0);
   outputValue.worldPosition = worldPositionValue;
   outputValue.worldNormal = worldNormalValue;
+  outputValue.seabedHeightValue = seabedHeightAtVertex;
   return outputValue;
 }
 
 @fragment
 fn oceanFragment(inputValue: OceanVertexOutput) -> @location(0) vec4f {
+  let verticalDepth = inputValue.worldPosition.y - inputValue.seabedHeightValue;
+  if (verticalDepth <= 0.025) {
+    discard;
+  }
+
   let surfaceNormal = normalize(inputValue.worldNormal);
   let viewDirection = normalize(renderUniforms.cameraPosition.xyz - inputValue.worldPosition);
   let lightDirection = normalize(renderUniforms.sunDirection.xyz);
   let reflectedDirection = reflect(-viewDirection, surfaceNormal);
 
   let normalView = max(dot(surfaceNormal, viewDirection), 0.001);
+  let eta = 1.0 / 1.333;
+  let transmittedCosine = sqrt(max(1.0 - eta * eta * (1.0 - normalView * normalView), 0.05));
+  let opticalPath = verticalDepth / max(transmittedCosine, 0.22);
+
   let fresnelBase = 0.02037;
   let fresnelValue = fresnelBase + (1.0 - fresnelBase) * pow(1.0 - normalView, 5.0);
 
+  let screenUV = clamp(
+    inputValue.clipPosition.xy / renderUniforms.screenProjection.xy,
+    vec2f(0.0),
+    vec2f(1.0)
+  );
+  let refractionStrength =
+    min(verticalDepth, 8.0) *
+    (0.00045 + (1.0 - normalView) * 0.0011);
+  let refractionOffset = vec2f(
+    surfaceNormal.x,
+    -surfaceNormal.z
+  ) * refractionStrength;
+  let refractedUV = clamp(
+    screenUV + refractionOffset,
+    vec2f(0.002),
+    vec2f(0.998)
+  );
+  let backgroundColor = textureSampleLevel(
+    sceneColorTexture,
+    sceneColorSampler,
+    refractedUV,
+    0.0
+  ).rgb;
+
+  let clarityValue = max(renderUniforms.shorelineParams.x, 0.25);
+  let absorptionCoefficient = vec3f(0.145, 0.040, 0.018) / clarityValue;
+  let transmittance = exp(-absorptionCoefficient * opticalPath);
+  let inScatterColor = vec3f(0.015, 0.235, 0.255);
+  let scatterAmount = vec3f(1.0) - transmittance;
+  let transmittedColor =
+    backgroundColor * transmittance +
+    inScatterColor * scatterAmount * 0.42;
+
   let reflectedSky = skyRadiance(reflectedDirection);
-  let grazingColor = vec3f(0.018, 0.055, 0.070);
-  let bodyColor = vec3f(0.004, 0.018, 0.024);
-  var surfaceColor = bodyColor * (1.0 - fresnelValue) + reflectedSky * fresnelValue;
-  surfaceColor += grazingColor * (1.0 - surfaceNormal.y) * 0.18;
+  var surfaceColor = mix(transmittedColor, reflectedSky, fresnelValue);
 
   let halfVector = normalize(viewDirection + lightDirection);
   let normalLight = max(dot(surfaceNormal, lightDirection), 0.0);
@@ -250,13 +418,18 @@ fn oceanFragment(inputValue: OceanVertexOutput) -> @location(0) vec4f {
   let geometryK = (roughnessValue + 1.0) * (roughnessValue + 1.0) * 0.125;
   let geometryView = normalView / (normalView * (1.0 - geometryK) + geometryK);
   let geometryLight = normalLight / (normalLight * (1.0 - geometryK) + geometryK);
-  let sunSpecular = distributionTerm * fresnelSun * geometryView * geometryLight / max(4.0 * normalView * max(normalLight, 0.001), 0.001);
-  surfaceColor += vec3f(7.2, 5.7, 3.8) * sunSpecular * normalLight;
+  let sunSpecular =
+    distributionTerm * fresnelSun * geometryView * geometryLight /
+    max(4.0 * normalView * max(normalLight, 0.001), 0.001);
+  surfaceColor += vec3f(7.7, 6.0, 3.8) * sunSpecular * normalLight;
+
+  let shallowHighlight = 1.0 - smoothstep(0.25, 3.8, verticalDepth);
+  surfaceColor += vec3f(0.025, 0.075, 0.055) * shallowHighlight * 0.35;
 
   let distanceValue = distance(renderUniforms.cameraPosition.xyz, inputValue.worldPosition);
-  let atmosphericMix = saturateValue((distanceValue - 260.0) / 760.0);
-  let horizonWater = vec3f(0.20, 0.34, 0.40);
-  surfaceColor = surfaceColor * (1.0 - atmosphericMix * 0.58) + horizonWater * atmosphericMix * 0.58;
+  let atmosphericMix = saturateValue((distanceValue - 360.0) / 720.0);
+  let horizonWater = vec3f(0.18, 0.34, 0.42);
+  surfaceColor = mix(surfaceColor, horizonWater, atmosphericMix * 0.50);
 
   let mappedColor = toneMapAces(surfaceColor);
   return vec4f(pow(mappedColor, vec3f(0.4545)), 1.0);
@@ -610,6 +783,8 @@ async function initialize() {
     entries: [
       { binding: 0, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
       { binding: 1, visibility: GPUShaderStage.VERTEX, buffer: { type: 'read-only-storage' } },
+      { binding: 2, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
+      { binding: 3, visibility: GPUShaderStage.FRAGMENT, sampler: { type: 'filtering' } },
     ],
   });
 
@@ -638,6 +813,19 @@ async function initialize() {
     primitive: { topology: 'triangle-list' },
     depthStencil: { format: 'depth24plus', depthWriteEnabled: false, depthCompare: 'always' },
   });
+  const seabedPipeline = await device.createRenderPipelineAsync({
+    layout: sharedPipelineLayout,
+    vertex: { module: renderModule, entryPoint: 'seabedVertex' },
+    fragment: { module: renderModule, entryPoint: 'seabedFragment', targets: [{ format: outputFormat }] },
+    primitive: { topology: 'triangle-list', cullMode: 'none' },
+    depthStencil: { format: 'depth24plus', depthWriteEnabled: true, depthCompare: 'less' },
+  });
+  const compositePipeline = await device.createRenderPipelineAsync({
+    layout: sharedPipelineLayout,
+    vertex: { module: renderModule, entryPoint: 'skyVertex' },
+    fragment: { module: renderModule, entryPoint: 'compositeFragment', targets: [{ format: outputFormat }] },
+    primitive: { topology: 'triangle-list' },
+  });
   const oceanPipeline = await device.createRenderPipelineAsync({
     layout: sharedPipelineLayout,
     vertex: { module: renderModule, entryPoint: 'oceanVertex' },
@@ -654,12 +842,12 @@ async function initialize() {
       { binding: 2, resource: { buffer: simulationUniformBuffer } },
     ],
   });
-  const renderBindGroup = device.createBindGroup({
-    layout: renderBindGroupLayout,
-    entries: [
-      { binding: 0, resource: { buffer: renderUniformBuffer } },
-      { binding: 1, resource: { buffer: surfaceBuffer } },
-    ],
+  let renderBindGroup = null;
+  const sceneColorSampler = device.createSampler({
+    magFilter: 'linear',
+    minFilter: 'linear',
+    addressModeU: 'clamp-to-edge',
+    addressModeV: 'clamp-to-edge',
   });
 
   const pipelineError = await device.popErrorScope();
@@ -676,6 +864,8 @@ async function initialize() {
     depth: Number(document.getElementById('depth').value),
     gamma: Number(document.getElementById('gamma').value),
     spread: Number(document.getElementById('spread').value),
+    clarity: Number(document.getElementById('clarity').value),
+    beachSlope: Number(document.getElementById('beachSlope').value),
   };
 
   let componentCount = 0;
@@ -722,7 +912,7 @@ async function initialize() {
   const controlSpecs = [
     ['windHs', 2], ['windTp', 1], ['windU10', 1], ['windDir', 0],
     ['swellHs', 2], ['swellTp', 1], ['swellDir', 0], ['depth', 0],
-    ['gamma', 1], ['spread', 0],
+    ['gamma', 1], ['spread', 0], ['clarity', 2], ['beachSlope', 3],
   ];
   for (const [controlId, digits] of controlSpecs) {
     const input = document.getElementById(controlId);
@@ -739,6 +929,7 @@ async function initialize() {
   let canvasWidth = 1;
   let canvasHeight = 1;
   let depthTexture = null;
+  let sceneColorTexture = null;
   let ciColorTexture = null;
 
   function configureOutput() {
@@ -760,17 +951,33 @@ async function initialize() {
     }
 
     if (depthTexture) depthTexture.destroy();
+    if (sceneColorTexture) sceneColorTexture.destroy();
+
     depthTexture = device.createTexture({
       size: [canvasWidth, canvasHeight, 1],
       format: 'depth24plus',
       usage: GPUTextureUsage.RENDER_ATTACHMENT,
     });
+    sceneColorTexture = device.createTexture({
+      size: [canvasWidth, canvasHeight, 1],
+      format: outputFormat,
+      usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
+    });
+    renderBindGroup = device.createBindGroup({
+      layout: renderBindGroupLayout,
+      entries: [
+        { binding: 0, resource: { buffer: renderUniformBuffer } },
+        { binding: 1, resource: { buffer: surfaceBuffer } },
+        { binding: 2, resource: sceneColorTexture.createView() },
+        { binding: 3, resource: sceneColorSampler },
+      ],
+    });
   }
   configureOutput();
 
-  let cameraHeight = 7.0;
+  let cameraHeight = 13.0;
   let cameraYaw = 0;
-  let cameraPitch = -0.035;
+  let cameraPitch = -0.115;
   let dragging = false;
   let previousPointerX = 0;
   let previousPointerY = 0;
@@ -806,7 +1013,7 @@ async function initialize() {
     ]);
     const right = normalize3(cross3([0, 1, 0], forward));
     const correctedUp = normalize3(cross3(forward, right));
-    const eye = [0, cameraHeight, -200];
+    const eye = [0, cameraHeight, -210];
     const center = [eye[0] + forward[0], eye[1] + forward[1], eye[2] + forward[2]];
     const viewMatrix = lookAt(eye, center, [0, 1, 0]);
     const projectionMatrix = perspectiveZO(fovRadians, aspectRatio, 0.15, 1800);
@@ -832,6 +1039,7 @@ async function initialize() {
     const coxMunkSlopeVariance = 0.003 + 0.00512 * controls.windU10;
     const microRoughness = Math.max(0.035, Math.min(0.18, Math.sqrt(coxMunkSlopeVariance) * 0.48));
     renderUniformData.set([microRoughness, 1.0, GRID_COUNT, DOMAIN_SIZE], 40);
+    renderUniformData.set([controls.clarity, controls.beachSlope, -82.0, 0.0], 44);
     device.queue.writeBuffer(renderUniformBuffer, 0, renderUniformData);
   }
 
@@ -926,9 +1134,10 @@ async function initialize() {
     computePass.dispatchWorkgroups(Math.ceil(GRID_COUNT / 8), Math.ceil(GRID_COUNT / 8));
     computePass.end();
 
-    const renderPass = commandEncoder.beginRenderPass({
+    // Pass 1: render physically continuous dry beach / submerged seabed into an offscreen scene texture.
+    const scenePass = commandEncoder.beginRenderPass({
       colorAttachments: [{
-        view: outputView,
+        view: sceneColorTexture.createView(),
         clearValue: { r: 0.12, g: 0.22, b: 0.30, a: 1 },
         loadOp: 'clear',
         storeOp: 'store',
@@ -940,13 +1149,35 @@ async function initialize() {
         depthStoreOp: 'store',
       },
     });
-    renderPass.setBindGroup(0, renderBindGroup);
-    renderPass.setPipeline(skyPipeline);
-    renderPass.draw(3);
-    renderPass.setPipeline(oceanPipeline);
-    renderPass.setIndexBuffer(indexBuffer, 'uint32');
-    renderPass.drawIndexed(indexData.length);
-    renderPass.end();
+    scenePass.setBindGroup(0, renderBindGroup);
+    scenePass.setPipeline(skyPipeline);
+    scenePass.draw(3);
+    scenePass.setPipeline(seabedPipeline);
+    scenePass.setIndexBuffer(indexBuffer, 'uint32');
+    scenePass.drawIndexed(indexData.length);
+    scenePass.end();
+
+    // Pass 2: copy the scene, preserve beach depth, then render the spectral water above submerged sand.
+    const finalPass = commandEncoder.beginRenderPass({
+      colorAttachments: [{
+        view: outputView,
+        clearValue: { r: 0.12, g: 0.22, b: 0.30, a: 1 },
+        loadOp: 'clear',
+        storeOp: 'store',
+      }],
+      depthStencilAttachment: {
+        view: depthTexture.createView(),
+        depthLoadOp: 'load',
+        depthStoreOp: 'store',
+      },
+    });
+    finalPass.setBindGroup(0, renderBindGroup);
+    finalPass.setPipeline(compositePipeline);
+    finalPass.draw(3);
+    finalPass.setPipeline(oceanPipeline);
+    finalPass.setIndexBuffer(indexBuffer, 'uint32');
+    finalPass.drawIndexed(indexData.length);
+    finalPass.end();
 
     const buoySampleTime = encodeBuoyReadbackCopy(simulationTime, commandEncoder);
     return { commandEncoder, buoySampleTime };
@@ -1008,6 +1239,10 @@ async function initialize() {
     previewContext.putImageData(new ImageData(packedPixels, canvasWidth, canvasHeight), 0, 0);
     document.body.prepend(previewCanvas);
 
+    document.documentElement.dataset.oceanPhase = '2';
+    document.documentElement.dataset.whiteSandBathymetry = 'true';
+    document.documentElement.dataset.beerLambert = 'true';
+    document.documentElement.dataset.sceneRefraction = 'true';
     stage('ok');
     return;
   }
@@ -1052,6 +1287,10 @@ async function initialize() {
     requestAnimationFrame(frame);
   }
 
+  document.documentElement.dataset.oceanPhase = '2';
+  document.documentElement.dataset.whiteSandBathymetry = 'true';
+  document.documentElement.dataset.beerLambert = 'true';
+  document.documentElement.dataset.sceneRefraction = 'true';
   stage('running');
   requestAnimationFrame(frame);
 }

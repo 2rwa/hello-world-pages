@@ -1,4 +1,4 @@
-# Ocean Reconstruction Lab — Phase 1
+# Ocean Reconstruction Lab — Phase 2
 
 A clean-room WebGPU ocean experiment focused on measurable wave statistics rather than game-water effects.
 
@@ -115,3 +115,21 @@ Useful modern context:
 - Physically accurate real-time synthesis of ocean waves for maritime simulators, Ocean Engineering, 2024
 - Real-Time Underwater Spectral Rendering, Computer Graphics Forum, 2024
 - Pahi: A Large-Scale Simulation and Rendering System for Water, Weta FX, 2023
+
+
+## Phase 2: tropical shallow water
+
+Phase 2 adds a continuous white-sand bathymetry that rises above mean sea level to become the beach. The terrain is rendered into an offscreen scene-color texture before the water pass.
+
+The water pass then uses:
+
+- screen-space refraction from the actual rendered sand scene
+- water-column thickness derived from the spectral surface and analytic seabed
+- Snell-law-based optical path approximation
+- Beer–Lambert RGB attenuation
+- blue-green in-scattering
+- dielectric Fresnel reflection
+- shallow-water wave damping and a small shoaling band
+- shared depth so dry beach geometry correctly occludes water behind it
+
+The shoreline is therefore geometry, not an alpha mask, and the sand seen through shallow water is the same terrain that continues onto the dry beach.
