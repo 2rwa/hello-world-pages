@@ -56,6 +56,8 @@
     <div class="metric"><b id="observedHs">sampling</b><span>buoy Hs</span></div>
     <div class="metric"><b id="zeroPeriod">sampling</b><span>buoy Tz</span></div>
     <div class="metric"><b id="fps">—</b><span>fps</span></div>
+    <div class="metric"><b id="shoreLambda">—</b><span>λ @ 2m</span></div>
+    <div class="metric"><b id="shoreKs">—</b><span>Ks @ 2m</span></div>
   </div>
   <canvas id="spectrum" width="720" height="164"></canvas>
   <div class="legend"><span>solid: total target spectrum</span><span>thin: wind + swell</span></div>
@@ -80,11 +82,16 @@ struct FoamSample {
   value: vec4f,
 }
 
+struct WavePhysicsSample {
+  value: vec4f,
+}
+
 struct SimulationUniforms {
   timingGrid: vec4f,
   domainCenter: vec4f,
   shorelineData: vec4f,
   fineGrid: vec4f,
+  physicsParams: vec4f,
 }
 
 @group(0) @binding(0) var<storage, read> waveComponents: array<WaveComponent>;
@@ -92,6 +99,7 @@ struct SimulationUniforms {
 @group(0) @binding(2) var<uniform> simulationUniforms: SimulationUniforms;
 @group(0) @binding(3) var<storage, read_write> fineSurfaceSamples: array<FineSurfaceSample>;
 @group(0) @binding(4) var<storage, read_write> foamSamples: array<FoamSample>;
+@group(0) @binding(5) var<storage, read> wavePhysicsLut: array<WavePhysicsSample>;
 
 fn computeSeabedHeight(worldXZ: vec2f) -> f32 {
   let slopeValue = simulationUniforms.shorelineData.x;
@@ -130,6 +138,44 @@ fn computeSeabedHeight(worldXZ: vec2f) -> f32 {
   return heightValue + broadSand + sandRipple + sandbarLift;
 }
 
+fn seabedGradient(worldXZ: vec2f) -> vec2f {
+  let sampleDistance = 1.25;
+  let leftHeight = computeSeabedHeight(worldXZ - vec2f(sampleDistance, 0.0));
+  let rightHeight = computeSeabedHeight(worldXZ + vec2f(sampleDistance, 0.0));
+  let backHeight = computeSeabedHeight(worldXZ - vec2f(0.0, sampleDistance));
+  let frontHeight = computeSeabedHeight(worldXZ + vec2f(0.0, sampleDistance));
+  return vec2f(
+    (rightHeight - leftHeight) / (2.0 * sampleDistance),
+    (frontHeight - backHeight) / (2.0 * sampleDistance)
+  );
+}
+
+fn lookupWavePhysics(slotIndex: u32, depthValue: f32) -> vec4f {
+  let minimumDepth = simulationUniforms.physicsParams.x;
+  let maximumDepth = simulationUniforms.physicsParams.y;
+  let depthLevelCount = u32(simulationUniforms.physicsParams.z + 0.5);
+  let slotCount = u32(simulationUniforms.physicsParams.w + 0.5);
+
+  let safeDepth = clamp(depthValue, minimumDepth, maximumDepth);
+  let logRange = log(maximumDepth / minimumDepth);
+  let normalizedDepth =
+    log(safeDepth / minimumDepth) / max(logRange, 0.0001);
+  let depthCoordinate =
+    normalizedDepth * f32(max(depthLevelCount - 1u, 1u));
+  let lowerLevel = u32(floor(depthCoordinate));
+  let upperLevel = min(lowerLevel + 1u, depthLevelCount - 1u);
+  let blendValue = fract(depthCoordinate);
+  let safeSlot = min(slotIndex, slotCount - 1u);
+
+  let lowerIndex = safeSlot * depthLevelCount + lowerLevel;
+  let upperIndex = safeSlot * depthLevelCount + upperLevel;
+  return mix(
+    wavePhysicsLut[lowerIndex].value,
+    wavePhysicsLut[upperIndex].value,
+    blendValue
+  );
+}
+
 @compute @workgroup_size(8, 8)
 fn computeSurface(@builtin(global_invocation_id) invocationId: vec3u) {
   let gridCount = u32(simulationUniforms.timingGrid.y + 0.5);
@@ -145,38 +191,112 @@ fn computeSurface(@builtin(global_invocation_id) invocationId: vec3u) {
   let simulationTime = simulationUniforms.timingGrid.x;
   let componentCount = u32(simulationUniforms.timingGrid.w + 0.5);
   let fineComponentCount = u32(simulationUniforms.domainCenter.z + 0.5);
+  let worldXZ = vec2f(worldX, worldZ);
+  let seabedHeightValue = computeSeabedHeight(worldXZ);
+  let meanDepth = max(-seabedHeightValue, 0.0);
+
+  let rawGradient = seabedGradient(worldXZ);
+  let gradientLength = length(rawGradient);
+  let shorewardNormal = select(
+    vec2f(0.0, -1.0),
+    normalize(rawGradient),
+    gradientLength > 0.0001
+  );
+  let shoreTangent = vec2f(-shorewardNormal.y, shorewardNormal.x);
+  let wetFactor = smoothstep(0.10, 0.85, meanDepth);
 
   var heightValue = 0.0;
   var slopeXValue = 0.0;
   var slopeZValue = 0.0;
+  var weightedShoaling = 0.0;
+  var amplitudeWeight = 0.0;
 
   for (var componentIndex = 0u; componentIndex < componentCount; componentIndex = componentIndex + 1u) {
     let componentPrimary = waveComponents[componentIndex].primary;
-    let phaseOffset = waveComponents[componentIndex].secondary.x;
+    let componentSecondary = waveComponents[componentIndex].secondary;
+    let phaseOffset = componentSecondary.x;
+    let physicsSlot = u32(componentSecondary.y + 0.5);
+    let referenceGroupVelocity = max(componentSecondary.z, 0.001);
+    let referencePhaseVelocity = max(componentSecondary.w, 0.001);
+
+    let baseWaveVector = componentPrimary.xy;
+    let baseWaveNumber = max(length(baseWaveVector), 0.00001);
+    let baseDirection = baseWaveVector / baseWaveNumber;
+
+    let localPhysics = lookupWavePhysics(
+      physicsSlot,
+      max(meanDepth, simulationUniforms.physicsParams.x)
+    );
+    let localWaveNumber = max(localPhysics.x, 0.00001);
+    let localPhaseVelocity = max(localPhysics.y, 0.001);
+    let localGroupVelocity = max(localPhysics.z, 0.001);
+
+    let incidentSin = clamp(dot(baseDirection, shoreTangent), -0.96, 0.96);
+    let incidentCos = sqrt(max(1.0 - incidentSin * incidentSin, 0.02));
+    let localSin = clamp(
+      incidentSin * localPhaseVelocity / referencePhaseVelocity,
+      -0.94,
+      0.94
+    );
+    let localCos = sqrt(max(1.0 - localSin * localSin, 0.02));
+    let localDirection = normalize(
+      shorewardNormal * localCos +
+      shoreTangent * localSin
+    );
+    let localWaveVector = localDirection * localWaveNumber;
+
+    let fluxRatio =
+      referenceGroupVelocity * incidentCos /
+      max(localGroupVelocity * localCos, 0.001);
+    let rawShoaling = clamp(sqrt(max(fluxRatio, 0.05)), 0.62, 2.15);
+
+    let targetSignificantHeight = max(simulationUniforms.shorelineData.z, 0.05);
+    let breakerLimit = 0.78 * max(meanDepth, 0.08);
+    let predictedSignificantHeight = targetSignificantHeight * rawShoaling;
+    let breakerAmplitudeScale = min(
+      1.0,
+      breakerLimit / max(predictedSignificantHeight, 0.01)
+    );
+    let localAmplitudeScale =
+      rawShoaling *
+      breakerAmplitudeScale *
+      wetFactor;
+
+    let shoreOrigin = vec2f(0.0, simulationUniforms.shorelineData.y);
+    let relativePosition = worldXZ - shoreOrigin;
     let spatialPhase =
-      componentPrimary.x * worldX +
-      componentPrimary.y * worldZ -
+      dot(localWaveVector, relativePosition) -
       componentPrimary.z * simulationTime +
       phaseOffset;
     let cosineValue = cos(spatialPhase);
     let sineValue = sin(spatialPhase);
-    heightValue += componentPrimary.w * cosineValue;
-    slopeXValue += -componentPrimary.w * componentPrimary.x * sineValue;
-    slopeZValue += -componentPrimary.w * componentPrimary.y * sineValue;
+    let localAmplitude = componentPrimary.w * localAmplitudeScale;
+
+    heightValue += localAmplitude * cosineValue;
+    slopeXValue += -localAmplitude * localWaveVector.x * sineValue;
+    slopeZValue += -localAmplitude * localWaveVector.y * sineValue;
+
+    let componentWeight = abs(componentPrimary.w);
+    weightedShoaling += rawShoaling * componentWeight;
+    amplitudeWeight += componentWeight;
   }
 
+  let representativeShoaling =
+    weightedShoaling / max(amplitudeWeight, 0.00001);
   let linearIndex = invocationId.y * gridCount + invocationId.x;
-  surfaceSamples[linearIndex].value = vec4f(heightValue, slopeXValue, slopeZValue, 1.0);
+  surfaceSamples[linearIndex].value = vec4f(
+    heightValue,
+    slopeXValue,
+    slopeZValue,
+    representativeShoaling
+  );
 
-  let worldXZ = vec2f(worldX, worldZ);
-  let seabedHeightValue = computeSeabedHeight(worldXZ);
-  let meanDepth = max(-seabedHeightValue, 0.0);
-  let shallowDamping = smoothstep(0.10, 1.30, meanDepth);
-  let shoalingBand = 1.0 + 0.16 * exp(-pow((meanDepth - 2.2) / 1.6, 2.0));
-  let surfaceHeight = heightValue * shallowDamping * shoalingBand;
+  let surfaceHeight = heightValue;
   let targetSignificantHeight = max(simulationUniforms.shorelineData.z, 0.05);
+  let localSignificantHeight =
+    targetSignificantHeight * representativeShoaling;
   let depthLimitedRatio =
-    targetSignificantHeight * shoalingBand /
+    localSignificantHeight /
     max(meanDepth, 0.12);
   let wetEnough = smoothstep(0.10, 0.36, meanDepth);
   let depthBreaker =
@@ -184,10 +304,7 @@ fn computeSurface(@builtin(global_invocation_id) invocationId: vec3u) {
     wetEnough;
   let crestFactor =
     smoothstep(0.06, max(targetSignificantHeight * 0.48, 0.12), surfaceHeight);
-  let combinedSteepness =
-    length(vec2f(slopeXValue, slopeZValue)) *
-    shallowDamping *
-    shoalingBand;
+  let combinedSteepness = length(vec2f(slopeXValue, slopeZValue));
   let steepnessFactor = smoothstep(0.08, 0.30, combinedSteepness);
   let breakerSource =
     depthBreaker *
@@ -241,12 +358,15 @@ fn computeFineSurface(@builtin(global_invocation_id) invocationId: vec3u) {
     fineSlopeZValue += -componentPrimary.w * componentPrimary.y * sineValue;
   }
 
+  let worldXZ = vec2f(worldX, worldZ);
+  let localDepth = max(-computeSeabedHeight(worldXZ), 0.0);
+  let fineWetFactor = smoothstep(0.08, 0.65, localDepth);
   let linearIndex = invocationId.y * fineGridCount + invocationId.x;
   fineSurfaceSamples[linearIndex].value = vec4f(
-    fineHeightValue,
-    fineSlopeXValue,
-    fineSlopeZValue,
-    1.0
+    fineHeightValue * fineWetFactor,
+    fineSlopeXValue * fineWetFactor,
+    fineSlopeZValue * fineWetFactor,
+    fineWetFactor
   );
 }
 </script>
@@ -631,20 +751,17 @@ fn oceanVertex(@builtin(vertex_index) vertexIndex: u32) -> OceanVertexOutput {
   let worldZ = 180.0 + normalizedZ * domainSize;
   let seabedHeightAtVertex = seabedHeight(vec2f(worldX, worldZ));
   let meanDepth = max(-seabedHeightAtVertex, 0.0);
-  let shallowDamping = smoothstep(0.10, 1.30, meanDepth);
-  let shoalingBand = 1.0 + 0.16 * exp(-pow((meanDepth - 2.2) / 1.6, 2.0));
   let surfaceValue = surfaceSamples[vertexIndex].value;
-  let waveMultiplier = shallowDamping * shoalingBand;
-  let surfaceHeight = surfaceValue.x * waveMultiplier;
+  let surfaceHeight = surfaceValue.x;
   let worldPositionValue = vec3f(worldX, surfaceHeight, worldZ);
   let linearIndex = zIndex * gridCount + xIndex;
   let fineValue = fineSurfaceSampleAt(vec2f(worldX, worldZ), vec2i(0, 0));
   let fineNormalWeight = fineValue.w;
   let combinedSlopeX =
-    surfaceValue.y * waveMultiplier +
+    surfaceValue.y +
     fineValue.y * fineNormalWeight;
   let combinedSlopeZ =
-    surfaceValue.z * waveMultiplier +
+    surfaceValue.z +
     fineValue.z * fineNormalWeight;
   let worldNormalValue = normalize(vec3f(
     -combinedSlopeX,
@@ -653,8 +770,10 @@ fn oceanVertex(@builtin(vertex_index) vertexIndex: u32) -> OceanVertexOutput {
   ));
 
   let targetSignificantHeight = max(renderUniforms.seaStateParams.x, 0.05);
+  let localSignificantHeight =
+    targetSignificantHeight * max(surfaceValue.w, 0.25);
   let depthLimitedRatio =
-    targetSignificantHeight * shoalingBand /
+    localSignificantHeight /
     max(meanDepth, 0.12);
   let depthBreaker =
     smoothstep(0.58, 0.82, depthLimitedRatio) *
@@ -662,7 +781,7 @@ fn oceanVertex(@builtin(vertex_index) vertexIndex: u32) -> OceanVertexOutput {
   let crestFactor =
     smoothstep(0.06, max(targetSignificantHeight * 0.48, 0.12), surfaceHeight);
   let slopeMagnitude =
-    length(surfaceValue.yz) * waveMultiplier +
+    length(surfaceValue.yz) +
     length(fineValue.yz) * 0.28;
   let steepnessFactor = smoothstep(0.08, 0.30, slopeMagnitude);
   let breakerPotential =
@@ -860,6 +979,10 @@ const FINE_DIR_BINS = 8;
 const MAX_BASE_COMPONENTS = FREQ_BINS * DIR_BINS * 2;
 const MAX_FINE_COMPONENTS = FINE_FREQ_BINS * FINE_DIR_BINS;
 const MAX_COMPONENTS = MAX_BASE_COMPONENTS + MAX_FINE_COMPONENTS;
+const PHYSICS_SLOTS = FREQ_BINS * 2;
+const PHYSICS_DEPTH_LEVELS = 128;
+const PHYSICS_MIN_DEPTH = 0.12;
+const PHYSICS_MAX_DEPTH = 70.0;
 const canvas = document.getElementById('gpuCanvas');
 const statusElement = document.getElementById('status');
 const ciMode = new URLSearchParams(location.search).has('ci');
@@ -976,6 +1099,17 @@ function solveWaveNumber(angularFrequency, depthValue) {
   return waveNumber;
 }
 
+function groupVelocity(angularFrequency, waveNumber, depthValue) {
+  const phaseVelocity = angularFrequency / Math.max(waveNumber, 1e-9);
+  const kh = waveNumber * depthValue;
+  const sinh2kh = Math.sinh(Math.min(2 * kh, 40));
+  const correction =
+    sinh2kh > 1e-7
+      ? (2 * kh) / sinh2kh
+      : 1;
+  return 0.5 * phaseVelocity * (1 + correction);
+}
+
 function wrapAngle(angleValue) {
   let angle = angleValue;
   while (angle > Math.PI) angle -= Math.PI * 2;
@@ -983,20 +1117,22 @@ function wrapAngle(angleValue) {
   return angle;
 }
 
-function buildSystemComponents(systemConfig, depthValue, gammaValue, spreadPeak, phaseOffset) {
-  if (systemConfig.hs <= 0.001) return { components: [], spectrum: [] };
+function buildSystemComponents(systemConfig, depthValue, gammaValue, spreadPeak, phaseOffset, physicsSlotBase) {
+  if (systemConfig.hs <= 0.001) return { components: [], spectrum: [], frequencies: [] };
 
   const peakFrequency = 1 / systemConfig.tp;
   const minimumFrequency = Math.max(0.025, peakFrequency * 0.42);
   const maximumFrequency = Math.min(1.35, peakFrequency * 2.45);
   const frequencyStep = (maximumFrequency - minimumFrequency) / FREQ_BINS;
   const rawSpectrum = [];
+  const frequencies = [];
   let rawMoment = 0;
 
   for (let frequencyIndex = 0; frequencyIndex < FREQ_BINS; frequencyIndex += 1) {
     const frequencyValue = minimumFrequency + (frequencyIndex + 0.5) * frequencyStep;
     const shapeValue = jonswapShape(frequencyValue, systemConfig.tp, gammaValue, depthValue);
     rawSpectrum.push({ frequency: frequencyValue, raw: shapeValue });
+    frequencies.push(frequencyValue);
     rawMoment += shapeValue * frequencyStep;
   }
 
@@ -1049,17 +1185,64 @@ function buildSystemComponents(systemConfig, depthValue, gammaValue, spreadPeak,
         frequencyIndex * DIR_BINS + directionIndex,
         phaseOffset
       );
+      const referencePhaseVelocity =
+        angularFrequency / Math.max(waveNumberMagnitude, 1e-9);
+      const referenceGroupVelocity =
+        groupVelocity(angularFrequency, waveNumberMagnitude, depthValue);
       components.push({
         kx,
         kz,
         omega: angularFrequency,
         amplitude: amplitudeValue,
         phase: phaseValue,
+        physicsSlot: physicsSlotBase + frequencyIndex,
+        referenceGroupVelocity,
+        referencePhaseVelocity,
       });
     }
   }
 
-  return { components, spectrum };
+  return { components, spectrum, frequencies };
+}
+
+function buildWavePhysicsLut(windFrequencies, swellFrequencies) {
+  const slotFrequencies = new Array(PHYSICS_SLOTS).fill(0);
+  for (let index = 0; index < FREQ_BINS; index += 1) {
+    slotFrequencies[index] = windFrequencies[index] || (1 / controls.windTp);
+    slotFrequencies[FREQ_BINS + index] =
+      swellFrequencies[index] || (1 / controls.swellTp);
+  }
+
+  const data = new Float32Array(
+    PHYSICS_SLOTS * PHYSICS_DEPTH_LEVELS * 4
+  );
+  const logRange = Math.log(PHYSICS_MAX_DEPTH / PHYSICS_MIN_DEPTH);
+
+  for (let slotIndex = 0; slotIndex < PHYSICS_SLOTS; slotIndex += 1) {
+    const angularFrequency =
+      Math.PI * 2 * Math.max(slotFrequencies[slotIndex], 0.01);
+
+    for (let depthIndex = 0; depthIndex < PHYSICS_DEPTH_LEVELS; depthIndex += 1) {
+      const normalizedDepth =
+        depthIndex / Math.max(PHYSICS_DEPTH_LEVELS - 1, 1);
+      const depthValue =
+        PHYSICS_MIN_DEPTH *
+        Math.exp(logRange * normalizedDepth);
+      const waveNumber =
+        solveWaveNumber(angularFrequency, depthValue);
+      const phaseVelocity =
+        angularFrequency / Math.max(waveNumber, 1e-9);
+      const groupVelocityValue =
+        groupVelocity(angularFrequency, waveNumber, depthValue);
+      const offset =
+        (slotIndex * PHYSICS_DEPTH_LEVELS + depthIndex) * 4;
+      data[offset] = waveNumber;
+      data[offset + 1] = phaseVelocity;
+      data[offset + 2] = groupVelocityValue;
+      data[offset + 3] = depthValue;
+    }
+  }
+  return data;
 }
 
 function buildFineSlopeComponents(systemConfig, depthValue, gammaValue, spreadPeak, windSpeed, detailScale) {
@@ -1248,6 +1431,10 @@ async function initialize() {
     size: MAX_COMPONENTS * 32,
     usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
   });
+  const wavePhysicsBuffer = device.createBuffer({
+    size: PHYSICS_SLOTS * PHYSICS_DEPTH_LEVELS * 16,
+    usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+  });
   const surfaceBuffer = device.createBuffer({
     size: GRID_COUNT * GRID_COUNT * 16,
     usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
@@ -1261,7 +1448,7 @@ async function initialize() {
     usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
   });
   const simulationUniformBuffer = device.createBuffer({
-    size: 64,
+    size: 80,
     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
   });
   const renderUniformBuffer = device.createBuffer({
@@ -1282,6 +1469,7 @@ async function initialize() {
       { binding: 2, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'uniform' } },
       { binding: 3, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'storage' } },
       { binding: 4, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'storage' } },
+      { binding: 5, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'read-only-storage' } },
     ],
   });
   const renderBindGroupLayout = device.createBindGroupLayout({
@@ -1355,6 +1543,7 @@ async function initialize() {
       { binding: 2, resource: { buffer: simulationUniformBuffer } },
       { binding: 3, resource: { buffer: fineSurfaceBuffer } },
       { binding: 4, resource: { buffer: foamBuffer } },
+      { binding: 5, resource: { buffer: wavePhysicsBuffer } },
     ],
   });
   let renderBindGroup = null;
@@ -1415,14 +1604,16 @@ async function initialize() {
       controls.depth,
       controls.gamma,
       controls.spread,
-      1
+      1,
+      0
     );
     const swellResult = buildSystemComponents(
       { hs: controls.swellHs, tp: controls.swellTp, directionDegrees: controls.swellDir },
       controls.depth,
       Math.max(1.0, Math.min(2.2, controls.gamma * 0.55)),
       Math.max(controls.spread * 1.35, 8),
-      7
+      7,
+      FREQ_BINS
     );
     const allComponents = [...windResult.components, ...swellResult.components];
     componentCount = Math.min(allComponents.length, MAX_BASE_COMPONENTS);
@@ -1448,6 +1639,9 @@ async function initialize() {
       waveData[offset + 2] = component.omega;
       waveData[offset + 3] = component.amplitude;
       waveData[offset + 4] = component.phase;
+      waveData[offset + 5] = component.physicsSlot;
+      waveData[offset + 6] = component.referenceGroupVelocity;
+      waveData[offset + 7] = component.referencePhaseVelocity;
     }
     for (let index = 0; index < fineComponentCount; index += 1) {
       const component = fineResult.components[index];
@@ -1459,12 +1653,61 @@ async function initialize() {
       waveData[offset + 4] = component.phase;
     }
     device.queue.writeBuffer(waveBuffer, 0, waveData);
+    const wavePhysicsData = buildWavePhysicsLut(
+      windResult.frequencies,
+      swellResult.frequencies
+    );
+    device.queue.writeBuffer(
+      wavePhysicsBuffer,
+      0,
+      wavePhysicsData
+    );
     chartPoints = combineSpectrumForChart(windResult.spectrum, swellResult.spectrum);
     drawSpectrum(chartPoints);
 
     const targetHsValue = Math.sqrt(controls.windHs * controls.windHs + controls.swellHs * controls.swellHs);
     targetHsCurrent = targetHsValue;
     document.getElementById('targetHs').textContent = targetHsValue.toFixed(2) + ' m';
+    const peakAngularFrequency = Math.PI * 2 / Math.max(controls.windTp, 0.1);
+    const referenceWaveNumber =
+      solveWaveNumber(peakAngularFrequency, controls.depth);
+    const shallowWaveNumber =
+      solveWaveNumber(peakAngularFrequency, 2.0);
+    const referencePhaseVelocity =
+      peakAngularFrequency / referenceWaveNumber;
+    const shallowPhaseVelocity =
+      peakAngularFrequency / shallowWaveNumber;
+    const referenceGroupVelocity =
+      groupVelocity(peakAngularFrequency, referenceWaveNumber, controls.depth);
+    const shallowGroupVelocity =
+      groupVelocity(peakAngularFrequency, shallowWaveNumber, 2.0);
+    const incidentAngle = controls.windDir * Math.PI / 180;
+    const shallowSin = Math.max(
+      -0.94,
+      Math.min(
+        0.94,
+        Math.sin(incidentAngle) *
+        shallowPhaseVelocity /
+        referencePhaseVelocity
+      )
+    );
+    const shallowCos = Math.sqrt(Math.max(1 - shallowSin * shallowSin, 0.02));
+    const referenceCos = Math.sqrt(
+      Math.max(1 - Math.sin(incidentAngle) ** 2, 0.02)
+    );
+    const shoreKs = Math.sqrt(
+      (referenceGroupVelocity * referenceCos) /
+      Math.max(shallowGroupVelocity * shallowCos, 1e-6)
+    );
+    const shoreLambda = Math.PI * 2 / shallowWaveNumber;
+    document.getElementById('shoreLambda').textContent =
+      shoreLambda.toFixed(1) + ' m';
+    document.getElementById('shoreKs').textContent =
+      shoreKs.toFixed(2);
+    document.documentElement.dataset.shoreLambda =
+      shoreLambda.toFixed(4);
+    document.documentElement.dataset.shoreKs =
+      shoreKs.toFixed(4);
     document.documentElement.dataset.componentCount = String(componentCount);
     document.documentElement.dataset.fineComponentCount = String(fineComponentCount);
     document.documentElement.dataset.targetHs = targetHsValue.toFixed(4);
@@ -1624,7 +1867,7 @@ async function initialize() {
     device.queue.writeBuffer(renderUniformBuffer, 0, renderUniformData);
   }
 
-  const simulationUniformArrayBuffer = new ArrayBuffer(64);
+  const simulationUniformArrayBuffer = new ArrayBuffer(80);
   const simulationFloatView = new Float32Array(simulationUniformArrayBuffer);
   function writeSimulationUniforms(simulationTime, deltaSeconds) {
     simulationFloatView.fill(0);
@@ -1643,6 +1886,10 @@ async function initialize() {
     simulationFloatView[13] = FINE_DOMAIN_SIZE;
     simulationFloatView[14] = FINE_CENTER_X;
     simulationFloatView[15] = FINE_CENTER_Z;
+    simulationFloatView[16] = PHYSICS_MIN_DEPTH;
+    simulationFloatView[17] = PHYSICS_MAX_DEPTH;
+    simulationFloatView[18] = PHYSICS_DEPTH_LEVELS;
+    simulationFloatView[19] = PHYSICS_SLOTS;
     device.queue.writeBuffer(simulationUniformBuffer, 0, simulationUniformArrayBuffer);
   }
 
@@ -1847,6 +2094,7 @@ async function initialize() {
     document.documentElement.dataset.waveDirection = 'shoreward-minus-z';
     document.documentElement.dataset.foamState = 'persistent-decay';
     document.documentElement.dataset.fineGrid = '321x321-140m';
+    document.documentElement.dataset.coastalWavePhysics = 'snell-groupvelocity-lut';
     stage('ok');
     return;
   }
@@ -1908,6 +2156,7 @@ async function initialize() {
   document.documentElement.dataset.waveDirection = 'shoreward-minus-z';
   document.documentElement.dataset.foamState = 'persistent-decay';
   document.documentElement.dataset.fineGrid = '321x321-140m';
+  document.documentElement.dataset.coastalWavePhysics = 'snell-groupvelocity-lut';
   stage('running');
   requestAnimationFrame(frame);
 }

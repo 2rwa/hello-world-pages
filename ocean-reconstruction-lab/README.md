@@ -221,3 +221,28 @@ This creates a real scale separation:
 - outside the local tile: unresolved short-wave slope variance returns to the Cox–Munk-derived BRDF roughness
 
 The local tile therefore does not abruptly remove short-wave energy; it changes representation from explicit slopes back to statistical reflection.
+
+
+## Phase 2.8: finite-depth refraction and energy-flux shoaling
+
+The long-wave band now changes physically as it enters shallow water.
+
+A CPU-built lookup table stores, for every long-wave frequency and 128 logarithmic depth levels:
+
+- local finite-depth wave number k from omega^2 = g k tanh(k h)
+- phase velocity c = omega / k
+- group velocity Cg
+
+Each spectral component carries its reference-depth phase and group velocity. At every coarse GPU surface sample:
+
+1. local bathymetry gradient defines the shoreward normal and alongshore tangent
+2. the local LUT is sampled from water depth
+3. Snell refraction preserves sin(theta) / c
+4. the wave vector rotates toward the shore normal and grows as wavelength shortens
+5. amplitude follows energy-flux conservation:
+   A ~ sqrt((Cg0 cos(theta0)) / (Cg cos(theta)))
+6. the depth-limited breaker criterion H <= 0.78 h caps further growth and feeds the foam source
+
+The old hand-authored shoaling bump is removed from rendering, so the same transformed spectral surface now drives geometry, normals, breaker detection, refraction and caustics.
+
+The UI also reports the wind-sea peak wavelength and shoaling coefficient at 2 m depth, making shallow-water transformation measurable rather than purely visual.
