@@ -1,0 +1,38 @@
+name: Ocean Reconstruction Lab CI
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'ocean-reconstruction-lab/**'
+      - 'tests/ocean-reconstruction-lab-ci.mjs'
+      - '.github/workflows/ocean-reconstruction-lab-test.yml'
+
+jobs:
+  spectral-ocean:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Browser version
+        run: google-chrome --version || google-chrome-stable --version || chromium --version
+      - name: Serve Pages tree
+        run: |
+          python3 -m http.server 8000 --bind 127.0.0.1 > /tmp/ocean-reconstruction-http.log 2>&1 &
+          echo $! > /tmp/ocean-reconstruction-http.pid
+      - name: Static JavaScript syntax check
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          source = Path('ocean-reconstruction-lab/index.html').read_text()
+          begin = source.index('<script type="module">') + len('<script type="module">')
+          end = source.index('</script>', begin)
+          Path('/tmp/ocean-reconstruction-app.mjs').write_text(source[begin:end])
+          PY
+          node --check /tmp/ocean-reconstruction-app.mjs
+          node --check tests/ocean-reconstruction-lab-ci.mjs
+      - name: WebGPU compute, ocean render and readback
+        run: node tests/ocean-reconstruction-lab-ci.mjs
