@@ -1,0 +1,44 @@
+name: WebGPU Hybrid Shoreline CI
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'webgpu-hybrid-shoreline/**'
+      - 'tests/webgpu-hybrid-shoreline-ci.mjs'
+      - '.github/workflows/webgpu-hybrid-shoreline-test.yml'
+
+jobs:
+  hybrid-shoreline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Browser version
+        run: google-chrome --version || google-chrome-stable --version || chromium --version
+      - name: Serve Pages tree
+        run: |
+          python3 -m http.server 8000 --bind 127.0.0.1 > /tmp/hybrid-shoreline-http.log 2>&1 &
+          echo $! > /tmp/hybrid-shoreline-http.pid
+      - name: Static JavaScript syntax check
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          source = Path('webgpu-hybrid-shoreline/index.html').read_text()
+          begin = source.index('<script type="module">') + len('<script type="module">')
+          end = source.index('</script>', begin)
+          Path('/tmp/hybrid-shoreline-app.mjs').write_text(source[begin:end])
+          PY
+          node --check /tmp/hybrid-shoreline-app.mjs
+          node --check tests/webgpu-hybrid-shoreline-ci.mjs
+      - name: WebGPU hybrid render and UI regression
+        run: node tests/webgpu-hybrid-shoreline-ci.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: webgpu-hybrid-shoreline-ci
+          path: artifacts/webgpu-hybrid-shoreline-ci.png
+          if-no-files-found: ignore

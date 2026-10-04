@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Hybrid WebGPU Shoreline</title>
+<style>
+  :root { color-scheme: dark; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+  * { box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: #b8d8df; color: #16252a; }
+  canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+  .panel { position: fixed; z-index: 10; left: 14px; top: 14px; width: min(390px, calc(100vw - 28px)); padding: 14px 15px; border-radius: 14px; background: rgba(248,245,230,.92); border: 1px solid rgba(48,61,56,.18); box-shadow: 0 16px 42px rgba(42,65,71,.18); }
+  .title { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 9px; }
+  h1 { margin: 0; font-size: 16px; letter-spacing: .01em; }
+  .status { font: 11px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace; color: #4d625f; }
+  .architecture { display: flex; flex-wrap: wrap; gap: 5px; margin: 0 0 11px; }
+  .architecture span { padding: 3px 6px; border: 1px solid rgba(42,78,74,.20); border-radius: 999px; background: rgba(255,255,255,.48); font: 10px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace; color: #31514e; }
+  .controls { display: grid; gap: 8px; }
+  label { display: grid; grid-template-columns: 102px 1fr 45px; gap: 8px; align-items: center; font-size: 12px; }
+  input[type=range] { width: 100%; accent-color: #258f83; }
+  output { text-align: right; font: 11px/1 ui-monospace, SFMono-Regular, Menlo, monospace; color: #2d625d; }
+  .check { grid-template-columns: auto 1fr; }
+  .check input { width: 16px; height: 16px; }
+  .hint { margin-top: 10px; font-size: 11px; line-height: 1.45; color: #53645f; }
+  .error { color: #a62929; white-space: pre-wrap; }
+  @media (max-width: 640px) { .panel { top: auto; bottom: 10px; } .hint { display:none; } }
+</style>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.webgpu.js",
+    "three/webgpu": "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.webgpu.js",
+    "three/tsl": "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.tsl.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+<section class="panel">
+  <div class="title"><h1>Hybrid WebGPU Shoreline</h1><span id="status" class="status">boot</span></div>
+  <div class="architecture">
+    <span>RASTER terrain/rocks</span>
+    <span>DEPTH refraction</span>
+    <span>WGSL 12-step volume</span>
+  </div>
+  <div class="controls">
+    <label>Water clarity <input id="clarity" type="range" min="0.45" max="2.0" value="1.20" step="0.05"><output id="clarityOut">1.20</output></label>
+    <label>Refraction <input id="refraction" type="range" min="0" max="0.028" value="0.010" step="0.001"><output id="refractionOut">0.010</output></label>
+    <label>Raymarch glow <input id="raymarch" type="range" min="0" max="1.2" value="0.38" step="0.02"><output id="raymarchOut">0.38</output></label>
+    <label>Wave scale <input id="waves" type="range" min="1.5" max="8.0" value="4.2" step="0.1"><output id="wavesOut">4.2</output></label>
+    <label class="check"><input id="rotate" type="checkbox" checked><span>slow camera orbit</span></label>
+  </div>
+  <div class="hint">通常メッシュの砂浜・岩・杭・水中オブジェクトを先に描画し、水面だけが scene color/depth を参照して屈折します。浅瀬の光だけ WGSL 固定ステップ・ボリュームレイマーチを追加しています。</div>
+</section>
+
+<script type="module">
+import * as THREE from 'three/webgpu';
+import {
+  color, vec2, vec3, linearDepth, positionWorld, screenUV,
+  viewportLinearDepth, viewportDepthTexture, viewportSharedTexture,
+  time, uniform, wgslFn
+} from 'three/tsl';
+import { voronoi2d } from 'three/addons/tsl/math/voronoiNoise.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import WebGPU from 'three/addons/capabilities/WebGPU.js';
+
+const root = document.documentElement;
+const statusElement = document.getElementById('status');
+const ciMode = new URLSearchParams(location.search).has('ci');
+let uiRevision = 0;
+
+function stage(name) {
+  root.dataset.testStage = name;
+  statusElement.textContent = name;
+}
+
+function fail(errorValue) {
+  const message = errorValue instanceof Error ? (errorValue.stack || errorValue.message) : String(errorValue);
+  root.dataset.testStage = 'failed';
+  root.dataset.error = message.slice(0, 1200);
+  statusElement.textContent = 'failed';
+  statusElement.classList.add('error');
+  console.error(errorValue);
+}
+
+function beachHeight(xValue, zValue) {
+  const shoreCurve = Math.sin(xValue * 0.10) * 1.20 + Math.sin(xValue * 0.29 + 1.3) * 0.35;
+  const depthCoordinate = zValue - (-1.2 + shoreCurve);
+  const broadSlope = -depthCoordinate * (depthCoordinate < 0 ? 0.15 : 0.115);
+  const dune = Math.sin(xValue * 0.19 + zValue * 0.07) * 0.12 + Math.sin(xValue * 0.73 - zValue * 0.15) * 0.025;
+  const sandRipple = Math.sin(xValue * 2.1 + Math.sin(zValue * 0.45)) * 0.012;
+  return broadSlope + dune + sandRipple;
+}
+
+function makeBeachGeometry() {
+  const geometry = new THREE.PlaneGeometry(68, 62, 136, 124);
+  geometry.rotateX(-Math.PI / 2);
+  const position = geometry.attributes.position;
+  const colors = [];
+  const dry = new THREE.Color(0xd8bd82);
+  const pale = new THREE.Color(0xead59f);
+  const wet = new THREE.Color(0x9b815f);
+  const deep = new THREE.Color(0x746d5a);
+  const work = new THREE.Color();
+
+  for (let index = 0; index < position.count; index += 1) {
+    const xValue = position.getX(index);
+    const zValue = position.getZ(index);
+    const yValue = beachHeight(xValue, zValue);
+    position.setY(index, yValue);
+
+    if (yValue > 0.35) work.copy(dry).lerp(pale, Math.min(1, (yValue - 0.35) * 0.5));
+    else if (yValue > -0.18) work.copy(wet).lerp(dry, Math.max(0, (yValue + 0.18) / 0.53));
+    else work.copy(deep).lerp(wet, Math.max(0, Math.min(1, (yValue + 2.8) / 2.62)));
+
+    const variation = 0.94 + 0.06 * Math.sin(xValue * 1.7 + zValue * 0.8);
+    colors.push(work.r * variation, work.g * variation, work.b * variation);
+  }
+
+  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
+function addRock(scene, xValue, zValue, scaleValue, colorValue) {
+  const yValue = beachHeight(xValue, zValue) + scaleValue * 0.38;
+  const geometry = new THREE.IcosahedronGeometry(scaleValue, 2);
+  const material = new THREE.MeshStandardMaterial({ color: colorValue, roughness: 0.88, metalness: 0.02 });
+  const rock = new THREE.Mesh(geometry, material);
+  rock.position.set(xValue, yValue, zValue);
+  rock.scale.set(1.15, 0.72, 0.95);
+  rock.rotation.set(0.13 * xValue, 0.27 * zValue, 0.08);
+  rock.castShadow = true;
+  rock.receiveShadow = true;
+  scene.add(rock);
+}
+
+function addPost(scene, xValue, zValue, heightValue) {
+  const floorY = beachHeight(xValue, zValue);
+  const geometry = new THREE.CylinderGeometry(0.18, 0.22, heightValue, 14);
+  const material = new THREE.MeshStandardMaterial({ color: 0x6c4c35, roughness: 0.9 });
+  const post = new THREE.Mesh(geometry, material);
+  post.position.set(xValue, floorY + heightValue * 0.5, zValue);
+  post.castShadow = true;
+  post.receiveShadow = true;
+  scene.add(post);
+}
+
+const volumeMarchFn = wgslFn(`
+  fn shallowVolumeMarch(
+    surfacePosition: vec3f,
+    travelAmount: f32,
+    timeValue: f32
+  ) -> f32 {
+    var accumulatedLight = 0.0;
+    let safeTravel = max(travelAmount, 0.001);
+    let stepLength = safeTravel / 12.0;
+
+    for (var stepIndex = 0; stepIndex < 12; stepIndex = stepIndex + 1) {
+      let sampleDepth = (f32(stepIndex) + 0.5) * stepLength;
+      let samplePosition = surfacePosition + vec3f(0.0, -sampleDepth, 0.0);
+
+      let ribbonA = 0.5 + 0.5 * sin(
+        samplePosition.x * 4.6 +
+        samplePosition.z * 3.1 +
+        timeValue * 1.55 +
+        sampleDepth * 2.4
+      );
+
+      let ribbonB = 0.5 + 0.5 * sin(
+        samplePosition.x * -2.8 +
+        samplePosition.z * 5.2 -
+        timeValue * 1.15 +
+        sampleDepth * 1.7
+      );
+
+      let focusedLight = pow(max(ribbonA * ribbonB, 0.0), 5.0);
+      accumulatedLight += focusedLight * exp(-sampleDepth * 0.72);
+    }
+
+    return accumulatedLight / 12.0;
+  }
+`);
+
+async function init() {
+  stage('script-start');
+
+  if (!navigator.gpu || WebGPU.isAvailable() === false) {
+    throw new Error('WebGPU is required for this comparison build.');
+  }
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0xaad5df);
+  scene.fog = new THREE.Fog(0xaad5df, 36, 88);
+
+  const camera = new THREE.PerspectiveCamera(48, innerWidth / innerHeight, 0.1, 120);
+  camera.position.set(10.5, 6.1, -19.0);
+
+  const hemisphere = new THREE.HemisphereLight(0xdff5ff, 0x8d724f, 2.7);
+  scene.add(hemisphere);
+
+  const sunLight = new THREE.DirectionalLight(0xffe1a3, 4.2);
+  sunLight.position.set(-7, 13, -9);
+  sunLight.castShadow = true;
+  sunLight.shadow.mapSize.set(1024, 1024);
+  sunLight.shadow.camera.left = -24;
+  sunLight.shadow.camera.right = 24;
+  sunLight.shadow.camera.top = 24;
+  sunLight.shadow.camera.bottom = -24;
+  sunLight.shadow.camera.near = 1;
+  sunLight.shadow.camera.far = 55;
+  scene.add(sunLight);
+
+  const beachMaterial = new THREE.MeshStandardMaterial({
+    vertexColors: true,
+    roughness: 0.96,
+    metalness: 0.0
+  });
+  const beach = new THREE.Mesh(makeBeachGeometry(), beachMaterial);
+  beach.receiveShadow = true;
+  scene.add(beach);
+
+  addRock(scene, -10.5, -4.7, 1.45, 0x766d61);
+  addRock(scene, -6.4, 3.2, 0.92, 0x66665e);
+  addRock(scene, 7.7, 6.5, 1.15, 0x5f645f);
+  addRock(scene, 13.0, 11.0, 1.65, 0x737168);
+  addRock(scene, 2.3, 14.0, 0.75, 0x5c655f);
+
+  addPost(scene, -3.2, 2.8, 3.8);
+  addPost(scene, -1.7, 4.4, 3.5);
+  addPost(scene, -0.2, 6.0, 3.3);
+
+  const submergedGroup = new THREE.Group();
+  const orangeMaterial = new THREE.MeshStandardMaterial({ color: 0xe77539, roughness: 0.42, metalness: 0.04 });
+  const blueMaterial = new THREE.MeshStandardMaterial({ color: 0x356f93, roughness: 0.36, metalness: 0.05 });
+
+  const orangeBox = new THREE.Mesh(new THREE.BoxGeometry(1.7, 1.2, 1.7), orangeMaterial);
+  orangeBox.position.set(4.5, beachHeight(4.5, 5.2) + 0.65, 5.2);
+  orangeBox.rotation.y = 0.38;
+  orangeBox.castShadow = true;
+  submergedGroup.add(orangeBox);
+
+  const blueSphere = new THREE.Mesh(new THREE.SphereGeometry(0.85, 32, 20), blueMaterial);
+  blueSphere.position.set(-5.1, beachHeight(-5.1, 8.0) + 0.86, 8.0);
+  blueSphere.castShadow = true;
+  submergedGroup.add(blueSphere);
+
+  const ring = new THREE.Mesh(
+    new THREE.TorusGeometry(1.05, 0.24, 18, 48),
+    new THREE.MeshStandardMaterial({ color: 0xe5c456, roughness: 0.35 })
+  );
+  ring.position.set(7.2, beachHeight(7.2, 10.5) + 0.75, 10.5);
+  ring.rotation.x = Math.PI * 0.5;
+  submergedGroup.add(ring);
+
+  scene.add(submergedGroup);
+
+  const clarityUniform = uniform(1.20);
+  const refractionUniform = uniform(0.010);
+  const raymarchUniform = uniform(0.38);
+  const waveScaleUniform = uniform(4.2);
+
+  const waterTime = time.mul(0.50);
+  const waterCoords = positionWorld.xz;
+  const waveA = voronoi2d(waterCoords.mul(waveScaleUniform), waterTime);
+  const waveB = voronoi2d(waterCoords.mul(waveScaleUniform.mul(0.57)), waterTime.mul(0.73));
+  const waveProduct = waveA.mul(waveB);
+
+  const surfaceDepth = linearDepth();
+  const sceneDepthGap = viewportLinearDepth.sub(surfaceDepth);
+  const depthPresence = sceneDepthGap.remapClamp(-0.002, 0.045);
+
+  const refractionOffset = vec2(
+    waveA.sub(0.5).mul(refractionUniform),
+    waveB.sub(0.5).mul(refractionUniform.mul(0.72))
+  ).mul(depthPresence.add(0.15));
+
+  const refractedUV = screenUV.add(refractionOffset);
+  const refractedSceneGap = linearDepth(viewportDepthTexture(refractedUV)).sub(surfaceDepth);
+  const safeUV = refractedSceneGap.lessThan(0).select(screenUV, refractedUV);
+
+  const sourceColor = viewportSharedTexture();
+  const refractedColor = viewportSharedTexture(safeUV);
+
+  const opticalDepth = refractedSceneGap.remapClamp(0, 0.12).div(clarityUniform).clamp();
+  const shallowWaterTint = color(0xe8fff3);
+  const deepWaterTint = color(0x247b84);
+  const waterTint = opticalDepth.mix(shallowWaterTint, deepWaterTint);
+  const transmittedColor = refractedColor.mul(waterTint);
+
+  const marchTravel = sceneDepthGap.remapClamp(0, 0.12).mul(3.2);
+  const marchedLight = volumeMarchFn({
+    surfacePosition: positionWorld,
+    travelAmount: marchTravel,
+    timeValue: time
+  });
+
+  const shallowFactor = opticalDepth.oneMinus();
+  const marchedGlow = color(0xc9ffe6).mul(
+    marchedLight.mul(raymarchUniform).mul(shallowFactor).mul(1.75)
+  );
+
+  const foamBand = sceneDepthGap.remapClamp(0.0, 0.012).oneMinus()
+    .mul(waveProduct.mul(1.9).clamp());
+  const foamColor = color(0xf2f1de).mul(foamBand.mul(0.32));
+
+  const combinedWater = transmittedColor.add(marchedGlow).add(foamColor);
+  const waterColor = waveProduct.mul(1.15).mix(color(0x58bfc0), color(0x98e2d0));
+
+  const waterMaterial = new THREE.MeshBasicNodeMaterial();
+  waterMaterial.colorNode = waterColor;
+  waterMaterial.backdropNode = depthPresence.mix(sourceColor, combinedWater).mul(color(0xd9f7ef));
+  waterMaterial.backdropAlphaNode = opticalDepth.oneMinus().mul(0.76);
+  waterMaterial.transparent = true;
+  waterMaterial.depthWrite = false;
+
+  const waterGeometry = new THREE.PlaneGeometry(68, 62, 1, 1);
+  waterGeometry.rotateX(-Math.PI / 2);
+  const water = new THREE.Mesh(waterGeometry, waterMaterial);
+  water.position.y = 0.0;
+  water.renderOrder = 20;
+  scene.add(water);
+
+  stage('renderer-init');
+  const renderer = new THREE.WebGPURenderer({ antialias: true });
+  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, ciMode ? 1 : 1.7));
+  renderer.setSize(innerWidth, innerHeight);
+  renderer.shadowMap.enabled = true;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.05;
+  renderer.setClearColor(0xaad5df, 1);
+  document.body.prepend(renderer.domElement);
+
+  await renderer.init();
+
+  const backendName = renderer.backend?.constructor?.name || 'unknown';
+  root.dataset.backend = backendName;
+  if (!backendName.toLowerCase().includes('webgpu')) {
+    throw new Error(`Expected WebGPU backend, got ${backendName}`);
+  }
+
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.target.set(0, -0.25, 7.5);
+  controls.minDistance = 8;
+  controls.maxDistance = 42;
+  controls.maxPolarAngle = Math.PI * 0.48;
+  controls.autoRotate = true;
+  controls.autoRotateSpeed = 0.22;
+  controls.update();
+
+  const timer = new THREE.Timer();
+  timer.connect(document);
+
+  function connectRange(inputId, outputId, nodeUniform, digits) {
+    const inputElement = document.getElementById(inputId);
+    const outputElement = document.getElementById(outputId);
+    const applyValue = () => {
+      const numericValue = Number(inputElement.value);
+      nodeUniform.value = numericValue;
+      outputElement.value = numericValue.toFixed(digits);
+      root.dataset[inputId] = String(numericValue);
+      uiRevision += 1;
+      root.dataset.uiRevision = String(uiRevision);
+    };
+    inputElement.addEventListener('input', applyValue);
+    applyValue();
+  }
+
+  connectRange('clarity', 'clarityOut', clarityUniform, 2);
+  connectRange('refraction', 'refractionOut', refractionUniform, 3);
+  connectRange('raymarch', 'raymarchOut', raymarchUniform, 2);
+  connectRange('waves', 'wavesOut', waveScaleUniform, 1);
+
+  const rotateElement = document.getElementById('rotate');
+  rotateElement.addEventListener('change', () => {
+    controls.autoRotate = rotateElement.checked;
+    root.dataset.rotate = String(rotateElement.checked);
+    uiRevision += 1;
+    root.dataset.uiRevision = String(uiRevision);
+  });
+  root.dataset.rotate = String(rotateElement.checked);
+
+  root.dataset.rasterScene = 'true';
+  root.dataset.depthRefraction = 'true';
+  root.dataset.selectiveRaymarch = '12-step-volume';
+
+  let frameCount = 0;
+  let elapsedWindow = 0;
+  let frameWindow = 0;
+
+  renderer.setAnimationLoop(async () => {
+    timer.update();
+    const delta = Math.min(timer.getDelta(), 0.05);
+    controls.update();
+
+    orangeBox.rotation.y += delta * 0.15;
+    ring.rotation.z += delta * 0.18;
+
+    renderer.render(scene, camera);
+
+    frameCount += 1;
+    frameWindow += 1;
+    elapsedWindow += delta;
+    root.dataset.frameCount = String(frameCount);
+
+    if (frameCount === 3) {
+      if (renderer.backend?.device?.queue?.onSubmittedWorkDone) {
+        await renderer.backend.device.queue.onSubmittedWorkDone();
+        root.dataset.gpuQueue = 'done';
+      }
+      stage('ok');
+    }
+
+    if (!ciMode && elapsedWindow > 0.65) {
+      const fps = Math.round(frameWindow / Math.max(elapsedWindow, 0.001));
+      statusElement.textContent = `${fps} fps · ${backendName}`;
+      elapsedWindow = 0;
+      frameWindow = 0;
+    }
+  });
+
+  window.addEventListener('resize', () => {
+    camera.aspect = innerWidth / innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(innerWidth, innerHeight);
+  });
+
+  window.__hybridShoreline = {
+    renderer,
+    camera,
+    scene,
+    water,
+    uniforms: { clarityUniform, refractionUniform, raymarchUniform, waveScaleUniform }
+  };
+}
+
+init().catch(fail);
+</script>
+</body>
+</html>
