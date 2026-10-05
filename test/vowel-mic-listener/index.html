@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#171711">
+<title>母音リスナー — F1/F2 リアルタイム判定</title>
+<style>
+:root{color-scheme:dark;--bg:#171711;--panel:#23231b;--panel2:#2b2a20;--text:#f2eedf;--muted:#aaa590;--line:#4b4938;--accent:#d8b55d;--good:#93c47d;--warn:#e1a35b;--bad:#d77768}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:ui-sans-serif,system-ui,-apple-system,"Hiragino Sans","Yu Gothic UI",sans-serif}
+body{min-height:100%;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+button,input{font:inherit}
+button{min-height:44px;border:1px solid var(--line);border-radius:12px;background:#343326;color:var(--text);padding:10px 14px;font-weight:700;cursor:pointer}
+button:disabled{opacity:.42;cursor:not-allowed}
+button.primary{background:var(--accent);border-color:var(--accent);color:#171711}
+button.stop{background:#4a2923;border-color:#71423a;color:#ffe7de}
+.wrap{width:min(980px,100%);margin:0 auto;padding:18px 14px 36px}
+header{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:14px}
+h1{font-size:clamp(24px,6vw,40px);line-height:1.05;margin:0;letter-spacing:.02em}
+.sub{color:var(--muted);font-size:13px;line-height:1.55;max-width:570px;margin-top:7px}
+.grid{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:14px;min-width:0}
+.liveCard{display:grid;grid-template-columns:minmax(120px,.7fr) minmax(0,1.3fr);gap:14px;align-items:stretch}
+.readout{display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;background:var(--panel2);border-radius:16px;padding:12px;min-height:190px}
+.kana{font-size:clamp(68px,20vw,128px);line-height:.9;font-weight:800;font-feature-settings:"palt"}
+.ipa{margin-top:10px;font:600 24px ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--accent)}
+.conf{margin-top:9px;color:var(--muted);font-size:13px}
+.metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;align-content:center}
+.metric{background:var(--panel2);border-radius:14px;padding:12px}
+.metric b{display:block;font:700 clamp(22px,6vw,34px) ui-monospace,SFMono-Regular,Menlo,monospace;white-space:nowrap}
+.metric span{display:block;color:var(--muted);font-size:12px;margin-top:5px}
+.meter{height:10px;background:#13130f;border:1px solid var(--line);border-radius:999px;overflow:hidden;margin-top:10px}
+.meter>i{display:block;height:100%;width:0;background:var(--good);transition:width .08s linear}
+.controls{display:flex;gap:9px;flex-wrap:wrap;margin-top:12px;align-items:center}
+.status{margin-top:10px;min-height:42px;color:var(--muted);font-size:13px;line-height:1.55}
+.status strong{color:var(--text)}
+.figure{position:relative;min-height:300px;background:#11110d;border:1px solid #38372b;border-radius:14px;overflow:hidden}
+canvas{display:block;width:100%;height:100%;min-height:300px}
+.figureLabel{position:absolute;left:10px;top:8px;font-size:11px;color:#9e9987;pointer-events:none}
+.sectionTitle{margin:0 0 10px;font-size:15px}
+.calGrid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+.calBtn{display:flex;flex-direction:column;align-items:center;gap:2px;padding:9px 4px;min-width:0}
+.calBtn .big{font-size:25px;line-height:1}
+.calBtn .small{font-size:11px;color:var(--muted);font-weight:500}
+.calBtn.recording{outline:2px solid var(--accent);background:#4b4124}
+.calInfo{margin-top:10px;color:var(--muted);font-size:12px;line-height:1.55}
+.refs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin-top:10px}
+.ref{background:var(--panel2);border-radius:10px;padding:8px 4px;text-align:center;font-size:11px;color:var(--muted);overflow:hidden}
+.ref b{display:block;color:var(--text);font-size:14px;margin-bottom:3px}
+details{margin-top:14px;border-top:1px solid var(--line);padding-top:10px}
+summary{cursor:pointer;color:var(--muted);font-size:13px}
+.advanced{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;margin-top:12px}
+.advanced input{width:min(280px,55vw)}
+.note{margin-top:14px;color:var(--muted);font-size:12px;line-height:1.6}
+.legend{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;color:var(--muted);font-size:11px}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--accent);vertical-align:-1px;margin-right:4px}
+@media(max-width:760px){.grid{grid-template-columns:1fr}.liveCard{grid-template-columns:1fr 1.25fr}.figure{min-height:280px}canvas{min-height:280px}}
+@media(max-width:440px){.wrap{padding-left:10px;padding-right:10px}.liveCard{grid-template-columns:1fr}.readout{min-height:150px}.kana{font-size:82px}.metrics{grid-template-columns:1fr 1fr}.calGrid{grid-template-columns:repeat(5,1fr);gap:5px}.calBtn{padding:8px 2px}.calBtn .small{font-size:9px}.refs{grid-template-columns:repeat(5,1fr);gap:4px}.ref{font-size:9px}.ref b{font-size:12px}}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header>
+    <div>
+      <h1>母音リスナー</h1>
+      <div class="sub">マイク音声のスペクトル包絡から F1 / F2 を推定し、日本語の「あ・い・う・え・お」をリアルタイム分類します。連続母音は軌跡として見えます。</div>
+    </div>
+  </header>
+
+  <div class="grid">
+    <section class="card">
+      <div class="liveCard">
+        <div class="readout" aria-live="polite">
+          <div class="kana" id="kana">—</div>
+          <div class="ipa" id="ipa">/—/</div>
+          <div class="conf" id="confidence">待機中</div>
+        </div>
+        <div class="metrics">
+          <div class="metric"><b id="f1">—</b><span>F1 · Hz</span></div>
+          <div class="metric"><b id="f2">—</b><span>F2 · Hz</span></div>
+          <div class="metric"><b id="quality">—</b><span>LPC peak quality</span></div>
+          <div class="metric"><b id="level">—</b><span>入力 RMS</span><div class="meter"><i id="levelBar"></i></div></div>
+        </div>
+      </div>
+      <div class="controls">
+        <button class="primary" id="micBtn" type="button">マイクを開始</button>
+        <button id="clearBtn" type="button" disabled>軌跡を消す</button>
+      </div>
+      <div class="status" id="status">マイク開始後、母音を少し長めに発音してください。</div>
+    </section>
+
+    <section class="card">
+      <h2 class="sectionTitle">F1–F2 母音平面</h2>
+      <div class="figure">
+        <canvas id="vowelMap" width="720" height="520" aria-label="F1 F2 vowel map"></canvas>
+        <div class="figureLabel">左ほど F2 が高い / 上ほど F1 が低い</div>
+      </div>
+      <div class="legend"><span><i class="dot"></i>現在位置</span><span>細線 = 直近の発音軌跡</span></div>
+    </section>
+  </div>
+
+  <section class="card" style="margin-top:14px">
+    <h2 class="sectionTitle">話者キャリブレーション</h2>
+    <div class="calGrid" id="calGrid">
+      <button class="calBtn" data-vowel="a" type="button" disabled><span class="big">あ</span><span class="small">/a/ を登録</span></button>
+      <button class="calBtn" data-vowel="i" type="button" disabled><span class="big">い</span><span class="small">/i/ を登録</span></button>
+      <button class="calBtn" data-vowel="u" type="button" disabled><span class="big">う</span><span class="small">/ɯ/ を登録</span></button>
+      <button class="calBtn" data-vowel="e" type="button" disabled><span class="big">え</span><span class="small">/e/ を登録</span></button>
+      <button class="calBtn" data-vowel="o" type="button" disabled><span class="big">お</span><span class="small">/o/ を登録</span></button>
+    </div>
+    <div class="calInfo" id="calInfo">初期値でも動きます。声質・年齢・マイク差が大きい場合は、各ボタンを押して表示中の母音を約1.4秒発音すると判定基準をあなたのF1/F2へ合わせます。</div>
+    <div class="refs" id="refs"></div>
+    <div class="controls"><button id="resetCalBtn" type="button">基準値を初期化</button></div>
+
+    <details>
+      <summary>判定感度 / 実装情報</summary>
+      <div class="advanced">
+        <label for="threshold">無音しきい値</label>
+        <input id="threshold" type="range" min="0.002" max="0.04" step="0.001" value="0.008">
+        <span>RMS</span><output id="thresholdOut">0.008</output>
+      </div>
+      <div class="note">音声は端末内だけで処理し、サーバーへ送信しません。マイク入力を 12 kHz 相当へ再標本化し、pre-emphasis → Hann窓 → LPC(16次) → スペクトル包絡ピークから F1/F2 を推定しています。これは音声認識ではなくフォルマントベースの近似判定なので、子音・鼻音・ささやき声・強い雑音では「—」や別母音になることがあります。</div>
+    </details>
+  </section>
+</main>
+<script type="module" src="./app.mjs"></script>
+</body>
+</html>

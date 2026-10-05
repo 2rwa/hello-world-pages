@@ -1,0 +1,33 @@
+name: Vowel mic listener test
+on:
+  push:
+    paths:
+      - 'test/vowel-mic-listener/**'
+      - '.github/workflows/vowel-mic-listener-test.yml'
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check JavaScript and DSP regression
+        run: |
+          node --check test/vowel-mic-listener/app.mjs
+          node --check test/vowel-mic-listener/dsp.mjs
+          node --check test/vowel-mic-listener/plot.mjs
+          node test/vowel-mic-listener/test-dsp.mjs
+      - name: Start static server
+        run: |
+          python3 -m http.server 8765 >/tmp/vowel-mic-http.log 2>&1 &
+          sleep 1
+      - name: Run UI self-test in browser
+        run: |
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser || true)"
+          test -n "$CHROME" || { echo "Chrome/Chromium not found"; exit 1; }
+          "$CHROME" --headless --no-sandbox --disable-gpu --virtual-time-budget=1800 \
+            --dump-dom 'http://127.0.0.1:8765/test/vowel-mic-listener/?selftest=1' > /tmp/vowel-mic-dom.html
+          grep -q 'data-selftest="pass"' /tmp/vowel-mic-dom.html
+          grep -q '"thresholdUpdates":true' /tmp/vowel-mic-dom.html
+          grep -q '"refsRendered":true' /tmp/vowel-mic-dom.html
