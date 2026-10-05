@@ -32,7 +32,7 @@ if(!adapter){setStage('error');throw new Error('No adapter')}
 setStage('request-device');
 const device=await adapter.requestDevice();
 device.lost.then(i=>{window.__sdfVolumeTest.lost=i;document.body.dataset.testState='error'});
-const shader=device.createShaderModule({code:\`
+const shader=device.createShaderModule({code:`
 struct Params{
   resolution:vec2f,
   time:f32,
@@ -135,7 +135,7 @@ fn rotX(angleX:f32)->mat3x3f{
   let bg=vec3f(0.004,0.007,0.014)+vec3f(0.015,0.025,0.055)*haze;
   let color=bg*trans+accum;
   return vec4f(1.0-exp(-color),1.0);
-}\`});
+}`});
 setStage('shader-compilation-info');
 const info=await shader.getCompilationInfo();
 const errs=info.messages.filter(m=>m.type==='error');
