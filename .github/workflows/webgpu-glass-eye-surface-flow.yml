@@ -1,0 +1,143 @@
+name: WebGPU Glass Eye Surface Flow CI
+
+on:
+  push:
+    paths:
+      - 'tests/webgpu-glass-eye-surface-flow/**'
+      - '.github/workflows/webgpu-glass-eye-surface-flow.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  webgpu:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show Chrome version
+        run: google-chrome --version
+
+      - name: Install CDP websocket client
+        run: python3 -m pip install --disable-pip-version-check websocket-client
+
+      - name: Start local server and Chrome
+        shell: bash
+        run: |
+          set -euxo pipefail
+          python3 -m http.server 8000 >server.log 2>&1 &
+          echo $! > server.pid
+          google-chrome \
+            --headless=new \
+            --no-sandbox \
+            --disable-dev-shm-usage \
+            --remote-debugging-port=9222 \
+            --remote-allow-origins='*' \
+            --enable-unsafe-webgpu \
+            --enable-features=Vulkan \
+            --use-vulkan=swiftshader \
+            --disable-vulkan-fallback-to-gl-for-testing \
+            --use-webgpu-adapter=swiftshader \
+            --enable-webgpu-developer-features \
+            --enable-dawn-features=allow_unsafe_apis \
+            --disable-dawn-features=use_dxc \
+            --use-gpu-in-tests \
+            --enable-unsafe-swiftshader \
+            'http://127.0.0.1:8000/tests/webgpu-glass-eye-surface-flow/?ci=1' \
+            >chrome.log 2>&1 &
+          echo $! > chrome.pid
+
+      - name: Wait for animated GPU render and readback
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          import sys
+          import time
+          import urllib.request
+          import websocket
+
+          wanted = "/tests/webgpu-glass-eye-surface-flow/?ci=1"
+
+          def get_targets():
+              with urllib.request.urlopen("http://127.0.0.1:9222/json/list", timeout=2) as response:
+                  return json.load(response)
+
+          target = None
+          deadline = time.time() + 25
+          while time.time() < deadline:
+              try:
+                  for item in get_targets():
+                      if wanted in item.get("url", ""):
+                          target = item
+                          break
+              except Exception:
+                  pass
+              if target:
+                  break
+              time.sleep(0.5)
+
+          if not target:
+              print("CDP target not found", file=sys.stderr)
+              sys.exit(2)
+
+          ws = websocket.create_connection(
+              target["webSocketDebuggerUrl"],
+              timeout=4,
+              origin="http://127.0.0.1:9222",
+          )
+          next_id = 1
+
+          def cdp(method, params=None):
+              global next_id
+              request_id = next_id
+              next_id += 1
+              ws.send(json.dumps({
+                  "id": request_id,
+                  "method": method,
+                  "params": params or {}
+              }))
+              while True:
+                  message = json.loads(ws.recv())
+                  if message.get("id") == request_id:
+                      return message
+
+          cdp("Runtime.enable")
+          deadline = time.time() + 35
+          last_payload = None
+
+          while time.time() < deadline:
+              result = cdp("Runtime.evaluate", {
+                  "expression": """(() => ({
+                    state: document.querySelector('#status')?.dataset.state || '',
+                    text: document.querySelector('#status')?.textContent || '',
+                    bodyState: document.body.dataset.ci || ''
+                  }))()""",
+                  "returnByValue": True,
+              })
+              last_payload = result
+              value = result.get("result", {}).get("result", {}).get("value", {})
+              print(value)
+
+              if value.get("state") == "ok" and value.get("bodyState") == "ok":
+                  ws.close()
+                  sys.exit(0)
+              if value.get("state") == "error" or value.get("bodyState") == "error":
+                  ws.close()
+                  sys.exit(3)
+              time.sleep(0.75)
+
+          print("Timed out waiting for WebGPU CI state:", last_payload, file=sys.stderr)
+          ws.close()
+          sys.exit(4)
+          PY
+
+      - name: Dump browser logs on failure
+        if: failure()
+        run: |
+          echo '--- chrome.log ---'
+          cat chrome.log || true
+          echo '--- server.log ---'
+          cat server.log || true

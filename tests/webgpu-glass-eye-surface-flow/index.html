@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Glass Eye Surface Flow Lab — WebGPU Raymarch</title>
+<link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<canvas id="gpu"></canvas>
+
+<section class="panel">
+  <header>
+    <div class="eyebrow">WEBGPU / RAYMARCH / PROCEDURAL BUMP</div>
+    <h1>Glass Eye Surface Flow Lab</h1>
+    <p>球の形状は変えず、表面法線だけを時間変化するバンプで揺らします。反射・屈折・ハイライトが流れることで、薄い液膜のような動きを作ります。</p>
+  </header>
+
+  <div class="modes" id="modes">
+    <button data-mode="0">calm</button>
+    <button data-mode="1" class="active">stream</button>
+    <button data-mode="2">iris swirl</button>
+    <button data-mode="3">spherical ripple</button>
+    <button data-mode="4">mixed flow</button>
+  </div>
+
+  <label class="row">
+    <span>bump strength</span>
+    <input id="strength" type="range" min="0" max="0.55" step="0.01" value="0.20">
+    <output id="strengthOut">0.20</output>
+  </label>
+  <label class="row">
+    <span>bump scale</span>
+    <input id="scale" type="range" min="1" max="12" step="0.1" value="5.5">
+    <output id="scaleOut">5.5</output>
+  </label>
+  <label class="row">
+    <span>flow speed</span>
+    <input id="speed" type="range" min="-2" max="2" step="0.05" value="0.65">
+    <output id="speedOut">0.65</output>
+  </label>
+  <label class="row">
+    <span>flow direction</span>
+    <input id="direction" type="range" min="-180" max="180" step="1" value="20">
+    <output id="directionOut">20°</output>
+  </label>
+  <label class="row">
+    <span>glass IOR</span>
+    <input id="ior" type="range" min="1.10" max="1.80" step="0.01" value="1.45">
+    <output id="iorOut">1.45</output>
+  </label>
+
+  <div class="desc" id="desc">
+    Stream: 球面上の複数の位相波を時間方向へ流し、ガラスの反射と屈折を水膜のように移動させます。
+  </div>
+
+  <footer>
+    <button class="secondary" id="resetView">view reset</button>
+    <button class="secondary" id="pauseAnim">pause flow</button>
+    <span class="small">drag: orbit</span>
+    <span class="status" id="status" data-state="boot">boot</span>
+  </footer>
+</section>
+
+<script type="module" src="./app.js"></script>
+</body>
+</html>

@@ -1,0 +1,136 @@
+:root{
+  color-scheme:dark;
+  font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  min-height:100vh;
+  overflow:hidden;
+  color:#f1efe9;
+  background:#090d0f;
+}
+canvas{
+  position:fixed;
+  inset:0;
+  width:100%;
+  height:100%;
+  display:block;
+  touch-action:none;
+}
+.panel{
+  position:fixed;
+  top:18px;
+  left:18px;
+  width:min(410px,calc(100vw - 36px));
+  padding:17px;
+  border:1px solid rgba(211,233,231,.16);
+  border-radius:18px;
+  background:rgba(10,17,18,.78);
+  box-shadow:0 20px 70px rgba(0,0,0,.34);
+  backdrop-filter:blur(18px);
+}
+.eyebrow{
+  font-size:10px;
+  letter-spacing:.15em;
+  color:#8ca6a2;
+  margin-bottom:6px;
+}
+h1{
+  margin:0;
+  font-size:18px;
+  letter-spacing:.01em;
+}
+header p{
+  margin:6px 0 14px;
+  color:#b8c3c0;
+  font-size:12px;
+  line-height:1.55;
+}
+.modes{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:7px;
+  margin-bottom:14px;
+}
+button{
+  appearance:none;
+  border:1px solid rgba(211,233,231,.14);
+  border-radius:10px;
+  padding:9px 10px;
+  color:#e7edeb;
+  background:#172224;
+  text-align:left;
+  cursor:pointer;
+}
+button:hover{background:#203033}
+button.active{
+  color:#091012;
+  background:#c6ddd8;
+  border-color:#c6ddd8;
+}
+.row{
+  display:grid;
+  grid-template-columns:112px 1fr 52px;
+  gap:10px;
+  align-items:center;
+  margin:8px 0;
+  font-size:12px;
+}
+input[type=range]{
+  width:100%;
+  accent-color:#9fc6bd;
+}
+output{
+  text-align:right;
+  font-variant-numeric:tabular-nums;
+  color:#d8e2df;
+}
+.desc{
+  min-height:49px;
+  margin-top:12px;
+  padding-top:11px;
+  border-top:1px solid rgba(211,233,231,.11);
+  color:#c0cbc8;
+  font-size:12px;
+  line-height:1.55;
+}
+footer{
+  display:flex;
+  gap:8px;
+  align-items:center;
+  margin-top:11px;
+}
+.secondary{
+  padding:7px 9px;
+  font-size:11px;
+}
+.small{
+  font-size:11px;
+  color:#80918d;
+}
+.status{
+  margin-left:auto;
+  padding:4px 8px;
+  border:1px solid rgba(211,233,231,.14);
+  border-radius:999px;
+  font-size:11px;
+}
+.status[data-state="ok"]{
+  color:#9ce0bd;
+  border-color:rgba(156,224,189,.38);
+}
+.status[data-state="error"]{
+  color:#ffaaa4;
+  border-color:rgba(255,170,164,.38);
+}
+@media(max-width:650px){
+  .panel{
+    top:auto;
+    bottom:12px;
+    left:12px;
+    width:calc(100vw - 24px);
+    max-height:56vh;
+    overflow:auto;
+  }
+}
