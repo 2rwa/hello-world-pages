@@ -16,6 +16,11 @@
       <p class="lead">透明な球体内を気泡が上昇し、上部の内壁へ到達すると白い泡へ遷移する発泡サンプル。</p>
     </div>
 
+    <label>背景画像 <output id="backgroundName">built-in</output>
+      <input id="backgroundFile" type="file" accept="image/*">
+    </label>
+    <button id="clearBackground" type="button">背景画像を解除</button>
+
     <label>泡の数 <output id="bubbleCountOut">20</output>
       <input id="bubbleCount" type="range" min="6" max="28" value="20" step="1">
     </label>
@@ -38,9 +43,9 @@
     </div>
 
     <details>
-      <summary>表現の構成</summary>
-      <p>外殻は球SDF、内部泡は複数の球SDF。気泡は上昇終盤で縮退し、同じ周期から上部の白いfoam群が立ち上がる。ガラスはFresnel反射と屈折、内部は距離吸収で色を付ける。</p>
+      <summary>背景画像について</summary>
+      <p>選択した画像はブラウザ内でのみ読み込み、WebGPU textureへ直接転送します。外部へアップロードしません。通常の写真として背景平面へcover配置し、ガラスと気泡を通った部分だけ屈折します。</p>
     </details>
   </aside>
 </main>
-<script type="module" src="./app.js"></script>
+<script type="module" src="./app-background.js"></script>

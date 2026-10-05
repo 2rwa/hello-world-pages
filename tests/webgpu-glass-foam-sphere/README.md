@@ -5,12 +5,15 @@ WebGPU + WGSL raymarch sample for a transparent glass sphere containing rising b
 ## Visual model
 
 - outer shell: sphere SDF, Fresnel reflection + refraction
-- internal bubbles: up to 28 animated sphere SDFs
+- internal bubbles: up to 28 animated sphere SDFs with liquid → gas → liquid refraction
 - foam: up to 30 small white SDF spheres distributed near the upper inside surface
-- transition: internal bubbles shrink near the end of their rise cycle while foam bubbles use the same time field to pulse at the upper shell
+- local background image: browser file picker → `createImageBitmap` → WebGPU sampled texture
+- background fitting: aspect-preserving cover placement; the photo is refracted through glass and bubbles
 - liquid: Beer–Lambert-like RGB absorption tint
 - render resolution: fixed 480 × 270; CSS scaling does not increase raymarch cost
 
+Local background files stay in the browser. The selected image is not uploaded by this sample. Images larger than 2048 px on either axis are downscaled before GPU upload.
+
 ## CI
 
-`?ci=1` renders the same shader/pipeline to an offscreen `rgba8unorm` texture, waits for GPU completion, checks the validation error scope, then maps a readback buffer and verifies non-empty visible output.
+`?ci=1` uses the same shader and texture bindings, renders to an offscreen `rgba8unorm` texture, waits for GPU completion, checks validation, maps a readback buffer, and verifies visible output.
