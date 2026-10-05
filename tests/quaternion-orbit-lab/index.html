@@ -1,0 +1,719 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>Quaternion Orbit Lab — WebGPU Raymarch</title>
+<style>
+:root{
+  color-scheme:dark;
+  font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --ink:#f4f7ff;--muted:#a9b4c8;--panel:rgba(8,13,25,.72);--border:rgba(199,218,255,.16);
+  --accent:#b99cff;--axis:#ffd873;--current:#73e6ff;--path:#d69cff;--ghost:#93a0b8;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:#02040b;color:var(--ink)}
+body{min-height:100vh;overflow-x:hidden}
+canvas{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+canvas:active{cursor:grabbing}
+canvas:focus-visible{outline:2px solid #d5c4ff;outline-offset:-4px}
+.ui-shell{position:relative;z-index:2;display:grid;grid-template-columns:minmax(330px,440px) minmax(260px,370px);justify-content:space-between;align-items:start;gap:20px;padding:18px;pointer-events:none;min-height:100vh}
+.card{pointer-events:auto;background:linear-gradient(145deg,rgba(11,17,31,.84),rgba(6,10,22,.60));border:1px solid var(--border);backdrop-filter:blur(18px) saturate(125%);box-shadow:0 18px 65px rgba(0,0,0,.28)}
+.hero{border-radius:22px;padding:18px}
+.eyebrow{font-size:10px;letter-spacing:.18em;color:#8fa7cc;margin-bottom:7px;font-weight:700}
+.title-row{display:flex;justify-content:space-between;gap:14px;align-items:flex-start}
+h1{font-size:22px;line-height:1.05;margin:0 0 6px;letter-spacing:-.03em}
+.title-row p{font-size:12px;line-height:1.55;color:var(--muted);margin:0;max-width:335px}
+.status{flex:0 0 auto;border:1px solid var(--border);border-radius:999px;padding:5px 8px;font:10px ui-monospace,SFMono-Regular,Menlo,monospace;color:#c4ccda;background:rgba(255,255,255,.025)}
+.status[data-state="ok"]{color:#9af0c3;border-color:rgba(154,240,195,.35)}
+.status[data-state="error"]{color:#ffaba7;border-color:rgba(255,171,167,.35);max-width:190px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.formula-card{margin:14px 0 13px;padding:12px 13px;border-radius:14px;background:rgba(94,118,179,.09);border:1px solid rgba(179,198,255,.11)}
+.formula-label{font-size:9px;text-transform:uppercase;letter-spacing:.13em;color:#8799ba;margin-bottom:6px}
+.formula{font:600 13px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;color:#eef2ff}
+.components{font:11px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;color:#c8b7f3;margin-top:5px;word-spacing:2px}
+.controls{display:grid;gap:6px}
+.control-row{display:grid;grid-template-columns:66px minmax(110px,1fr) 52px;gap:9px;align-items:center;font-size:11px;color:#bdc6d6}
+.control-row output{text-align:right;font-variant-numeric:tabular-nums;color:#e6ebf7}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.angle-row{padding-top:4px;margin-top:2px;border-top:1px solid rgba(255,255,255,.07)}
+.preset-row,.action-row,.legend{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+button{appearance:none;border:1px solid rgba(209,222,255,.14);background:rgba(255,255,255,.055);color:#dbe3f2;border-radius:10px;padding:8px 10px;font:600 10px/1.1 inherit;cursor:pointer;min-height:34px}
+button:hover{background:rgba(255,255,255,.10)}
+button:focus-visible{outline:2px solid #d5c4ff;outline-offset:2px}
+button.active{background:rgba(185,156,255,.19);border-color:rgba(185,156,255,.45);color:#efe9ff}
+button.primary{background:linear-gradient(135deg,rgba(103,219,255,.18),rgba(188,139,255,.20));border-color:rgba(149,198,255,.31)}
+.legend{padding-top:10px;border-top:1px solid rgba(255,255,255,.07);font-size:10px;color:#aeb8c7;gap:9px 13px}
+.legend span{display:flex;align-items:center;gap:5px}.dot{width:7px;height:7px;border-radius:999px;display:inline-block}
+.axis-dot{background:var(--axis)}.current-dot{background:var(--current)}.path-dot{background:var(--path)}.ghost-dot{background:var(--ghost)}
+.lessons{display:grid;gap:9px}
+.lesson{display:grid;grid-template-columns:34px 1fr;gap:11px;border-radius:17px;padding:12px 13px}
+.step{font:700 11px/1 ui-monospace,SFMono-Regular,Menlo,monospace;color:#8793a9;padding-top:3px}
+.lesson h2{font-size:16px;margin:0 0 4px;color:#f0f3fa}
+.lesson p{font-size:10.5px;line-height:1.5;color:#aeb8c9;margin:0}
+.lesson strong{color:#e5dcff}
+.readout{margin-top:6px;font:10px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;color:#9fdff0}
+.meter{height:4px;border-radius:10px;background:rgba(255,255,255,.07);margin-top:8px;overflow:hidden}.meter span{display:block;width:100%;height:100%;background:linear-gradient(90deg,#75deff,#ca9fff)}
+.emphasis{border-color:rgba(255,216,115,.27);background:linear-gradient(145deg,rgba(37,30,17,.70),rgba(13,16,27,.66))}
+.sign-line{display:flex;align-items:center;gap:7px;margin-top:7px;font:10px ui-monospace,SFMono-Regular,Menlo,monospace}.sign-line span:first-child{border:1px solid rgba(255,216,115,.27);border-radius:6px;padding:3px 6px;color:#ffe29a}
+.hint{position:fixed;z-index:3;left:50%;bottom:16px;transform:translateX(-50%);font-size:10px;color:rgba(220,229,244,.58);pointer-events:none;text-shadow:0 1px 6px #000;white-space:nowrap}
+@media(max-width:900px){
+  body{overflow-y:auto;background:#050916}
+  canvas{height:100vh}
+  .ui-shell{display:block;padding:12px;min-height:100vh}
+  .hero{width:min(100%,460px);margin-bottom:52vh}
+  .lessons{width:min(100%,460px);margin-left:auto;padding-bottom:30px}
+  .hint{top:14px;bottom:auto;left:auto;right:14px;transform:none}
+}
+@media(max-width:540px){
+  .ui-shell{padding:8px}.hero{padding:13px;border-radius:17px;margin-bottom:48vh}
+  h1{font-size:19px}.title-row p{font-size:11px}.formula{font-size:11px}.components{font-size:10px}
+  .control-row{grid-template-columns:57px minmax(90px,1fr) 46px;gap:7px}
+  button{padding:7px 8px}.hint{font-size:9px}.lesson{padding:11px}.lessons{gap:7px}
+}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<canvas id="gpu" aria-label="クォータニオンによる3次元回転のレイマーチ可視化"></canvas>
+
+<main class="ui-shell">
+<section class="hero card" aria-labelledby="title">
+  <div class="eyebrow">WEBGPU · RAYMARCH · INTERACTIVE MATH</div>
+  <div class="title-row">
+    <div>
+      <h1 id="title">Quaternion Orbit Lab</h1>
+      <p>クォータニオンを「4つの数字」ではなく、<strong>回転軸と半角</strong>が3D空間をどう動かすかで見る教材。</p>
+    </div>
+    <span id="status" class="status" data-state="boot">boot</span>
+  </div>
+
+  <div class="formula-card" aria-live="polite">
+    <div class="formula-label">axis-angle → quaternion path</div>
+    <div class="formula">q(t) = cos(tθ/2) + (uₓi + uᵧj + u𝓏k) sin(tθ/2)</div>
+    <div class="components" id="components">w +1.000 · x +0.000 · y +0.000 · z +0.000</div>
+  </div>
+
+  <div class="controls">
+    <label class="control-row"><span>axis X</span><input id="axisX" type="range" min="-1" max="1" step="0.01" value="0.58"><output id="axisXOut">0.58</output></label>
+    <label class="control-row"><span>axis Y</span><input id="axisY" type="range" min="-1" max="1" step="0.01" value="0.72"><output id="axisYOut">0.72</output></label>
+    <label class="control-row"><span>axis Z</span><input id="axisZ" type="range" min="-1" max="1" step="0.01" value="0.38"><output id="axisZOut">0.38</output></label>
+    <label class="control-row angle-row"><span>angle θ</span><input id="angle" type="range" min="0" max="720" step="1" value="120"><output id="angleOut">120°</output></label>
+    <label class="control-row"><span>進行 t</span><input id="progress" type="range" min="0" max="1" step="0.001" value="1"><output id="progressOut">1.000</output></label>
+  </div>
+
+  <div class="preset-row" id="presets" aria-label="回転プリセット">
+    <button type="button" data-preset="x90">X · 90°</button>
+    <button type="button" data-preset="y90">Y · 90°</button>
+    <button type="button" data-preset="diag120" class="active">(1,1,1) · 120°</button>
+    <button type="button" data-preset="full360">360°</button>
+    <button type="button" data-preset="spin720">720°</button>
+  </div>
+
+  <div class="action-row">
+    <button type="button" id="playBtn" class="primary">▶ 回転を再生</button>
+    <button type="button" id="resetViewBtn">視点リセット</button>
+    <button type="button" id="toggleGhostBtn" aria-pressed="true">基準軸 ON</button>
+  </div>
+
+  <div class="legend">
+    <span><i class="dot axis-dot"></i>回転軸</span>
+    <span><i class="dot current-dot"></i>現在姿勢</span>
+    <span><i class="dot path-dot"></i>回転経路</span>
+    <span><i class="dot ghost-dot"></i>回転前</span>
+  </div>
+</section>
+
+<aside class="lessons">
+  <section class="lesson card">
+    <div class="step">01</div><div>
+      <h2>まず軸を1本決める</h2>
+      <p>金色の線が単位回転軸 <strong>u</strong>。X/Y/Z を触ると自動で正規化されます。</p>
+      <div class="readout" id="axisReadout">u = (0.580, 0.720, 0.380)</div>
+    </div>
+  </section>
+  <section class="lesson card">
+    <div class="step">02</div><div>
+      <h2>角度を半分にして格納</h2>
+      <p><strong>w = cos(tθ/2)</strong>、ベクトル部は <strong>u·sin(tθ/2)</strong>。4成分は常に4次元の単位球上にあります。</p>
+      <div class="meter"><span id="normBar"></span></div>
+      <div class="readout" id="normReadout">|q| = 1.000000</div>
+    </div>
+  </section>
+  <section class="lesson card emphasis">
+    <div class="step">03</div><div>
+      <h2>360°で姿勢は戻る。でも q は −q</h2>
+      <p id="doubleCoverText">120°では、物体の姿勢とクォータニオンの符号の違いを同時に観察できます。</p>
+      <div class="sign-line"><span id="signBadge">+q side</span><span id="signValue">w = +0.500</span></div>
+    </div>
+  </section>
+  <section class="lesson card">
+    <div class="step">04</div><div>
+      <h2>補間では「どちら側を通るか」が重要</h2>
+      <p>紫の粒はこの教材で使う連続経路 <strong>q(t)</strong>。実務のSLERPでは、通常は q と −q のうち短い側を選びます。</p>
+      <div class="readout" id="pathReadout">orientation = q(t), t = 1.000</div>
+    </div>
+  </section>
+</aside>
+</main>
+
+<div class="hint">ドラッグ: 視点回転 · ホイール/ピンチ: ズーム</div>
+
+<script id="shaderSource" type="text/plain">
+struct UniformData {
+  viewportData: vec4<f32>,
+  axisData: vec4<f32>,
+  cameraData: vec4<f32>,
+  miscData: vec4<f32>,
+};
+@group(0) @binding(0) var<uniform> uniformData: UniformData;
+
+struct VertexResult { @builtin(position) clipPosition: vec4<f32>, };
+struct SceneSample { distanceValue: f32, materialId: f32, };
+struct MarchResult { rayDistance: f32, hitFlag: f32, materialId: f32, };
+
+@vertex
+fn vertexMain(@builtin(vertex_index) vertexIndex: u32) -> VertexResult {
+  var trianglePositions = array<vec2<f32>,3>(
+    vec2<f32>(-1.0,-1.0), vec2<f32>(3.0,-1.0), vec2<f32>(-1.0,3.0)
+  );
+  var outputValue: VertexResult;
+  outputValue.clipPosition = vec4<f32>(trianglePositions[vertexIndex],0.0,1.0);
+  return outputValue;
+}
+
+fn blend3(firstValue: vec3<f32>, secondValue: vec3<f32>, blendValue: f32) -> vec3<f32> {
+  return firstValue * (1.0 - blendValue) + secondValue * blendValue;
+}
+fn safeNormalize(vectorValue: vec3<f32>) -> vec3<f32> {
+  let lengthValue = length(vectorValue);
+  if (lengthValue < 0.00001) { return vec3<f32>(0.0,1.0,0.0); }
+  return vectorValue / lengthValue;
+}
+fn quaternionNormalize(quaternionValue: vec4<f32>) -> vec4<f32> {
+  let lengthValue = length(quaternionValue);
+  if (lengthValue < 0.00001) { return vec4<f32>(1.0,0.0,0.0,0.0); }
+  return quaternionValue / lengthValue;
+}
+fn quaternionFromAxisAngle(axisValue: vec3<f32>, angleValue: f32) -> vec4<f32> {
+  let halfAngle = angleValue * 0.5;
+  return quaternionNormalize(vec4<f32>(cos(halfAngle), axisValue * sin(halfAngle)));
+}
+fn quaternionRotate(quaternionValue: vec4<f32>, vectorValue: vec3<f32>) -> vec3<f32> {
+  let scalarPart = quaternionValue.x;
+  let vectorPart = quaternionValue.yzw;
+  let twiceCross = 2.0 * cross(vectorPart, vectorValue);
+  return vectorValue + scalarPart * twiceCross + cross(vectorPart, twiceCross);
+}
+fn sdSphere(positionValue: vec3<f32>, radiusValue: f32) -> f32 {
+  return length(positionValue) - radiusValue;
+}
+fn sdCapsule(positionValue: vec3<f32>, startPoint: vec3<f32>, endPoint: vec3<f32>, radiusValue: f32) -> f32 {
+  let segmentVector = endPoint - startPoint;
+  let pointVector = positionValue - startPoint;
+  let denominator = max(dot(segmentVector,segmentVector),0.000001);
+  let segmentAmount = clamp(dot(pointVector,segmentVector)/denominator,0.0,1.0);
+  return length(pointVector - segmentVector * segmentAmount) - radiusValue;
+}
+fn sdTorusY(positionValue: vec3<f32>, majorRadius: f32, minorRadius: f32) -> f32 {
+  let torusPoint = vec2<f32>(length(positionValue.xz) - majorRadius, positionValue.y);
+  return length(torusPoint) - minorRadius;
+}
+fn basisFromAxis(axisValue: vec3<f32>) -> mat3x3<f32> {
+  let axisDirection = safeNormalize(axisValue);
+  let helperDirection = select(vec3<f32>(0.0,1.0,0.0),vec3<f32>(1.0,0.0,0.0),abs(axisDirection.y)>0.86);
+  let sideDirection = safeNormalize(cross(helperDirection,axisDirection));
+  let forwardDirection = safeNormalize(cross(axisDirection,sideDirection));
+  return mat3x3<f32>(sideDirection,axisDirection,forwardDirection);
+}
+fn minimumSample(firstSample: SceneSample, secondDistance: f32, secondMaterial: f32) -> SceneSample {
+  if (secondDistance < firstSample.distanceValue) { return SceneSample(secondDistance,secondMaterial); }
+  return firstSample;
+}
+
+fn ghostFrameDistance(positionValue: vec3<f32>) -> SceneSample {
+  var sampleValue = SceneSample(100.0,0.0);
+  if (uniformData.cameraData.w < 0.5) { return sampleValue; }
+  sampleValue = minimumSample(sampleValue,sdCapsule(positionValue,vec3<f32>(0.0),vec3<f32>(1.18,0.0,0.0),0.010),10.0);
+  sampleValue = minimumSample(sampleValue,sdCapsule(positionValue,vec3<f32>(0.0),vec3<f32>(0.0,1.18,0.0),0.010),11.0);
+  sampleValue = minimumSample(sampleValue,sdCapsule(positionValue,vec3<f32>(0.0),vec3<f32>(0.0,0.0,1.18),0.010),12.0);
+  return sampleValue;
+}
+
+fn sceneField(positionValue: vec3<f32>) -> SceneSample {
+  let axisValue = safeNormalize(uniformData.axisData.xyz);
+  let totalAngle = uniformData.viewportData.w;
+  let progressValue = clamp(uniformData.axisData.w,0.0,1.0);
+  let currentQuaternion = quaternionFromAxisAngle(axisValue,totalAngle * progressValue);
+  var sampleValue = SceneSample(100.0,0.0);
+
+  sampleValue = minimumSample(sampleValue,sdSphere(positionValue,0.074),1.0);
+
+  let axisStart = axisValue * -1.52;
+  let axisEnd = axisValue * 1.52;
+  sampleValue = minimumSample(sampleValue,sdCapsule(positionValue,axisStart,axisEnd,0.017),2.0);
+  sampleValue = minimumSample(sampleValue,sdSphere(positionValue-axisEnd,0.052),2.0);
+
+  let rotatedX = quaternionRotate(currentQuaternion,vec3<f32>(1.18,0.0,0.0));
+  let rotatedY = quaternionRotate(currentQuaternion,vec3<f32>(0.0,1.18,0.0));
+  let rotatedZ = quaternionRotate(currentQuaternion,vec3<f32>(0.0,0.0,1.18));
+  sampleValue = minimumSample(sampleValue,sdCapsule(positionValue,vec3<f32>(0.0),rotatedX,0.030),3.0);
+  sampleValue = minimumSample(sampleValue,sdCapsule(positionValue,vec3<f32>(0.0),rotatedY,0.030),4.0);
+  sampleValue = minimumSample(sampleValue,sdCapsule(positionValue,vec3<f32>(0.0),rotatedZ,0.030),5.0);
+  sampleValue = minimumSample(sampleValue,sdSphere(positionValue-rotatedX,0.060),3.0);
+  sampleValue = minimumSample(sampleValue,sdSphere(positionValue-rotatedY,0.060),4.0);
+  sampleValue = minimumSample(sampleValue,sdSphere(positionValue-rotatedZ,0.060),5.0);
+
+  let ringBasis = basisFromAxis(axisValue);
+  let ringPosition = transpose(ringBasis) * positionValue;
+  sampleValue = minimumSample(sampleValue,sdTorusY(ringPosition,1.47,0.010),6.0);
+
+  let guideRadius = 1.18;
+  var beadIndex: i32 = 0;
+  loop {
+    if (beadIndex > 16) { break; }
+    let beadAmount = f32(beadIndex) / 16.0;
+    let beadQuaternion = quaternionFromAxisAngle(axisValue,totalAngle * beadAmount);
+    let beadPosition = quaternionRotate(beadQuaternion,vec3<f32>(guideRadius,0.0,0.0));
+    let beadRadius = select(0.020,0.045,abs(beadAmount-progressValue)<0.033);
+    sampleValue = minimumSample(sampleValue,sdSphere(positionValue-beadPosition,beadRadius),7.0);
+    beadIndex = beadIndex + 1;
+  }
+
+  let currentPoint = quaternionRotate(currentQuaternion,vec3<f32>(guideRadius,0.0,0.0));
+  sampleValue = minimumSample(sampleValue,sdCapsule(positionValue,vec3<f32>(0.0),currentPoint,0.020),8.0);
+  sampleValue = minimumSample(sampleValue,sdSphere(positionValue-currentPoint,0.084),8.0);
+
+  let ghostSample = ghostFrameDistance(positionValue);
+  if (ghostSample.distanceValue < sampleValue.distanceValue) { sampleValue = ghostSample; }
+
+  let shellDistance = abs(length(positionValue)-1.49)-0.0035;
+  let shellPattern = min(abs(positionValue.x),min(abs(positionValue.y),abs(positionValue.z)));
+  if (shellPattern < 0.030) { sampleValue = minimumSample(sampleValue,shellDistance,9.0); }
+
+  let floorDistance = positionValue.y + 1.66;
+  sampleValue = minimumSample(sampleValue,floorDistance,20.0);
+  return sampleValue;
+}
+
+fn marchScene(rayOrigin: vec3<f32>, rayDirection: vec3<f32>) -> MarchResult {
+  var travelDistance = 0.0;
+  var marchIndex: i32 = 0;
+  loop {
+    if (marchIndex >= 150 || travelDistance > 12.0) { break; }
+    let samplePosition = rayOrigin + rayDirection * travelDistance;
+    let sceneSample = sceneField(samplePosition);
+    if (sceneSample.distanceValue < 0.0015) {
+      return MarchResult(travelDistance,1.0,sceneSample.materialId);
+    }
+    travelDistance = travelDistance + max(sceneSample.distanceValue * 0.72,0.0018);
+    marchIndex = marchIndex + 1;
+  }
+  return MarchResult(travelDistance,0.0,0.0);
+}
+fn sceneNormal(positionValue: vec3<f32>) -> vec3<f32> {
+  let epsilonValue = 0.0018;
+  let axisX = vec3<f32>(epsilonValue,0.0,0.0);
+  let axisY = vec3<f32>(0.0,epsilonValue,0.0);
+  let axisZ = vec3<f32>(0.0,0.0,epsilonValue);
+  return safeNormalize(vec3<f32>(
+    sceneField(positionValue+axisX).distanceValue-sceneField(positionValue-axisX).distanceValue,
+    sceneField(positionValue+axisY).distanceValue-sceneField(positionValue-axisY).distanceValue,
+    sceneField(positionValue+axisZ).distanceValue-sceneField(positionValue-axisZ).distanceValue
+  ));
+}
+fn materialColor(materialId: f32) -> vec3<f32> {
+  if (materialId < 1.5) { return vec3<f32>(0.88,0.93,1.00); }
+  if (materialId < 2.5) { return vec3<f32>(1.00,0.73,0.22); }
+  if (materialId < 3.5) { return vec3<f32>(0.98,0.25,0.36); }
+  if (materialId < 4.5) { return vec3<f32>(0.28,0.95,0.62); }
+  if (materialId < 5.5) { return vec3<f32>(0.31,0.58,1.00); }
+  if (materialId < 6.5) { return vec3<f32>(0.55,0.43,1.00); }
+  if (materialId < 7.5) { return vec3<f32>(0.82,0.43,1.00); }
+  if (materialId < 8.5) { return vec3<f32>(0.22,0.88,1.00); }
+  if (materialId < 9.5) { return vec3<f32>(0.25,0.38,0.64); }
+  if (materialId < 12.5) { return vec3<f32>(0.18,0.23,0.34); }
+  return vec3<f32>(0.10,0.12,0.18);
+}
+fn environmentColor(rayDirection: vec3<f32>) -> vec3<f32> {
+  let verticalAmount = clamp(rayDirection.y*0.5+0.5,0.0,1.0);
+  var colorValue = blend3(vec3<f32>(0.055,0.075,0.14),vec3<f32>(0.006,0.010,0.030),pow(verticalAmount,0.7));
+  let glowA = pow(max(dot(rayDirection,safeNormalize(vec3<f32>(-0.62,0.36,-0.72))),0.0),20.0);
+  let glowB = pow(max(dot(rayDirection,safeNormalize(vec3<f32>(0.62,0.10,-0.77))),0.0),28.0);
+  colorValue = colorValue + vec3<f32>(0.16,0.32,0.66)*glowA + vec3<f32>(0.42,0.13,0.48)*glowB;
+  return colorValue;
+}
+fn shadeHit(hitPosition: vec3<f32>, rayDirection: vec3<f32>, materialId: f32) -> vec3<f32> {
+  let normalValue = sceneNormal(hitPosition);
+  let baseColor = materialColor(materialId);
+  let lightDirectionA = safeNormalize(vec3<f32>(-0.72,0.88,-0.45));
+  let lightDirectionB = safeNormalize(vec3<f32>(0.58,0.24,-0.78));
+  let diffuseA = max(dot(normalValue,lightDirectionA),0.0);
+  let diffuseB = max(dot(normalValue,lightDirectionB),0.0);
+  let viewDirection = -rayDirection;
+  let halfDirection = safeNormalize(lightDirectionA+viewDirection);
+  let specularValue = pow(max(dot(normalValue,halfDirection),0.0),82.0);
+  let rimValue = pow(1.0-max(dot(normalValue,viewDirection),0.0),2.4);
+  var colorValue = baseColor*(0.24+0.74*diffuseA+0.24*diffuseB);
+  colorValue = colorValue + vec3<f32>(1.0,0.92,0.82)*specularValue*0.72 + baseColor*rimValue*0.55;
+
+  if (materialId > 1.5 && materialId < 8.5) { colorValue = colorValue + baseColor*0.22; }
+  if (materialId > 19.5) {
+    let gridX = 1.0-smoothstep(0.0,0.028,abs(fract(hitPosition.x*1.35)-0.5));
+    let gridZ = 1.0-smoothstep(0.0,0.028,abs(fract(hitPosition.z*1.35)-0.5));
+    let gridValue = max(gridX,gridZ);
+    let floorBase = blend3(vec3<f32>(0.018,0.027,0.052),vec3<f32>(0.055,0.075,0.13),gridValue*0.60);
+    let reflectionAmount = pow(1.0-max(dot(normalValue,viewDirection),0.0),4.0)*0.30;
+    colorValue = floorBase + environmentColor(reflect(rayDirection,normalValue))*reflectionAmount;
+  }
+  if (materialId > 8.5 && materialId < 12.5) { colorValue = colorValue * 0.56; }
+  return colorValue;
+}
+
+@fragment
+fn fragmentMain(@builtin(position) fragmentPosition: vec4<f32>) -> @location(0) vec4<f32> {
+  let resolutionValue = uniformData.viewportData.xy;
+  var screenPosition = fragmentPosition.xy / resolutionValue * 2.0 - vec2<f32>(1.0,1.0);
+  screenPosition = vec2<f32>(screenPosition.x*(resolutionValue.x/resolutionValue.y),-screenPosition.y);
+
+  let yawValue = uniformData.cameraData.x;
+  let pitchValue = uniformData.cameraData.y;
+  let orbitRadius = uniformData.cameraData.z;
+  let cameraFocus = vec3<f32>(0.0,-0.08,0.0);
+  let rayOrigin = cameraFocus + vec3<f32>(
+    orbitRadius*sin(yawValue)*cos(pitchValue),
+    orbitRadius*sin(pitchValue),
+    -orbitRadius*cos(yawValue)*cos(pitchValue)
+  );
+  let forwardDirection = safeNormalize(cameraFocus-rayOrigin);
+  let worldUp = vec3<f32>(0.0,1.0,0.0);
+  let rightDirection = safeNormalize(cross(forwardDirection,worldUp));
+  let upDirection = safeNormalize(cross(rightDirection,forwardDirection));
+  let rayDirection = safeNormalize(forwardDirection + rightDirection*screenPosition.x*0.62 + upDirection*screenPosition.y*0.62);
+
+  let marchResult = marchScene(rayOrigin,rayDirection);
+  var colorValue = environmentColor(rayDirection);
+  if (marchResult.hitFlag > 0.5) {
+    let hitPosition = rayOrigin + rayDirection*marchResult.rayDistance;
+    colorValue = shadeHit(hitPosition,rayDirection,marchResult.materialId);
+    let fogAmount = 1.0-exp(-0.013*marchResult.rayDistance*marchResult.rayDistance);
+    colorValue = blend3(colorValue,environmentColor(rayDirection),fogAmount);
+  }
+  let vignetteRadius = dot(screenPosition,screenPosition);
+  colorValue = colorValue*(1.0-0.12*smoothstep(0.3,2.0,vignetteRadius));
+  colorValue = colorValue/(colorValue+vec3<f32>(1.0));
+  colorValue = pow(colorValue,vec3<f32>(1.0/2.2));
+  return vec4<f32>(colorValue,1.0);
+}
+</script>
+
+<script type="module">
+const canvas=document.querySelector('#gpu');
+const statusEl=document.querySelector('#status');
+const axisXEl=document.querySelector('#axisX');
+const axisYEl=document.querySelector('#axisY');
+const axisZEl=document.querySelector('#axisZ');
+const angleEl=document.querySelector('#angle');
+const progressEl=document.querySelector('#progress');
+const axisXOut=document.querySelector('#axisXOut');
+const axisYOut=document.querySelector('#axisYOut');
+const axisZOut=document.querySelector('#axisZOut');
+const angleOut=document.querySelector('#angleOut');
+const progressOut=document.querySelector('#progressOut');
+const componentsEl=document.querySelector('#components');
+const axisReadoutEl=document.querySelector('#axisReadout');
+const normReadoutEl=document.querySelector('#normReadout');
+const pathReadoutEl=document.querySelector('#pathReadout');
+const doubleCoverTextEl=document.querySelector('#doubleCoverText');
+const signBadgeEl=document.querySelector('#signBadge');
+const signValueEl=document.querySelector('#signValue');
+const playBtn=document.querySelector('#playBtn');
+const resetViewBtn=document.querySelector('#resetViewBtn');
+const toggleGhostBtn=document.querySelector('#toggleGhostBtn');
+const presetsEl=document.querySelector('#presets');
+const ciMode=new URLSearchParams(location.search).get('ci')==='1';
+const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+let cameraYaw=-0.45;
+let cameraPitch=0.19;
+let cameraDistance=4.9;
+let pointerDrag=null;
+let showGhost=true;
+let animationRunning=false;
+let animationStartMs=0;
+let animationStartProgress=0;
+
+function setStatus(textValue,stateValue='boot'){
+  statusEl.textContent=textValue;
+  statusEl.dataset.state=stateValue;
+}
+function normalizedAxis(){
+  const raw=[Number(axisXEl.value),Number(axisYEl.value),Number(axisZEl.value)];
+  const magnitude=Math.hypot(raw[0],raw[1],raw[2]);
+  if(magnitude<0.0001)return[0,1,0];
+  return raw.map(function(value){return value/magnitude;});
+}
+function quaternionAtCurrentProgress(){
+  const axisValue=normalizedAxis();
+  const currentDegrees=Number(angleEl.value)*Number(progressEl.value);
+  const halfAngle=currentDegrees*Math.PI/360;
+  const sineHalf=Math.sin(halfAngle);
+  return [Math.cos(halfAngle),axisValue[0]*sineHalf,axisValue[1]*sineHalf,axisValue[2]*sineHalf];
+}
+function signed(value){return(value>=0?'+':'−')+Math.abs(value).toFixed(3);}
+function syncUi(){
+  const axisValue=normalizedAxis();
+  const totalDegrees=Number(angleEl.value);
+  const progressValue=Number(progressEl.value);
+  const currentDegrees=totalDegrees*progressValue;
+  const quaternionValue=quaternionAtCurrentProgress();
+  const normValue=Math.hypot(quaternionValue[0],quaternionValue[1],quaternionValue[2],quaternionValue[3]);
+
+  axisXOut.textContent=Number(axisXEl.value).toFixed(2);
+  axisYOut.textContent=Number(axisYEl.value).toFixed(2);
+  axisZOut.textContent=Number(axisZEl.value).toFixed(2);
+  angleOut.textContent=Math.round(totalDegrees)+'°';
+  progressOut.textContent=progressValue.toFixed(3);
+  componentsEl.textContent='w '+signed(quaternionValue[0])+' · x '+signed(quaternionValue[1])+' · y '+signed(quaternionValue[2])+' · z '+signed(quaternionValue[3]);
+  axisReadoutEl.textContent='u = ('+axisValue.map(function(value){return value.toFixed(3);}).join(', ')+')';
+  normReadoutEl.textContent='|q| = '+normValue.toFixed(6);
+  pathReadoutEl.textContent='q(t), t = '+progressValue.toFixed(3)+' · current angle = '+currentDegrees.toFixed(1)+'°';
+
+  const wrapped=((currentDegrees%720)+720)%720;
+  const near360=Math.abs(wrapped-360)<2.0;
+  const nearZero=Math.min(Math.abs(wrapped),Math.abs(wrapped-720))<2.0;
+  if(near360){
+    doubleCoverTextEl.innerHTML='姿勢は出発点と同じ。でも <strong>q = (−1, 0, 0, 0)</strong>。3D回転では q と −q が同じ姿勢を表します。';
+  }else if(nearZero&&currentDegrees>1){
+    doubleCoverTextEl.innerHTML='720°で <strong>q = (+1, 0, 0, 0)</strong> に戻ります。クォータニオン自身の経路は360°では一周しません。';
+  }else{
+    doubleCoverTextEl.textContent=currentDegrees.toFixed(1)+'°地点。物体の姿勢と、4次元単位球上のqの符号を同時に観察します。';
+  }
+  signBadgeEl.textContent=quaternionValue[0]<0?'−q side':'+q side';
+  signValueEl.textContent='w = '+signed(quaternionValue[0]);
+}
+[axisXEl,axisYEl,axisZEl,angleEl,progressEl].forEach(function(inputEl){
+  inputEl.addEventListener('input',function(){
+    if(inputEl===progressEl)animationRunning=false;
+    syncUi();
+  });
+});
+const presetMap={
+  x90:{axis:[1,0,0],angle:90},
+  y90:{axis:[0,1,0],angle:90},
+  diag120:{axis:[1,1,1],angle:120},
+  full360:{axis:[0.58,0.72,0.38],angle:360},
+  spin720:{axis:[0.58,0.72,0.38],angle:720}
+};
+presetsEl.addEventListener('click',function(event){
+  const buttonEl=event.target.closest('button[data-preset]');
+  if(!buttonEl)return;
+  const presetValue=presetMap[buttonEl.dataset.preset];
+  axisXEl.value=String(presetValue.axis[0]);
+  axisYEl.value=String(presetValue.axis[1]);
+  axisZEl.value=String(presetValue.axis[2]);
+  angleEl.value=String(presetValue.angle);
+  progressEl.value='1';
+  animationRunning=false;
+  presetsEl.querySelectorAll('button').forEach(function(node){node.classList.toggle('active',node===buttonEl);});
+  syncUi();
+});
+playBtn.addEventListener('click',function(){
+  if(reducedMotion){
+    progressEl.value=progressEl.value==='1'?'0':'1';
+    syncUi();
+    return;
+  }
+  animationRunning=!animationRunning;
+  if(animationRunning){
+    animationStartMs=performance.now();
+    animationStartProgress=Number(progressEl.value)>=0.999?0:Number(progressEl.value);
+  }
+  playBtn.textContent=animationRunning?'❚❚ 一時停止':'▶ 回転を再生';
+});
+resetViewBtn.addEventListener('click',function(){cameraYaw=-0.45;cameraPitch=0.19;cameraDistance=4.9;});
+toggleGhostBtn.addEventListener('click',function(){
+  showGhost=!showGhost;
+  toggleGhostBtn.textContent='基準軸 '+(showGhost?'ON':'OFF');
+  toggleGhostBtn.setAttribute('aria-pressed',String(showGhost));
+});
+canvas.tabIndex=0;
+canvas.addEventListener('pointerdown',function(event){
+  pointerDrag={id:event.pointerId,x:event.clientX,y:event.clientY};
+  canvas.setPointerCapture(event.pointerId);
+});
+canvas.addEventListener('pointermove',function(event){
+  if(!pointerDrag||pointerDrag.id!==event.pointerId)return;
+  cameraYaw+=(event.clientX-pointerDrag.x)*0.007;
+  cameraPitch=Math.max(-1.15,Math.min(1.15,cameraPitch+(event.clientY-pointerDrag.y)*0.0055));
+  pointerDrag.x=event.clientX;pointerDrag.y=event.clientY;
+});
+canvas.addEventListener('pointerup',function(event){if(pointerDrag&&pointerDrag.id===event.pointerId)pointerDrag=null;});
+canvas.addEventListener('pointercancel',function(){pointerDrag=null;});
+canvas.addEventListener('wheel',function(event){
+  event.preventDefault();
+  cameraDistance=Math.max(3.2,Math.min(8.0,cameraDistance*Math.exp(event.deltaY*0.001)));
+},{passive:false});
+let touchDistance=0;
+canvas.addEventListener('touchmove',function(event){
+  if(event.touches.length!==2)return;
+  const dx=event.touches[0].clientX-event.touches[1].clientX;
+  const dy=event.touches[0].clientY-event.touches[1].clientY;
+  const nextDistance=Math.hypot(dx,dy);
+  if(touchDistance>0)cameraDistance=Math.max(3.2,Math.min(8.0,cameraDistance*touchDistance/nextDistance));
+  touchDistance=nextDistance;
+},{passive:true});
+canvas.addEventListener('touchend',function(){touchDistance=0;},{passive:true});
+syncUi();
+
+const shaderCode=document.querySelector('#shaderSource').textContent;
+
+async function main(){
+  try{
+    if(!navigator.gpu)throw new Error('WebGPU is unavailable');
+    setStatus('adapter…');
+    const gpuAdapter=await navigator.gpu.requestAdapter({powerPreference:'high-performance'});
+    if(!gpuAdapter)throw new Error('requestAdapter() returned null');
+
+    setStatus('device…');
+    const gpuDevice=await gpuAdapter.requestDevice();
+    gpuDevice.lost.then(function(info){setStatus('device lost: '+(info.reason||'unknown'),'error');});
+
+    setStatus('shader…');
+    const shaderModule=gpuDevice.createShaderModule({code:shaderCode});
+    const compilationInfo=await shaderModule.getCompilationInfo();
+    const shaderErrors=compilationInfo.messages.filter(function(message){return message.type==='error';});
+    if(shaderErrors.length)throw new Error(shaderErrors.map(function(message){return message.lineNum+':'+message.linePos+' '+message.message;}).join('\n'));
+
+    const uniformBuffer=gpuDevice.createBuffer({size:64,usage:GPUBufferUsage.UNIFORM|GPUBufferUsage.COPY_DST});
+    function createPipeline(surfaceFormat){
+      return gpuDevice.createRenderPipeline({
+        layout:'auto',
+        vertex:{module:shaderModule,entryPoint:'vertexMain'},
+        fragment:{module:shaderModule,entryPoint:'fragmentMain',targets:[{format:surfaceFormat}]},
+        primitive:{topology:'triangle-list'}
+      });
+    }
+    function createBindGroup(renderPipeline){
+      return gpuDevice.createBindGroup({
+        layout:renderPipeline.getBindGroupLayout(0),
+        entries:[{binding:0,resource:{buffer:uniformBuffer}}]
+      });
+    }
+    function writeUniforms(widthValue,heightValue,timeValue){
+      const axisValue=normalizedAxis();
+      const uniformValues=new Float32Array([
+        widthValue,heightValue,timeValue,Number(angleEl.value)*Math.PI/180,
+        axisValue[0],axisValue[1],axisValue[2],Number(progressEl.value),
+        cameraYaw,cameraPitch,cameraDistance,showGhost?1:0,
+        ciMode?1:0,0,0,0
+      ]);
+      gpuDevice.queue.writeBuffer(uniformBuffer,0,uniformValues);
+    }
+    function encodeRender(renderPipeline,bindGroup,textureView){
+      const commandEncoder=gpuDevice.createCommandEncoder();
+      const renderPass=commandEncoder.beginRenderPass({
+        colorAttachments:[{view:textureView,clearValue:{r:0.004,g:0.007,b:0.018,a:1},loadOp:'clear',storeOp:'store'}]
+      });
+      renderPass.setPipeline(renderPipeline);
+      renderPass.setBindGroup(0,bindGroup);
+      renderPass.draw(3,1,0,0);
+      renderPass.end();
+      return commandEncoder;
+    }
+
+    if(ciMode){
+      setStatus('pipeline…');
+      gpuDevice.pushErrorScope('validation');
+      const ciFormat='rgba8unorm';
+      const renderPipeline=createPipeline(ciFormat);
+      const bindGroup=createBindGroup(renderPipeline);
+      const textureWidth=96,textureHeight=64;
+      const bytesPerRow=512;
+      const offscreenTexture=gpuDevice.createTexture({
+        size:[textureWidth,textureHeight,1],format:ciFormat,
+        usage:GPUTextureUsage.RENDER_ATTACHMENT|GPUTextureUsage.COPY_SRC
+      });
+      const readbackBuffer=gpuDevice.createBuffer({
+        size:bytesPerRow*textureHeight,
+        usage:GPUBufferUsage.COPY_DST|GPUBufferUsage.MAP_READ
+      });
+      angleEl.value='360';progressEl.value='1';syncUi();
+      writeUniforms(textureWidth,textureHeight,0.6);
+      const commandEncoder=encodeRender(renderPipeline,bindGroup,offscreenTexture.createView());
+      commandEncoder.copyTextureToBuffer(
+        {texture:offscreenTexture},
+        {buffer:readbackBuffer,bytesPerRow:bytesPerRow,rowsPerImage:textureHeight},
+        [textureWidth,textureHeight,1]
+      );
+      gpuDevice.queue.submit([commandEncoder.finish()]);
+      setStatus('submitted…');
+      await gpuDevice.queue.onSubmittedWorkDone();
+      const validationError=await gpuDevice.popErrorScope();
+      if(validationError)throw new Error('validation: '+validationError.message);
+      setStatus('readback…');
+      await readbackBuffer.mapAsync(GPUMapMode.READ);
+      const pixels=new Uint8Array(readbackBuffer.getMappedRange());
+      let checksumValue=0;
+      for(let indexValue=0;indexValue<pixels.length;indexValue+=127)checksumValue=(checksumValue+pixels[indexValue])>>>0;
+      readbackBuffer.unmap();
+      if(checksumValue===0)throw new Error('render readback checksum was zero');
+      document.body.dataset.ci='ok';
+      setStatus('ok · '+checksumValue,'ok');
+      return;
+    }
+
+    const gpuContext=canvas.getContext('webgpu');
+    if(!gpuContext)throw new Error('webgpu canvas context unavailable');
+    const surfaceFormat=navigator.gpu.getPreferredCanvasFormat();
+    gpuContext.configure({device:gpuDevice,format:surfaceFormat,alphaMode:'opaque'});
+
+    setStatus('pipeline…');
+    gpuDevice.pushErrorScope('validation');
+    const renderPipeline=createPipeline(surfaceFormat);
+    const bindGroup=createBindGroup(renderPipeline);
+
+    function resizeCanvas(){
+      const pixelRatio=Math.min(devicePixelRatio||1,1.55);
+      const displayWidth=Math.max(1,Math.floor(innerWidth*pixelRatio));
+      const displayHeight=Math.max(1,Math.floor(innerHeight*pixelRatio));
+      if(canvas.width!==displayWidth||canvas.height!==displayHeight){canvas.width=displayWidth;canvas.height=displayHeight;}
+    }
+    resizeCanvas();
+    writeUniforms(canvas.width,canvas.height,0.1);
+    const firstEncoder=encodeRender(renderPipeline,bindGroup,gpuContext.getCurrentTexture().createView());
+    gpuDevice.queue.submit([firstEncoder.finish()]);
+    await gpuDevice.queue.onSubmittedWorkDone();
+    const validationError=await gpuDevice.popErrorScope();
+    if(validationError)throw new Error('validation: '+validationError.message);
+    setStatus('ok','ok');
+
+    const startTime=performance.now();
+    function frame(nowValue){
+      if(animationRunning){
+        const elapsed=(nowValue-animationStartMs)*0.001;
+        const nextProgress=Math.min(1,animationStartProgress+elapsed/2.8);
+        progressEl.value=String(nextProgress);
+        if(nextProgress>=1){
+          animationRunning=false;
+          playBtn.textContent='▶ もう一度再生';
+        }
+        syncUi();
+      }
+      resizeCanvas();
+      writeUniforms(canvas.width,canvas.height,(nowValue-startTime)*0.001);
+      const commandEncoder=encodeRender(renderPipeline,bindGroup,gpuContext.getCurrentTexture().createView());
+      gpuDevice.queue.submit([commandEncoder.finish()]);
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }catch(errorValue){
+    console.error(errorValue);
+    document.body.dataset.ci='error';
+    setStatus(String(errorValue&&errorValue.message?errorValue.message:errorValue),'error');
+  }
+}
+main();
+</script>
+</body>
+</html>
