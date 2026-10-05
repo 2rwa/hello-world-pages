@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Glass Eye Texture Transmission Lab — WebGPU</title>
+<link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<canvas id="gpu"></canvas>
+
+<section class="panel">
+  <header>
+    <div class="eyebrow">WEBGPU / RAYMARCH / RGBA TEXTURE MASK</div>
+    <h1>Glass Eye Texture Transmission Lab</h1>
+    <p>2D RGBAテクスチャを球面UVへ貼り、Aチャンネルで局所的な透過率を変化させます。</p>
+  </header>
+
+  <div class="patterns" id="patterns">
+    <button data-pattern="clear">clear</button>
+    <button data-pattern="bands" class="active">bands</button>
+    <button data-pattern="spots">spots</button>
+    <button data-pattern="veins">veins</button>
+    <button data-pattern="cells">cells</button>
+  </div>
+
+  <label class="row">
+    <span>alpha influence</span>
+    <input id="alphaInfluence" type="range" min="0" max="1" step="0.01" value="0.86">
+    <output id="alphaInfluenceOut">0.86</output>
+  </label>
+  <label class="row">
+    <span>min transmission</span>
+    <input id="minTransmission" type="range" min="0" max="1" step="0.01" value="0.16">
+    <output id="minTransmissionOut">0.16</output>
+  </label>
+  <label class="row">
+    <span>max transmission</span>
+    <input id="maxTransmission" type="range" min="0" max="1" step="0.01" value="0.96">
+    <output id="maxTransmissionOut">0.96</output>
+  </label>
+  <label class="row">
+    <span>texture scale</span>
+    <input id="textureScale" type="range" min="0.5" max="6" step="0.1" value="2.2">
+    <output id="textureScaleOut">2.2</output>
+  </label>
+  <label class="row">
+    <span>scroll speed</span>
+    <input id="scrollSpeed" type="range" min="-1.5" max="1.5" step="0.05" value="0.20">
+    <output id="scrollSpeedOut">0.20</output>
+  </label>
+  <label class="row">
+    <span>tint strength</span>
+    <input id="tintStrength" type="range" min="0" max="1" step="0.01" value="0.34">
+    <output id="tintStrengthOut">0.34</output>
+  </label>
+  <label class="row">
+    <span>glass IOR</span>
+    <input id="ior" type="range" min="1.10" max="1.80" step="0.01" value="1.45">
+    <output id="iorOut">1.45</output>
+  </label>
+
+  <label class="checkrow">
+    <input id="maskPreview" type="checkbox">
+    <span>texture mask preview</span>
+  </label>
+
+  <div class="desc" id="desc">
+    Bands: Aチャンネルに帯状の透明度マスク。透明な帯と濁った帯が球面上を交互に通ります。
+  </div>
+
+  <footer>
+    <button class="secondary" id="resetView">view reset</button>
+    <button class="secondary" id="pauseAnim">pause</button>
+    <span class="small">drag: orbit</span>
+    <span class="status" id="status" data-state="boot">boot</span>
+  </footer>
+</section>
+
+<script type="module" src="./app.js"></script>
+</body>
+</html>
