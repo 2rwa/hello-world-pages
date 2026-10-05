@@ -354,7 +354,7 @@ fn shadeCrystal(hitPosition: vec3<f32>, rayDirection: vec3<f32>) -> vec3<f32> {
   let baseNormal = dieBaseNormalWorld(hitPosition);
   let viewDirection = -rayDirection;
   let facingValue = clamp(dot(normalValue,viewDirection),0.0,1.0);
-  let fresnelValue = 0.035 + 0.965*pow(1.0-facingValue,5.0);
+  let fresnelValue = 0.025 + 0.975*pow(1.0-facingValue,5.0);
   let reflectionColor = environmentColor(reflect(rayDirection,normalValue));
 
   let refractiveIndex = uniformData.effectData.z;
@@ -368,7 +368,7 @@ fn shadeCrystal(hitPosition: vec3<f32>, rayDirection: vec3<f32>) -> vec3<f32> {
   let insideStart = hitPosition + innerDirection*0.012;
   let exitInfo = marchDieExit(insideStart,innerDirection);
   var transmittedColor = environmentColor(innerDirection);
-  var thicknessValue = exitInfo.x;
+  let thicknessValue = exitInfo.x;
   if (exitInfo.y > 0.5) {
     let exitPosition = insideStart + innerDirection*exitInfo.x;
     let exitNormal = dieNormalWorld(exitPosition);
@@ -380,32 +380,80 @@ fn shadeCrystal(hitPosition: vec3<f32>, rayDirection: vec3<f32>) -> vec3<f32> {
   }
 
   let textureColor = surfaceTextureColor(localPoint);
-  let textureLuma = dot(textureColor,vec3<f32>(0.333333));
-  let spectralPhase = (1.0-facingValue)*11.0 + textureLuma*7.0 + localPoint.x*1.7 + localPoint.y*1.1 + localPoint.z*1.4;
-  let interferenceColor = spectralColor(spectralPhase);
-  let rainbowAmount = uniformData.effectData.y;
-  let spectralMix = clamp(rainbowAmount*(0.22 + 0.72*pow(1.0-facingValue,1.35)),0.0,1.35);
-
-  let absorptionColor = vec3<f32>(0.86,0.93,1.0);
-  let absorptionAmount = exp(-thicknessValue*vec3<f32>(0.17,0.10,0.055));
-  var crystalColor = transmittedColor*absorptionAmount*absorptionColor;
-  crystalColor = crystalColor + textureColor*0.18*rainbowAmount;
-  crystalColor = blend3(crystalColor,interferenceColor*(0.68+0.55*reflectionColor),min(spectralMix,0.88));
-  crystalColor = blend3(crystalColor,reflectionColor,min(fresnelValue*1.10,0.93));
+  let absorptionAmount = exp(-thicknessValue*vec3<f32>(0.075,0.050,0.035));
+  var crystalColor = transmittedColor*absorptionAmount*vec3<f32>(0.94,0.975,1.0);
+  crystalColor = crystalColor + textureColor*0.012*uniformData.effectData.y;
+  crystalColor = blend3(crystalColor,reflectionColor,min(fresnelValue*0.95,0.90));
 
   let lightDirection = safeNormalize(vec3<f32>(-0.55,0.88,-0.31));
   let halfDirection = safeNormalize(lightDirection+viewDirection);
-  let highlightValue = pow(max(dot(normalValue,halfDirection),0.0),110.0);
-  crystalColor = crystalColor + vec3<f32>(1.3,1.18,1.05)*highlightValue;
+  let highlightValue = pow(max(dot(normalValue,halfDirection),0.0),128.0);
+  crystalColor = crystalColor + vec3<f32>(1.18,1.22,1.28)*highlightValue;
 
-  let cavityProximity = pipPatternDistance(faceInformation(localPoint).uvRaw,faceInformation(localPoint).faceValue);
+  let faceData = faceInformation(localPoint);
+  let cavityProximity = pipPatternDistance(faceData.uvRaw,faceData.faceValue);
   let pipEdgeValue = 1.0-smoothstep(0.11,0.22,cavityProximity);
-  let geometryDifference = clamp(length(normalValue-baseNormal)*1.6,0.0,1.0);
-  crystalColor = crystalColor + interferenceColor*(0.10*pipEdgeValue + 0.08*geometryDifference)*rainbowAmount;
+  let geometryDifference = clamp(length(normalValue-baseNormal)*1.5,0.0,1.0);
+  crystalColor = crystalColor + vec3<f32>(0.12,0.19,0.28)*(0.20*pipEdgeValue + 0.12*geometryDifference);
 
-  let rimValue = pow(1.0-facingValue,2.1);
-  crystalColor = crystalColor + interferenceColor*rimValue*0.30*rainbowAmount;
+  let rimValue = pow(1.0-facingValue,2.2);
+  crystalColor = crystalColor + vec3<f32>(0.16,0.28,0.46)*rimValue*0.22;
   return crystalColor;
+}
+
+fn resultAura(rayOrigin: vec3<f32>, rayDirection: vec3<f32>, maximumDistance: f32) -> vec3<f32> {
+  let resultValue = uniformData.miscData.x;
+  if (resultValue < 0.5) {
+    return vec3<f32>(0.0);
+  }
+
+  let sampleCount = 44.0;
+  let boundedDistance = min(maximumDistance,7.5);
+  let stepLength = boundedDistance/sampleCount;
+  let timeValue = uniformData.viewportData.z;
+  let rainbowAmount = uniformData.effectData.y;
+  var accumulatedColor = vec3<f32>(0.0);
+
+  for (var sampleIndex = 0; sampleIndex < 44; sampleIndex = sampleIndex + 1) {
+    let travelValue = (f32(sampleIndex)+0.5)*stepLength;
+    let samplePosition = rayOrigin + rayDirection*travelValue;
+    let surfaceDistance = dieDistanceWorld(samplePosition);
+
+    if (surfaceDistance > 0.015 && surfaceDistance < 0.44) {
+      let localPoint = localPosition(samplePosition);
+      let shellCenter = 0.115 + 0.015*sin(timeValue*1.7 + localPoint.y*5.0);
+      let shellValue = exp(-pow((surfaceDistance-shellCenter)/0.105,2.0));
+
+      let orbitAngle = atan2(localPoint.z,localPoint.x);
+      let strandWave = 0.5 + 0.5*cos(
+        orbitAngle*resultValue +
+        localPoint.y*(3.4+resultValue*0.35) -
+        timeValue*(1.35+resultValue*0.08)
+      );
+      let strandValue = 0.30 + 0.70*pow(strandWave,5.0);
+
+      let rainbowUv = fract(
+        localPoint.xz*0.21 +
+        vec2<f32>(0.50 + timeValue*0.014,0.50 - timeValue*0.010)
+      );
+      let textureRainbow = textureSampleLevel(rainbowTexture,surfaceSampler,rainbowUv,0.0).rgb;
+      let phaseValue =
+        orbitAngle*1.8 +
+        localPoint.y*3.1 +
+        surfaceDistance*12.0 +
+        timeValue*0.82 +
+        resultValue*0.88;
+      let proceduralRainbow = spectralColor(phaseValue);
+      let auraColor = blend3(proceduralRainbow,textureRainbow,0.38);
+
+      let heightFade = exp(-abs(localPoint.y)*0.20);
+      let breatheValue = 0.88 + 0.12*sin(timeValue*2.2 + resultValue);
+      accumulatedColor = accumulatedColor +
+        auraColor*shellValue*strandValue*heightFade*breatheValue*stepLength;
+    }
+  }
+
+  return accumulatedColor*(0.62 + 0.42*rainbowAmount);
 }
 
 fn shadeFloor(hitPosition: vec3<f32>, rayDirection: vec3<f32>) -> vec3<f32> {
@@ -417,8 +465,8 @@ fn shadeFloor(hitPosition: vec3<f32>, rayDirection: vec3<f32>) -> vec3<f32> {
   let radialValue = length(hitPosition.xz);
   let causticBand = pow(max(0.0,0.5+0.5*cos(radialValue*18.0-uniformData.viewportData.z*1.8)),7.0);
   let causticFade = exp(-radialValue*radialValue*0.55);
-  let causticColor = spectralColor(radialValue*3.0+uniformData.viewportData.z*0.35);
-  floorColor = floorColor + causticColor*causticBand*causticFade*0.17*uniformData.effectData.y;
+  let causticColor = spectralColor(radialValue*3.0+uniformData.viewportData.z*0.35+uniformData.miscData.x*0.72);
+  floorColor = floorColor + causticColor*causticBand*causticFade*0.08*uniformData.effectData.y*step(0.5,uniformData.miscData.x);
 
   let reflectionDirection = reflect(rayDirection,floorNormal());
   let reflectionColor = environmentColor(reflectionDirection);
@@ -459,6 +507,12 @@ fn fragmentMain(@builtin(position) fragmentPosition: vec4<f32>) -> @location(0) 
     let fogAmount = 1.0-exp(-0.008*marchResult.rayDistance*marchResult.rayDistance);
     colorValue = blend3(colorValue,environmentColor(rayDirection),fogAmount);
   }
+
+  var auraLimit = 7.5;
+  if (marchResult.hitFlag > 0.5) {
+    auraLimit = marchResult.rayDistance;
+  }
+  colorValue = colorValue + resultAura(rayOrigin,rayDirection,auraLimit);
 
   let vignetteValue = dot(screenPosition,screenPosition);
   colorValue = colorValue*(1.0-0.14*smoothstep(0.45,2.3,vignetteValue));
@@ -624,7 +678,7 @@ function finishRoll(valueValue,targetQuaternion){
   bounceHeight=0;
   resultNumberEl.textContent=String(valueValue);
   resultTitleEl.textContent=valueValue===6?'Grand crystal!':'Result '+valueValue;
-  resultTextEl.textContent='出目 '+valueValue+' のファンファーレ';
+  resultTextEl.textContent='出目 '+valueValue+' · 虹色オーラ + ファンファーレ';
   updateHistory(valueValue);
   playFanfare(valueValue);
 }
@@ -638,6 +692,7 @@ function startRoll(){
     finishRoll(resultValue,targetQuaternion);
     return;
   }
+  currentResult=0;
   const spinAxis=[0.43+Math.random(),0.62+Math.random(),0.31+Math.random()];
   const spinTurns=4.7+Math.random()*2.8;
   rollState={
