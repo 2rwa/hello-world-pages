@@ -121,6 +121,7 @@ button.primary{background:linear-gradient(135deg,rgba(103,219,255,.18),rgba(188,
     <span><i class="dot current-dot"></i>現在姿勢</span>
     <span><i class="dot path-dot"></i>回転経路</span>
     <span><i class="dot ghost-dot"></i>回転前</span>
+    <span><i class="dot" style="background:#78bde8"></i>透明チューブ枠</span>
   </div>
 </section>
 
@@ -240,7 +241,14 @@ fn ghostFrameDistance(positionValue: vec3<f32>) -> SceneSample {
   return sampleValue;
 }
 
-fn sceneField(positionValue: vec3<f32>) -> SceneSample {
+fn glassFrameDistance(positionValue: vec3<f32>) -> f32 {
+  let ringAroundY = sdTorusY(positionValue,1.49,0.030);
+  let ringAroundX = sdTorusY(vec3<f32>(positionValue.y,positionValue.x,positionValue.z),1.49,0.030);
+  let ringAroundZ = sdTorusY(vec3<f32>(positionValue.x,positionValue.z,positionValue.y),1.49,0.030);
+  return min(ringAroundY,min(ringAroundX,ringAroundZ));
+}
+
+fn sceneFieldOpaque(positionValue: vec3<f32>) -> SceneSample {
   let axisValue = safeNormalize(uniformData.axisData.xyz);
   let totalAngle = uniformData.viewportData.w;
   let progressValue = clamp(uniformData.axisData.w,0.0,1.0);
@@ -287,12 +295,14 @@ fn sceneField(positionValue: vec3<f32>) -> SceneSample {
   let ghostSample = ghostFrameDistance(positionValue);
   if (ghostSample.distanceValue < sampleValue.distanceValue) { sampleValue = ghostSample; }
 
-  let shellDistance = abs(length(positionValue)-1.49)-0.0035;
-  let shellPattern = min(abs(positionValue.x),min(abs(positionValue.y),abs(positionValue.z)));
-  if (shellPattern < 0.030) { sampleValue = minimumSample(sampleValue,shellDistance,9.0); }
-
   let floorDistance = positionValue.y + 1.66;
   sampleValue = minimumSample(sampleValue,floorDistance,20.0);
+  return sampleValue;
+}
+
+fn sceneField(positionValue: vec3<f32>) -> SceneSample {
+  var sampleValue = sceneFieldOpaque(positionValue);
+  sampleValue = minimumSample(sampleValue,glassFrameDistance(positionValue),9.0);
   return sampleValue;
 }
 
@@ -311,15 +321,44 @@ fn marchScene(rayOrigin: vec3<f32>, rayDirection: vec3<f32>) -> MarchResult {
   }
   return MarchResult(travelDistance,0.0,0.0);
 }
-fn sceneNormal(positionValue: vec3<f32>) -> vec3<f32> {
+
+fn marchOpaque(rayOrigin: vec3<f32>, rayDirection: vec3<f32>) -> MarchResult {
+  var travelDistance = 0.0;
+  var marchIndex: i32 = 0;
+  loop {
+    if (marchIndex >= 150 || travelDistance > 12.0) { break; }
+    let samplePosition = rayOrigin + rayDirection * travelDistance;
+    let sceneSample = sceneFieldOpaque(samplePosition);
+    if (sceneSample.distanceValue < 0.0015) {
+      return MarchResult(travelDistance,1.0,sceneSample.materialId);
+    }
+    travelDistance = travelDistance + max(sceneSample.distanceValue * 0.72,0.0018);
+    marchIndex = marchIndex + 1;
+  }
+  return MarchResult(travelDistance,0.0,0.0);
+}
+
+fn sceneNormalOpaque(positionValue: vec3<f32>) -> vec3<f32> {
   let epsilonValue = 0.0018;
   let axisX = vec3<f32>(epsilonValue,0.0,0.0);
   let axisY = vec3<f32>(0.0,epsilonValue,0.0);
   let axisZ = vec3<f32>(0.0,0.0,epsilonValue);
   return safeNormalize(vec3<f32>(
-    sceneField(positionValue+axisX).distanceValue-sceneField(positionValue-axisX).distanceValue,
-    sceneField(positionValue+axisY).distanceValue-sceneField(positionValue-axisY).distanceValue,
-    sceneField(positionValue+axisZ).distanceValue-sceneField(positionValue-axisZ).distanceValue
+    sceneFieldOpaque(positionValue+axisX).distanceValue-sceneFieldOpaque(positionValue-axisX).distanceValue,
+    sceneFieldOpaque(positionValue+axisY).distanceValue-sceneFieldOpaque(positionValue-axisY).distanceValue,
+    sceneFieldOpaque(positionValue+axisZ).distanceValue-sceneFieldOpaque(positionValue-axisZ).distanceValue
+  ));
+}
+
+fn glassFrameNormal(positionValue: vec3<f32>) -> vec3<f32> {
+  let epsilonValue = 0.0015;
+  let axisX = vec3<f32>(epsilonValue,0.0,0.0);
+  let axisY = vec3<f32>(0.0,epsilonValue,0.0);
+  let axisZ = vec3<f32>(0.0,0.0,epsilonValue);
+  return safeNormalize(vec3<f32>(
+    glassFrameDistance(positionValue+axisX)-glassFrameDistance(positionValue-axisX),
+    glassFrameDistance(positionValue+axisY)-glassFrameDistance(positionValue-axisY),
+    glassFrameDistance(positionValue+axisZ)-glassFrameDistance(positionValue-axisZ)
   ));
 }
 fn materialColor(materialId: f32) -> vec3<f32> {
@@ -343,8 +382,8 @@ fn environmentColor(rayDirection: vec3<f32>) -> vec3<f32> {
   colorValue = colorValue + vec3<f32>(0.16,0.32,0.66)*glowA + vec3<f32>(0.42,0.13,0.48)*glowB;
   return colorValue;
 }
-fn shadeHit(hitPosition: vec3<f32>, rayDirection: vec3<f32>, materialId: f32) -> vec3<f32> {
-  let normalValue = sceneNormal(hitPosition);
+fn shadeOpaqueHit(hitPosition: vec3<f32>, rayDirection: vec3<f32>, materialId: f32) -> vec3<f32> {
+  let normalValue = sceneNormalOpaque(hitPosition);
   let baseColor = materialColor(materialId);
   let lightDirectionA = safeNormalize(vec3<f32>(-0.72,0.88,-0.45));
   let lightDirectionB = safeNormalize(vec3<f32>(0.58,0.24,-0.78));
@@ -395,9 +434,41 @@ fn fragmentMain(@builtin(position) fragmentPosition: vec4<f32>) -> @location(0) 
   var colorValue = environmentColor(rayDirection);
   if (marchResult.hitFlag > 0.5) {
     let hitPosition = rayOrigin + rayDirection*marchResult.rayDistance;
-    colorValue = shadeHit(hitPosition,rayDirection,marchResult.materialId);
-    let fogAmount = 1.0-exp(-0.013*marchResult.rayDistance*marchResult.rayDistance);
-    colorValue = blend3(colorValue,environmentColor(rayDirection),fogAmount);
+    if (marchResult.materialId > 8.5 && marchResult.materialId < 9.5) {
+      let glassNormal = glassFrameNormal(hitPosition);
+      let viewCosine = clamp(dot(-rayDirection,glassNormal),0.0,1.0);
+      let fresnelValue = 0.035 + 0.965*pow(1.0-viewCosine,5.0);
+      let reflectedDirection = reflect(rayDirection,glassNormal);
+      let reflectedColor = environmentColor(reflectedDirection);
+
+      let behindOrigin = hitPosition + rayDirection*0.075;
+      let behindResult = marchOpaque(behindOrigin,rayDirection);
+      var behindColor = environmentColor(rayDirection);
+      var behindDistance = marchResult.rayDistance;
+      if (behindResult.hitFlag > 0.5) {
+        let behindPosition = behindOrigin + rayDirection*behindResult.rayDistance;
+        behindColor = shadeOpaqueHit(behindPosition,rayDirection,behindResult.materialId);
+        behindDistance = behindDistance + 0.075 + behindResult.rayDistance;
+      }
+
+      let behindFog = 1.0-exp(-0.013*behindDistance*behindDistance);
+      behindColor = blend3(behindColor,environmentColor(rayDirection),behindFog);
+
+      let glassTint = vec3<f32>(0.38,0.68,0.92);
+      let transmissionAmount = 0.84 - 0.24*fresnelValue;
+      let edgeGlow = glassTint*pow(1.0-viewCosine,2.2)*0.60;
+      let highlightDirection = safeNormalize(vec3<f32>(-0.72,0.88,-0.45)-rayDirection);
+      let glassHighlight = pow(max(dot(glassNormal,highlightDirection),0.0),120.0);
+      colorValue = behindColor*transmissionAmount
+        + reflectedColor*(0.08+0.46*fresnelValue)
+        + glassTint*0.075
+        + edgeGlow
+        + vec3<f32>(1.0,0.96,0.88)*glassHighlight*0.75;
+    } else {
+      colorValue = shadeOpaqueHit(hitPosition,rayDirection,marchResult.materialId);
+      let fogAmount = 1.0-exp(-0.013*marchResult.rayDistance*marchResult.rayDistance);
+      colorValue = blend3(colorValue,environmentColor(rayDirection),fogAmount);
+    }
   }
   let vignetteRadius = dot(screenPosition,screenPosition);
   colorValue = colorValue*(1.0-0.12*smoothstep(0.3,2.0,vignetteRadius));
