@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Glass Eye Droplet Lab — WebGPU Raymarch</title>
+<link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<canvas id="gpu"></canvas>
+<div class="panel">
+  <div class="eyebrow">WEBGPU / RAYMARCH / WATER DROPLETS</div>
+  <h1>Glass Eye Droplet Lab</h1>
+  <div class="sub">変形するガラス目玉の表面へ、立体SDFの水滴を貼り付けます。水滴も同じ逆変形座標で評価するため、twist / bend / taper 後も表面に追従します。</div>
+
+  <div class="modes" id="modes">
+    <button data-mode="0" class="active">0 · original</button>
+    <button data-mode="1">1 · twist</button>
+    <button data-mode="2">2 · bend</button>
+    <button data-mode="3">3 · taper</button>
+    <button data-mode="4">4 · shear</button>
+    <button data-mode="5">5 · stretch</button>
+    <button data-mode="6">6 · domain warp</button>
+  </div>
+
+  <label class="row"><span>amount</span><input id="amount" type="range" min="-1.5" max="1.5" step="0.01" value="0.55"><output id="amountOut">0.55</output></label>
+  <label class="row"><span>flattening</span><input id="flattening" type="range" min="0" max="0.45" step="0.01" value="0.08"><output id="flatteningOut">0.08</output></label>
+  <label class="row"><span>warp frequency</span><input id="frequency" type="range" min="1.5" max="8" step="0.1" value="4.2"><output id="frequencyOut">4.2</output></label>
+
+  <div class="divider"></div>
+  <label class="row"><span>droplets</span><input id="dropletCount" type="range" min="0" max="14" step="1" value="11"><output id="dropletCountOut">11</output></label>
+  <label class="row"><span>droplet size</span><input id="dropletSize" type="range" min="0.45" max="1.65" step="0.01" value="1.00"><output id="dropletSizeOut">1.00</output></label>
+  <label class="row"><span>droplet bulge</span><input id="dropletBulge" type="range" min="0.20" max="0.82" step="0.01" value="0.48"><output id="dropletBulgeOut">0.48</output></label>
+  <label class="row"><span>water IOR</span><input id="waterIor" type="range" min="1.20" max="1.48" step="0.001" value="1.333"><output id="waterIorOut">1.333</output></label>
+  <label class="row"><span>glass IOR</span><input id="glassIor" type="range" min="1.10" max="1.80" step="0.01" value="1.45"><output id="glassIorOut">1.45</output></label>
+
+  <div class="desc" id="desc">Original: 球〜楕円体の目玉へ水滴を載せた基準状態。中央の大きめの滴では虹彩がレンズ状に歪みます。</div>
+  <div class="footer">
+    <button class="secondary" id="resetView">view reset</button>
+    <button class="secondary" id="pauseAnim">warp pause</button>
+    <span class="small">drag: orbit</span>
+    <span class="pill" id="status" data-state="boot">boot</span>
+  </div>
+</div>
+<script type="module" src="./app.js"></script>
+</body>
+</html>
