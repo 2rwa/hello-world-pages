@@ -1,17 +1,19 @@
 const canvas = document.querySelector('#gpu');
 const statusEl = document.querySelector('#status');
 const amountEl = document.querySelector('#amount');
+const flatteningEl = document.querySelector('#flattening');
 const frequencyEl = document.querySelector('#frequency');
 const iorEl = document.querySelector('#ior');
 const amountOut = document.querySelector('#amountOut');
+const flatteningOut = document.querySelector('#flatteningOut');
 const frequencyOut = document.querySelector('#frequencyOut');
 const iorOut = document.querySelector('#iorOut');
 const descEl = document.querySelector('#desc');
 const ciMode = new URLSearchParams(location.search).get('ci') === '1';
 
 const descriptions = [
-  'Original: 少し非対称な楕円体ガラス殻と、その内側の虹彩・瞳孔。完全な球ではないので twist の輪郭変化も見えます。',
-  'Twist: z に応じて xy を逆回転。ガラス殻・虹彩・瞳孔を同じ座標場でねじります。',
+  'Original: flattening=0 では完全な球。flattening を上げると x–y 断面が楕円になり、twist の外形変化も観察できます。',
+  'Twist: z に応じて xy を逆回転。球では外形が不変ですが、flattening を上げると楕円断面の向きが z ごとに変わり、ねじれが輪郭にも現れます。',
   'Bend: x に応じて xz 平面を回転する近似 inverse bend。輪郭と内部像が一緒に湾曲します。',
   'Taper: z に応じて xy スケールを変化。前後方向に先細り／末広がりになります。',
   'Shear: x ← x − k·z。ガラス全体を平行四辺形的に斜めへずらします。',
@@ -34,6 +36,7 @@ function setStatus(textValue, stateValue='boot'){
 }
 function syncOutputs(){
   amountOut.textContent = Number(amountEl.value).toFixed(2);
+  flatteningOut.textContent = Number(flatteningEl.value).toFixed(2);
   frequencyOut.textContent = Number(frequencyEl.value).toFixed(1);
   iorOut.textContent = Number(iorEl.value).toFixed(2);
 }
@@ -46,7 +49,7 @@ document.querySelector('#modes').addEventListener('click', (event) => {
   document.querySelectorAll('button[data-mode]').forEach((node) => node.classList.toggle('active', node === buttonEl));
   descEl.textContent = descriptions[modeCode];
 });
-for (const inputEl of [amountEl, frequencyEl, iorEl]) inputEl.addEventListener('input', syncOutputs);
+for (const inputEl of [amountEl, flatteningEl, frequencyEl, iorEl]) inputEl.addEventListener('input', syncOutputs);
 document.querySelector('#resetView').addEventListener('click', () => { yawValue = 0; pitchValue = 0.05; });
 document.querySelector('#pauseAnim').addEventListener('click', (event) => {
   paused = !paused;
@@ -112,7 +115,7 @@ async function main(){
       const values = new Float32Array([
         widthValue, heightValue, timeValue, 0,
         modeCode, Number(amountEl.value), Number(frequencyEl.value), Number(iorEl.value),
-        yawValue, pitchValue, 0, 0
+        yawValue, pitchValue, Number(flatteningEl.value), 0
       ]);
       gpuDevice.queue.writeBuffer(uniformBuffer, 0, values);
     }
@@ -150,6 +153,9 @@ async function main(){
         size: textureSize * 256,
         usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
       });
+      modeCode = 1;
+      flatteningEl.value = '0.30';
+      syncOutputs();
       writeUniforms(textureSize, textureSize, 0.75);
       const commandEncoder = encodeRender(renderPipeline, bindGroup, offscreenTexture.createView());
       commandEncoder.copyTextureToBuffer(
@@ -171,7 +177,7 @@ async function main(){
       }
       readbackBuffer.unmap();
       if (checksumValue === 0) throw new Error('render readback checksum was zero');
-      setStatus(`ok · checksum ${checksumValue}`, 'ok');
+      setStatus(`ok · twist+flatten checksum ${checksumValue}`, 'ok');
       document.body.dataset.ci = 'ok';
       return;
     }

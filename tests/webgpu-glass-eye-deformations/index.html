@@ -21,9 +21,10 @@
     <button data-mode="6">6 · domain warp</button>
   </div>
   <label class="row"><span>amount</span><input id="amount" type="range" min="-1.5" max="1.5" step="0.01" value="0.72"><output id="amountOut">0.72</output></label>
+  <label class="row"><span>flattening</span><input id="flattening" type="range" min="0" max="0.45" step="0.01" value="0"><output id="flatteningOut">0.00</output></label>
   <label class="row"><span>warp frequency</span><input id="frequency" type="range" min="1.5" max="8" step="0.1" value="4.2"><output id="frequencyOut">4.2</output></label>
   <label class="row"><span>glass IOR</span><input id="ior" type="range" min="1.10" max="1.80" step="0.01" value="1.45"><output id="iorOut">1.45</output></label>
-  <div class="desc" id="desc">Original: 少し非対称な楕円体ガラス殻と、その内側の虹彩・瞳孔。完全な球ではないので twist の輪郭変化も見えます。</div>
+  <div class="desc" id="desc">Original: flattening=0 では完全な球。flattening を上げると x–y 断面が楕円になり、twist の外形変化も観察できます。</div>
   <div class="footer">
     <button class="secondary" id="resetView">view reset</button>
     <button class="secondary" id="pauseAnim">warp pause</button>

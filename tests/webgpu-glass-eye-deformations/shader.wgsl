@@ -40,6 +40,20 @@ fn rotate2(vectorValue: vec2<f32>, angleValue: f32) -> vec2<f32> {
   );
 }
 
+fn flattenFactor() -> f32 {
+  return clamp(uniformData.cameraData.z, 0.0, 0.45);
+}
+
+fn outerRadii() -> vec3<f32> {
+  let flattenValue = flattenFactor();
+  return vec3<f32>(1.0, 1.0 - flattenValue, 1.0);
+}
+
+fn innerRadii() -> vec3<f32> {
+  let flattenValue = flattenFactor();
+  return vec3<f32>(0.78, 0.78 * (1.0 - flattenValue), 0.78);
+}
+
 fn inverseWarp(worldPosition: vec3<f32>) -> vec3<f32> {
   var warpedPosition = worldPosition;
   let modeValue = uniformData.controlData.x;
@@ -99,12 +113,12 @@ fn ellipsoidField(localPosition: vec3<f32>, radiiValue: vec3<f32>) -> f32 {
 
 fn outerField(worldPosition: vec3<f32>) -> f32 {
   let localPosition = inverseWarp(worldPosition);
-  return ellipsoidField(localPosition, vec3<f32>(1.00, 0.91, 1.08));
+  return ellipsoidField(localPosition, outerRadii());
 }
 
 fn innerField(worldPosition: vec3<f32>) -> f32 {
   let localPosition = inverseWarp(worldPosition);
-  return ellipsoidField(localPosition, vec3<f32>(0.78, 0.70, 0.84));
+  return ellipsoidField(localPosition, innerRadii());
 }
 
 fn refineOuterRoot(rayOrigin: vec3<f32>, rayDirection: vec3<f32>, nearDistance: f32, farDistance: f32) -> f32 {
@@ -237,7 +251,8 @@ fn environmentColor(rayOrigin: vec3<f32>, rayDirection: vec3<f32>) -> vec3<f32> 
 
 fn eyeMaterial(worldPosition: vec3<f32>, surfaceNormal: vec3<f32>, incomingDirection: vec3<f32>) -> vec3<f32> {
   let localPosition = inverseWarp(worldPosition);
-  let normalizedXY = vec2<f32>(localPosition.x / 0.78, localPosition.y / 0.70);
+  let eyeRadii = innerRadii();
+  let normalizedXY = vec2<f32>(localPosition.x / eyeRadii.x, localPosition.y / eyeRadii.y);
   let radialValue = length(normalizedXY);
   let frontMask = 1.0 - smoothstep(-0.66, -0.28, localPosition.z);
   let irisMask = (1.0 - smoothstep(0.46, 0.58, radialValue)) * frontMask;
