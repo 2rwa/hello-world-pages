@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Glass Eye Deformation Lab — WebGPU Raymarch</title>
+<link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<canvas id="gpu"></canvas>
+<div class="panel">
+  <h1>Glass Eye Deformation Lab</h1>
+  <div class="sub">WebGPU + raymarch。ドラッグで視点回転。変形後は厳密SDFではないため、安全係数付きmarch + 符号反転時の二分探索で追跡します。</div>
+  <div class="modes" id="modes">
+    <button data-mode="0" class="active">0 · original</button>
+    <button data-mode="1">1 · twist / ねじる</button>
+    <button data-mode="2">2 · bend / 曲げる</button>
+    <button data-mode="3">3 · taper / 先細り</button>
+    <button data-mode="4">4 · shear / 斜めずらし</button>
+    <button data-mode="5">5 · stretch / 局所伸縮</button>
+    <button data-mode="6">6 · domain warp</button>
+  </div>
+  <label class="row"><span>amount</span><input id="amount" type="range" min="-1.5" max="1.5" step="0.01" value="0.72"><output id="amountOut">0.72</output></label>
+  <label class="row"><span>warp frequency</span><input id="frequency" type="range" min="1.5" max="8" step="0.1" value="4.2"><output id="frequencyOut">4.2</output></label>
+  <label class="row"><span>glass IOR</span><input id="ior" type="range" min="1.10" max="1.80" step="0.01" value="1.45"><output id="iorOut">1.45</output></label>
+  <div class="desc" id="desc">Original: 少し非対称な楕円体ガラス殻と、その内側の虹彩・瞳孔。完全な球ではないので twist の輪郭変化も見えます。</div>
+  <div class="footer">
+    <button class="secondary" id="resetView">view reset</button>
+    <button class="secondary" id="pauseAnim">warp pause</button>
+    <span class="small">WebGPU</span>
+    <span class="pill" id="status" data-state="boot">boot</span>
+  </div>
+</div>
+<script type="module" src="./app.js"></script>
+</body>
+</html>
