@@ -724,10 +724,12 @@ async function main(){
         if(validationError)throw new Error('validation: '+validationError.message);
         await readbackBuffer.mapAsync(GPUMapMode.READ);
         const pixels=new Uint8Array(readbackBuffer.getMappedRange());
-        let checksumValue=0;
-        for(let indexValue=0;indexValue<pixels.length;indexValue+=127)checksumValue=(checksumValue+pixels[indexValue])>>>0;
+        let checksumValue=2166136261;
+        for(let indexValue=0;indexValue<pixels.length;indexValue+=1){
+          checksumValue=Math.imul(checksumValue^pixels[indexValue],16777619)>>>0;
+        }
         readbackBuffer.unmap();
-        if(checksumValue===0)throw new Error('render readback checksum was zero');
+        if(checksumValue===0)throw new Error('render readback hash was zero');
         return checksumValue;
       }
 
