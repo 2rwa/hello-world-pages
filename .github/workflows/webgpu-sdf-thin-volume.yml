@@ -19,7 +19,7 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           s=Path("tests/webgpu-sdf-thin-volume/index.html").read_text()
-          for token in ["navigator.gpu","getCompilationInfo","createRenderPipelineAsync","fieldInfo","abs(hit.dist)","copyTextureToBuffer","queue.onSubmittedWorkDone","data-test-state"]:
+          for token in ["navigator.gpu","getCompilationInfo","createRenderPipelineAsync","fieldInfo","abs(hit.dist)","copyTextureToBuffer","queue.onSubmittedWorkDone","dataset.testState"]:
               assert token in s, token
           assert "var<workgroup>" not in s
           print("static preflight: ok")
@@ -35,14 +35,7 @@ jobs:
           set -euo pipefail
           CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
           test -n "$CHROME"
-          "$CHROME" --headless=new --no-sandbox --disable-dev-shm-usage \
-            --enable-unsafe-webgpu --enable-features=Vulkan --use-vulkan=swiftshader \
-            --disable-vulkan-fallback-to-gl-for-testing --use-webgpu-adapter=swiftshader \
-            --enable-webgpu-developer-features --enable-dawn-features=allow_unsafe_apis \
-            --disable-dawn-features=use_dxc --use-gpu-in-tests --enable-unsafe-swiftshader \
-            --remote-debugging-port=9222 --remote-allow-origins=* \
-            http://127.0.0.1:8765/tests/webgpu-sdf-thin-volume/?ci=1 \
-            >/tmp/chrome-out.log 2>/tmp/chrome.log &
+          "$CHROME" --headless=new --no-sandbox --disable-dev-shm-usage             --enable-unsafe-webgpu --enable-features=Vulkan --use-vulkan=swiftshader             --disable-vulkan-fallback-to-gl-for-testing --use-webgpu-adapter=swiftshader             --enable-webgpu-developer-features --enable-dawn-features=allow_unsafe_apis             --disable-dawn-features=use_dxc --use-gpu-in-tests --enable-unsafe-swiftshader             --remote-debugging-port=9222 --remote-allow-origins=*             http://127.0.0.1:8765/tests/webgpu-sdf-thin-volume/?ci=1             >/tmp/chrome-out.log 2>/tmp/chrome.log &
           CPID=$!
           trap 'kill $CPID 2>/dev/null || true' EXIT
           for i in $(seq 1 15); do curl -fsS http://127.0.0.1:9222/json/list >/tmp/targets.json && break || sleep 1; done
