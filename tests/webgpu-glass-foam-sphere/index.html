@@ -20,6 +20,10 @@
       <input id="backgroundFile" type="file" accept="image/*">
     </label>
     <button id="clearBackground" type="button">背景画像を解除</button>
+    <div class="buttons">
+      <button id="cameraStart" type="button">カメラ開始</button>
+      <button id="cameraStop" type="button">カメラ停止</button>
+    </div>
 
     <label>泡の数 <output id="bubbleCountOut">20</output>
       <input id="bubbleCount" type="range" min="6" max="28" value="20" step="1">
@@ -44,7 +48,7 @@
 
     <details>
       <summary>背景画像について</summary>
-      <p>選択した画像はブラウザ内でのみ読み込み、WebGPU textureへ直接転送します。外部へアップロードしません。通常の写真として背景平面へcover配置し、ガラスと気泡を通った部分だけ屈折します。</p>
+      <p>選択した画像はブラウザ内でのみ読み込みます。カメラ開始ではブラウザのカメラ権限を使い、背面カメラを優先して480×270へcover変換し、WebGPU textureへ毎フレーム転送します。画像もカメラ映像も外部へアップロードしません。</p>
     </details>
   </aside>
 </main>

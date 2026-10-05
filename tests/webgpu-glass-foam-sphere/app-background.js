@@ -1,4 +1,4 @@
-import {loadBackgroundTexture} from './background-loader.js';
+import {createMediaBackgroundController} from './media-background.js';
 const q=(s)=>document.querySelector(s),canvas=q('#gpu'),statusEl=q('#status');
 const bubbleCount=q('#bubbleCount'),riseSpeed=q('#riseSpeed'),foamAmount=q('#foamAmount'),glassIor=q('#glassIor'),absorption=q('#absorption');
 const bubbleCountOut=q('#bubbleCountOut'),riseSpeedOut=q('#riseSpeedOut'),foamAmountOut=q('#foamAmountOut'),glassIorOut=q('#glassIorOut'),absorptionOut=q('#absorptionOut');
@@ -28,6 +28,7 @@ function runUiRegression(){
   for(const node of [bubbleCount,riseSpeed,foamAmount])node.dispatchEvent(new Event('input',{bubbles:true}));
   if(bubbleCountOut.textContent!=='17'||riseSpeedOut.textContent!=='1.35'||foamAmountOut.textContent!=='0.66')throw new Error('UI regression: control output did not update');
   if(backgroundFile.type!=='file'||!backgroundFile.accept.includes('image/'))throw new Error('UI regression: local background file picker missing');
+  if(!q('#cameraStart')||!q('#cameraStop'))throw new Error('UI regression: camera controls missing');
 }
 
 const shaderCode=await Promise.all(['./shader-base-bg.wgsl','./shader-bubbles.wgsl','./shader-lighting-bg.wgsl','./shader-fragment.wgsl'].map(async(pathValue)=>{
@@ -53,7 +54,7 @@ async function main(){
     const sampler=gpuDevice.createSampler({magFilter:'linear',minFilter:'linear',addressModeU:'clamp-to-edge',addressModeV:'clamp-to-edge'});
     const defaultTexture=gpuDevice.createTexture({size:[2,2,1],format:'rgba8unorm-srgb',usage:GPUTextureUsage.TEXTURE_BINDING|GPUTextureUsage.COPY_DST});
     gpuDevice.queue.writeTexture({texture:defaultTexture},new Uint8Array([30,60,68,255,40,80,88,255,22,45,52,255,48,92,98,255]),{bytesPerRow:8},[2,2,1]);
-    let activeTexture=defaultTexture,userTexture=null,currentBindGroup=null;
+    let activeTexture=defaultTexture,currentBindGroup=null;
 
     function createPipeline(surfaceFormat){
       return gpuDevice.createRenderPipeline({layout:'auto',vertex:{module:shaderModule,entryPoint:'vertexMain'},fragment:{module:shaderModule,entryPoint:'fragmentMain',targets:[{format:surfaceFormat}]},primitive:{topology:'triangle-list'}});
@@ -102,19 +103,15 @@ async function main(){
     gpuDevice.pushErrorScope('validation');
     const renderPipeline=createPipeline(surfaceFormat);rebuildBindGroup(renderPipeline);
 
-    backgroundFile.addEventListener('change',async()=>{
-      try{
-        const fileValue=backgroundFile.files?.[0];if(!fileValue)return;
-        setStatus('background…');
-        const loaded=await loadBackgroundTexture(gpuDevice,fileValue);
-        if(userTexture)userTexture.destroy();
-        userTexture=loaded.texture;activeTexture=loaded.texture;backgroundAspect=loaded.aspect;backgroundEnabled=1;
-        rebuildBindGroup(renderPipeline);backgroundName.textContent=fileValue.name;setStatus('ok','ok');
-      }catch(errorValue){console.error(errorValue);setStatus(`background: ${errorValue?.message||errorValue}`,'error')}
-    });
-    clearBackground.addEventListener('click',()=>{
-      if(userTexture){userTexture.destroy();userTexture=null}
-      activeTexture=defaultTexture;backgroundEnabled=0;backgroundAspect=16/9;backgroundFile.value='';backgroundName.textContent='built-in';rebuildBindGroup(renderPipeline);setStatus('ok','ok');
+    const mediaController=createMediaBackgroundController({
+      gpuDevice,defaultTexture,backgroundFile,backgroundName,clearBackground,
+      cameraStart:q('#cameraStart'),cameraStop:q('#cameraStop'),setStatus,
+      onTexture:(textureValue,aspectValue,enabledValue)=>{
+        activeTexture=textureValue;
+        backgroundAspect=aspectValue;
+        backgroundEnabled=enabledValue;
+        rebuildBindGroup(renderPipeline);
+      }
     });
 
     writeUniforms(.3,RENDER_W,RENDER_H);
@@ -124,6 +121,7 @@ async function main(){
     setStatus('ok','ok');
     const startedAt=performance.now();
     function frame(nowValue){
+      mediaController.updateCameraFrame();
       if(!paused)heldTime=(nowValue-startedAt)*.001;
       writeUniforms(heldTime,RENDER_W,RENDER_H);
       gpuDevice.queue.submit([encodeRender(renderPipeline,gpuContext.getCurrentTexture().createView()).finish()]);
