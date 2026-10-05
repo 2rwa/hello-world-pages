@@ -1,0 +1,174 @@
+name: Crystal Dice WebGPU CI
+
+on:
+  push:
+    paths:
+      - 'tests/crystal-dice-fanfare/**'
+      - '.github/workflows/crystal-dice-fanfare-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  webgpu:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show Chrome version
+        run: google-chrome --version
+
+      - name: Install CDP websocket client
+        run: python3 -m pip install --disable-pip-version-check websocket-client
+
+      - name: Start local server and Chrome
+        shell: bash
+        run: |
+          set -euxo pipefail
+          python3 -m http.server 8000 >server.log 2>&1 &
+          google-chrome \
+            --headless=new \
+            --no-sandbox \
+            --disable-dev-shm-usage \
+            --remote-debugging-port=9222 \
+            --remote-allow-origins='*' \
+            --enable-unsafe-webgpu \
+            --enable-features=Vulkan \
+            --use-vulkan=swiftshader \
+            --disable-vulkan-fallback-to-gl-for-testing \
+            --use-webgpu-adapter=swiftshader \
+            --enable-webgpu-developer-features \
+            --enable-dawn-features=allow_unsafe_apis \
+            --disable-dawn-features=use_dxc \
+            --use-gpu-in-tests \
+            --enable-unsafe-swiftshader \
+            'http://127.0.0.1:8000/tests/crystal-dice-fanfare/?ci=1' \
+            >chrome.log 2>&1 &
+
+      - name: Verify WGSL, render and UI redraw
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          import sys
+          import time
+          import urllib.request
+          import websocket
+
+          wanted = "/tests/crystal-dice-fanfare/?ci=1"
+
+          def targets():
+              with urllib.request.urlopen("http://127.0.0.1:9222/json/list", timeout=2) as response:
+                  return json.load(response)
+
+          target = None
+          deadline = time.time() + 25
+          while time.time() < deadline:
+              try:
+                  for item in targets():
+                      if wanted in item.get("url", ""):
+                          target = item
+                          break
+              except Exception:
+                  pass
+              if target:
+                  break
+              time.sleep(0.5)
+
+          if not target:
+              print("CDP target not found", file=sys.stderr)
+              sys.exit(2)
+
+          ws = websocket.create_connection(
+              target["webSocketDebuggerUrl"],
+              timeout=4,
+              origin="http://127.0.0.1:9222",
+          )
+          request_id = 0
+
+          def cdp(method, params=None):
+              global request_id
+              request_id += 1
+              current_id = request_id
+              ws.send(json.dumps({"id": current_id, "method": method, "params": params or {}}))
+              while True:
+                  message = json.loads(ws.recv())
+                  if message.get("id") == current_id:
+                      return message
+
+          cdp("Runtime.enable")
+          deadline = time.time() + 45
+          while time.time() < deadline:
+              result = cdp("Runtime.evaluate", {
+                  "expression": """(() => ({
+                    state: document.querySelector('#status')?.dataset.state || '',
+                    text: document.querySelector('#status')?.textContent || '',
+                    ci: document.body.dataset.ci || ''
+                  }))()""",
+                  "returnByValue": True,
+              })
+              value = result.get("result", {}).get("result", {}).get("value", {})
+              print(value)
+              if value.get("state") == "error" or value.get("ci") == "error":
+                  ws.close()
+                  sys.exit(3)
+              if value.get("state") == "ok" and value.get("ci") == "ok":
+                  check = cdp("Runtime.evaluate", {
+                      "expression": """(async () => {
+                        const api = window.__crystalDiceCi;
+                        if (!api) return {ok:false, reason:'CI hook missing'};
+
+                        const before = await api.renderChecksum();
+
+                        api.forceNextResult(6);
+                        document.querySelector('#rollButton')?.click();
+                        const rollValue = document.querySelector('#resultNumber')?.textContent || '';
+                        const afterRoll = await api.renderChecksum();
+
+                        const bump = document.querySelector('#bumpRange');
+                        bump.value = '0.05';
+                        bump.dispatchEvent(new Event('input',{bubbles:true}));
+                        const bumpUi = document.querySelector('#bumpOut')?.textContent || '';
+                        const afterBump = await api.renderChecksum();
+
+                        const rainbow = document.querySelector('#rainbowRange');
+                        rainbow.value = '0.20';
+                        rainbow.dispatchEvent(new Event('input',{bubbles:true}));
+                        const rainbowUi = document.querySelector('#rainbowOut')?.textContent || '';
+                        const afterRainbow = await api.renderChecksum();
+
+                        const sound = document.querySelector('#soundButton');
+                        sound.click();
+                        const soundOk = sound.getAttribute('aria-pressed') === 'false';
+
+                        return {
+                          ok: rollValue === '6' && bumpUi === '0.05' && rainbowUi === '0.20' &&
+                              soundOk && before !== afterRoll && afterRoll !== afterBump &&
+                              afterBump !== afterRainbow,
+                          before, afterRoll, afterBump, afterRainbow,
+                          rollValue, bumpUi, rainbowUi, soundOk
+                        };
+                      })()""",
+                      "returnByValue": True,
+                      "awaitPromise": True,
+                  })
+                  check_value = check.get("result", {}).get("result", {}).get("value", {})
+                  print({"regression": check_value})
+                  ws.close()
+                  sys.exit(0 if check_value.get("ok") else 5)
+              time.sleep(0.75)
+
+          print("Timed out waiting for WebGPU result", file=sys.stderr)
+          ws.close()
+          sys.exit(4)
+          PY
+
+      - name: Dump browser logs on failure
+        if: failure()
+        run: |
+          echo '--- chrome.log ---'
+          cat chrome.log || true
+          echo '--- server.log ---'
+          cat server.log || true

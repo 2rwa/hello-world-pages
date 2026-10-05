@@ -1,0 +1,932 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>Prismatic Crystal Dice — WebGPU Raymarch</title>
+<style>
+:root{
+  color-scheme:dark;
+  font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --ink:#f8fbff;--muted:#9eacc2;--glass:rgba(8,12,24,.62);--line:rgba(214,228,255,.15);
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:#02040b;color:var(--ink)}
+body{min-height:100vh;overflow:hidden}
+canvas{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
+.ui{position:relative;z-index:2;min-height:100vh;padding:18px;pointer-events:none;display:flex;flex-direction:column;justify-content:space-between}
+.topbar{display:flex;justify-content:space-between;align-items:flex-start;gap:14px}
+.panel{pointer-events:auto;background:linear-gradient(145deg,rgba(11,17,34,.72),rgba(5,8,19,.48));border:1px solid var(--line);backdrop-filter:blur(18px) saturate(125%);box-shadow:0 18px 72px rgba(0,0,0,.28)}
+.brand{padding:15px 17px;border-radius:20px;max-width:390px}
+.eyebrow{font:700 9px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.18em;color:#9db2d4;margin-bottom:7px}
+h1{font-size:22px;line-height:1.02;margin:0 0 7px;letter-spacing:-.04em}
+.brand p{margin:0;color:var(--muted);font-size:11px;line-height:1.55}
+.status{pointer-events:auto;border:1px solid var(--line);border-radius:999px;padding:7px 10px;background:rgba(5,8,17,.55);backdrop-filter:blur(12px);font:10px ui-monospace,SFMono-Regular,Menlo,monospace;color:#b8c3d7;max-width:250px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.status[data-state="ok"]{color:#a4f0c8;border-color:rgba(164,240,200,.28)}
+.status[data-state="error"]{color:#ffaaa7;border-color:rgba(255,170,167,.32)}
+.bottom{display:flex;justify-content:space-between;align-items:end;gap:16px}
+.controls{width:min(360px,calc(100vw - 36px));padding:14px;border-radius:20px}
+.result-card{display:flex;align-items:center;gap:12px;margin-bottom:11px}
+.result-number{width:62px;height:62px;border-radius:18px;display:grid;place-items:center;font:800 34px/1 ui-monospace,SFMono-Regular,Menlo,monospace;background:radial-gradient(circle at 35% 25%,rgba(255,255,255,.17),rgba(126,151,255,.06) 45%,rgba(255,255,255,.02));border:1px solid rgba(220,230,255,.18);box-shadow:inset 0 0 30px rgba(150,180,255,.05)}
+.result-copy b{display:block;font-size:12px;margin-bottom:3px}.result-copy span{display:block;font-size:10px;color:var(--muted);line-height:1.35}
+.control-row{display:grid;grid-template-columns:76px minmax(100px,1fr) 44px;align-items:center;gap:8px;margin:8px 0;font-size:10px;color:#bac5d6}
+.control-row output{text-align:right;font-variant-numeric:tabular-nums;color:#e5ebf5}
+input[type=range]{width:100%;accent-color:#b29cff}
+.actions{display:flex;gap:7px;margin-top:12px}
+button{appearance:none;border:1px solid rgba(218,229,255,.16);background:rgba(255,255,255,.055);color:#e6ecf6;border-radius:12px;padding:10px 12px;font:700 10px/1 inherit;cursor:pointer}
+button:hover{background:rgba(255,255,255,.10)}
+button:focus-visible{outline:2px solid #d9c8ff;outline-offset:2px}
+#rollButton{flex:1;background:linear-gradient(135deg,rgba(96,215,255,.17),rgba(189,112,255,.19),rgba(255,160,107,.14));border-color:rgba(177,196,255,.30);font-size:11px}
+.history{display:flex;gap:5px;margin-top:10px;min-height:23px;align-items:center;color:#7f8da4;font:9px ui-monospace,SFMono-Regular,Menlo,monospace}
+.history i{font-style:normal;width:22px;height:22px;border-radius:7px;display:grid;place-items:center;border:1px solid rgba(220,230,255,.11);background:rgba(255,255,255,.03);color:#ccd6e6}
+.caption{pointer-events:none;padding:7px 10px;border-radius:999px;background:rgba(4,7,15,.45);border:1px solid rgba(214,228,255,.10);backdrop-filter:blur(10px);font-size:9px;color:rgba(220,229,244,.58);white-space:nowrap}
+@media(max-width:720px){
+  .ui{padding:10px}.topbar{align-items:flex-start}.brand{padding:12px 13px;border-radius:16px;max-width:300px}
+  h1{font-size:18px}.brand p{font-size:10px}.status{font-size:8px;padding:6px 8px;max-width:130px}
+  .bottom{display:block}.caption{display:none}.controls{width:min(100%,360px);padding:11px;border-radius:16px}
+  .result-number{width:52px;height:52px;font-size:28px}.control-row{margin:6px 0}
+}
+@media(max-width:480px){.brand p{display:none}.brand{max-width:230px}.eyebrow{font-size:8px}.controls{background:linear-gradient(145deg,rgba(11,17,34,.78),rgba(5,8,19,.60))}}
+</style>
+</head>
+<body>
+<canvas id="gpu" aria-label="虹色に輝くクリスタルサイコロのWebGPUレイマーチ表示"></canvas>
+
+<main class="ui">
+  <div class="topbar">
+    <section class="brand panel">
+      <div class="eyebrow">WEBGPU · RAYMARCH · REFRACTION · AUDIO</div>
+      <h1>Prismatic Crystal Dice</h1>
+      <p>バンプマップで表面を揺らし、虹色テクスチャ・反射・屈折を重ねたクリスタル骰子。出目ごとに別のファンファーレを鳴らします。</p>
+    </section>
+    <div id="status" class="status" data-state="boot">boot</div>
+  </div>
+
+  <div class="bottom">
+    <section class="controls panel" aria-label="サイコロ操作">
+      <div class="result-card">
+        <div id="resultNumber" class="result-number" aria-live="polite">—</div>
+        <div class="result-copy">
+          <b id="resultTitle">Crystal ready</b>
+          <span id="resultText">ROLLでサイコロを振る</span>
+        </div>
+      </div>
+
+      <label class="control-row">
+        <span>Bump</span><input id="bumpRange" type="range" min="0" max="1.4" step="0.01" value="0.72"><output id="bumpOut">0.72</output>
+      </label>
+      <label class="control-row">
+        <span>Rainbow</span><input id="rainbowRange" type="range" min="0" max="1.6" step="0.01" value="1.08"><output id="rainbowOut">1.08</output>
+      </label>
+      <label class="control-row">
+        <span>Refraction</span><input id="iorRange" type="range" min="1.05" max="1.85" step="0.01" value="1.48"><output id="iorOut">1.48</output>
+      </label>
+
+      <div class="actions">
+        <button id="rollButton" type="button">◆ ROLL DICE</button>
+        <button id="soundButton" type="button" aria-pressed="true">Sound ON</button>
+      </div>
+      <div id="history" class="history"><span>history</span></div>
+    </section>
+    <div class="caption">drag: orbit · wheel: zoom</div>
+  </div>
+</main>
+
+<script id="shaderSource" type="text/plain">
+struct UniformData {
+  viewportData: vec4<f32>,
+  quaternionData: vec4<f32>,
+  effectData: vec4<f32>,
+  miscData: vec4<f32>,
+  cameraData: vec4<f32>,
+};
+@group(0) @binding(0) var<uniform> uniformData: UniformData;
+@group(0) @binding(1) var surfaceSampler: sampler;
+@group(0) @binding(2) var bumpTexture: texture_2d<f32>;
+@group(0) @binding(3) var rainbowTexture: texture_2d<f32>;
+
+struct VertexOutput {
+  @builtin(position) clipPosition: vec4<f32>,
+};
+struct SceneSample {
+  distanceValue: f32,
+  materialId: f32,
+};
+struct MarchResult {
+  rayDistance: f32,
+  hitFlag: f32,
+  materialId: f32,
+};
+struct FaceInfo {
+  uvRaw: vec2<f32>,
+  outwardCoordinate: f32,
+  faceValue: f32,
+  tangentA: vec3<f32>,
+  tangentB: vec3<f32>,
+};
+
+@vertex
+fn vertexMain(@builtin(vertex_index) vertexIndex: u32) -> VertexOutput {
+  var positions = array<vec2<f32>,3>(
+    vec2<f32>(-1.0,-1.0),
+    vec2<f32>(3.0,-1.0),
+    vec2<f32>(-1.0,3.0)
+  );
+  var outputValue: VertexOutput;
+  outputValue.clipPosition = vec4<f32>(positions[vertexIndex],0.0,1.0);
+  return outputValue;
+}
+
+fn safeNormalize(vectorValue: vec3<f32>) -> vec3<f32> {
+  let magnitudeValue = length(vectorValue);
+  if (magnitudeValue < 0.00001) {
+    return vec3<f32>(0.0,1.0,0.0);
+  }
+  return vectorValue / magnitudeValue;
+}
+
+fn blend3(firstValue: vec3<f32>, secondValue: vec3<f32>, blendValue: f32) -> vec3<f32> {
+  return firstValue * (1.0 - blendValue) + secondValue * blendValue;
+}
+
+fn quaternionRotate(quaternionValue: vec4<f32>, vectorValue: vec3<f32>) -> vec3<f32> {
+  let vectorPart = quaternionValue.xyz;
+  let scalarPart = quaternionValue.w;
+  let twiceCross = 2.0 * cross(vectorPart,vectorValue);
+  return vectorValue + scalarPart * twiceCross + cross(vectorPart,twiceCross);
+}
+
+fn localPosition(worldPosition: vec3<f32>) -> vec3<f32> {
+  let dieCenter = vec3<f32>(0.0,-0.05 + uniformData.miscData.y,0.0);
+  let inverseQuaternion = vec4<f32>(-uniformData.quaternionData.xyz,uniformData.quaternionData.w);
+  return quaternionRotate(inverseQuaternion,worldPosition-dieCenter);
+}
+
+fn worldDirection(localDirection: vec3<f32>) -> vec3<f32> {
+  return quaternionRotate(uniformData.quaternionData,localDirection);
+}
+
+fn roundedBoxDistance(positionValue: vec3<f32>) -> f32 {
+  let cornerRadius = 0.14;
+  let halfExtent = vec3<f32>(0.88);
+  let offsetValue = abs(positionValue)-halfExtent;
+  let outsideValue = length(max(offsetValue,vec3<f32>(0.0)));
+  let insideValue = min(max(offsetValue.x,max(offsetValue.y,offsetValue.z)),0.0);
+  return outsideValue + insideValue - cornerRadius;
+}
+
+fn faceInformation(positionValue: vec3<f32>) -> FaceInfo {
+  let absoluteValue = abs(positionValue);
+  if (absoluteValue.x >= absoluteValue.y && absoluteValue.x >= absoluteValue.z) {
+    if (positionValue.x >= 0.0) {
+      return FaceInfo(vec2<f32>(positionValue.z,positionValue.y),absoluteValue.x,3.0,vec3<f32>(0.0,0.0,1.0),vec3<f32>(0.0,1.0,0.0));
+    }
+    return FaceInfo(vec2<f32>(-positionValue.z,positionValue.y),absoluteValue.x,4.0,vec3<f32>(0.0,0.0,-1.0),vec3<f32>(0.0,1.0,0.0));
+  }
+  if (absoluteValue.y >= absoluteValue.x && absoluteValue.y >= absoluteValue.z) {
+    if (positionValue.y >= 0.0) {
+      return FaceInfo(vec2<f32>(positionValue.x,positionValue.z),absoluteValue.y,1.0,vec3<f32>(1.0,0.0,0.0),vec3<f32>(0.0,0.0,1.0));
+    }
+    return FaceInfo(vec2<f32>(positionValue.x,-positionValue.z),absoluteValue.y,6.0,vec3<f32>(1.0,0.0,0.0),vec3<f32>(0.0,0.0,-1.0));
+  }
+  if (positionValue.z >= 0.0) {
+    return FaceInfo(vec2<f32>(positionValue.x,positionValue.y),absoluteValue.z,2.0,vec3<f32>(1.0,0.0,0.0),vec3<f32>(0.0,1.0,0.0));
+  }
+  return FaceInfo(vec2<f32>(-positionValue.x,positionValue.y),absoluteValue.z,5.0,vec3<f32>(-1.0,0.0,0.0),vec3<f32>(0.0,1.0,0.0));
+}
+
+fn pipPatternDistance(uvValue: vec2<f32>, faceValue: f32) -> f32 {
+  let spacingValue = 0.40;
+  let pointTL = vec2<f32>(-spacingValue,spacingValue);
+  let pointTR = vec2<f32>(spacingValue,spacingValue);
+  let pointML = vec2<f32>(-spacingValue,0.0);
+  let pointMR = vec2<f32>(spacingValue,0.0);
+  let pointBL = vec2<f32>(-spacingValue,-spacingValue);
+  let pointBR = vec2<f32>(spacingValue,-spacingValue);
+  let pointCC = vec2<f32>(0.0,0.0);
+  var nearestValue = 9.0;
+
+  if (faceValue < 1.5) {
+    nearestValue = length(uvValue-pointCC);
+  } else if (faceValue < 2.5) {
+    nearestValue = min(length(uvValue-pointTL),length(uvValue-pointBR));
+  } else if (faceValue < 3.5) {
+    nearestValue = min(length(uvValue-pointTL),min(length(uvValue-pointCC),length(uvValue-pointBR)));
+  } else if (faceValue < 4.5) {
+    nearestValue = min(min(length(uvValue-pointTL),length(uvValue-pointTR)),min(length(uvValue-pointBL),length(uvValue-pointBR)));
+  } else if (faceValue < 5.5) {
+    nearestValue = min(length(uvValue-pointCC),min(min(length(uvValue-pointTL),length(uvValue-pointTR)),min(length(uvValue-pointBL),length(uvValue-pointBR))));
+  } else {
+    nearestValue = min(min(length(uvValue-pointTL),length(uvValue-pointML)),length(uvValue-pointBL));
+    nearestValue = min(nearestValue,min(min(length(uvValue-pointTR),length(uvValue-pointMR)),length(uvValue-pointBR)));
+  }
+  return nearestValue;
+}
+
+fn pipCavityDistance(positionValue: vec3<f32>) -> f32 {
+  let faceData = faceInformation(positionValue);
+  let planarDistance = pipPatternDistance(faceData.uvRaw,faceData.faceValue);
+  let axialDistance = faceData.outwardCoordinate - 1.035;
+  return sqrt(planarDistance*planarDistance + axialDistance*axialDistance) - 0.145;
+}
+
+fn dieDistanceLocal(positionValue: vec3<f32>) -> f32 {
+  let boxDistance = roundedBoxDistance(positionValue);
+  let cavityDistance = pipCavityDistance(positionValue);
+  return max(boxDistance,-cavityDistance);
+}
+
+fn dieDistanceWorld(positionValue: vec3<f32>) -> f32 {
+  return dieDistanceLocal(localPosition(positionValue));
+}
+
+fn sceneField(positionValue: vec3<f32>) -> SceneSample {
+  let dieDistance = dieDistanceWorld(positionValue);
+  let floorDistance = positionValue.y + 1.32;
+  if (dieDistance < floorDistance) {
+    return SceneSample(dieDistance,1.0);
+  }
+  return SceneSample(floorDistance,2.0);
+}
+
+fn marchScene(rayOrigin: vec3<f32>, rayDirection: vec3<f32>) -> MarchResult {
+  var travelValue = 0.0;
+  var materialValue = 0.0;
+  for (var iterationValue = 0; iterationValue < 150; iterationValue = iterationValue + 1) {
+    let sampleValue = sceneField(rayOrigin + rayDirection*travelValue);
+    if (sampleValue.distanceValue < 0.0017) {
+      materialValue = sampleValue.materialId;
+      return MarchResult(travelValue,1.0,materialValue);
+    }
+    travelValue = travelValue + max(sampleValue.distanceValue*0.72,0.0045);
+    if (travelValue > 18.0) {
+      break;
+    }
+  }
+  return MarchResult(travelValue,0.0,materialValue);
+}
+
+fn dieBaseNormalLocal(positionValue: vec3<f32>) -> vec3<f32> {
+  let epsilonValue = 0.0028;
+  let axisX = vec3<f32>(epsilonValue,0.0,0.0);
+  let axisY = vec3<f32>(0.0,epsilonValue,0.0);
+  let axisZ = vec3<f32>(0.0,0.0,epsilonValue);
+  return safeNormalize(vec3<f32>(
+    dieDistanceLocal(positionValue+axisX)-dieDistanceLocal(positionValue-axisX),
+    dieDistanceLocal(positionValue+axisY)-dieDistanceLocal(positionValue-axisY),
+    dieDistanceLocal(positionValue+axisZ)-dieDistanceLocal(positionValue-axisZ)
+  ));
+}
+
+fn bumpMappedNormalLocal(positionValue: vec3<f32>) -> vec3<f32> {
+  let baseNormal = dieBaseNormalLocal(positionValue);
+  let faceData = faceInformation(positionValue);
+  let uvValue = fract(faceData.uvRaw*0.46 + vec2<f32>(0.5));
+  let texelStep = 1.0/128.0;
+  let heightCenter = textureSampleLevel(bumpTexture,surfaceSampler,uvValue,0.0).r;
+  let heightA = textureSampleLevel(bumpTexture,surfaceSampler,fract(uvValue+vec2<f32>(texelStep,0.0)),0.0).r;
+  let heightB = textureSampleLevel(bumpTexture,surfaceSampler,fract(uvValue+vec2<f32>(0.0,texelStep)),0.0).r;
+  let gradientA = (heightA-heightCenter)*uniformData.effectData.x*5.0;
+  let gradientB = (heightB-heightCenter)*uniformData.effectData.x*5.0;
+  return safeNormalize(baseNormal - faceData.tangentA*gradientA - faceData.tangentB*gradientB);
+}
+
+fn dieNormalWorld(positionValue: vec3<f32>) -> vec3<f32> {
+  return safeNormalize(worldDirection(bumpMappedNormalLocal(localPosition(positionValue))));
+}
+
+fn dieBaseNormalWorld(positionValue: vec3<f32>) -> vec3<f32> {
+  return safeNormalize(worldDirection(dieBaseNormalLocal(localPosition(positionValue))));
+}
+
+fn floorNormal() -> vec3<f32> {
+  return vec3<f32>(0.0,1.0,0.0);
+}
+
+fn surfaceTextureColor(localPoint: vec3<f32>) -> vec3<f32> {
+  let faceData = faceInformation(localPoint);
+  let motionValue = uniformData.viewportData.z*0.018;
+  let uvValue = fract(faceData.uvRaw*0.47 + vec2<f32>(0.5+motionValue,0.5-motionValue*0.67));
+  return textureSampleLevel(rainbowTexture,surfaceSampler,uvValue,0.0).rgb;
+}
+
+fn environmentColor(rayDirection: vec3<f32>) -> vec3<f32> {
+  let verticalAmount = clamp(rayDirection.y*0.5+0.5,0.0,1.0);
+  var colorValue = blend3(vec3<f32>(0.026,0.014,0.052),vec3<f32>(0.002,0.008,0.024),pow(verticalAmount,0.7));
+  let cyanDirection = safeNormalize(vec3<f32>(-0.68,0.36,-0.64));
+  let pinkDirection = safeNormalize(vec3<f32>(0.67,0.19,-0.72));
+  let goldDirection = safeNormalize(vec3<f32>(0.06,0.82,-0.56));
+  let cyanGlow = pow(max(dot(rayDirection,cyanDirection),0.0),34.0);
+  let pinkGlow = pow(max(dot(rayDirection,pinkDirection),0.0),28.0);
+  let goldGlow = pow(max(dot(rayDirection,goldDirection),0.0),55.0);
+  colorValue = colorValue + vec3<f32>(0.12,0.55,0.92)*cyanGlow;
+  colorValue = colorValue + vec3<f32>(0.86,0.16,0.78)*pinkGlow;
+  colorValue = colorValue + vec3<f32>(1.0,0.67,0.26)*goldGlow;
+  let horizonValue = exp(-abs(rayDirection.y+0.03)*18.0);
+  colorValue = colorValue + vec3<f32>(0.045,0.055,0.10)*horizonValue;
+  return colorValue;
+}
+
+fn spectralColor(phaseValue: f32) -> vec3<f32> {
+  return 0.50 + 0.50*cos(vec3<f32>(0.1,2.25,4.35)+vec3<f32>(phaseValue));
+}
+
+fn marchDieExit(startPosition: vec3<f32>, rayDirection: vec3<f32>) -> vec2<f32> {
+  var travelValue = 0.0;
+  for (var iterationValue = 0; iterationValue < 72; iterationValue = iterationValue + 1) {
+    let samplePosition = startPosition + rayDirection*travelValue;
+    let distanceValue = dieDistanceWorld(samplePosition);
+    if (iterationValue > 1 && distanceValue > 0.0025) {
+      return vec2<f32>(travelValue,1.0);
+    }
+    travelValue = travelValue + max(abs(distanceValue)*0.68,0.006);
+    if (travelValue > 4.5) {
+      break;
+    }
+  }
+  return vec2<f32>(travelValue,0.0);
+}
+
+fn shadeCrystal(hitPosition: vec3<f32>, rayDirection: vec3<f32>) -> vec3<f32> {
+  let localPoint = localPosition(hitPosition);
+  let normalValue = dieNormalWorld(hitPosition);
+  let baseNormal = dieBaseNormalWorld(hitPosition);
+  let viewDirection = -rayDirection;
+  let facingValue = clamp(dot(normalValue,viewDirection),0.0,1.0);
+  let fresnelValue = 0.035 + 0.965*pow(1.0-facingValue,5.0);
+  let reflectionColor = environmentColor(reflect(rayDirection,normalValue));
+
+  let refractiveIndex = uniformData.effectData.z;
+  var innerDirection = refract(rayDirection,normalValue,1.0/refractiveIndex);
+  if (length(innerDirection) < 0.001) {
+    innerDirection = reflect(rayDirection,normalValue);
+  } else {
+    innerDirection = safeNormalize(innerDirection);
+  }
+
+  let insideStart = hitPosition + innerDirection*0.012;
+  let exitInfo = marchDieExit(insideStart,innerDirection);
+  var transmittedColor = environmentColor(innerDirection);
+  var thicknessValue = exitInfo.x;
+  if (exitInfo.y > 0.5) {
+    let exitPosition = insideStart + innerDirection*exitInfo.x;
+    let exitNormal = dieNormalWorld(exitPosition);
+    var exitDirection = refract(innerDirection,-exitNormal,refractiveIndex);
+    if (length(exitDirection) < 0.001) {
+      exitDirection = reflect(innerDirection,-exitNormal);
+    }
+    transmittedColor = environmentColor(safeNormalize(exitDirection));
+  }
+
+  let textureColor = surfaceTextureColor(localPoint);
+  let textureLuma = dot(textureColor,vec3<f32>(0.333333));
+  let spectralPhase = (1.0-facingValue)*11.0 + textureLuma*7.0 + localPoint.x*1.7 + localPoint.y*1.1 + localPoint.z*1.4;
+  let interferenceColor = spectralColor(spectralPhase);
+  let rainbowAmount = uniformData.effectData.y;
+  let spectralMix = clamp(rainbowAmount*(0.22 + 0.72*pow(1.0-facingValue,1.35)),0.0,1.35);
+
+  let absorptionColor = vec3<f32>(0.86,0.93,1.0);
+  let absorptionAmount = exp(-thicknessValue*vec3<f32>(0.17,0.10,0.055));
+  var crystalColor = transmittedColor*absorptionAmount*absorptionColor;
+  crystalColor = crystalColor + textureColor*0.18*rainbowAmount;
+  crystalColor = blend3(crystalColor,interferenceColor*(0.68+0.55*reflectionColor),min(spectralMix,0.88));
+  crystalColor = blend3(crystalColor,reflectionColor,min(fresnelValue*1.10,0.93));
+
+  let lightDirection = safeNormalize(vec3<f32>(-0.55,0.88,-0.31));
+  let halfDirection = safeNormalize(lightDirection+viewDirection);
+  let highlightValue = pow(max(dot(normalValue,halfDirection),0.0),110.0);
+  crystalColor = crystalColor + vec3<f32>(1.3,1.18,1.05)*highlightValue;
+
+  let cavityProximity = pipPatternDistance(faceInformation(localPoint).uvRaw,faceInformation(localPoint).faceValue);
+  let pipEdgeValue = 1.0-smoothstep(0.11,0.22,cavityProximity);
+  let geometryDifference = clamp(length(normalValue-baseNormal)*1.6,0.0,1.0);
+  crystalColor = crystalColor + interferenceColor*(0.10*pipEdgeValue + 0.08*geometryDifference)*rainbowAmount;
+
+  let rimValue = pow(1.0-facingValue,2.1);
+  crystalColor = crystalColor + interferenceColor*rimValue*0.30*rainbowAmount;
+  return crystalColor;
+}
+
+fn shadeFloor(hitPosition: vec3<f32>, rayDirection: vec3<f32>) -> vec3<f32> {
+  let checkerX = step(0.5,fract(hitPosition.x*0.55));
+  let checkerZ = step(0.5,fract(hitPosition.z*0.55));
+  let checkerValue = abs(checkerX-checkerZ);
+  var floorColor = blend3(vec3<f32>(0.010,0.015,0.031),vec3<f32>(0.020,0.027,0.052),checkerValue*0.45);
+
+  let radialValue = length(hitPosition.xz);
+  let causticBand = pow(max(0.0,0.5+0.5*cos(radialValue*18.0-uniformData.viewportData.z*1.8)),7.0);
+  let causticFade = exp(-radialValue*radialValue*0.55);
+  let causticColor = spectralColor(radialValue*3.0+uniformData.viewportData.z*0.35);
+  floorColor = floorColor + causticColor*causticBand*causticFade*0.17*uniformData.effectData.y;
+
+  let reflectionDirection = reflect(rayDirection,floorNormal());
+  let reflectionColor = environmentColor(reflectionDirection);
+  let fresnelValue = pow(1.0-max(dot(floorNormal(),-rayDirection),0.0),4.0);
+  return floorColor + reflectionColor*(0.08+0.16*fresnelValue);
+}
+
+@fragment
+fn fragmentMain(@builtin(position) fragmentPosition: vec4<f32>) -> @location(0) vec4<f32> {
+  let resolutionValue = uniformData.viewportData.xy;
+  var screenPosition = fragmentPosition.xy / resolutionValue * 2.0 - vec2<f32>(1.0);
+  screenPosition = vec2<f32>(screenPosition.x*(resolutionValue.x/resolutionValue.y),-screenPosition.y);
+
+  let yawValue = uniformData.cameraData.x;
+  let pitchValue = uniformData.cameraData.y;
+  let cameraRadius = uniformData.cameraData.z;
+  let focusPoint = vec3<f32>(0.0,-0.12,0.0);
+  let rayOrigin = focusPoint + vec3<f32>(
+    cameraRadius*sin(yawValue)*cos(pitchValue),
+    cameraRadius*sin(pitchValue),
+    -cameraRadius*cos(yawValue)*cos(pitchValue)
+  );
+  let forwardDirection = safeNormalize(focusPoint-rayOrigin);
+  let worldUp = vec3<f32>(0.0,1.0,0.0);
+  let rightDirection = safeNormalize(cross(forwardDirection,worldUp));
+  let upDirection = safeNormalize(cross(rightDirection,forwardDirection));
+  let rayDirection = safeNormalize(forwardDirection + rightDirection*screenPosition.x*0.66 + upDirection*screenPosition.y*0.66);
+
+  let marchResult = marchScene(rayOrigin,rayDirection);
+  var colorValue = environmentColor(rayDirection);
+  if (marchResult.hitFlag > 0.5) {
+    let hitPosition = rayOrigin + rayDirection*marchResult.rayDistance;
+    if (marchResult.materialId < 1.5) {
+      colorValue = shadeCrystal(hitPosition,rayDirection);
+    } else {
+      colorValue = shadeFloor(hitPosition,rayDirection);
+    }
+    let fogAmount = 1.0-exp(-0.008*marchResult.rayDistance*marchResult.rayDistance);
+    colorValue = blend3(colorValue,environmentColor(rayDirection),fogAmount);
+  }
+
+  let vignetteValue = dot(screenPosition,screenPosition);
+  colorValue = colorValue*(1.0-0.14*smoothstep(0.45,2.3,vignetteValue));
+  colorValue = colorValue/(colorValue+vec3<f32>(0.82));
+  colorValue = pow(max(colorValue,vec3<f32>(0.0)),vec3<f32>(1.0/2.2));
+  return vec4<f32>(colorValue,1.0);
+}
+</script>
+
+<script type="module">
+const canvas=document.querySelector('#gpu');
+const statusEl=document.querySelector('#status');
+const resultNumberEl=document.querySelector('#resultNumber');
+const resultTitleEl=document.querySelector('#resultTitle');
+const resultTextEl=document.querySelector('#resultText');
+const bumpRangeEl=document.querySelector('#bumpRange');
+const rainbowRangeEl=document.querySelector('#rainbowRange');
+const iorRangeEl=document.querySelector('#iorRange');
+const bumpOutEl=document.querySelector('#bumpOut');
+const rainbowOutEl=document.querySelector('#rainbowOut');
+const iorOutEl=document.querySelector('#iorOut');
+const rollButton=document.querySelector('#rollButton');
+const soundButton=document.querySelector('#soundButton');
+const historyEl=document.querySelector('#history');
+const shaderCode=document.querySelector('#shaderSource').textContent;
+const ciMode=new URLSearchParams(location.search).get('ci')==='1';
+
+let cameraYaw=-0.50;
+let cameraPitch=0.23;
+let cameraDistance=4.65;
+let pointerState=null;
+let soundEnabled=true;
+let audioContext=null;
+let currentQuaternion=[0,0,0,1];
+let currentResult=0;
+let rollState=null;
+let rollHistory=[];
+let forcedCiResult=null;
+let bounceHeight=0;
+
+function setStatus(textValue,stateValue='boot'){
+  statusEl.textContent=textValue;
+  statusEl.dataset.state=stateValue;
+}
+function syncControls(){
+  bumpOutEl.textContent=Number(bumpRangeEl.value).toFixed(2);
+  rainbowOutEl.textContent=Number(rainbowRangeEl.value).toFixed(2);
+  iorOutEl.textContent=Number(iorRangeEl.value).toFixed(2);
+}
+[bumpRangeEl,rainbowRangeEl,iorRangeEl].forEach(function(inputEl){
+  inputEl.addEventListener('input',syncControls);
+});
+syncControls();
+
+function quaternionNormalize(value){
+  const magnitude=Math.hypot(value[0],value[1],value[2],value[3])||1;
+  return value.map(function(component){return component/magnitude;});
+}
+function quaternionMultiply(firstValue,secondValue){
+  const ax=firstValue[0],ay=firstValue[1],az=firstValue[2],aw=firstValue[3];
+  const bx=secondValue[0],by=secondValue[1],bz=secondValue[2],bw=secondValue[3];
+  return quaternionNormalize([
+    aw*bx+ax*bw+ay*bz-az*by,
+    aw*by-ay*-bw+az*bx-ax*bz,
+    aw*bz+az*bw+ax*by-ay*bx,
+    aw*bw-ax*bx-ay*by-az*bz
+  ]);
+}
+function quaternionFromAxisAngle(axisValue,angleValue){
+  const magnitude=Math.hypot(axisValue[0],axisValue[1],axisValue[2])||1;
+  const halfAngle=angleValue*0.5;
+  const sineHalf=Math.sin(halfAngle)/magnitude;
+  return quaternionNormalize([axisValue[0]*sineHalf,axisValue[1]*sineHalf,axisValue[2]*sineHalf,Math.cos(halfAngle)]);
+}
+function quaternionSlerp(firstValue,secondValue,amountValue){
+  let endValue=secondValue.slice();
+  let dotValue=firstValue[0]*endValue[0]+firstValue[1]*endValue[1]+firstValue[2]*endValue[2]+firstValue[3]*endValue[3];
+  if(dotValue<0){
+    endValue=endValue.map(function(component){return -component;});
+    dotValue=-dotValue;
+  }
+  if(dotValue>0.9995){
+    return quaternionNormalize(firstValue.map(function(component,indexValue){return component+(endValue[indexValue]-component)*amountValue;}));
+  }
+  const angleValue=Math.acos(Math.max(-1,Math.min(1,dotValue)));
+  const sineValue=Math.sin(angleValue);
+  const weightA=Math.sin((1-amountValue)*angleValue)/sineValue;
+  const weightB=Math.sin(amountValue*angleValue)/sineValue;
+  return quaternionNormalize(firstValue.map(function(component,indexValue){return component*weightA+endValue[indexValue]*weightB;}));
+}
+function easedOutCubic(value){
+  return 1-Math.pow(1-value,3);
+}
+function targetQuaternionForResult(valueValue,yawValue){
+  let faceQuaternion=[0,0,0,1];
+  if(valueValue===6)faceQuaternion=quaternionFromAxisAngle([1,0,0],Math.PI);
+  if(valueValue===2)faceQuaternion=quaternionFromAxisAngle([1,0,0],-Math.PI/2);
+  if(valueValue===5)faceQuaternion=quaternionFromAxisAngle([1,0,0],Math.PI/2);
+  if(valueValue===3)faceQuaternion=quaternionFromAxisAngle([0,0,1],Math.PI/2);
+  if(valueValue===4)faceQuaternion=quaternionFromAxisAngle([0,0,1],-Math.PI/2);
+  const yawQuaternion=quaternionFromAxisAngle([0,1,0],yawValue);
+  return quaternionMultiply(yawQuaternion,faceQuaternion);
+}
+
+function noteFrequency(midiValue){
+  return 440*Math.pow(2,(midiValue-69)/12);
+}
+function ensureAudio(){
+  if(!audioContext){
+    const AudioCtor=window.AudioContext||window.webkitAudioContext;
+    if(AudioCtor)audioContext=new AudioCtor();
+  }
+  if(audioContext&&audioContext.state==='suspended')audioContext.resume();
+}
+function scheduleTone(midiValue,startValue,durationValue,brightnessValue){
+  if(!audioContext)return;
+  const oscillator=audioContext.createOscillator();
+  const shimmer=audioContext.createOscillator();
+  const gainNode=audioContext.createGain();
+  const shimmerGain=audioContext.createGain();
+  const startTime=audioContext.currentTime+startValue;
+  oscillator.type='triangle';
+  shimmer.type='sine';
+  oscillator.frequency.setValueAtTime(noteFrequency(midiValue),startTime);
+  shimmer.frequency.setValueAtTime(noteFrequency(midiValue+12),startTime);
+  gainNode.gain.setValueAtTime(0.0001,startTime);
+  gainNode.gain.exponentialRampToValueAtTime(0.085+brightnessValue*0.018,startTime+0.018);
+  gainNode.gain.exponentialRampToValueAtTime(0.0001,startTime+durationValue);
+  shimmerGain.gain.setValueAtTime(0.0001,startTime);
+  shimmerGain.gain.exponentialRampToValueAtTime(0.022,startTime+0.012);
+  shimmerGain.gain.exponentialRampToValueAtTime(0.0001,startTime+durationValue*0.72);
+  oscillator.connect(gainNode).connect(audioContext.destination);
+  shimmer.connect(shimmerGain).connect(audioContext.destination);
+  oscillator.start(startTime);shimmer.start(startTime);
+  oscillator.stop(startTime+durationValue+0.04);shimmer.stop(startTime+durationValue+0.04);
+}
+function playFanfare(valueValue){
+  if(!soundEnabled||ciMode)return;
+  ensureAudio();
+  if(!audioContext)return;
+  const fanfares={
+    1:[[60,0],[67,.13],[72,.30]],
+    2:[[62,0],[69,.12],[74,.27],[78,.44]],
+    3:[[64,0],[68,.11],[71,.23],[76,.39]],
+    4:[[65,0],[69,.10],[72,.21],[77,.34],[81,.49]],
+    5:[[67,0],[71,.10],[74,.20],[79,.32],[83,.46]],
+    6:[[60,0],[64,.08],[67,.16],[72,.28],[76,.40],[79,.52],[84,.68]]
+  };
+  const sequence=fanfares[valueValue];
+  sequence.forEach(function(noteValue,indexValue){
+    scheduleTone(noteValue[0],noteValue[1],valueValue===6?0.72:0.54,indexValue/sequence.length);
+  });
+}
+function updateHistory(valueValue){
+  rollHistory.unshift(valueValue);
+  rollHistory=rollHistory.slice(0,6);
+  historyEl.innerHTML='<span>history</span>'+rollHistory.map(function(item){return '<i>'+item+'</i>';}).join('');
+}
+function finishRoll(valueValue,targetQuaternion){
+  currentQuaternion=targetQuaternion;
+  currentResult=valueValue;
+  rollState=null;
+  bounceHeight=0;
+  resultNumberEl.textContent=String(valueValue);
+  resultTitleEl.textContent=valueValue===6?'Grand crystal!':'Result '+valueValue;
+  resultTextEl.textContent='出目 '+valueValue+' のファンファーレ';
+  updateHistory(valueValue);
+  playFanfare(valueValue);
+}
+function startRoll(){
+  ensureAudio();
+  const resultValue=forcedCiResult||Math.floor(Math.random()*6)+1;
+  forcedCiResult=null;
+  const randomYaw=(Math.random()*2-1)*Math.PI;
+  const targetQuaternion=targetQuaternionForResult(resultValue,randomYaw);
+  if(ciMode){
+    finishRoll(resultValue,targetQuaternion);
+    return;
+  }
+  const spinAxis=[0.43+Math.random(),0.62+Math.random(),0.31+Math.random()];
+  const spinTurns=4.7+Math.random()*2.8;
+  rollState={
+    resultValue:resultValue,
+    startedAt:performance.now(),
+    duration:2450+Math.random()*450,
+    startQuaternion:currentQuaternion.slice(),
+    spinAxis:spinAxis,
+    spinTurns:spinTurns,
+    targetQuaternion:targetQuaternion
+  };
+  resultNumberEl.textContent='··';
+  resultTitleEl.textContent='Rolling';
+  resultTextEl.textContent='crystal is tumbling…';
+}
+rollButton.addEventListener('click',startRoll);
+soundButton.addEventListener('click',function(){
+  soundEnabled=!soundEnabled;
+  soundButton.textContent=soundEnabled?'Sound ON':'Sound OFF';
+  soundButton.setAttribute('aria-pressed',String(soundEnabled));
+  if(soundEnabled)ensureAudio();
+});
+
+canvas.addEventListener('pointerdown',function(event){
+  pointerState={id:event.pointerId,x:event.clientX,y:event.clientY};
+  canvas.setPointerCapture(event.pointerId);
+});
+canvas.addEventListener('pointermove',function(event){
+  if(!pointerState||pointerState.id!==event.pointerId)return;
+  cameraYaw+=(event.clientX-pointerState.x)*0.0065;
+  cameraPitch=Math.max(-0.82,Math.min(0.95,cameraPitch+(event.clientY-pointerState.y)*0.005));
+  pointerState.x=event.clientX;pointerState.y=event.clientY;
+});
+canvas.addEventListener('pointerup',function(){pointerState=null;});
+canvas.addEventListener('pointercancel',function(){pointerState=null;});
+canvas.addEventListener('wheel',function(event){
+  event.preventDefault();
+  cameraDistance=Math.max(3.1,Math.min(7.2,cameraDistance*Math.exp(event.deltaY*0.001)));
+},{passive:false});
+
+function makeBumpPixels(){
+  const widthValue=128,heightValue=128;
+  const pixels=new Uint8Array(widthValue*heightValue*4);
+  for(let yValue=0;yValue<heightValue;yValue++){
+    for(let xValue=0;xValue<widthValue;xValue++){
+      const indexValue=(yValue*widthValue+xValue)*4;
+      const nx=xValue/widthValue,ny=yValue/heightValue;
+      const waveValue=
+        Math.sin(nx*47+Math.sin(ny*19)*2.4)*0.34+
+        Math.sin(ny*61+nx*13)*0.25+
+        Math.sin((nx+ny)*91)*0.18+
+        Math.sin(Math.hypot(nx-.5,ny-.5)*120)*0.23;
+      const heightByte=Math.max(0,Math.min(255,Math.round(128+waveValue*92)));
+      pixels[indexValue]=heightByte;
+      pixels[indexValue+1]=heightByte;
+      pixels[indexValue+2]=heightByte;
+      pixels[indexValue+3]=255;
+    }
+  }
+  return {width:widthValue,height:heightValue,pixels:pixels};
+}
+function hsvToRgb(hueValue,saturationValue,valueValue){
+  const sector=Math.floor(hueValue*6);
+  const fraction=hueValue*6-sector;
+  const p=valueValue*(1-saturationValue);
+  const q=valueValue*(1-fraction*saturationValue);
+  const t=valueValue*(1-(1-fraction)*saturationValue);
+  const table=[[valueValue,t,p],[q,valueValue,p],[p,valueValue,t],[p,q,valueValue],[t,p,valueValue],[valueValue,p,q]];
+  return table[sector%6];
+}
+function makeRainbowPixels(){
+  const widthValue=256,heightValue=128;
+  const pixels=new Uint8Array(widthValue*heightValue*4);
+  for(let yValue=0;yValue<heightValue;yValue++){
+    for(let xValue=0;xValue<widthValue;xValue++){
+      const indexValue=(yValue*widthValue+xValue)*4;
+      const nx=xValue/widthValue,ny=yValue/heightValue;
+      const hueValue=((nx*1.20+ny*.36+Math.sin(ny*14+nx*5)*.08)%1+1)%1;
+      const rgbValue=hsvToRgb(hueValue,.74,.98);
+      const sheenValue=.82+.18*Math.sin((nx-ny)*24);
+      pixels[indexValue]=Math.round(rgbValue[0]*255*sheenValue);
+      pixels[indexValue+1]=Math.round(rgbValue[1]*255*sheenValue);
+      pixels[indexValue+2]=Math.round(rgbValue[2]*255*sheenValue);
+      pixels[indexValue+3]=255;
+    }
+  }
+  return {width:widthValue,height:heightValue,pixels:pixels};
+}
+
+async function main(){
+  try{
+    if(!navigator.gpu)throw new Error('WebGPU unavailable');
+    setStatus('request adapter…');
+    const gpuAdapter=await navigator.gpu.requestAdapter({powerPreference:'high-performance'});
+    if(!gpuAdapter)throw new Error('requestAdapter returned null');
+
+    setStatus('request device…');
+    const gpuDevice=await gpuAdapter.requestDevice();
+    gpuDevice.lost.then(function(info){setStatus('device lost: '+(info.reason||'unknown'),'error');});
+
+    setStatus('compile WGSL…');
+    const shaderModule=gpuDevice.createShaderModule({code:shaderCode});
+    const compilationInfo=await shaderModule.getCompilationInfo();
+    const shaderErrors=compilationInfo.messages.filter(function(message){return message.type==='error';});
+    if(shaderErrors.length){
+      throw new Error(shaderErrors.map(function(message){return message.lineNum+':'+message.linePos+' '+message.message;}).join(' | '));
+    }
+
+    const uniformBuffer=gpuDevice.createBuffer({size:80,usage:GPUBufferUsage.UNIFORM|GPUBufferUsage.COPY_DST});
+    const samplerValue=gpuDevice.createSampler({
+      addressModeU:'repeat',addressModeV:'repeat',
+      magFilter:'linear',minFilter:'linear',mipmapFilter:'nearest'
+    });
+
+    function uploadTexture(textureData){
+      const gpuTexture=gpuDevice.createTexture({
+        size:[textureData.width,textureData.height,1],
+        format:'rgba8unorm',
+        usage:GPUTextureUsage.TEXTURE_BINDING|GPUTextureUsage.COPY_DST
+      });
+      gpuDevice.queue.writeTexture(
+        {texture:gpuTexture},
+        textureData.pixels,
+        {bytesPerRow:textureData.width*4,rowsPerImage:textureData.height},
+        [textureData.width,textureData.height,1]
+      );
+      return gpuTexture;
+    }
+    const bumpGpuTexture=uploadTexture(makeBumpPixels());
+    const rainbowGpuTexture=uploadTexture(makeRainbowPixels());
+
+    function createPipeline(formatValue){
+      return gpuDevice.createRenderPipeline({
+        layout:'auto',
+        vertex:{module:shaderModule,entryPoint:'vertexMain'},
+        fragment:{module:shaderModule,entryPoint:'fragmentMain',targets:[{format:formatValue}]},
+        primitive:{topology:'triangle-list'}
+      });
+    }
+    function createBindGroup(pipelineValue){
+      return gpuDevice.createBindGroup({
+        layout:pipelineValue.getBindGroupLayout(0),
+        entries:[
+          {binding:0,resource:{buffer:uniformBuffer}},
+          {binding:1,resource:samplerValue},
+          {binding:2,resource:bumpGpuTexture.createView()},
+          {binding:3,resource:rainbowGpuTexture.createView()}
+        ]
+      });
+    }
+    function writeUniforms(widthValue,heightValue,timeValue){
+      const uniformValues=new Float32Array([
+        widthValue,heightValue,timeValue,currentResult,
+        currentQuaternion[0],currentQuaternion[1],currentQuaternion[2],currentQuaternion[3],
+        Number(bumpRangeEl.value),Number(rainbowRangeEl.value),Number(iorRangeEl.value),soundEnabled?1:0,
+        currentResult,bounceHeight,ciMode?1:0,rollState?1:0,
+        cameraYaw,cameraPitch,cameraDistance,0
+      ]);
+      gpuDevice.queue.writeBuffer(uniformBuffer,0,uniformValues);
+    }
+    function encodeRender(pipelineValue,bindGroupValue,textureView){
+      const commandEncoder=gpuDevice.createCommandEncoder();
+      const renderPass=commandEncoder.beginRenderPass({
+        colorAttachments:[{
+          view:textureView,
+          clearValue:{r:0.002,g:0.004,b:0.012,a:1},
+          loadOp:'clear',storeOp:'store'
+        }]
+      });
+      renderPass.setPipeline(pipelineValue);
+      renderPass.setBindGroup(0,bindGroupValue);
+      renderPass.draw(3,1,0,0);
+      renderPass.end();
+      return commandEncoder;
+    }
+
+    async function renderChecksum(pipelineValue,bindGroupValue){
+      const textureWidth=128,textureHeight=96,bytesPerRow=512;
+      const offscreenTexture=gpuDevice.createTexture({
+        size:[textureWidth,textureHeight,1],
+        format:'rgba8unorm',
+        usage:GPUTextureUsage.RENDER_ATTACHMENT|GPUTextureUsage.COPY_SRC
+      });
+      const readbackBuffer=gpuDevice.createBuffer({
+        size:bytesPerRow*textureHeight,
+        usage:GPUBufferUsage.COPY_DST|GPUBufferUsage.MAP_READ
+      });
+      writeUniforms(textureWidth,textureHeight,performance.now()*0.001);
+      gpuDevice.pushErrorScope('validation');
+      const commandEncoder=encodeRender(pipelineValue,bindGroupValue,offscreenTexture.createView());
+      commandEncoder.copyTextureToBuffer(
+        {texture:offscreenTexture},
+        {buffer:readbackBuffer,bytesPerRow:bytesPerRow,rowsPerImage:textureHeight},
+        [textureWidth,textureHeight,1]
+      );
+      gpuDevice.queue.submit([commandEncoder.finish()]);
+      await gpuDevice.queue.onSubmittedWorkDone();
+      const validationError=await gpuDevice.popErrorScope();
+      if(validationError)throw new Error('validation: '+validationError.message);
+      await readbackBuffer.mapAsync(GPUMapMode.READ);
+      const pixels=new Uint8Array(readbackBuffer.getMappedRange());
+      let hashValue=2166136261;
+      for(let indexValue=0;indexValue<pixels.length;indexValue++){
+        hashValue=Math.imul(hashValue^pixels[indexValue],16777619)>>>0;
+      }
+      readbackBuffer.unmap();
+      readbackBuffer.destroy();
+      offscreenTexture.destroy();
+      if(hashValue===0)throw new Error('render hash was zero');
+      return hashValue;
+    }
+
+    if(ciMode){
+      setStatus('pipeline + offscreen…');
+      const pipelineValue=createPipeline('rgba8unorm');
+      const bindGroupValue=createBindGroup(pipelineValue);
+      currentResult=1;
+      currentQuaternion=targetQuaternionForResult(1,0.0);
+      const firstHash=await renderChecksum(pipelineValue,bindGroupValue);
+      window.__crystalDiceCi={
+        renderChecksum:function(){return renderChecksum(pipelineValue,bindGroupValue);},
+        forceNextResult:function(valueValue){forcedCiResult=valueValue;}
+      };
+      document.body.dataset.ci='ok';
+      setStatus('ok · '+firstHash,'ok');
+      return;
+    }
+
+    const gpuContext=canvas.getContext('webgpu');
+    if(!gpuContext)throw new Error('webgpu canvas context unavailable');
+    const surfaceFormat=navigator.gpu.getPreferredCanvasFormat();
+    gpuContext.configure({device:gpuDevice,format:surfaceFormat,alphaMode:'opaque'});
+    setStatus('pipeline…');
+    gpuDevice.pushErrorScope('validation');
+    const pipelineValue=createPipeline(surfaceFormat);
+    const bindGroupValue=createBindGroup(pipelineValue);
+
+    function resizeCanvas(){
+      const pixelRatio=Math.min(devicePixelRatio||1,1.5);
+      const widthValue=Math.max(1,Math.floor(innerWidth*pixelRatio));
+      const heightValue=Math.max(1,Math.floor(innerHeight*pixelRatio));
+      if(canvas.width!==widthValue||canvas.height!==heightValue){
+        canvas.width=widthValue;canvas.height=heightValue;
+      }
+    }
+    resizeCanvas();
+    writeUniforms(canvas.width,canvas.height,0);
+    const firstEncoder=encodeRender(pipelineValue,bindGroupValue,gpuContext.getCurrentTexture().createView());
+    gpuDevice.queue.submit([firstEncoder.finish()]);
+    await gpuDevice.queue.onSubmittedWorkDone();
+    const validationError=await gpuDevice.popErrorScope();
+    if(validationError)throw new Error('validation: '+validationError.message);
+    setStatus('ok','ok');
+
+    const startTime=performance.now();
+    function frame(nowValue){
+      if(rollState){
+        const elapsed=nowValue-rollState.startedAt;
+        const progressValue=Math.max(0,Math.min(1,elapsed/rollState.duration));
+        const spinProgress=Math.min(progressValue/.72,1);
+        const spinAngle=spinProgress*rollState.spinTurns*Math.PI*2;
+        const spinQuaternion=quaternionFromAxisAngle(rollState.spinAxis,spinAngle);
+        const earlyQuaternion=quaternionMultiply(spinQuaternion,rollState.startQuaternion);
+        if(progressValue<.72){
+          currentQuaternion=earlyQuaternion;
+        }else{
+          const snapProgress=(progressValue-.72)/.28;
+          currentQuaternion=quaternionSlerp(earlyQuaternion,rollState.targetQuaternion,easedOutCubic(snapProgress));
+        }
+        bounceHeight=(1-progressValue)*0.68+Math.abs(Math.sin(progressValue*Math.PI*7.0))*(1-progressValue)*0.24;
+        if(progressValue>=1){
+          finishRoll(rollState.resultValue,rollState.targetQuaternion);
+        }
+      }
+
+      resizeCanvas();
+      writeUniforms(canvas.width,canvas.height,(nowValue-startTime)*0.001);
+      const commandEncoder=encodeRender(pipelineValue,bindGroupValue,gpuContext.getCurrentTexture().createView());
+      gpuDevice.queue.submit([commandEncoder.finish()]);
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }catch(errorValue){
+    console.error(errorValue);
+    document.body.dataset.ci='error';
+    setStatus(String(errorValue&&errorValue.message?errorValue.message:errorValue),'error');
+  }
+}
+main();
+</script>
+</body>
+</html>
