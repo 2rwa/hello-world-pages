@@ -1,0 +1,46 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Glass Foam Sphere · WebGPU Raymarch</title>
+<link rel="stylesheet" href="./style.css">
+<main>
+  <section class="stage">
+    <canvas id="gpu" width="480" height="270" aria-label="WebGPU glass sphere with rising bubbles"></canvas>
+    <div class="badge">480 × 270 fixed render</div>
+    <div id="status" data-state="boot">boot…</div>
+  </section>
+  <aside class="panel">
+    <div>
+      <p class="eyebrow">WEBGPU · SDF RAYMARCH</p>
+      <h1>Glass Foam Sphere</h1>
+      <p class="lead">透明な球体内を気泡が上昇し、上部の内壁へ到達すると白い泡へ遷移する発泡サンプル。</p>
+    </div>
+
+    <label>泡の数 <output id="bubbleCountOut">20</output>
+      <input id="bubbleCount" type="range" min="6" max="28" value="20" step="1">
+    </label>
+    <label>上昇速度 <output id="riseSpeedOut">1.00</output>
+      <input id="riseSpeed" type="range" min="0.20" max="2.00" value="1.00" step="0.05">
+    </label>
+    <label>表面の発泡量 <output id="foamAmountOut">0.78</output>
+      <input id="foamAmount" type="range" min="0.00" max="1.00" value="0.78" step="0.01">
+    </label>
+    <label>ガラス屈折率 <output id="glassIorOut">1.45</output>
+      <input id="glassIor" type="range" min="1.05" max="1.70" value="1.45" step="0.01">
+    </label>
+    <label>液体の吸収 <output id="absorptionOut">0.36</output>
+      <input id="absorption" type="range" min="0.00" max="1.00" value="0.36" step="0.01">
+    </label>
+
+    <div class="buttons">
+      <button id="pauseAnim" type="button">pause</button>
+      <button id="resetView" type="button">reset view</button>
+    </div>
+
+    <details>
+      <summary>表現の構成</summary>
+      <p>外殻は球SDF、内部泡は複数の球SDF。気泡は上昇終盤で縮退し、同じ周期から上部の白いfoam群が立ち上がる。ガラスはFresnel反射と屈折、内部は距離吸収で色を付ける。</p>
+    </details>
+  </aside>
+</main>
+<script type="module" src="./app.js"></script>

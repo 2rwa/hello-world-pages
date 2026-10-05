@@ -1,0 +1,227 @@
+const canvas = document.querySelector('#gpu');
+const statusEl = document.querySelector('#status');
+const bubbleCountEl = document.querySelector('#bubbleCount');
+const riseSpeedEl = document.querySelector('#riseSpeed');
+const foamAmountEl = document.querySelector('#foamAmount');
+const glassIorEl = document.querySelector('#glassIor');
+const absorptionEl = document.querySelector('#absorption');
+const bubbleCountOut = document.querySelector('#bubbleCountOut');
+const riseSpeedOut = document.querySelector('#riseSpeedOut');
+const foamAmountOut = document.querySelector('#foamAmountOut');
+const glassIorOut = document.querySelector('#glassIorOut');
+const absorptionOut = document.querySelector('#absorptionOut');
+const ciMode = new URLSearchParams(location.search).get('ci') === '1';
+
+const RENDER_W = 480;
+const RENDER_H = 270;
+let paused = false;
+let heldTime = 0;
+let yawValue = 0;
+let pitchValue = 0.04;
+let dragging = false;
+let lastX = 0;
+let lastY = 0;
+
+function setStatus(textValue, stateValue='boot'){
+  statusEl.textContent = textValue;
+  statusEl.dataset.state = stateValue;
+}
+function syncOutputs(){
+  bubbleCountOut.textContent = String(Math.round(Number(bubbleCountEl.value)));
+  riseSpeedOut.textContent = Number(riseSpeedEl.value).toFixed(2);
+  foamAmountOut.textContent = Number(foamAmountEl.value).toFixed(2);
+  glassIorOut.textContent = Number(glassIorEl.value).toFixed(2);
+  absorptionOut.textContent = Number(absorptionEl.value).toFixed(2);
+}
+syncOutputs();
+
+for (const inputEl of [bubbleCountEl, riseSpeedEl, foamAmountEl, glassIorEl, absorptionEl]) {
+  inputEl.addEventListener('input', syncOutputs);
+}
+document.querySelector('#pauseAnim').addEventListener('click', (event) => {
+  paused = !paused;
+  event.currentTarget.textContent = paused ? 'resume' : 'pause';
+});
+document.querySelector('#resetView').addEventListener('click', () => {
+  yawValue = 0;
+  pitchValue = 0.04;
+});
+canvas.addEventListener('pointerdown', (event) => {
+  dragging = true;
+  lastX = event.clientX;
+  lastY = event.clientY;
+  canvas.setPointerCapture(event.pointerId);
+});
+canvas.addEventListener('pointermove', (event) => {
+  if (!dragging) return;
+  yawValue += (event.clientX - lastX) * 0.008;
+  pitchValue = Math.max(-0.75, Math.min(0.75, pitchValue + (event.clientY - lastY) * 0.006));
+  lastX = event.clientX;
+  lastY = event.clientY;
+});
+canvas.addEventListener('pointerup', () => { dragging = false; });
+canvas.addEventListener('pointercancel', () => { dragging = false; });
+
+function runUiRegression(){
+  bubbleCountEl.value = '17';
+  riseSpeedEl.value = '1.35';
+  foamAmountEl.value = '0.66';
+  for (const node of [bubbleCountEl, riseSpeedEl, foamAmountEl]) {
+    node.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+  if (bubbleCountOut.textContent !== '17' || riseSpeedOut.textContent !== '1.35' || foamAmountOut.textContent !== '0.66') {
+    throw new Error('UI regression: control output did not update');
+  }
+}
+
+const shaderCode = await Promise.all(['./shader-base.wgsl', './shader-bubbles.wgsl', './shader-lighting.wgsl', './shader-fragment.wgsl'].map(async (pathValue) => {
+  const response = await fetch(pathValue);
+  if (!response.ok) throw new Error(`shader fetch failed: ${pathValue} ${response.status}`);
+  return response.text();
+})).then((parts) => parts.join('\n'));
+
+async function main(){
+  try {
+    if (ciMode) runUiRegression();
+    if (!navigator.gpu) throw new Error('navigator.gpu is unavailable');
+
+    setStatus('adapter…');
+    const gpuAdapter = await navigator.gpu.requestAdapter({ powerPreference: 'high-performance' });
+    if (!gpuAdapter) throw new Error('requestAdapter() returned null');
+
+    setStatus('device…');
+    const gpuDevice = await gpuAdapter.requestDevice();
+    gpuDevice.lost.then((info) => setStatus(`device lost: ${info.reason || 'unknown'} ${info.message || ''}`, 'error'));
+
+    setStatus('shader…');
+    const shaderModule = gpuDevice.createShaderModule({ code: shaderCode });
+    const info = await shaderModule.getCompilationInfo();
+    const errors = info.messages.filter((message) => message.type === 'error');
+    if (errors.length) throw new Error(errors.map((m) => `${m.lineNum}:${m.linePos} ${m.message}`).join('\n'));
+
+    const uniformBuffer = gpuDevice.createBuffer({
+      size: 64,
+      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    });
+
+    function createPipeline(surfaceFormat){
+      return gpuDevice.createRenderPipeline({
+        layout: 'auto',
+        vertex: { module: shaderModule, entryPoint: 'vertexMain' },
+        fragment: { module: shaderModule, entryPoint: 'fragmentMain', targets: [{ format: surfaceFormat }] },
+        primitive: { topology: 'triangle-list' },
+      });
+    }
+    function createBindGroup(renderPipeline){
+      return gpuDevice.createBindGroup({
+        layout: renderPipeline.getBindGroupLayout(0),
+        entries: [{ binding: 0, resource: { buffer: uniformBuffer } }],
+      });
+    }
+    function writeUniforms(timeValue, widthValue, heightValue){
+      const values = new Float32Array([
+        widthValue, heightValue, timeValue, 0,
+        Number(bubbleCountEl.value), Number(riseSpeedEl.value), Number(foamAmountEl.value), Number(glassIorEl.value),
+        yawValue, pitchValue, Number(absorptionEl.value), 0,
+        0, 0, 0, 0,
+      ]);
+      gpuDevice.queue.writeBuffer(uniformBuffer, 0, values);
+    }
+    function encodeRender(renderPipeline, bindGroup, textureView){
+      const encoder = gpuDevice.createCommandEncoder();
+      const pass = encoder.beginRenderPass({
+        colorAttachments: [{
+          view: textureView,
+          clearValue: { r: 0.01, g: 0.02, b: 0.025, a: 1 },
+          loadOp: 'clear',
+          storeOp: 'store',
+        }],
+      });
+      pass.setPipeline(renderPipeline);
+      pass.setBindGroup(0, bindGroup);
+      pass.draw(3, 1, 0, 0);
+      pass.end();
+      return encoder;
+    }
+
+    if (ciMode) {
+      setStatus('pipeline…');
+      gpuDevice.pushErrorScope('validation');
+      const ciFormat = 'rgba8unorm';
+      const renderPipeline = createPipeline(ciFormat);
+      const bindGroup = createBindGroup(renderPipeline);
+      const w = 120;
+      const h = 68;
+      const bytesPerRow = 256 * Math.ceil((w * 4) / 256);
+      const targetTexture = gpuDevice.createTexture({
+        size: [w, h, 1],
+        format: ciFormat,
+        usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC,
+      });
+      const readbackBuffer = gpuDevice.createBuffer({
+        size: bytesPerRow * h,
+        usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
+      });
+      writeUniforms(2.4, w, h);
+      const encoder = encodeRender(renderPipeline, bindGroup, targetTexture.createView());
+      encoder.copyTextureToBuffer(
+        { texture: targetTexture },
+        { buffer: readbackBuffer, bytesPerRow, rowsPerImage: h },
+        [w, h, 1]
+      );
+      gpuDevice.queue.submit([encoder.finish()]);
+      setStatus('submitted…');
+      await gpuDevice.queue.onSubmittedWorkDone();
+      const validationError = await gpuDevice.popErrorScope();
+      if (validationError) throw new Error(`validation: ${validationError.message}`);
+
+      setStatus('readback…');
+      await readbackBuffer.mapAsync(GPUMapMode.READ);
+      const pixels = new Uint8Array(readbackBuffer.getMappedRange());
+      let checksumValue = 0;
+      let brightSamples = 0;
+      for (let indexValue = 0; indexValue < pixels.length; indexValue += 97) {
+        checksumValue = (checksumValue + pixels[indexValue]) >>> 0;
+        if (pixels[indexValue] > 80) brightSamples += 1;
+      }
+      readbackBuffer.unmap();
+      if (checksumValue === 0 || brightSamples < 2) throw new Error('readback did not contain visible sphere/foam output');
+      setStatus(`ok · foam checksum ${checksumValue}`, 'ok');
+      document.body.dataset.ci = 'ok';
+      return;
+    }
+
+    canvas.width = RENDER_W;
+    canvas.height = RENDER_H;
+    const gpuContext = canvas.getContext('webgpu');
+    if (!gpuContext) throw new Error('webgpu canvas context unavailable');
+    const surfaceFormat = navigator.gpu.getPreferredCanvasFormat();
+    gpuContext.configure({ device: gpuDevice, format: surfaceFormat, alphaMode: 'opaque' });
+
+    gpuDevice.pushErrorScope('validation');
+    const renderPipeline = createPipeline(surfaceFormat);
+    const bindGroup = createBindGroup(renderPipeline);
+    writeUniforms(0.3, RENDER_W, RENDER_H);
+    const firstEncoder = encodeRender(renderPipeline, bindGroup, gpuContext.getCurrentTexture().createView());
+    gpuDevice.queue.submit([firstEncoder.finish()]);
+    await gpuDevice.queue.onSubmittedWorkDone();
+    const validationError = await gpuDevice.popErrorScope();
+    if (validationError) throw new Error(`validation: ${validationError.message}`);
+    setStatus('ok', 'ok');
+
+    const startedAt = performance.now();
+    function frame(nowValue){
+      if (!paused) heldTime = (nowValue - startedAt) * 0.001;
+      writeUniforms(heldTime, RENDER_W, RENDER_H);
+      const encoder = encodeRender(renderPipeline, bindGroup, gpuContext.getCurrentTexture().createView());
+      gpuDevice.queue.submit([encoder.finish()]);
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  } catch (errorValue) {
+    console.error(errorValue);
+    document.body.dataset.ci = 'error';
+    setStatus(String(errorValue?.message || errorValue), 'error');
+  }
+}
+main();
