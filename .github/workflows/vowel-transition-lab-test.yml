@@ -1,0 +1,30 @@
+name: Vowel transition lab test
+on:
+  push:
+    paths:
+      - 'test/vowel-transition-lab/**'
+      - '.github/workflows/vowel-transition-lab-test.yml'
+  workflow_dispatch:
+
+jobs:
+  browser-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check JavaScript syntax
+        run: node --check test/vowel-transition-lab/app.js
+      - name: Start static server
+        run: |
+          python3 -m http.server 8765 >/tmp/vowel-http.log 2>&1 &
+          echo $! > /tmp/vowel-http.pid
+          sleep 1
+      - name: Run browser self-test
+        run: |
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser || true)"
+          test -n "$CHROME" || { echo "Chrome/Chromium not found"; exit 1; }
+          "$CHROME" --headless --no-sandbox --disable-gpu --virtual-time-budget=2000             --dump-dom 'http://127.0.0.1:8765/test/vowel-transition-lab/?selftest=1' > /tmp/vowel-dom.html
+          grep -q 'data-selftest="pass"' /tmp/vowel-dom.html
+          grep -q '"curveOk":true' /tmp/vowel-dom.html
+          grep -q '"viaEOk":true' /tmp/vowel-dom.html
+          grep -q '"customOk":true' /tmp/vowel-dom.html
