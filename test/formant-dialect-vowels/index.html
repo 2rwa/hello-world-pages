@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>日本語方言 母音フォルマント比較</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<main>
+  <header>
+    <div><p class="eyebrow">FORMANT VOWEL LAB</p><h1>日本語方言 母音フォルマント比較</h1></div>
+    <p class="lead">F1–F2母音図をクリックして擬似母音を再生。標準日本語の実測例と、方言研究で報告された「母音の接近」を模式化したプリセットを聞き比べます。</p>
+  </header>
+
+  <section class="toolbar card">
+    <label>表示A<select id="presetA"></select></label>
+    <label>表示B<select id="presetB"></select></label>
+    <label>基本周波数 F0 <input id="f0" type="range" min="80" max="240" value="130"><output id="f0out">130 Hz</output></label>
+    <button id="playSeq" class="primary">A→I→U→E→O を比較</button>
+  </section>
+
+  <section class="grid">
+    <div class="card plotCard">
+      <div class="sectionHead"><div><h2>F1–F2 母音図</h2><p>左ほどF2高・上ほどF1低。点を押すと再生します。</p></div><div class="legend"><span class="dot a"></span>A <span class="dot b"></span>B</div></div>
+      <canvas id="plot" width="840" height="620" aria-label="F1 F2 vowel chart"></canvas>
+    </div>
+
+    <aside class="card controls">
+      <div class="sectionHead"><div><h2>合成器</h2><p id="selectionLabel">/a/ を選択中</p></div><button id="playOne">▶ 再生</button></div>
+      <label>F1 <input id="f1" type="range" min="200" max="1000" value="801"><output id="f1out">801 Hz</output></label>
+      <label>F2 <input id="f2" type="range" min="600" max="3000" value="1159"><output id="f2out">1159 Hz</output></label>
+      <label>F3 <input id="f3" type="range" min="1800" max="3600" value="2600"><output id="f3out">2600 Hz</output></label>
+      <div id="vowelButtons" class="vowels"></div>
+      <div class="readout"><span>選択</span><strong id="readout">A /a/ — F1 801 / F2 1159 Hz</strong></div>
+      <p class="hint">ドラッグ中のF1/F2変更も図へ即時反映。再生音は分析用の簡易フォルマント合成で、実際の話者音声そのものではありません。</p>
+    </aside>
+  </section>
+
+  <section class="card notes">
+    <h2>プリセットの意味</h2>
+    <div id="presetNotes"></div>
+    <details><summary>データと合成について</summary><p>「標準日本語・実測例」は公開されている日本語5母音の一話者の測定例（F1/F2）を使用。方言モデルは会津・津軽・出雲で報告された母音カテゴリーの接近傾向を聞き比べやすく模式化した値で、個別話者の実測値ではありません。</p><p>音源はWeb Audio APIで鋸歯状波を作り、F1/F2/F3中心の帯域通過フィルタへ並列に通しています。F0とF3を揃えて聞けば、主にF1/F2差による母音色の変化を比較できます。</p><p class="sources"><strong>参考:</strong> <a href="https://utsugi-phonetics.com/phonetics_introduction/acoustic_phonetics/formant/">日本語5母音のF1/F2測定例</a> / <a href="https://www.u-aizu.ac.jp/~wilson/publications/SakamotoEtAl2010Aizuben.pdf">会津方言のフォルマント分析</a> / <a href="https://www2.ninjal.ac.jp/kikuo/KM_etal_1984_Izumo.pdf">出雲・津軽の母音フォルマント研究</a></p></details>
+  </section>
+</main>
+<script src="app.js"></script>
+</body>
+</html>
