@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Glass Eye Dual Flow Lab — WebGPU Raymarch</title>
+<link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<canvas id="gpu"></canvas>
+
+<section class="panel">
+  <header>
+    <div class="eyebrow">WEBGPU / RAYMARCH / TWO-LAYER BUMP</div>
+    <h1>Glass Eye Dual Flow Lab</h1>
+    <p>外側の角膜ガラスと、内側の虹彩を別々の procedural bump 系として動かします。</p>
+  </header>
+
+  <div class="presets" id="presets">
+    <button data-preset="cornea">cornea only</button>
+    <button data-preset="iris">iris only</button>
+    <button data-preset="dual" class="active">dual flow</button>
+    <button data-preset="counter">counterflow</button>
+  </div>
+
+  <div class="section-title">CORNEA / OUTER GLASS</div>
+  <label class="row">
+    <span>outer strength</span>
+    <input id="outerStrength" type="range" min="0" max="0.55" step="0.01" value="0.16">
+    <output id="outerStrengthOut">0.16</output>
+  </label>
+  <label class="row">
+    <span>outer scale</span>
+    <input id="outerScale" type="range" min="1" max="12" step="0.1" value="4.8">
+    <output id="outerScaleOut">4.8</output>
+  </label>
+  <label class="row">
+    <span>outer speed</span>
+    <input id="outerSpeed" type="range" min="-2" max="2" step="0.05" value="0.42">
+    <output id="outerSpeedOut">0.42</output>
+  </label>
+  <label class="row">
+    <span>outer direction</span>
+    <input id="outerDirection" type="range" min="-180" max="180" step="1" value="18">
+    <output id="outerDirectionOut">18°</output>
+  </label>
+
+  <div class="section-title iris-title">IRIS / INNER EYE</div>
+  <label class="row">
+    <span>iris strength</span>
+    <input id="irisStrength" type="range" min="0" max="0.65" step="0.01" value="0.30">
+    <output id="irisStrengthOut">0.30</output>
+  </label>
+  <label class="row">
+    <span>iris scale</span>
+    <input id="irisScale" type="range" min="2" max="18" step="0.1" value="9.0">
+    <output id="irisScaleOut">9.0</output>
+  </label>
+  <label class="row">
+    <span>iris speed</span>
+    <input id="irisSpeed" type="range" min="-3" max="3" step="0.05" value="1.10">
+    <output id="irisSpeedOut">1.10</output>
+  </label>
+  <label class="row">
+    <span>iris twist</span>
+    <input id="irisTwist" type="range" min="-8" max="8" step="0.1" value="3.2">
+    <output id="irisTwistOut">3.2</output>
+  </label>
+
+  <label class="row glass-row">
+    <span>glass IOR</span>
+    <input id="ior" type="range" min="1.10" max="1.80" step="0.01" value="1.45">
+    <output id="iorOut">1.45</output>
+  </label>
+
+  <div class="desc" id="desc">
+    Dual flow: 外側はゆっくり流れる液膜、内側の虹彩は速い放射・旋回流。二つの法線場を独立して動かします。
+  </div>
+
+  <footer>
+    <button class="secondary" id="resetView">view reset</button>
+    <button class="secondary" id="pauseAnim">pause</button>
+    <span class="small">drag: orbit</span>
+    <span class="status" id="status" data-state="boot">boot</span>
+  </footer>
+</section>
+
+<script type="module" src="./app.js"></script>
+</body>
+</html>
