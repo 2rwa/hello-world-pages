@@ -328,44 +328,44 @@
       "actions_url": "https://github.com/2rwa/tmp-music/actions",
       "runs": [
         {
-          "id": 37245741666,
-          "title": "fix: scope Section AI model check to cutter build",
-          "status": "in_progress",
-          "conclusion": null,
-          "status_label": "currently running:  Run 54 of Deploy GitHub Pages. fix: scope Section AI model check to cutter build",
-          "branch": "main",
-          "time": "2026-10-04T23:59:54Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37245741666"
-        },
-        {
-          "id": 37245705466,
+          "id": 37248579431,
           "title": "M6 Pages smoke",
           "status": "completed",
-          "conclusion": "skipped",
-          "status_label": "skipped:  Run 50 of M6 Pages smoke.",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 55 of M6 Pages smoke.",
           "branch": null,
-          "time": "2026-10-04T23:59:13Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37245705466"
+          "time": "2026-10-05T00:42:58Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37248579431"
         },
         {
-          "id": 37245705452,
+          "id": 37248579355,
           "title": "Structure Cutter Lab Pages smoke",
           "status": "completed",
-          "conclusion": "skipped",
-          "status_label": "skipped:  Run 13 of Structure Cutter Lab Pages smoke.",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 18 of Structure Cutter Lab Pages smoke.",
           "branch": null,
-          "time": "2026-10-04T23:59:13Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37245705452"
+          "time": "2026-10-05T00:42:58Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37248579355"
         },
         {
-          "id": 37245673801,
-          "title": "fix: align Section AI selftest with peak window",
+          "id": 37248524276,
+          "title": "feat: merge up to three stems for playback and WAV export",
           "status": "completed",
-          "conclusion": "failure",
-          "status_label": "failed:  Run 53 of Deploy GitHub Pages. fix: align Section AI selftest with peak window",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 58 of Deploy GitHub Pages. feat: merge up to three stems for playback and WAV export",
           "branch": "main",
-          "time": "2026-10-04T23:58:38Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37245673801"
+          "time": "2026-10-05T00:42:05Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37248524276"
+        },
+        {
+          "id": 37248524200,
+          "title": "feat: merge up to three stems for playback and WAV export",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 21 of Structure Cutter Lab CI. feat: merge up to three stems for playback and WAV export",
+          "branch": "main",
+          "time": "2026-10-05T00:42:05Z",
+          "url": "https://github.com/2rwa/tmp-music/actions/runs/37248524200"
         }
       ]
     },
@@ -445,5 +445,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-10-05T00:00:53Z"
+  "updated_at": "2026-10-05T01:04:04Z"
 }
