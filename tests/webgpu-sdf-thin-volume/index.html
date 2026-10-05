@@ -1,0 +1,201 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>SDF Thin Volume Swarm</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+html,body{margin:0;height:100%;overflow:hidden;background:#05070c;color:#dce7ff;font:14px system-ui}
+canvas{width:100%;height:100%;display:block}
+#ui{position:fixed;left:14px;top:14px;padding:12px 14px;background:#0a1020cc;border:1px solid #ffffff22;border-radius:12px;backdrop-filter:blur(10px);max-width:320px}
+h1{font-size:15px;margin:0 0 7px}p{margin:4px 0;color:#aab8d8;line-height:1.4}
+label{display:grid;grid-template-columns:72px 1fr 42px;gap:8px;align-items:center;margin:7px 0}
+input{width:100%}code{color:#c7e8ff}#status{margin-top:7px;color:#9fd6b8}
+</style>
+<canvas id="c"></canvas>
+<div id="ui">
+<h1>SDF Thin Volume Swarm</h1>
+<p>球SDFの <code>|d| ≈ 0</code> だけを薄い発光密度として積分。ドラッグで視点回転。</p>
+<label>Thickness<input id="th" type="range" min=".015" max=".16" step=".005" value=".055"><span id="thv"></span></label>
+<label>Density<input id="de" type="range" min=".2" max="2.2" step=".05" value="1.05"><span id="dev"></span></label>
+<label>Speed<input id="sp" type="range" min=".05" max="1.5" step=".05" value=".45"><span id="spv"></span></label>
+<div id="status">initializing</div>
+</div>
+<script type="module">
+const canvas=document.querySelector('#c'), statusEl=document.querySelector('#status');
+const ci=new URLSearchParams(location.search).has('ci');
+document.body.dataset.testState='boot';
+window.__sdfVolumeTest={stage:'boot'};
+const setStage=s=>{window.__sdfVolumeTest.stage=s;document.body.dataset.testState=s;statusEl.textContent=s};
+if(!navigator.gpu){setStage('error');throw new Error('WebGPU unavailable')}
+setStage('request-adapter');
+const adapter=await navigator.gpu.requestAdapter();
+if(!adapter){setStage('error');throw new Error('No adapter')}
+setStage('request-device');
+const device=await adapter.requestDevice();
+device.lost.then(i=>{window.__sdfVolumeTest.lost=i;document.body.dataset.testState='error'});
+const shader=device.createShaderModule({code:\`
+struct Params{
+  resolution:vec2f,
+  time:f32,
+  thickness:f32,
+  density:f32,
+  speed:f32,
+  yaw:f32,
+  pitch:f32,
+};
+@group(0) @binding(0) var<uniform> params:Params;
+
+struct FieldHit{ dist:f32, seed:f32, radius:f32 };
+
+fn hash31(pIn:vec3f)->f32{
+  var q=fract(pIn*0.1031);
+  q=q+dot(q,q.yzx+33.33);
+  return fract((q.x+q.y)*q.z);
+}
+fn sphereCenter(cell:vec3f, seed:f32)->vec3f{
+  let j=vec3f(
+    hash31(cell+vec3f(3.1,7.7,1.2)),
+    hash31(cell+vec3f(8.4,2.6,5.3)),
+    hash31(cell+vec3f(4.8,9.2,6.7))
+  )-0.5;
+  let phase=6.2831853*seed;
+  let drift=vec3f(
+    sin(params.time*params.speed*0.71+phase),
+    cos(params.time*params.speed*0.53+phase*1.7),
+    sin(params.time*params.speed*0.41+phase*2.3)
+  )*0.28;
+  return cell*2.15+j*0.62+drift;
+}
+fn fieldInfo(p:vec3f)->FieldHit{
+  let baseCell=floor(p/2.15);
+  var best=1e9;
+  var bestSeed=0.0;
+  var bestRadius=0.5;
+  for(var xi:i32=-1;xi<=1;xi=xi+1){
+    for(var yi:i32=-1;yi<=1;yi=yi+1){
+      for(var zi:i32=-1;zi<=1;zi=zi+1){
+        let cell=baseCell+vec3f(f32(xi),f32(yi),f32(zi));
+        let seed=hash31(cell+vec3f(12.3,4.4,8.8));
+        let radius=0.34+0.28*hash31(cell+vec3f(1.9,6.2,3.7));
+        let center=sphereCenter(cell,seed);
+        let sd=length(p-center)-radius;
+        if(sd<best){best=sd;bestSeed=seed;bestRadius=radius;}
+      }
+    }
+  }
+  return FieldHit(best,bestSeed,bestRadius);
+}
+fn palette(seed:f32)->vec3f{
+  let a=vec3f(0.48,0.55,0.66);
+  let b=vec3f(0.34,0.30,0.28);
+  let c=vec3f(0.72,0.86,1.00);
+  let d=vec3f(0.00,0.17,0.43);
+  return a+b*cos(6.2831853*(c*seed+d));
+}
+fn rotY(angleY:f32)->mat3x3f{
+  let c=cos(angleY);let s=sin(angleY);
+  return mat3x3f(vec3f(c,0.0,-s),vec3f(0.0,1.0,0.0),vec3f(s,0.0,c));
+}
+fn rotX(angleX:f32)->mat3x3f{
+  let c=cos(angleX);let s=sin(angleX);
+  return mat3x3f(vec3f(1.0,0.0,0.0),vec3f(0.0,c,-s),vec3f(0.0,s,c));
+}
+@vertex fn vs(@builtin(vertex_index) vid:u32)->@builtin(position) vec4f{
+  let p=array<vec2f,3>(vec2f(-1.0,-3.0),vec2f(3.0,1.0),vec2f(-1.0,1.0));
+  return vec4f(p[vid],0.0,1.0);
+}
+@fragment fn fs(@builtin(position) frag:vec4f)->@location(0) vec4f{
+  var uv=frag.xy/params.resolution*2.0-1.0;
+  uv.y=-uv.y;
+  uv.x=uv.x*(params.resolution.x/params.resolution.y);
+  let camRot=rotY(params.yaw)*rotX(params.pitch);
+  let rayOrigin=camRot*vec3f(0.0,0.0,6.7);
+  let forwardDir=normalize(-rayOrigin);
+  let rightDir=normalize(cross(forwardDir,vec3f(0.0,1.0,0.0)));
+  let upDir=normalize(cross(rightDir,forwardDir));
+  let rayDir=normalize(forwardDir+uv.x*rightDir+uv.y*upDir);
+  var travel=0.0;
+  var trans=1.0;
+  var accum=vec3f(0.0);
+  for(var stepIndex:i32=0;stepIndex<128;stepIndex=stepIndex+1){
+    let pos=rayOrigin+rayDir*travel;
+    let hit=fieldInfo(pos);
+    let shell=1.0-smoothstep(params.thickness,params.thickness*2.15,abs(hit.dist));
+    let cluster=1.0-smoothstep(4.2,7.0,length(pos));
+    let sparkle=0.72+0.28*sin(params.time*0.9+hit.seed*17.0+pos.y*2.2);
+    let localDensity=shell*cluster*params.density*sparkle;
+    let alpha=1.0-exp(-localDensity*0.105);
+    let tint=palette(hit.seed);
+    accum=accum+trans*alpha*tint*(1.8+2.8*shell);
+    trans=trans*(1.0-alpha);
+    let stepLen=clamp(abs(hit.dist)*0.48,0.022,0.18);
+    travel=travel+stepLen;
+    if(travel>14.0||trans<0.025){break;}
+  }
+  let haze=pow(max(0.0,1.0-rayDir.y*0.35),2.0);
+  let bg=vec3f(0.004,0.007,0.014)+vec3f(0.015,0.025,0.055)*haze;
+  let color=bg*trans+accum;
+  return vec4f(1.0-exp(-color),1.0);
+}\`});
+setStage('shader-compilation-info');
+const info=await shader.getCompilationInfo();
+const errs=info.messages.filter(m=>m.type==='error');
+if(errs.length){setStage('error');throw new Error(errs.map(e=>e.message).join('\\n'))}
+const format=navigator.gpu.getPreferredCanvasFormat();
+setStage('create-pipeline');
+const pipeline=await device.createRenderPipelineAsync({
+ layout:'auto',
+ vertex:{module:shader,entryPoint:'vs'},
+ fragment:{module:shader,entryPoint:'fs',targets:[{format}]},
+ primitive:{topology:'triangle-list'}
+});
+const uniform=device.createBuffer({size:32,usage:GPUBufferUsage.UNIFORM|GPUBufferUsage.COPY_DST});
+const bind=device.createBindGroup({layout:pipeline.getBindGroupLayout(0),entries:[{binding:0,resource:{buffer:uniform}}]});
+let yaw=0.15,pitch=-0.08,drag=false,lx=0,ly=0;
+canvas.addEventListener('pointerdown',e=>{drag=true;lx=e.clientX;ly=e.clientY;canvas.setPointerCapture(e.pointerId)});
+canvas.addEventListener('pointerup',()=>drag=false);
+canvas.addEventListener('pointermove',e=>{if(!drag)return;yaw+=(e.clientX-lx)*.006;pitch=Math.max(-1.2,Math.min(1.2,pitch+(e.clientY-ly)*.006));lx=e.clientX;ly=e.clientY});
+const vals={th:document.querySelector('#th'),de:document.querySelector('#de'),sp:document.querySelector('#sp')};
+for(const k of Object.keys(vals)){const out=document.querySelector('#'+k+'v');const sync=()=>out.textContent=Number(vals[k].value).toFixed(2);vals[k].addEventListener('input',sync);sync()}
+function writeUniform(w,h,t){device.queue.writeBuffer(uniform,0,new Float32Array([w,h,t,+vals.th.value,+vals.de.value,+vals.sp.value,yaw,pitch]))}
+function encode(view){
+  const enc=device.createCommandEncoder();
+  const pass=enc.beginRenderPass({colorAttachments:[{view,clearValue:{r:0,g:0,b:0,a:1},loadOp:'clear',storeOp:'store'}]});
+  pass.setPipeline(pipeline);pass.setBindGroup(0,bind);pass.draw(3);pass.end();
+  return enc;
+}
+async function runCi(){
+  setStage('validation-scope');
+  device.pushErrorScope('validation');
+  const tex=device.createTexture({size:[64,64],format,usage:GPUTextureUsage.RENDER_ATTACHMENT|GPUTextureUsage.COPY_SRC});
+  writeUniform(64,64,1.7);
+  const enc=encode(tex.createView());
+  const read=device.createBuffer({size:64*64*4,usage:GPUBufferUsage.COPY_DST|GPUBufferUsage.MAP_READ});
+  enc.copyTextureToBuffer({texture:tex},{buffer:read,bytesPerRow:256},[64,64]);
+  device.queue.submit([enc.finish()]);
+  setStage('submitted-work-wait');
+  await device.queue.onSubmittedWorkDone();
+  const validationError=await device.popErrorScope();
+  if(validationError)throw new Error(validationError.message);
+  await read.mapAsync(GPUMapMode.READ);
+  const a=new Uint8Array(read.getMappedRange());
+  let checksum=0;for(let i=0;i<a.length;i+=37)checksum=(checksum+a[i])>>>0;
+  read.unmap();
+  window.__sdfVolumeTest.checksum=checksum;
+  if(checksum===0)throw new Error('zero render checksum');
+  document.body.dataset.testState='ok';window.__sdfVolumeTest.stage='ok';statusEl.textContent='ok checksum '+checksum;
+}
+if(ci){runCi().catch(e=>{window.__sdfVolumeTest.error=String(e);setStage('error');throw e})}
+else{
+  const ctx=canvas.getContext('webgpu');ctx.configure({device,format,alphaMode:'opaque'});
+  function frame(ms){
+    const dpr=Math.min(devicePixelRatio,1.5),w=Math.max(1,Math.floor(innerWidth*dpr)),h=Math.max(1,Math.floor(innerHeight*dpr));
+    if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h}
+    writeUniform(w,h,ms*.001);
+    const enc=encode(ctx.getCurrentTexture().createView());
+    device.queue.submit([enc.finish()]);
+    document.body.dataset.testState='ok';window.__sdfVolumeTest.stage='ok';statusEl.textContent='WebGPU / SDF volume running';
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+</script>
