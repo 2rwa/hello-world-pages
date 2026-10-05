@@ -19,9 +19,9 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           s=Path("tests/webgpu-sdf-thin-volume/index.html").read_text()
-          for token in ["navigator.gpu","getCompilationInfo","createRenderPipelineAsync","fieldInfo","abs(hit.dist)","copyTextureToBuffer","queue.onSubmittedWorkDone","dataset.testState"]:
+          for token in ["navigator.gpu","getCompilationInfo","createRenderPipelineAsync","fieldInfo","abs(hit.dist)","copyTextureToBuffer","queue.onSubmittedWorkDone","dataset.testState","RENDER_WIDTH=480","RENDER_HEIGHT=270","writeUniform(RENDER_WIDTH,RENDER_HEIGHT"]:
               assert token in s, token
-          assert "var<workgroup>" not in s
+          assert "var<workgroup>" not in s\n          assert "devicePixelRatio" not in s\n          assert "innerWidth*dpr" not in s
           print("static preflight: ok")
           PY
       - name: Start server
