@@ -1,0 +1,116 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>WebGPU Black Hole 480</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+html,body{margin:0;height:100%;overflow:hidden;background:#02040a;color:#dce8ff;font:14px system-ui}
+body{display:grid;place-items:center}
+canvas{width:min(100vw,calc(100vh * 16 / 9));height:min(100vh,calc(100vw * 9 / 16));display:block}
+#ui{position:fixed;left:14px;top:14px;padding:12px 14px;background:#08101dcc;border:1px solid #ffffff22;border-radius:12px;backdrop-filter:blur(10px);max-width:340px}
+h1{font-size:15px;margin:0 0 7px}p{margin:4px 0;color:#aab8d8;line-height:1.4}
+label{display:grid;grid-template-columns:82px 1fr 44px;gap:8px;align-items:center;margin:7px 0}input{width:100%}
+#status{margin-top:7px;color:#9fd6b8}
+</style>
+<canvas id="c"></canvas>
+<div id="ui"><h1>Black Hole · 480×270 fixed</h1>
+<p>sphere SDF horizon + absorption + curved ray + accretion disk</p>
+<label>Bend<input id="be" type="range" min=".05" max="2.2" step=".01" value=".76"><span id="bev"></span></label>
+<label>Absorb<input id="ab" type="range" min=".1" max="4" step=".02" value="1.35"><span id="abv"></span></label>
+<label>Disk Glow<input id="gl" type="range" min=".1" max="4" step=".02" value="1.65"><span id="glv"></span></label>
+<label>Spin<input id="sp" type="range" min="0" max="2" step=".02" value=".9"><span id="spv"></span></label>
+<div id="status">initializing</div></div>
+<script type="module">
+const canvas=document.querySelector('#c'),statusEl=document.querySelector('#status');
+const RENDER_WIDTH=480,RENDER_HEIGHT=270;canvas.width=RENDER_WIDTH;canvas.height=RENDER_HEIGHT;
+const ci=new URLSearchParams(location.search).has('ci');
+document.body.dataset.testState='boot';window.__blackHoleTest={stage:'boot',renderSize:[RENDER_WIDTH,RENDER_HEIGHT]};
+const setStage=s=>{window.__blackHoleTest.stage=s;document.body.dataset.testState=s;statusEl.textContent=s};
+const v={be:document.querySelector('#be'),ab:document.querySelector('#ab'),gl:document.querySelector('#gl'),sp:document.querySelector('#sp')};
+for(const k of Object.keys(v)){const o=document.querySelector('#'+k+'v');const f=()=>o.textContent=Number(v[k].value).toFixed(2);v[k].addEventListener('input',f);f()}
+if(!navigator.gpu){setStage('error');throw new Error('WebGPU unavailable')}
+setStage('request-adapter');const adapter=await navigator.gpu.requestAdapter();if(!adapter){setStage('error');throw new Error('No adapter')}
+setStage('request-device');const device=await adapter.requestDevice();device.lost.then(i=>{window.__blackHoleTest.lost=i;document.body.dataset.testState='error'});
+const shader=device.createShaderModule({code:`
+struct Params{resolution:vec2f,time:f32,bend:f32,absorb:f32,glow:f32,spin:f32,yaw:f32,pitch:f32};
+@group(0) @binding(0) var<uniform> params:Params;
+
+fn hash31(pIn:vec3f)->f32{
+ var q=fract(pIn*0.1031);q=q+dot(q,q.yzx+33.33);return fract((q.x+q.y)*q.z);
+}
+fn rotY(a:f32)->mat3x3f{let c=cos(a);let s=sin(a);return mat3x3f(vec3f(c,0.0,-s),vec3f(0.0,1.0,0.0),vec3f(s,0.0,c));}
+fn rotX(a:f32)->mat3x3f{let c=cos(a);let s=sin(a);return mat3x3f(vec3f(1.0,0.0,0.0),vec3f(0.0,c,-s),vec3f(0.0,s,c));}
+fn sdHorizon(p:vec3f)->f32{return length(p)-0.92;}
+
+fn background(rayDir:vec3f)->vec3f{
+ let d=normalize(rayDir);
+ var col=vec3f(0.002,0.004,0.011)+vec3f(0.013,0.018,0.04)*pow(max(0.0,0.55+0.45*d.y),1.8);
+ let band=0.5+0.5*sin(d.x*5.0+d.y*7.0-d.z*3.0);
+ col=col+vec3f(0.012,0.018,0.045)*band;
+ let cell=floor(d*150.0);let h=hash31(cell+vec3f(3.1,7.3,1.9));
+ let star=pow(max(0.0,h-0.986)/0.014,8.0);col=col+vec3f(star);
+ return col;
+}
+fn diskEmission(p:vec3f,rayDir:vec3f)->vec3f{
+ let radial=length(p.xz);let thin=exp(-p.y*p.y*260.0);
+ let inner=smoothstep(1.18,1.55,radial);
+ let ring=exp(-pow((radial-2.25)*1.25,2.0))+0.42*exp(-pow((radial-3.7)*0.65,2.0));
+ let disk=thin*inner*ring;
+ let tangent=vec3f(-p.z,0.0,p.x)/max(radial,0.001);
+ let beam=clamp(0.72+0.72*dot(tangent,-rayDir)*params.spin,0.12,1.9);
+ let hot=clamp(1.25-(radial-1.4)*0.18,0.0,1.0);
+ let warm=vec3f(1.45,0.34,0.07);let whiteHot=vec3f(2.8,1.65,0.56);
+ let tint=warm*(1.0-hot)+whiteHot*hot;
+ return tint*disk*beam*params.glow;
+}
+@vertex fn vs(@builtin(vertex_index) vid:u32)->@builtin(position) vec4f{
+ let p=array<vec2f,3>(vec2f(-1.0,-3.0),vec2f(3.0,1.0),vec2f(-1.0,1.0));return vec4f(p[vid],0.0,1.0);
+}
+@fragment fn fs(@builtin(position) frag:vec4f)->@location(0) vec4f{
+ var uv=frag.xy/params.resolution*2.0-1.0;uv.y=-uv.y;uv.x=uv.x*(params.resolution.x/params.resolution.y);
+ let camRot=rotY(params.yaw)*rotX(params.pitch);let rayOrigin=camRot*vec3f(0.0,0.55,7.4);
+ let forwardDir=normalize(-rayOrigin+vec3f(0.0,0.1,0.0));
+ let rightDir=normalize(cross(forwardDir,vec3f(0.0,1.0,0.0)));let upDir=normalize(cross(rightDir,forwardDir));
+ var rayDir=normalize(forwardDir+uv.x*rightDir+uv.y*upDir);
+ var p=rayOrigin;var trans=1.0;var accum=vec3f(0.0);var minRadius=1e9;var captured=false;
+ for(var stepIndex:i32=0;stepIndex<144;stepIndex=stepIndex+1){
+   let radius=length(p);minRadius=min(minRadius,radius);let horizonSd=sdHorizon(p);
+   if(horizonSd<0.0){captured=true;trans=0.0;break;}
+   let stepLen=clamp(max(horizonSd*0.12,0.022),0.022,0.105);
+   let inward=-p/max(radius,0.001);let bendGain=params.bend/max(radius*radius,0.22);
+   rayDir=normalize(rayDir+inward*bendGain*stepLen);
+   let sigma=params.absorb*(0.08/(radius*radius+0.08)+0.18*exp(-pow((radius-1.2)*2.4,2.0)));
+   trans=trans*exp(-sigma*stepLen);
+   accum=accum+trans*diskEmission(p,rayDir)*stepLen;
+   p=p+rayDir*stepLen;
+   if(length(p-rayOrigin)>22.0||trans<0.006){break;}
+ }
+ var color=accum+trans*background(rayDir);
+ let photonRing=exp(-pow((minRadius-1.38)*9.0,2.0));
+ color=color+vec3f(1.7,1.15,0.52)*photonRing*0.19*select(1.0,0.0,captured);
+ let vignette=1.0-0.18*smoothstep(0.45,1.5,length(uv));color=color*vignette;
+ return vec4f(1.0-exp(-color),1.0);
+}`});
+setStage('shader-compilation-info');const info=await shader.getCompilationInfo();const errs=info.messages.filter(m=>m.type==='error');
+if(errs.length){setStage('error');throw new Error(errs.map(e=>e.message).join('\n'))}
+const format=navigator.gpu.getPreferredCanvasFormat();setStage('create-pipeline');
+const pipeline=await device.createRenderPipelineAsync({layout:'auto',vertex:{module:shader,entryPoint:'vs'},fragment:{module:shader,entryPoint:'fs',targets:[{format}]},primitive:{topology:'triangle-list'}});
+const uniform=device.createBuffer({size:48,usage:GPUBufferUsage.UNIFORM|GPUBufferUsage.COPY_DST});
+const bind=device.createBindGroup({layout:pipeline.getBindGroupLayout(0),entries:[{binding:0,resource:{buffer:uniform}}]});
+let yaw=.14,pitch=-.06,drag=false,lx=0,ly=0;
+canvas.addEventListener('pointerdown',e=>{drag=true;lx=e.clientX;ly=e.clientY;canvas.setPointerCapture(e.pointerId)});
+canvas.addEventListener('pointerup',()=>drag=false);
+canvas.addEventListener('pointermove',e=>{if(!drag)return;yaw+=(e.clientX-lx)*.006;pitch=Math.max(-1.1,Math.min(1.1,pitch+(e.clientY-ly)*.006));lx=e.clientX;ly=e.clientY});
+function writeUniform(w,h,t){device.queue.writeBuffer(uniform,0,new Float32Array([w,h,t,+v.be.value,+v.ab.value,+v.gl.value,+v.sp.value,yaw,pitch]))}
+function encode(view){const enc=device.createCommandEncoder();const pass=enc.beginRenderPass({colorAttachments:[{view,clearValue:{r:0,g:0,b:0,a:1},loadOp:'clear',storeOp:'store'}]});pass.setPipeline(pipeline);pass.setBindGroup(0,bind);pass.draw(3);pass.end();return enc}
+async function runCi(){
+ setStage('validation-scope');device.pushErrorScope('validation');
+ const tex=device.createTexture({size:[64,64],format,usage:GPUTextureUsage.RENDER_ATTACHMENT|GPUTextureUsage.COPY_SRC});writeUniform(64,64,1.7);
+ const enc=encode(tex.createView());const read=device.createBuffer({size:64*64*4,usage:GPUBufferUsage.COPY_DST|GPUBufferUsage.MAP_READ});
+ enc.copyTextureToBuffer({texture:tex},{buffer:read,bytesPerRow:256},[64,64]);device.queue.submit([enc.finish()]);setStage('submitted-work-wait');await device.queue.onSubmittedWorkDone();
+ const ve=await device.popErrorScope();if(ve)throw new Error(ve.message);await read.mapAsync(GPUMapMode.READ);const a=new Uint8Array(read.getMappedRange());
+ let checksum=0;for(let i=0;i<a.length;i+=37)checksum=(checksum+a[i])>>>0;read.unmap();window.__blackHoleTest.checksum=checksum;if(checksum===0)throw new Error('zero checksum');
+ document.body.dataset.testState='ok';window.__blackHoleTest.stage='ok';statusEl.textContent='ok checksum '+checksum;
+}
+if(ci){runCi().catch(e=>{window.__blackHoleTest.error=String(e);setStage('error');throw e})}
+else{const ctx=canvas.getContext('webgpu');ctx.configure({device,format,alphaMode:'opaque'});function frame(ms){writeUniform(RENDER_WIDTH,RENDER_HEIGHT,ms*.001);device.queue.submit([encode(ctx.getCurrentTexture().createView()).finish()]);document.body.dataset.testState='ok';window.__blackHoleTest.stage='ok';statusEl.textContent='running · 480×270 fixed';requestAnimationFrame(frame)}requestAnimationFrame(frame)}
+</script>

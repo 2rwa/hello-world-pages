@@ -1,0 +1,77 @@
+name: WebGPU black hole 480 test
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'tests/webgpu-black-hole-480/index.html'
+      - '.github/workflows/webgpu-black-hole-480.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  browser-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+      - name: Static preflight
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path("tests/webgpu-black-hole-480/index.html").read_text()
+          for token in ["navigator.gpu","getCompilationInfo","createRenderPipelineAsync","sdHorizon","diskEmission","copyTextureToBuffer","queue.onSubmittedWorkDone","RENDER_WIDTH=480","RENDER_HEIGHT=270","writeUniform(RENDER_WIDTH,RENDER_HEIGHT","__blackHoleTest"]:
+              assert token in s, token
+          assert "devicePixelRatio" not in s
+          assert "innerWidth" not in s
+          assert "var<workgroup>" not in s
+          print("static preflight: ok")
+          PY
+      - name: Start server
+        run: |
+          python3 -m http.server 8765 --directory . >/tmp/http.log 2>&1 &
+          sleep 1
+          curl -f http://127.0.0.1:8765/tests/webgpu-black-hole-480/?ci=1 >/dev/null
+      - name: WebGPU render
+        shell: bash
+        run: |
+          set -euo pipefail
+          CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
+          test -n "$CHROME"
+          "$CHROME" --headless=new --no-sandbox --disable-dev-shm-usage \
+            --enable-unsafe-webgpu --enable-features=Vulkan --use-vulkan=swiftshader \
+            --disable-vulkan-fallback-to-gl-for-testing --use-webgpu-adapter=swiftshader \
+            --enable-webgpu-developer-features --enable-dawn-features=allow_unsafe_apis \
+            --disable-dawn-features=use_dxc --use-gpu-in-tests --enable-unsafe-swiftshader \
+            --remote-debugging-port=9222 --remote-allow-origins=* \
+            http://127.0.0.1:8765/tests/webgpu-black-hole-480/?ci=1 >/tmp/chrome-out.log 2>/tmp/chrome.log &
+          CPID=$!
+          trap 'kill $CPID 2>/dev/null || true' EXIT
+          for i in $(seq 1 15); do curl -fsS http://127.0.0.1:9222/json/list >/tmp/targets.json && break || sleep 1; done
+          python3 -m pip install --quiet websocket-client
+          python3 - <<'PY'
+          import json,time,urllib.request,websocket
+          ts=json.load(urllib.request.urlopen("http://127.0.0.1:9222/json/list"))
+          p=next(t for t in ts if t.get("type")=="page" and "webgpu-black-hole-480" in t.get("url",""))
+          ws=websocket.create_connection(p["webSocketDebuggerUrl"],timeout=5)
+          n=1
+          def ev(expr):
+              global n
+              i=n;n+=1
+              ws.send(json.dumps({"id":i,"method":"Runtime.evaluate","params":{"expression":expr,"returnByValue":True}}))
+              while True:
+                  r=json.loads(ws.recv())
+                  if r.get("id")==i:return r["result"]["result"].get("value")
+          last=None;end=time.time()+25
+          while time.time()<end:
+              raw=ev("JSON.stringify({state:document.body?.dataset?.testState,test:window.__blackHoleTest})")
+              if raw!=last: print(raw,flush=True);last=raw
+              d=json.loads(raw)
+              if d.get("state")=="ok":
+                  assert (d.get("test") or {}).get("checksum",0)>0
+                  print("WebGPU black hole 480: ok");raise SystemExit(0)
+              if d.get("state")=="error": raise SystemExit("page error: "+raw)
+              time.sleep(.5)
+          raise SystemExit("timeout: "+str(last))
+          PY
+          echo "--- chrome stderr ---"
+          tail -n 120 /tmp/chrome.log || true
