@@ -43,9 +43,37 @@ fn marchInternal(rayOrigin: vec3<f32>, rayDirection: vec3<f32>, maxDistance: f32
   return HitResult(travelDistance, 0.0, 0.0, 0.0);
 }
 
+fn marchBubbleExit(rayOrigin: vec3<f32>, rayDirection: vec3<f32>) -> f32 {
+  var travelDistance = 0.0;
+  var marchIndex: i32 = 0;
+  loop {
+    if (marchIndex >= 96 || travelDistance > 0.52) { break; }
+    let samplePosition = rayOrigin + rayDirection * travelDistance;
+    let fieldValue = bubbleField(samplePosition);
+    if (travelDistance > 0.004 && fieldValue > -0.0012) {
+      return travelDistance;
+    }
+    travelDistance = travelDistance + max(abs(fieldValue) * 0.72, 0.0015);
+    marchIndex = marchIndex + 1;
+  }
+  return -1.0;
+}
+
 fn sphereExitDistance(rayOrigin: vec3<f32>, rayDirection: vec3<f32>) -> f32 {
   let bValue = dot(rayOrigin, rayDirection);
   let cValue = dot(rayOrigin, rayOrigin) - 0.992 * 0.992;
   let discriminantValue = max(0.0, bValue * bValue - cValue);
   return max(0.0, -bValue + sqrt(discriminantValue));
+}
+
+fn sphereExitEnvironment(rayOrigin: vec3<f32>, rayDirection: vec3<f32>, glassIor: f32) -> vec3<f32> {
+  let exitDistance = sphereExitDistance(rayOrigin, rayDirection);
+  let exitPosition = rayOrigin + rayDirection * exitDistance;
+  let exitNormal = normalize(exitPosition);
+  let airDirection = refract(rayDirection, -exitNormal, glassIor);
+  let reflectedDirection = reflect(rayDirection, -exitNormal);
+  if (length(airDirection) > 0.001) {
+    return environmentColor(normalize(airDirection));
+  }
+  return environmentColor(normalize(reflectedDirection));
 }

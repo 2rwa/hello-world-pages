@@ -34,6 +34,7 @@ fn fragmentMain(@builtin(position) pixelPosition: vec4<f32>) -> @location(0) vec
       let insideDirection = normalize(refractedDirection);
       let exitDistance = sphereExitDistance(insideOrigin, insideDirection);
       let hitValue = marchInternal(insideOrigin, insideDirection, exitDistance);
+      var tintDistance = exitDistance;
 
       if (hitValue.hitFlag > 0.5) {
         let hitPosition = insideOrigin + insideDirection * hitValue.travel;
@@ -41,28 +42,53 @@ fn fragmentMain(@builtin(position) pixelPosition: vec4<f32>) -> @location(0) vec
         let lightDirection = normalize(vec3<f32>(-0.48, 0.72, 0.32));
         let diffuseValue = max(dot(hitNormal, lightDirection), 0.0);
         let rimValue = pow(1.0 - max(dot(-insideDirection, hitNormal), 0.0), 2.4);
+
         if (hitValue.materialId > 1.5) {
           let sparkleValue = pow(max(dot(reflect(-lightDirection, hitNormal), -insideDirection), 0.0), 48.0);
           throughColor = vec3<f32>(0.78, 0.88, 0.85) * (0.72 + diffuseValue * 0.30)
             + vec3<f32>(1.0) * (0.32 + rimValue * 0.55 + sparkleValue);
+          tintDistance = max(hitValue.travel, 0.0);
         } else {
-          let bubbleFresnel = fresnelSchlick(max(dot(-insideDirection, hitNormal), 0.0), 1.333, 1.0);
-          let bubbleReflect = environmentColor(reflect(insideDirection, hitNormal));
-          let bubbleBase = vec3<f32>(0.20, 0.47, 0.50) + vec3<f32>(0.50, 0.86, 0.88) * diffuseValue * 0.22;
-          throughColor = lerp3(bubbleBase, bubbleReflect, clamp(0.24 + bubbleFresnel * 1.8 + rimValue * 0.35, 0.0, 0.92));
+          let liquidIor = 1.333;
+          let gasIor = 1.0;
+          let bubbleFacing = max(dot(-insideDirection, hitNormal), 0.0);
+          let bubbleFresnel = fresnelSchlick(bubbleFacing, liquidIor, gasIor);
+          let interfaceReflection = environmentColor(reflect(insideDirection, hitNormal));
+          let gasDirectionRaw = refract(insideDirection, hitNormal, liquidIor / gasIor);
+
+          var transmittedColor = interfaceReflection;
+          if (length(gasDirectionRaw) > 0.001) {
+            let gasDirection = normalize(gasDirectionRaw);
+            let gasOrigin = hitPosition - hitNormal * 0.004;
+            let bubbleExitDistance = marchBubbleExit(gasOrigin, gasDirection);
+
+            if (bubbleExitDistance > 0.0) {
+              let bubbleExitPosition = gasOrigin + gasDirection * bubbleExitDistance;
+              let bubbleExitNormal = fieldNormal(bubbleExitPosition, 1.0);
+              let liquidDirectionRaw = refract(gasDirection, -bubbleExitNormal, gasIor / liquidIor);
+              let liquidReflection = reflect(gasDirection, -bubbleExitNormal);
+              var liquidDirection = normalize(liquidReflection);
+
+              if (length(liquidDirectionRaw) > 0.001) {
+                liquidDirection = normalize(liquidDirectionRaw);
+              }
+
+              let liquidOrigin = bubbleExitPosition + bubbleExitNormal * 0.004;
+              transmittedColor = sphereExitEnvironment(liquidOrigin, liquidDirection, glassIor);
+            }
+          }
+
+          let reflectionWeight = clamp(bubbleFresnel * 1.15 + rimValue * 0.08, 0.025, 0.72);
+          throughColor = lerp3(transmittedColor, interfaceReflection, reflectionWeight);
+          throughColor = throughColor + vec3<f32>(0.58, 0.90, 0.92) * rimValue * 0.08;
+          tintDistance = exitDistance;
         }
       } else {
-        let exitPosition = insideOrigin + insideDirection * exitDistance;
-        let exitNormal = normalize(exitPosition);
-        let exitDirection = refract(insideDirection, -exitNormal, glassIor);
-        let fallbackDirection = reflect(insideDirection, -exitNormal);
-        let outgoingDirection = normalize(lerp3(fallbackDirection, exitDirection, step(0.001, length(exitDirection))));
-        throughColor = environmentColor(outgoingDirection);
+        throughColor = sphereExitEnvironment(insideOrigin, insideDirection, glassIor);
       }
 
       let absorptionValue = clamp(uniformData.cameraData.z, 0.0, 1.0);
-      let travelForTint = min(exitDistance, max(hitValue.travel, 0.0));
-      let transmittance = exp(-vec3<f32>(0.12, 0.035, 0.028) * travelForTint * absorptionValue * 3.2);
+      let transmittance = exp(-vec3<f32>(0.12, 0.035, 0.028) * tintDistance * absorptionValue * 3.2);
       throughColor = throughColor * transmittance + vec3<f32>(0.018, 0.060, 0.062) * (1.0 - transmittance);
     }
 
