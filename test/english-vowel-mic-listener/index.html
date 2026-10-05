@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#151812">
+<title>English Vowel Listener</title>
+<link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<main class="wrap">
+<header>
+  <div>
+    <h1>English Vowel Listener</h1>
+    <div class="sub">Microphone → LPC formants → General American vowel estimate. Tracks F1, F2 and F3, plots the vowel space, and supports speaker calibration.</div>
+  </div>
+</header>
+
+<div class="grid">
+<section class="card">
+  <div class="live">
+    <div class="readout" aria-live="polite">
+      <div class="symbol" id="symbol">—</div>
+      <div class="word" id="word">waiting</div>
+      <div class="ipa" id="ipa">/—/</div>
+      <div class="conf" id="confidence">microphone stopped</div>
+    </div>
+    <div class="metrics">
+      <div class="metric"><b id="f1">—</b><span>F1 · Hz</span></div>
+      <div class="metric"><b id="f2">—</b><span>F2 · Hz</span></div>
+      <div class="metric"><b id="f3">—</b><span>F3 · Hz</span></div>
+      <div class="metric"><b id="quality">—</b><span>LPC peak quality</span></div>
+      <div class="metric" style="grid-column:1/-1"><b id="level">—</b><span>input RMS</span><div class="meter"><i id="levelBar"></i></div></div>
+    </div>
+  </div>
+  <div class="controls">
+    <button class="primary" id="micBtn" type="button">Start microphone</button>
+    <button id="clearBtn" type="button" disabled>Clear trail</button>
+  </div>
+  <div class="status" id="status">Start the microphone, then sustain a vowel for a moment.</div>
+</section>
+
+<section class="card">
+  <h2 class="sectionTitle">F1–F2 vowel space</h2>
+  <div class="figure">
+    <canvas id="vowelMap" width="760" height="540" aria-label="English vowel formant plot"></canvas>
+    <div class="figureLabel">left = higher F2 · top = lower F1</div>
+  </div>
+</section>
+</div>
+
+<section class="card" style="margin-top:14px">
+  <div class="toolbar">
+    <h2 class="sectionTitle" style="margin:0">Reference profile</h2>
+    <label>baseline
+      <select id="profile">
+        <option value="adult">Adult average</option>
+        <option value="men">Men (Hillenbrand)</option>
+        <option value="women">Women (Hillenbrand)</option>
+      </select>
+    </label>
+    <span class="badge">General American / Michigan data</span>
+  </div>
+  <div class="note">The 12 reference categories follow Hillenbrand et al. (1995): heed, hid, hayed, head, had, hod, hawed, hoed, hood, who’d, hud, heard. The diphthongs /eɪ/ and /oʊ/ are shown by their steady-state reference point; the trail lets you see their movement.</div>
+</section>
+
+<section class="card" style="margin-top:14px">
+  <h2 class="sectionTitle">Speaker calibration</h2>
+  <div class="calGrid" id="calGrid"></div>
+  <div class="note" id="calInfo">Defaults work immediately, but English vowel spaces vary strongly by speaker and dialect. Tap a card and sustain the target vowel for about 1.4 seconds to replace that reference with your own F1/F2/F3 median.</div>
+  <div class="refs" id="refs"></div>
+  <div class="controls"><button id="resetCalBtn" type="button">Reset to selected profile</button></div>
+
+  <details>
+    <summary>Sensitivity / implementation notes</summary>
+    <div class="advanced">
+      <label for="threshold">silence threshold</label>
+      <input id="threshold" type="range" min="0.002" max="0.04" step="0.001" value="0.008">
+      <output id="thresholdOut">0.008</output>
+    </div>
+    <div class="note">Audio stays in the browser. Analysis uses downsampling to 12 kHz, pre-emphasis, Hann windowing, 18th-order LPC, and peak picking for F1–F3. This is a formant classifier, not speech recognition: consonants, whispering, nasalization, background noise, and strong dialect shifts can produce wrong labels. /ɝ/ gets extra F3 weighting because rhoticity is strongly associated with a lowered third formant.</div>
+  </details>
+</section>
+</main>
+<script type="module" src="./app.mjs"></script>
+</body>
+</html>

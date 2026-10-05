@@ -1,0 +1,32 @@
+name: English vowel mic listener test
+on:
+  push:
+    paths:
+      - 'test/english-vowel-mic-listener/**'
+      - '.github/workflows/english-vowel-mic-listener-test.yml'
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: JavaScript and DSP regression
+        run: |
+          node --check test/english-vowel-mic-listener/app.mjs
+          node --check test/english-vowel-mic-listener/dsp.mjs
+          node --check test/english-vowel-mic-listener/plot.mjs
+          node test/english-vowel-mic-listener/test-dsp.mjs
+      - name: Static server
+        run: |
+          python3 -m http.server 8765 >/tmp/english-vowel-http.log 2>&1 &
+          sleep 1
+      - name: Browser UI self-test
+        run: |
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser || true)"
+          test -n "$CHROME" || { echo "Chrome/Chromium not found"; exit 1; }
+          "$CHROME" --headless --no-sandbox --disable-gpu --virtual-time-budget=1800 \
+            --dump-dom 'http://127.0.0.1:8765/test/english-vowel-mic-listener/?selftest=1' > /tmp/english-vowel-dom.html
+          grep -q 'data-selftest="pass"' /tmp/english-vowel-dom.html
+          grep -q '"cards":true' /tmp/english-vowel-dom.html
+          grep -q '"profileSwitch":true' /tmp/english-vowel-dom.html
