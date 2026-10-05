@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>母音遷移フォルマント・ラボ</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<main>
+  <header>
+    <div>
+      <p class="eyebrow">VOWEL TRANSITION / FORMANT TRAJECTORY</p>
+      <h1>母音の「途中」を聴く</h1>
+    </div>
+    <p class="lead">/a/→/i/ のような連続発音を、F1–F2平面上の軌跡として描いてそのまま合成します。白い中間点を動かすと、同じ始点・終点でも「途中の母音色」が変わります。</p>
+  </header>
+
+  <section class="card toolbar">
+    <label>開始母音<select id="start"></select></label>
+    <label>終了母音<select id="end"></select></label>
+    <label>長さ <input id="duration" type="range" min="0.4" max="3.0" step="0.1" value="1.6"><output id="durationOut">1.6 s</output></label>
+    <label>F0 <input id="f0" type="range" min="80" max="240" step="1" value="130"><output id="f0Out">130 Hz</output></label>
+    <label>時間変化<select id="timing"><option value="linear">一定速度</option><option value="ease">なめらか</option><option value="late">後半で急変</option><option value="early">前半で急変</option></select></label>
+    <button id="play" class="primary">▶ 軌跡を再生</button>
+  </section>
+
+  <section class="layout">
+    <section class="card plotCard">
+      <div class="sectionHead">
+        <div><h2>F1–F2 軌跡</h2><p>白い中間点をドラッグ。空白をクリックしても中間点を移動できます。</p></div>
+        <div id="now">F1 — / F2 —</div>
+      </div>
+      <canvas id="plot" width="900" height="650" aria-label="F1 F2 vowel transition chart"></canvas>
+      <div class="legend"><span class="swatch start"></span>開始 <span class="swatch control"></span>中間点 <span class="swatch end"></span>終了 <span class="swatch playhead"></span>再生位置</div>
+    </section>
+
+    <aside class="card controls">
+      <h2>経路プリセット</h2>
+      <div class="presetGrid">
+        <button data-route="direct">直線</button>
+        <button data-route="e">/e/ 側へ</button>
+        <button data-route="u">/u/ 側へ</button>
+        <button data-route="center">中央を通る</button>
+      </div>
+      <div class="readout">
+        <span>開始</span><strong id="startRead"></strong>
+        <span>中間点</span><strong id="controlRead"></strong>
+        <span>終了</span><strong id="endRead"></strong>
+      </div>
+      <p class="hint">線は二次 Bézier 曲線です。中間点は「実際に別の母音を発音している」という意味ではなく、調音器官が移動する途中のスペクトル形状を操作するための制御点です。</p>
+      <button id="swap">⇄ 開始と終了を交換</button>
+      <button id="reset">中間点を直線へ戻す</button>
+    </aside>
+  </section>
+
+  <section class="card explainer">
+    <h2>何を聴いているか</h2>
+    <div class="facts">
+      <p><strong>F1</strong><br>概ね舌の高さ・口の開きに対応。高いほど開いた母音寄り。</p>
+      <p><strong>F2</strong><br>概ね舌の前後位置に対応。高いほど前舌母音寄り。</p>
+      <p><strong>軌跡</strong><br>開始と終了が同じでも、途中でどこを通るか・何秒かけるかで聞こえ方が変わります。</p>
+    </div>
+    <p class="small">音源は Web Audio API の鋸歯状波を F1/F2/F3 の帯域通過フィルタへ並列に通す簡易フォルマント合成です。自然音声そのものではなく、母音色の連続変化を観察するためのモデルです。</p>
+    <output id="selftest" hidden></output>
+  </section>
+</main>
+<script src="app.js"></script>
+</body>
+</html>
