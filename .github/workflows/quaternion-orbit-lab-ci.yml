@@ -116,8 +116,49 @@ jobs:
               value = result.get("result", {}).get("result", {}).get("value", {})
               print(value)
               if value.get("state") == "ok" and value.get("bodyState") == "ok":
+                  ui_result = cdp("Runtime.evaluate", {
+                      "expression": """(async () => {
+                        const render = window.__quaternionLabCi?.renderChecksum;
+                        if (!render) return { ok: false, reason: 'CI render hook missing' };
+                        const before = await render();
+
+                        document.querySelector('[data-preset="x90"]')?.click();
+                        const afterPreset = await render();
+                        const presetOk =
+                          document.querySelector('#angleOut')?.textContent === '90°' &&
+                          document.querySelector('#axisReadout')?.textContent?.includes('(1.000, 0.000, 0.000)');
+
+                        const progress = document.querySelector('#progress');
+                        progress.value = '0.25';
+                        progress.dispatchEvent(new Event('input', { bubbles: true }));
+                        const afterProgress = await render();
+                        const progressOk =
+                          document.querySelector('#progressOut')?.textContent === '0.250' &&
+                          document.querySelector('#pathReadout')?.textContent?.includes('22.5°');
+
+                        const ghostButton = document.querySelector('#toggleGhostBtn');
+                        ghostButton?.click();
+                        const ghostOk = ghostButton?.getAttribute('aria-pressed') === 'false';
+
+                        document.querySelector('[data-preset="spin720"]')?.click();
+                        const doubleCoverOk =
+                          document.querySelector('#angleOut')?.textContent === '720°' &&
+                          document.querySelector('#signValue')?.textContent?.includes('+1.000');
+
+                        return {
+                          ok: presetOk && progressOk && ghostOk && doubleCoverOk &&
+                              before !== afterPreset && afterPreset !== afterProgress,
+                          before, afterPreset, afterProgress,
+                          presetOk, progressOk, ghostOk, doubleCoverOk
+                        };
+                      })()""",
+                      "returnByValue": True,
+                      "awaitPromise": True,
+                  })
+                  ui_value = ui_result.get("result", {}).get("result", {}).get("value", {})
+                  print({"ui_regression": ui_value})
                   ws.close()
-                  sys.exit(0)
+                  sys.exit(0 if ui_value.get("ok") else 5)
               if value.get("state") == "error" or value.get("bodyState") == "error":
                   ws.close()
                   sys.exit(3)

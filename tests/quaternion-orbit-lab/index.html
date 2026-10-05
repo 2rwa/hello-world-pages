@@ -624,7 +624,6 @@ async function main(){
 
     if(ciMode){
       setStatus('pipeline…');
-      gpuDevice.pushErrorScope('validation');
       const ciFormat='rgba8unorm';
       const renderPipeline=createPipeline(ciFormat);
       const bindGroup=createBindGroup(renderPipeline);
@@ -638,26 +637,33 @@ async function main(){
         size:bytesPerRow*textureHeight,
         usage:GPUBufferUsage.COPY_DST|GPUBufferUsage.MAP_READ
       });
+
+      async function ciRenderChecksum(){
+        gpuDevice.pushErrorScope('validation');
+        writeUniforms(textureWidth,textureHeight,0.6);
+        const commandEncoder=encodeRender(renderPipeline,bindGroup,offscreenTexture.createView());
+        commandEncoder.copyTextureToBuffer(
+          {texture:offscreenTexture},
+          {buffer:readbackBuffer,bytesPerRow:bytesPerRow,rowsPerImage:textureHeight},
+          [textureWidth,textureHeight,1]
+        );
+        gpuDevice.queue.submit([commandEncoder.finish()]);
+        await gpuDevice.queue.onSubmittedWorkDone();
+        const validationError=await gpuDevice.popErrorScope();
+        if(validationError)throw new Error('validation: '+validationError.message);
+        await readbackBuffer.mapAsync(GPUMapMode.READ);
+        const pixels=new Uint8Array(readbackBuffer.getMappedRange());
+        let checksumValue=0;
+        for(let indexValue=0;indexValue<pixels.length;indexValue+=127)checksumValue=(checksumValue+pixels[indexValue])>>>0;
+        readbackBuffer.unmap();
+        if(checksumValue===0)throw new Error('render readback checksum was zero');
+        return checksumValue;
+      }
+
       angleEl.value='360';progressEl.value='1';syncUi();
-      writeUniforms(textureWidth,textureHeight,0.6);
-      const commandEncoder=encodeRender(renderPipeline,bindGroup,offscreenTexture.createView());
-      commandEncoder.copyTextureToBuffer(
-        {texture:offscreenTexture},
-        {buffer:readbackBuffer,bytesPerRow:bytesPerRow,rowsPerImage:textureHeight},
-        [textureWidth,textureHeight,1]
-      );
-      gpuDevice.queue.submit([commandEncoder.finish()]);
       setStatus('submitted…');
-      await gpuDevice.queue.onSubmittedWorkDone();
-      const validationError=await gpuDevice.popErrorScope();
-      if(validationError)throw new Error('validation: '+validationError.message);
-      setStatus('readback…');
-      await readbackBuffer.mapAsync(GPUMapMode.READ);
-      const pixels=new Uint8Array(readbackBuffer.getMappedRange());
-      let checksumValue=0;
-      for(let indexValue=0;indexValue<pixels.length;indexValue+=127)checksumValue=(checksumValue+pixels[indexValue])>>>0;
-      readbackBuffer.unmap();
-      if(checksumValue===0)throw new Error('render readback checksum was zero');
+      const checksumValue=await ciRenderChecksum();
+      window.__quaternionLabCi={renderChecksum:ciRenderChecksum};
       document.body.dataset.ci='ok';
       setStatus('ok · '+checksumValue,'ok');
       return;
