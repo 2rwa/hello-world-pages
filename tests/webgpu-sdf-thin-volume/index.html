@@ -4,7 +4,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
 html,body{margin:0;height:100%;overflow:hidden;background:#05070c;color:#dce7ff;font:14px system-ui}
-body{display:grid;place-items:center}\ncanvas{width:min(100vw,calc(100vh * 16 / 9));height:min(100vh,calc(100vw * 9 / 16));display:block}
+body{display:grid;place-items:center}
+canvas{width:min(100vw,calc(100vh * 16 / 9));height:min(100vh,calc(100vw * 9 / 16));display:block}
 #ui{position:fixed;left:14px;top:14px;padding:12px 14px;background:#0a1020cc;border:1px solid #ffffff22;border-radius:12px;backdrop-filter:blur(10px);max-width:320px}
 h1{font-size:15px;margin:0 0 7px}p{margin:4px 0;color:#aab8d8;line-height:1.4}
 label{display:grid;grid-template-columns:72px 1fr 42px;gap:8px;align-items:center;margin:7px 0}
@@ -20,7 +21,9 @@ input{width:100%}code{color:#c7e8ff}#status{margin-top:7px;color:#9fd6b8}
 <div id="status">initializing</div>
 </div>
 <script type="module">
-const canvas=document.querySelector('#c'), statusEl=document.querySelector('#status');\nconst RENDER_WIDTH=480, RENDER_HEIGHT=270;\ncanvas.width=RENDER_WIDTH;canvas.height=RENDER_HEIGHT;
+const canvas=document.querySelector('#c'), statusEl=document.querySelector('#status');
+const RENDER_WIDTH=480, RENDER_HEIGHT=270;
+canvas.width=RENDER_WIDTH;canvas.height=RENDER_HEIGHT;
 const ci=new URLSearchParams(location.search).has('ci');
 document.body.dataset.testState='boot';
 window.__sdfVolumeTest={stage:'boot'};
