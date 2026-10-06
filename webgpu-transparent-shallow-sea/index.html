@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>WebGPU Transparent Shallow Sea</title>
+<style>
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#061923;color:#e9fbff;font:12px/1.4 system-ui,sans-serif}canvas{width:100vw;height:100vh;display:block;image-rendering:auto}.hud{position:fixed;left:12px;top:12px;padding:9px 11px;border:1px solid #ffffff24;border-radius:10px;background:#03131acc;backdrop-filter:blur(8px)}.ok{color:#9fffc0}.bad{color:#ff9b9b}
+</style>
+</head>
+<body>
+<canvas id="sea" width="480" height="270"></canvas>
+<div class="hud"><b>Transparent Shallow Sea</b><br>480×270 · Beer–Lambert · Fresnel · refraction · caustics · shoreline foam<br><span id="status">boot</span></div>
+<script type="module">
+const root=document.documentElement,statusEl=document.getElementById('status'),canvas=document.getElementById('sea');
+const ciMode=new URLSearchParams(location.search).has('ci');
+function stage(value){root.dataset.webgpuStage=value;statusEl.textContent=value;}
+function fail(error){const msg=String(error?.stack||error);root.dataset.webgpuStatus='error';root.dataset.webgpuError=msg.slice(0,1600);statusEl.textContent='error';statusEl.className='bad';console.error(error);}
+
+const shaderCode=String.raw`
+struct UniformData { timeValue:f32, aspectValue:f32, widthValue:f32, heightValue:f32 }
+@group(0) @binding(0) var<uniform> uniforms:UniformData;
+
+struct VertexOutput { @builtin(position) position:vec4f }
+@vertex fn vertexMain(@builtin(vertex_index) vertexIndex:u32)->VertexOutput{
+  var positions=array<vec2f,3>(vec2f(-1.0,-1.0),vec2f(3.0,-1.0),vec2f(-1.0,3.0));
+  var output:VertexOutput; output.position=vec4f(positions[vertexIndex],0.0,1.0); return output;
+}
+fn saturate(value:f32)->f32{return clamp(value,0.0,1.0);}
+fn hash21(point:vec2f)->f32{return fract(sin(dot(point,vec2f(127.1,311.7)))*43758.5453);}
+fn noise2(point:vec2f)->f32{
+  let cell=floor(point); let fraction=fract(point); let blend=fraction*fraction*(3.0-2.0*fraction);
+  let a=hash21(cell); let b=hash21(cell+vec2f(1.0,0.0)); let c=hash21(cell+vec2f(0.0,1.0)); let d=hash21(cell+vec2f(1.0,1.0));
+  return mix(mix(a,b,blend.x),mix(c,d,blend.x),blend.y);
+}
+fn waterHeight(horizontal:vec2f)->f32{
+  let phase=uniforms.timeValue*0.65;
+  return 0.045*sin(dot(horizontal,normalize(vec2f(0.86,0.52)))*2.25+phase*1.20)
+       + 0.025*sin(dot(horizontal,normalize(vec2f(-0.35,0.94)))*4.10-phase*1.55)
+       + 0.012*sin(dot(horizontal,normalize(vec2f(0.98,-0.18)))*7.20+phase*2.05);
+}
+fn waterNormal(horizontal:vec2f)->vec3f{
+  let epsilon=0.018; let center=waterHeight(horizontal);
+  let dx=waterHeight(horizontal+vec2f(epsilon,0.0)); let dz=waterHeight(horizontal+vec2f(0.0,epsilon));
+  return normalize(vec3f(center-dx,epsilon,center-dz));
+}
+fn bottomHeight(horizontal:vec2f)->f32{
+  let broad=0.10+horizontal.y*0.105;
+  let sandbar=0.055*exp(-pow(horizontal.y+2.1,2.0)*0.65)*sin(horizontal.x*0.65);
+  let ripple=(noise2(horizontal*2.8)-0.5)*0.035;
+  return broad+sandbar+ripple;
+}
+fn bottomNormal(horizontal:vec2f)->vec3f{
+  let epsilon=0.028; let center=bottomHeight(horizontal);
+  let dx=bottomHeight(horizontal+vec2f(epsilon,0.0)); let dz=bottomHeight(horizontal+vec2f(0.0,epsilon));
+  return normalize(vec3f(center-dx,epsilon,center-dz));
+}
+fn cameraRay(uv:vec2f)->vec3f{
+  let cameraOrigin=vec3f(0.0,1.35,4.2); let cameraTarget=vec3f(0.0,-0.20,-4.0);
+  let forwardDirection=normalize(cameraTarget-cameraOrigin); let rightDirection=normalize(cross(forwardDirection,vec3f(0.0,1.0,0.0))); let upDirection=cross(rightDirection,forwardDirection);
+  let screen=vec2f((uv.x*2.0-1.0)*uniforms.aspectValue,(1.0-uv.y)*2.0-1.0);
+  return normalize(forwardDirection+rightDirection*screen.x*0.78+upDirection*screen.y*0.44);
+}
+fn skyColor(rayDirection:vec3f)->vec3f{
+  let skyAmount=saturate(rayDirection.y*0.55+0.52); var sky=vec3f(0.72,0.90,0.98)+(vec3f(0.08,0.34,0.72)-vec3f(0.72,0.90,0.98))*pow(skyAmount,0.85);
+  let sunDirection=normalize(vec3f(-0.30,0.78,-0.42)); let sunGlow=pow(max(dot(rayDirection,sunDirection),0.0),320.0); return sky+vec3f(1.0,0.87,0.58)*sunGlow*0.9;
+}
+fn solveWaterHit(rayOrigin:vec3f,rayDirection:vec3f)->f32{
+  if(rayDirection.y>=-0.001){return -1.0;} var travel=(0.0-rayOrigin.y)/rayDirection.y;
+  for(var iterationIndex:i32=0;iterationIndex<4;iterationIndex=iterationIndex+1){let samplePosition=rayOrigin+rayDirection*travel;travel=travel-(samplePosition.y-waterHeight(samplePosition.xz))/rayDirection.y;}
+  return travel;
+}
+fn solveBottomHit(rayOrigin:vec3f,rayDirection:vec3f)->f32{
+  if(rayDirection.y>=-0.001){return -1.0;} var travel=(-0.45-rayOrigin.y)/rayDirection.y;
+  for(var iterationIndex:i32=0;iterationIndex<6;iterationIndex=iterationIndex+1){let samplePosition=rayOrigin+rayDirection*travel;travel=travel-(samplePosition.y-bottomHeight(samplePosition.xz))/rayDirection.y;}
+  return travel;
+}
+fn sandColor(position:vec3f,rayDirection:vec3f,wetness:f32)->vec3f{
+  let baseNoise=noise2(position.xz*3.6); var albedo=vec3f(0.91,0.80,0.60)+(vec3f(0.72,0.60,0.43)-vec3f(0.91,0.80,0.60))*baseNoise;
+  albedo*=1.0-0.42*wetness; let surfaceNormal=bottomNormal(position.xz); let sunDirection=normalize(vec3f(-0.30,0.78,-0.42)); let diffuse=max(dot(surfaceNormal,sunDirection),0.0);
+  let halfDirection=normalize(sunDirection-rayDirection); let specular=pow(max(dot(surfaceNormal,halfDirection),0.0),mix(18.0,70.0,wetness))*mix(0.02,0.20,wetness);
+  return albedo*(0.28+0.78*diffuse)+vec3f(specular);
+}
+fn causticAmount(horizontal:vec2f,pathLength:f32)->f32{
+  let phase=uniforms.timeValue; let waveA=sin(horizontal.x*7.2+phase*2.0)+sin(horizontal.y*5.8-phase*1.6); let waveB=sin((horizontal.x+horizontal.y)*8.6-phase*1.2);
+  let focused=smoothstep(1.28,1.82,abs(waveA+0.48*waveB)); return focused*exp(-pathLength*0.95)*0.26;
+}
+@fragment fn fragmentMain(@builtin(position) fragmentPosition:vec4f)->@location(0) vec4f{
+  let uv=fragmentPosition.xy/vec2f(uniforms.widthValue,uniforms.heightValue); let rayOrigin=vec3f(0.0,1.35,4.2); let rayDirection=cameraRay(uv);
+  if(rayDirection.y>=-0.001){return vec4f(skyColor(rayDirection),1.0);}
+  let directBottomTravel=solveBottomHit(rayOrigin,rayDirection); let directBottomPosition=rayOrigin+rayDirection*directBottomTravel;
+  let waterTravel=solveWaterHit(rayOrigin,rayDirection); let directLand=directBottomTravel>0.0 && bottomHeight(directBottomPosition.xz)>waterHeight(directBottomPosition.xz)+0.01;
+  if(directLand || waterTravel<=0.0){let wetness=1.0-smoothstep(-0.015,0.16,bottomHeight(directBottomPosition.xz));return vec4f(sandColor(directBottomPosition,rayDirection,wetness),1.0);}
+  let waterPosition=rayOrigin+rayDirection*waterTravel; let surfaceNormal=waterNormal(waterPosition.xz); let refractedDirection=refract(rayDirection,surfaceNormal,1.0/1.333);
+  let underwaterOrigin=waterPosition-surfaceNormal*0.018; let bottomTravel=solveBottomHit(underwaterOrigin,refractedDirection); let seabedPosition=underwaterOrigin+refractedDirection*bottomTravel;
+  let opticalPath=max(bottomTravel,0.0); let seabed=sandColor(seabedPosition,refractedDirection,1.0);
+  let transmission=vec3f(exp(-1.15*opticalPath),exp(-0.18*opticalPath),exp(-0.055*opticalPath));
+  let scattering=vec3f(0.015,0.17,0.22)*(1.0-exp(-0.62*opticalPath)); var transmitted=seabed*transmission+scattering;
+  transmitted+=vec3f(1.0,0.95,0.76)*causticAmount(seabedPosition.xz,opticalPath);
+  let viewCosine=saturate(dot(-rayDirection,surfaceNormal)); let fresnel=0.0202+0.9798*pow(1.0-viewCosine,5.0); let reflected=skyColor(reflect(rayDirection,surfaceNormal));
+  var waterColor=transmitted+(reflected-transmitted)*fresnel;
+  let localDepth=max(waterHeight(waterPosition.xz)-bottomHeight(waterPosition.xz),0.0); let shoreMask=1.0-smoothstep(0.025,0.20,localDepth);
+  let foamNoise=0.55+0.45*sin(waterPosition.x*12.0+uniforms.timeValue*2.3)*sin(waterPosition.z*9.0-uniforms.timeValue*1.7); let foam=saturate(shoreMask*foamNoise);
+  waterColor=waterColor+(vec3f(0.97,0.99,0.96)-waterColor)*foam*0.72; return vec4f(waterColor,1.0);
+}`;
+
+async function start(){
+  stage('request-adapter'); if(!navigator.gpu)throw new Error('navigator.gpu unavailable'); const adapter=await navigator.gpu.requestAdapter(); if(!adapter)throw new Error('requestAdapter returned null');
+  stage('request-device'); const device=await adapter.requestDevice(); device.lost.then(info=>{root.dataset.webgpuLost=`${info.reason}:${info.message}`});
+  stage('shader-compilation-info'); const module=device.createShaderModule({code:shaderCode}); const info=await module.getCompilationInfo(); const errors=info.messages.filter(message=>message.type==='error'); if(errors.length)throw new Error(errors.map(message=>`${message.lineNum}:${message.linePos} ${message.message}`).join('\n'));
+  const uniformBuffer=device.createBuffer({size:16,usage:GPUBufferUsage.UNIFORM|GPUBufferUsage.COPY_DST});
+  const bindGroupLayout=device.createBindGroupLayout({entries:[{binding:0,visibility:GPUShaderStage.FRAGMENT,buffer:{type:'uniform'}}]});
+  const pipelineLayout=device.createPipelineLayout({bindGroupLayouts:[bindGroupLayout]}); const format=navigator.gpu.getPreferredCanvasFormat();
+  stage('create-pipeline'); device.pushErrorScope('validation'); const pipeline=device.createRenderPipeline({layout:pipelineLayout,vertex:{module,entryPoint:'vertexMain'},fragment:{module,entryPoint:'fragmentMain',targets:[{format}]},primitive:{topology:'triangle-list'}}); const pipelineError=await device.popErrorScope(); if(pipelineError)throw pipelineError;
+  const bindGroup=device.createBindGroup({layout:bindGroupLayout,entries:[{binding:0,resource:{buffer:uniformBuffer}}]});
+  async function renderTo(view,width,height,timeValue,copyInfo=null){device.queue.writeBuffer(uniformBuffer,0,new Float32Array([timeValue,width/height,width,height]));const encoder=device.createCommandEncoder();device.pushErrorScope('validation');const pass=encoder.beginRenderPass({colorAttachments:[{view,clearValue:{r:0.02,g:0.08,b:0.11,a:1},loadOp:'clear',storeOp:'store'}]});pass.setPipeline(pipeline);pass.setBindGroup(0,bindGroup);pass.draw(3);pass.end();if(copyInfo)encoder.copyTextureToBuffer({texture:copyInfo.texture},{buffer:copyInfo.buffer,bytesPerRow:copyInfo.bytesPerRow},{width,height,depthOrArrayLayers:1});device.queue.submit([encoder.finish()]);await device.queue.onSubmittedWorkDone();const validationError=await device.popErrorScope();if(validationError)throw validationError;}
+  if(ciMode){stage('ci-offscreen-render');const width=256,height=144,bytesPerRow=1024;const texture=device.createTexture({size:[width,height],format,usage:GPUTextureUsage.RENDER_ATTACHMENT|GPUTextureUsage.COPY_SRC});const readBuffer=device.createBuffer({size:bytesPerRow*height,usage:GPUBufferUsage.COPY_DST|GPUBufferUsage.MAP_READ});await renderTo(texture.createView(),width,height,1.25,{texture,buffer:readBuffer,bytesPerRow});stage('ci-readback');await readBuffer.mapAsync(GPUMapMode.READ);const bytes=new Uint8Array(readBuffer.getMappedRange());let checksum=0;for(let index=0;index<bytes.length;index+=257)checksum=(checksum+bytes[index])%1000000007;root.dataset.pixelChecksum=String(checksum);if(checksum===0)throw new Error('readback checksum is zero');readBuffer.unmap();root.dataset.webgpuStatus='ok';stage('ok');statusEl.className='ok';return;}
+  const context=canvas.getContext('webgpu');context.configure({device,format,alphaMode:'opaque'});let frameCount=0;function frame(ms){renderTo(context.getCurrentTexture().createView(),480,270,ms*0.001).then(()=>{frameCount++;root.dataset.frameCount=String(frameCount);if(frameCount===2){root.dataset.webgpuStatus='ok';stage('ok');statusEl.className='ok';}requestAnimationFrame(frame);}).catch(fail);}requestAnimationFrame(frame);
+}
+start().catch(fail);
+</script>
+</body>
+</html>
