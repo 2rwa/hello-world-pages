@@ -6,7 +6,7 @@
 <title>WebGPU Tropical Shallow Sea · 960×540</title>
 <style>
 :root{color-scheme:dark;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#061923;color:#e9fbff}canvas{width:100vw;height:100vh;display:block;image-rendering:auto}.panel{position:fixed;z-index:10;left:12px;top:12px;width:min(390px,calc(100vw - 24px));padding:12px 13px;border:1px solid #ffffff24;border-radius:12px;background:#03131add;backdrop-filter:blur(10px);box-shadow:0 14px 40px #00101855}.title{display:flex;justify-content:space-between;gap:12px;align-items:baseline;margin-bottom:7px}.title b{font-size:14px}.status{font:11px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace;color:#9ad8df}.arch{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}.arch span{padding:3px 6px;border:1px solid #ffffff20;border-radius:999px;background:#ffffff0d;font:10px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace;color:#bce9ec}.controls{display:grid;gap:7px}.control{display:grid;grid-template-columns:78px 1fr 50px;gap:8px;align-items:center;font-size:11px}.control input{width:100%;accent-color:#57d4c7}.control output{text-align:right;color:#b7fff2;font:10px/1 ui-monospace,SFMono-Regular,Menlo,monospace}.note{margin-top:9px;color:#9bb8bd;font-size:10px;line-height:1.4}.ok{color:#9fffc0}.bad{color:#ff9b9b}@media(max-width:640px){.panel{top:auto;bottom:10px}.note{display:none}}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#061923;color:#e9fbff}canvas{width:100vw;height:100vh;display:block;image-rendering:auto;touch-action:none;cursor:grab;user-select:none}canvas.dragging{cursor:grabbing}.panel{position:fixed;z-index:10;left:12px;top:12px;width:min(390px,calc(100vw - 24px));padding:12px 13px;border:1px solid #ffffff24;border-radius:12px;background:#03131add;backdrop-filter:blur(10px);box-shadow:0 14px 40px #00101855}.title{display:flex;justify-content:space-between;gap:12px;align-items:baseline;margin-bottom:7px}.title b{font-size:14px}.status{font:11px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace;color:#9ad8df}.arch{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}.arch span{padding:3px 6px;border:1px solid #ffffff20;border-radius:999px;background:#ffffff0d;font:10px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace;color:#bce9ec}.controls{display:grid;gap:7px}.control{display:grid;grid-template-columns:78px 1fr 50px;gap:8px;align-items:center;font-size:11px}.control input{width:100%;accent-color:#57d4c7}.control output{text-align:right;color:#b7fff2;font:10px/1 ui-monospace,SFMono-Regular,Menlo,monospace}.note{margin-top:9px;color:#9bb8bd;font-size:10px;line-height:1.4}.ok{color:#9fffc0}.bad{color:#ff9b9b}@media(max-width:640px){.panel{top:auto;bottom:10px}.note{display:none}}
 </style>
 </head>
 <body>
@@ -21,7 +21,7 @@
     <label class="control">吸収係数<input id="absorption" type="range" min="0.35" max="2.40" value="0.72" step="0.05"><output id="absorptionOut">0.72</output></label>
     <label class="control">泡量<input id="foam" type="range" min="0.00" max="2.00" value="0.58" step="0.05"><output id="foamOut">0.58</output></label>
   </div>
-  <div class="note">内部解像度 960×540。3パス構成を維持し、白砂・穏やかな細波・ターコイズ散乱・高い太陽・細粒causticsへ寄せた南国浅海版。</div>
+  <div class="note">内部解像度 960×540。3パス構成。ドラッグ/1本指で視点旋回、ホイール/2本指ピンチでズーム、ダブルクリックで初期視点へ戻る。</div>
 </section>
 <script type="module">
 const root=document.documentElement;
@@ -29,17 +29,83 @@ const statusEl=document.getElementById('status');
 const canvas=document.getElementById('sea');
 const ciMode=new URLSearchParams(location.search).has('ci');
 const INTERNAL_W=960, INTERNAL_H=540;
-const state={depth:0.78,waves:0.62,clarity:1.72,absorption:0.72,foam:0.58,uiRevision:0};
+const state={depth:0.78,waves:0.62,clarity:1.72,absorption:0.72,foam:0.58,uiRevision:0,cameraYaw:0.0,cameraPitch:0.18682016,cameraDistance:8.345208,cameraRevision:0};
 function stage(value){root.dataset.webgpuStage=value;statusEl.textContent=value;}
 function fail(error){const msg=String(error?.stack||error);root.dataset.webgpuStatus='error';root.dataset.webgpuError=msg.slice(0,1800);statusEl.textContent='error';statusEl.className='bad';console.error(error);}
 function bindRange(id,key,digits){const input=document.getElementById(id),out=document.getElementById(id+'Out');const apply=()=>{state[key]=Number(input.value);out.value=state[key].toFixed(digits);root.dataset[key]=String(state[key]);state.uiRevision++;root.dataset.uiRevision=String(state.uiRevision);};input.addEventListener('input',apply);apply();return input;}
 const depthInput=bindRange('depth','depth',2),wavesInput=bindRange('waves','waves',2),clarityInput=bindRange('clarity','clarity',2),absorptionInput=bindRange('absorption','absorption',2),foamInput=bindRange('foam','foam',2);
+const CAMERA_DEFAULT={yaw:0.0,pitch:0.18682016,distance:8.345208};
+const cameraPointers=new Map();
+let pinchDistance=0;
+function clampCamera(){
+  state.cameraPitch=Math.max(0.03,Math.min(1.18,state.cameraPitch));
+  state.cameraDistance=Math.max(4.2,Math.min(14.0,state.cameraDistance));
+}
+function commitCamera(){
+  clampCamera();
+  state.cameraRevision++;
+  root.dataset.cameraRevision=String(state.cameraRevision);
+  root.dataset.cameraYaw=state.cameraYaw.toFixed(4);
+  root.dataset.cameraPitch=state.cameraPitch.toFixed(4);
+  root.dataset.cameraDistance=state.cameraDistance.toFixed(3);
+}
+function resetCamera(){
+  state.cameraYaw=CAMERA_DEFAULT.yaw;
+  state.cameraPitch=CAMERA_DEFAULT.pitch;
+  state.cameraDistance=CAMERA_DEFAULT.distance;
+  commitCamera();
+}
+function pointerDistance(){
+  const points=[...cameraPointers.values()];
+  return points.length<2?0:Math.hypot(points[1].x-points[0].x,points[1].y-points[0].y);
+}
+canvas.addEventListener('pointerdown',event=>{
+  canvas.setPointerCapture?.(event.pointerId);
+  cameraPointers.set(event.pointerId,{x:event.clientX,y:event.clientY});
+  canvas.classList.add('dragging');
+  if(cameraPointers.size===2)pinchDistance=pointerDistance();
+});
+canvas.addEventListener('pointermove',event=>{
+  const previous=cameraPointers.get(event.pointerId);
+  if(!previous)return;
+  const next={x:event.clientX,y:event.clientY};
+  if(cameraPointers.size===1){
+    state.cameraYaw-=(next.x-previous.x)*0.005;
+    state.cameraPitch-=(next.y-previous.y)*0.004;
+    cameraPointers.set(event.pointerId,next);
+    commitCamera();
+  }else{
+    cameraPointers.set(event.pointerId,next);
+    const distance=pointerDistance();
+    if(pinchDistance>0&&distance>1){
+      state.cameraDistance*=pinchDistance/distance;
+      commitCamera();
+    }
+    pinchDistance=distance;
+  }
+  event.preventDefault();
+},{passive:false});
+function endCameraPointer(event){
+  cameraPointers.delete(event.pointerId);
+  if(cameraPointers.size<2)pinchDistance=0;
+  if(cameraPointers.size===0)canvas.classList.remove('dragging');
+}
+canvas.addEventListener('pointerup',endCameraPointer);
+canvas.addEventListener('pointercancel',endCameraPointer);
+canvas.addEventListener('wheel',event=>{
+  state.cameraDistance*=Math.exp(event.deltaY*0.001);
+  commitCamera();
+  event.preventDefault();
+},{passive:false});
+canvas.addEventListener('dblclick',event=>{resetCamera();event.preventDefault();});
+commitCamera();
 
 const commonWGSL=String.raw`
 struct UniformData {
   timeValue:f32, aspectValue:f32, widthValue:f32, heightValue:f32,
   depthValue:f32, waveStrength:f32, clarityValue:f32, absorptionValue:f32,
-  foamAmount:f32, reservedA:f32, reservedB:f32, reservedC:f32
+  foamAmount:f32, reservedA:f32, reservedB:f32, reservedC:f32,
+  cameraYaw:f32, cameraPitch:f32, cameraDistance:f32, cameraReserved:f32
 }
 @group(0) @binding(0) var<uniform> uniforms:UniformData;
 struct VertexOutput { @builtin(position) position:vec4f }
@@ -77,9 +143,14 @@ fn bottomNormal(horizontal:vec2f)->vec3f{
   let dx=bottomHeight(horizontal+vec2f(epsilon,0.0)); let dz=bottomHeight(horizontal+vec2f(0.0,epsilon));
   return normalize(vec3f(center-dx,epsilon,center-dz));
 }
-fn cameraOrigin()->vec3f{return vec3f(0.0,1.35,4.2);}
+fn cameraTargetPosition()->vec3f{return vec3f(0.0,-0.20,-4.0);}
+fn cameraOrigin()->vec3f{
+  let cp=cos(uniforms.cameraPitch);
+  let orbit=vec3f(sin(uniforms.cameraYaw)*cp,sin(uniforms.cameraPitch),cos(uniforms.cameraYaw)*cp)*uniforms.cameraDistance;
+  return cameraTargetPosition()+orbit;
+}
 fn cameraRay(uv:vec2f)->vec3f{
-  let origin=cameraOrigin(); let cameraTarget=vec3f(0.0,-0.20,-4.0);
+  let origin=cameraOrigin(); let cameraTarget=cameraTargetPosition();
   let forwardDirection=normalize(cameraTarget-origin); let rightDirection=normalize(cross(forwardDirection,vec3f(0.0,1.0,0.0))); let upDirection=cross(rightDirection,forwardDirection);
   let screen=vec2f((uv.x*2.0-1.0)*uniforms.aspectValue,(1.0-uv.y)*2.0-1.0);
   return normalize(forwardDirection+rightDirection*screen.x*0.78+upDirection*screen.y*0.44);
@@ -191,7 +262,7 @@ async function start(){
   const seabedModule=device.createShaderModule({code:seabedWGSL}); const surfaceModule=device.createShaderModule({code:surfaceWGSL}); const compositeModule=device.createShaderModule({code:compositeWGSL});
   stage('shader-compilation-info');
   for(const [label,module] of [['seabed',seabedModule],['surface',surfaceModule],['composite',compositeModule]]){const info=await module.getCompilationInfo();const errors=info.messages.filter(message=>message.type==='error');if(errors.length)throw new Error(`${label} WGSL\n`+errors.map(message=>`${message.lineNum}:${message.linePos} ${message.message}`).join('\n'));}
-  const uniformBuffer=device.createBuffer({size:48,usage:GPUBufferUsage.UNIFORM|GPUBufferUsage.COPY_DST});
+  const uniformBuffer=device.createBuffer({size:64,usage:GPUBufferUsage.UNIFORM|GPUBufferUsage.COPY_DST});
   const uniformLayout=device.createBindGroupLayout({entries:[{binding:0,visibility:GPUShaderStage.FRAGMENT,buffer:{type:'uniform'}}]});
   const uniformBindGroup=device.createBindGroup({layout:uniformLayout,entries:[{binding:0,resource:{buffer:uniformBuffer}}]});
   const textureLayout=device.createBindGroupLayout({entries:[
@@ -218,7 +289,7 @@ async function start(){
     {binding:0,resource:seabedColor.createView()},{binding:1,resource:seabedDepth.createView()},{binding:2,resource:surfaceData.createView()},{binding:3,resource:foamMask.createView()},{binding:4,resource:linearSampler}
   ]});
   root.dataset.passArchitecture='seabed,surface+foam,composite'; root.dataset.refractionGuard='linear-depth'; root.dataset.foamMask='separate-texture'; root.dataset.caustics='sun-projected';
-  function writeUniforms(timeValue){device.queue.writeBuffer(uniformBuffer,0,new Float32Array([timeValue,INTERNAL_W/INTERNAL_H,INTERNAL_W,INTERNAL_H,state.depth,state.waves,state.clarity,state.absorption,state.foam,0,0,0]));root.dataset.lastUniforms=[state.depth,state.waves,state.clarity,state.absorption,state.foam].join(',');}
+  function writeUniforms(timeValue){device.queue.writeBuffer(uniformBuffer,0,new Float32Array([timeValue,INTERNAL_W/INTERNAL_H,INTERNAL_W,INTERNAL_H,state.depth,state.waves,state.clarity,state.absorption,state.foam,0,0,0,state.cameraYaw,state.cameraPitch,state.cameraDistance,0]));root.dataset.lastUniforms=[state.depth,state.waves,state.clarity,state.absorption,state.foam,state.cameraYaw,state.cameraPitch,state.cameraDistance].join(',');}
   async function renderFrame(finalView,timeValue,copyInfo=null){
     writeUniforms(timeValue); const encoder=device.createCommandEncoder(); device.pushErrorScope('validation');
     const seabedPass=encoder.beginRenderPass({colorAttachments:[
@@ -243,7 +314,10 @@ async function start(){
     const mutations=[[depthInput,'1.75'],[wavesInput,'1.55'],[clarityInput,'0.80'],[absorptionInput,'1.65'],[foamInput,'1.60']];for(const [element,value] of mutations){element.value=value;element.dispatchEvent(new Event('input',{bubbles:true}));}
     if(state.uiRevision<10)throw new Error(`GUI input handlers did not run: revision=${state.uiRevision}`);
     const readBufferB=device.createBuffer({size:bytesPerRow*INTERNAL_H,usage:GPUBufferUsage.COPY_DST|GPUBufferUsage.MAP_READ});stage('ci-three-pass-render-b');await renderFrame(finalTexture.createView(),2.10,{texture:finalTexture,buffer:readBufferB,bytesPerRow});const checksumB=await checksumBuffer(readBufferB);
-    root.dataset.pixelChecksum=String(checksumB);root.dataset.pixelChecksumBefore=String(checksumA);root.dataset.guiRedraw=checksumA!==checksumB?'changed':'unchanged';if(checksumB===0||checksumA===checksumB)throw new Error(`GUI mutation did not change render: ${checksumA} -> ${checksumB}`);
+    if(checksumB===0||checksumA===checksumB)throw new Error(`GUI mutation did not change render: ${checksumA} -> ${checksumB}`);
+    stage('ci-camera-mutation');state.cameraYaw=0.52;state.cameraPitch=0.34;state.cameraDistance=7.25;commitCamera();
+    const readBufferC=device.createBuffer({size:bytesPerRow*INTERNAL_H,usage:GPUBufferUsage.COPY_DST|GPUBufferUsage.MAP_READ});stage('ci-three-pass-render-camera');await renderFrame(finalTexture.createView(),2.10,{texture:finalTexture,buffer:readBufferC,bytesPerRow});const checksumC=await checksumBuffer(readBufferC);
+    root.dataset.pixelChecksum=String(checksumC);root.dataset.pixelChecksumBefore=String(checksumA);root.dataset.guiChecksum=String(checksumB);root.dataset.guiRedraw=checksumA!==checksumB?'changed':'unchanged';root.dataset.cameraRedraw=checksumB!==checksumC?'changed':'unchanged';if(checksumC===0||checksumB===checksumC)throw new Error(`Camera mutation did not change render: ${checksumB} -> ${checksumC}`);
     root.dataset.webgpuStatus='ok';stage('ok');statusEl.className='ok';return;
   }
   const context=canvas.getContext('webgpu');context.configure({device,format:finalFormat,alphaMode:'opaque'});let frameCount=0;

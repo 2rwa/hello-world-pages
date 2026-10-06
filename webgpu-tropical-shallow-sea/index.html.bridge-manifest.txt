@@ -1,3 +1,3 @@
-source=dropbox:tmp-webgpu-tropical-shallow-sea-20261007.html
-size_bytes=24880
-sha256=76706de437ce40ebdd29e1b55aa94e3504423ac0c8d582a9bbfc24efeb17e384
+source=dropbox:tmp-webgpu-tropical-shallow-sea-camera-20261007.html
+size_bytes=28560
+sha256=ebd961cc005dac89540abe8f12dd761c89138223100f1d602983d9077cbc7800
