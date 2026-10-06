@@ -145,6 +145,33 @@
       ]
     },
     {
+      "name": "tmp-android",
+      "url": "https://github.com/2rwa/tmp-android",
+      "actions_url": "https://github.com/2rwa/tmp-android/actions",
+      "runs": [
+        {
+          "id": 37396881692,
+          "title": "Fix Android SDK setup on current Actions runner",
+          "status": "completed",
+          "conclusion": "failure",
+          "status_label": "failed:  Run 2 of Build Android APK. Fix Android SDK setup on current Actions runner",
+          "branch": "main",
+          "time": "2026-10-06T00:59:41Z",
+          "url": "https://github.com/2rwa/tmp-android/actions/runs/37396881692"
+        },
+        {
+          "id": 37396710350,
+          "title": "Add Android 9+ Hello World APK sample",
+          "status": "completed",
+          "conclusion": "failure",
+          "status_label": "failed:  Run 1 of Build Android APK. Add Android 9+ Hello World APK sample",
+          "branch": "main",
+          "time": "2026-10-06T00:57:42Z",
+          "url": "https://github.com/2rwa/tmp-android/actions/runs/37396710350"
+        }
+      ]
+    },
+    {
       "name": "tmp-blender",
       "url": "https://github.com/2rwa/tmp-blender",
       "actions_url": "https://github.com/2rwa/tmp-blender/actions",
@@ -445,5 +472,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-10-05T01:44:56Z"
+  "updated_at": "2026-10-06T01:09:56Z"
 }
