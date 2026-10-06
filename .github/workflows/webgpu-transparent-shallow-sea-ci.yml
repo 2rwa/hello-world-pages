@@ -1,0 +1,39 @@
+name: WebGPU Transparent Shallow Sea CI
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'webgpu-transparent-shallow-sea/**'
+      - '.github/workflows/webgpu-transparent-shallow-sea-ci.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  webgpu:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - name: Static JavaScript syntax check
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          source=Path('webgpu-transparent-shallow-sea/index.html').read_text()
+          begin=source.index('<script type="module">')+len('<script type="module">')
+          end=source.index('</script>',begin)
+          Path('/tmp/shallow-sea.mjs').write_text(source[begin:end])
+          PY
+          node --check /tmp/shallow-sea.mjs
+      - name: WebGPU compile, draw, submit and readback
+        run: |
+          python3 -m http.server 8000 --bind 127.0.0.1 >/tmp/shallow-http.log 2>&1 &
+          cp tests/webgpu-ocean-ci.mjs /tmp/shallow-ci.mjs
+          sed -i "s#webgpu-ocean-raymarch/index.html?ci=1#webgpu-transparent-shallow-sea/?ci=1#" /tmp/shallow-ci.mjs
+          sed -i 's/dataset.webgpuTest/dataset.webgpuStatus/g; s/dataset.webgpuPixelSum/dataset.pixelChecksum/g; s/lastStage === '\''failed'\''/lastStage === '\''error'\''/g' /tmp/shallow-ci.mjs
+          node /tmp/shallow-ci.mjs
+      - name: HTTP diagnostics
+        if: always()
+        run: cat /tmp/shallow-http.log 2>/dev/null || true
