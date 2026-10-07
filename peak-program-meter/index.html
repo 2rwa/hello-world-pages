@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#151513">
+  <title>Mic Peak Program Meter</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">WEB AUDIO / MICROPHONE</p>
+        <h1>Peak Program Meter</h1>
+        <p class="lead">マイク入力を dBFS で表示する、ブラウザ完結のPPM風メーター。</p>
+      </div>
+      <div id="statusPill" class="status-pill" data-state="idle">IDLE</div>
+    </header>
+
+    <section class="panel" aria-label="Peak program meter">
+      <div class="meter-head">
+        <div>
+          <span class="label">PROGRAM</span>
+          <strong id="ppmValue">−60.0</strong><span class="unit"> dBFS</span>
+        </div>
+        <button id="clipLamp" class="clip-lamp" type="button" title="クリックでCLIP保持をリセット">CLIP</button>
+      </div>
+
+      <div class="scale" aria-hidden="true">
+        <span style="left:0%">−60</span>
+        <span style="left:20%">−48</span>
+        <span style="left:40%">−36</span>
+        <span style="left:60%">−24</span>
+        <span style="left:70%">−18</span>
+        <span style="left:80%">−12</span>
+        <span style="left:85%">−9</span>
+        <span style="left:90%">−6</span>
+        <span style="left:95%">−3</span>
+        <span style="left:100%">0</span>
+      </div>
+
+      <div class="meter-track" role="meter" aria-valuemin="-60" aria-valuemax="0" aria-valuenow="-60" id="meterTrack">
+        <div class="zone-lines" aria-hidden="true"></div>
+        <div id="meterFill" class="meter-fill"></div>
+        <div id="holdMarker" class="hold-marker" title="Peak hold"></div>
+      </div>
+
+      <div class="legend-row" aria-hidden="true">
+        <span>NORMAL</span><span>HEADROOM</span><span>HOT</span>
+      </div>
+
+      <div class="readouts">
+        <div><span>瞬間ピーク</span><strong id="instantValue">−60.0 dBFS</strong></div>
+        <div><span>RMS</span><strong id="rmsValue">−60.0 dBFS</strong></div>
+        <div><span>ピーク保持</span><strong id="holdValue">−60.0 dBFS</strong></div>
+      </div>
+
+      <div class="controls">
+        <button id="startButton" class="primary" type="button">マイクを開始</button>
+        <button id="stopButton" type="button" disabled>停止</button>
+        <button id="resetButton" type="button">ピークをリセット</button>
+      </div>
+
+      <div class="device-card">
+        <span class="dot"></span>
+        <div>
+          <strong id="deviceName">マイク未接続</strong>
+          <p id="deviceInfo">開始するとブラウザがマイク利用許可を求めます。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="notes">
+      <p><b>表示:</b> 0 dBFS がデジタル上限。−6 dBFS 以上を赤、−18 dBFS 以上を黄色で表示します。</p>
+      <p><b>応答:</b> 約10 msの高速アタック＋約1.5 sの緩やかなリリース。ピーク保持は約1.2 s後に下降します。</p>
+      <p><b>注意:</b> OS・端末・ブラウザの入力ゲインを含むため、音圧(dB SPL)の校正値ではありません。</p>
+    </section>
+  </main>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

@@ -1,0 +1,32 @@
+name: Peak Program Meter Smoke
+on:
+  push:
+    branches: [main]
+    paths:
+      - peak-program-meter/**
+      - .github/workflows/peak-program-meter-smoke.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Core math smoke
+        run: node peak-program-meter/tests/core-smoke.mjs
+      - name: Browser UI regression
+        run: |
+          python3 -m http.server 8765 >/tmp/ppm-http.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID || true' EXIT
+          sleep 1
+          CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser)"
+          test -n "$CHROME"
+          "$CHROME" --headless --disable-gpu --no-sandbox --virtual-time-budget=1200 --dump-dom \
+            "http://127.0.0.1:8765/peak-program-meter/?ci=1" > /tmp/ppm-dom.html
+          grep -q 'data-ci-status="ok"' /tmp/ppm-dom.html
+          grep -q 'data-ci-checks="dbfs,ppm-ui,peak-hold,clip-reset"' /tmp/ppm-dom.html
