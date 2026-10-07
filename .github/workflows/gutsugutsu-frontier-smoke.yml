@@ -1,0 +1,36 @@
+name: Gutsugutsu Frontier Smoke
+on:
+  push:
+    branches: [main]
+    paths:
+      - gutsugutsu-frontier/**
+      - .github/workflows/gutsugutsu-frontier-smoke.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Syntax and model smoke
+        run: |
+          node --check gutsugutsu-frontier/data.js
+          node --check gutsugutsu-frontier/model.js
+          node --check gutsugutsu-frontier/view.js
+          node --check gutsugutsu-frontier/main.js
+          node gutsugutsu-frontier/tests/model-smoke.mjs
+      - name: Browser UI smoke
+        run: |
+          python3 -m http.server 8765 >/tmp/gutsugutsu-http.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID || true' EXIT
+          sleep 1
+          CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser)"
+          test -n "$CHROME"
+          "$CHROME" --headless --disable-gpu --no-sandbox --virtual-time-budget=1800 --dump-dom             "http://127.0.0.1:8765/gutsugutsu-frontier/?ci=1" > /tmp/dom.html
+          grep -q 'data-ci-status="ok"' /tmp/dom.html
+          grep -q 'data-ci-checks="prep-ui,battle-ui,summon,movement"' /tmp/dom.html

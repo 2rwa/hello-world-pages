@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>ぐつぐつ戦線 — 軽量RTS試作</title>
+<link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<header>
+  <div>
+    <h1>ぐつぐつ戦線 <small>prototype 0.1</small></h1>
+    <p>将軍をドラッグして拠点へ派遣。戦闘前に材料を仕込み、戦闘中は鍋を長押しして解放。</p>
+  </div>
+  <div class="status">
+    <span>🥬 <b id="res-herb">0</b></span>
+    <span>🔥 <b id="res-fire">0</b></span>
+    <span>⚡ <b id="res-spark">0</b></span>
+    <span>沸点 <b id="boil">0%</b></span>
+  </div>
+</header>
+<main>
+  <section class="map-shell">
+    <canvas id="map" aria-label="戦略マップ"></canvas>
+    <div id="toast" class="toast"></div>
+  </section>
+  <aside>
+    <h2>将軍と仕込み</h2>
+    <div id="generals"></div>
+    <div class="legend">
+      <b>操作</b>
+      <span>将軍の丸い駒をドラッグ → 拠点へ</span>
+      <span>🥬/🔥/⚡ の2素材を事前に仕込む</span>
+      <span>戦闘中は鍋を長押し、緑帯で離す</span>
+    </div>
+  </aside>
+</main>
+
+<section id="battle" class="battle hidden" aria-live="polite">
+  <div class="battle-card">
+    <div class="battle-title">
+      <div><small>味方</small><b id="battle-player-name"></b></div>
+      <strong>VS</strong>
+      <div><small>敵</small><b id="battle-enemy-name"></b></div>
+    </div>
+    <div class="troops"><div id="player-bar"></div><div id="enemy-bar"></div></div>
+    <div class="battle-numbers"><span id="player-troops"></span><span id="enemy-troops"></span></div>
+    <div id="summon-result" class="summon-result">鍋はまだ静かだ…</div>
+    <div class="charge"><div id="charge-fill"></div><i></i></div>
+    <button id="pot">🍲 長押しして煮込む</button>
+    <button id="retreat" class="secondary">撤退</button>
+  </div>
+</section>
+
+<section id="ending" class="ending hidden">
+  <div><h2 id="ending-title"></h2><p id="ending-text"></p><button id="restart">もう一戦</button></div>
+</section>
+
+<footer>最小検証版: 6拠点 / 3対3 / 3素材 / 18召喚結果 / 単純AI</footer>
+<script type="module" src="./main.js"></script>
+</body>
+</html>

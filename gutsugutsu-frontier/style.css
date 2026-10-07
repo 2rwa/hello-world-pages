@@ -1,0 +1,23 @@
+:root{font-family:ui-rounded,"Hiragino Maru Gothic ProN","Yu Gothic",system-ui,sans-serif;color:#33291f;background:#efe7d2}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at 50% 0,#fff7dc,#e7d6b6 65%,#cdb990);color:#33291f}
+header{min-height:86px;padding:12px 18px;display:flex;align-items:center;justify-content:space-between;gap:16px;background:#382b25;color:#fff8df;border-bottom:4px solid #b65a3a}
+h1{font-size:22px;margin:0 0 4px}h1 small{font-size:11px;font-weight:500;color:#eabf87}header p{margin:0;font-size:12px;color:#e8dac6}
+.status{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.status span{background:#ffffff12;border:1px solid #ffffff24;border-radius:999px;padding:6px 9px;font-size:12px}
+main{display:grid;grid-template-columns:minmax(0,1fr) 290px;gap:12px;padding:12px;max-width:1280px;margin:auto}
+.map-shell{position:relative;min-height:560px;border:3px solid #6e4d38;border-radius:18px;overflow:hidden;background:#91bb88;box-shadow:0 10px 26px #4a332533}
+canvas{width:100%;height:100%;min-height:560px;display:block;touch-action:none;cursor:grab}canvas.dragging{cursor:grabbing}
+aside{border:2px solid #795741;border-radius:16px;background:#fff4dccc;padding:12px;box-shadow:0 10px 26px #4a332522}aside h2{font-size:15px;margin:0 0 10px}
+.general{background:#fffdf4;border:2px solid #d9b98b;border-radius:13px;padding:9px;margin-bottom:9px}.general.dead{opacity:.52}.g-head{display:flex;justify-content:space-between;gap:8px}.g-name{font-weight:800}.g-stats{font-size:11px;color:#6e5945}.g-state{font-size:11px;margin:5px 0 7px;padding:4px 6px;border-radius:7px;background:#f1e5ca}
+.prep{display:grid;grid-template-columns:1fr 1fr;gap:6px}.prep select{width:100%;border:1px solid #b58b62;border-radius:8px;padding:5px;background:#fffaf0}
+.legend{display:grid;gap:5px;border-top:1px dashed #b59a78;padding-top:9px;font-size:11px;color:#67523d}.legend b{font-size:12px}
+.toast{position:absolute;left:50%;top:12px;transform:translateX(-50%);background:#33291ee8;color:white;padding:7px 11px;border-radius:9px;font-size:12px;opacity:0;transition:.2s;pointer-events:none}.toast.show{opacity:1}
+.battle,.ending{position:fixed;inset:0;z-index:20;background:#251b17c9;display:grid;place-items:center;padding:16px}.hidden{display:none!important}
+.battle-card,.ending>div{width:min(620px,96vw);background:#fff2cc;border:4px solid #5b3b2a;border-radius:22px;padding:16px;box-shadow:0 22px 70px #0008;text-align:center}
+.battle-title{display:grid;grid-template-columns:1fr 52px 1fr;align-items:center}.battle-title div{display:grid}.battle-title small{font-size:10px;color:#80664f}.battle-title b{font-size:18px}.battle-title strong{font-size:14px;color:#9a3f31}
+.troops{display:grid;grid-template-columns:1fr 1fr;height:22px;border:2px solid #5b3b2a;border-radius:9px;overflow:hidden;margin:13px 0 4px;background:#5e534b}.troops>div{height:100%;transition:width .12s linear}.troops #player-bar{background:#4a9c68;justify-self:start}.troops #enemy-bar{background:#b84d45;justify-self:end}
+.battle-numbers{display:flex;justify-content:space-between;font:12px ui-monospace,monospace}.summon-result{min-height:48px;margin:12px 0 8px;padding:8px;border-radius:10px;background:#e8d4a8;font-size:13px;display:grid;place-items:center}
+.charge{height:16px;position:relative;background:#8b7964;border:2px solid #5b3b2a;border-radius:8px;overflow:hidden;margin:8px 0}.charge>div{height:100%;width:0;background:linear-gradient(90deg,#e0b14d 0 31%,#56b970 31% 73%,#d9583e 73%);transition:width .03s linear}.charge i{position:absolute;left:31%;right:27%;top:0;bottom:0;border-left:1px solid #fff8;border-right:1px solid #fff8}
+button{border:0;border-radius:11px;padding:11px 15px;font-weight:800;background:#bd5a3a;color:white;box-shadow:0 4px 0 #793722;cursor:pointer}button:active{transform:translateY(3px);box-shadow:0 1px 0 #793722}#pot{width:100%;font-size:16px;touch-action:none;user-select:none}.secondary{margin-top:8px;background:#736253;box-shadow:0 4px 0 #4d4037}
+.ending h2{font-size:28px;margin:0 0 8px}.ending p{font-size:14px}
+footer{text-align:center;font-size:10px;color:#705a45;padding:0 10px 12px}
+@media(max-width:800px){header{align-items:flex-start;flex-direction:column}.status{justify-content:flex-start}main{grid-template-columns:1fr}.map-shell,canvas{min-height:430px}aside{order:2}.general{padding:8px}.battle-card{padding:12px}}
