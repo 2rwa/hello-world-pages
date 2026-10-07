@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#121310">
+  <title>Stereo PPM + VU Meter</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">WEB AUDIO / L-R INPUT ANALYZER</p>
+        <h1>Stereo Peak + Average</h1>
+        <p class="lead">L/Rの瞬間ピークと平均音量を同時に見る、PPM + VU-like メーター。</p>
+      </div>
+      <div id="statusPill" class="status-pill" data-state="idle">IDLE</div>
+    </header>
+
+    <section class="meter-grid">
+      <article class="panel ppm-panel">
+        <div class="panel-title">
+          <div><span class="kicker">FAST</span><h2>PPM / PEAK</h2></div>
+          <span class="hint">瞬間的な大きさ</span>
+        </div>
+        <div class="ppm-scale scale" aria-hidden="true">
+          <span style="left:0%">−60</span><span style="left:40%">−36</span><span style="left:70%">−18</span><span style="left:80%">−12</span><span style="left:90%">−6</span><span style="left:100%">0</span>
+        </div>
+        <div class="channel-stack">
+          <div class="channel-row" data-channel="left">
+            <div class="channel-label"><b>L</b><strong id="ppmLeftValue">−60.0</strong><small>dBFS</small></div>
+            <div id="ppmLeftTrack" class="meter-track ppm-track" role="meter" aria-valuemin="-60" aria-valuemax="0" aria-valuenow="-60">
+              <div id="ppmLeftFill" class="meter-fill ppm-fill"></div><div id="ppmLeftHold" class="hold-marker"></div>
+            </div>
+            <button id="clipLeft" class="clip-lamp" type="button">CLIP L</button>
+          </div>
+          <div class="channel-row" data-channel="right">
+            <div class="channel-label"><b>R</b><strong id="ppmRightValue">−60.0</strong><small>dBFS</small></div>
+            <div id="ppmRightTrack" class="meter-track ppm-track" role="meter" aria-valuemin="-60" aria-valuemax="0" aria-valuenow="-60">
+              <div id="ppmRightFill" class="meter-fill ppm-fill"></div><div id="ppmRightHold" class="hold-marker"></div>
+            </div>
+            <button id="clipRight" class="clip-lamp" type="button">CLIP R</button>
+          </div>
+        </div>
+        <p class="panel-note">約10 ms attack / 約1.5 s release。ピークホールド付き。</p>
+      </article>
+
+      <article class="panel vu-panel">
+        <div class="panel-title">
+          <div><span class="kicker">SLOW</span><h2>VU-like / AVERAGE</h2></div>
+          <span class="hint">持続する大きさ</span>
+        </div>
+        <div class="vu-scale scale" aria-hidden="true">
+          <span style="left:0%">−20</span><span style="left:43.5%">−10</span><span style="left:65.2%">−5</span><span style="left:78.3%">−2</span><span style="left:87%">0</span><span style="left:100%">+3</span>
+        </div>
+        <div class="channel-stack">
+          <div class="channel-row">
+            <div class="channel-label"><b>L</b><strong id="vuLeftValue">−20.0</strong><small>VU</small></div>
+            <div id="vuLeftTrack" class="meter-track vu-track" role="meter" aria-valuemin="-20" aria-valuemax="3" aria-valuenow="-20">
+              <div id="vuLeftFill" class="meter-fill vu-fill"></div><div class="zero-vu"></div>
+            </div>
+            <div class="dbfs-equivalent" id="vuLeftDbfs">−60.0 dBFS</div>
+          </div>
+          <div class="channel-row">
+            <div class="channel-label"><b>R</b><strong id="vuRightValue">−20.0</strong><small>VU</small></div>
+            <div id="vuRightTrack" class="meter-track vu-track" role="meter" aria-valuemin="-20" aria-valuemax="3" aria-valuenow="-20">
+              <div id="vuRightFill" class="meter-fill vu-fill"></div><div class="zero-vu"></div>
+            </div>
+            <div class="dbfs-equivalent" id="vuRightDbfs">−60.0 dBFS</div>
+          </div>
+        </div>
+        <p class="panel-note">RMSを約300 msで平滑化。0 VU = −18 dBFS の比較用表示（厳密な規格VU計ではありません）。</p>
+      </article>
+    </section>
+
+    <section class="comparison panel">
+      <div class="panel-title compact">
+        <div><span class="kicker">DIFFERENCE</span><h2>Peak − Average</h2></div>
+        <span class="hint">Crest factor</span>
+      </div>
+      <div class="crest-grid">
+        <div class="crest-card"><b>L</b><strong id="crestLeft">0.0 dB</strong><div class="crest-track"><i id="crestLeftFill"></i></div></div>
+        <div class="crest-card"><b>R</b><strong id="crestRight">0.0 dB</strong><div class="crest-track"><i id="crestRightFill"></i></div></div>
+      </div>
+      <p class="crest-help">差が大きいほど「瞬間だけ鋭い音」。差が小さいほど「持続的に大きい音」。</p>
+    </section>
+
+    <section class="control-panel panel">
+      <div class="controls">
+        <button id="startButton" class="primary" type="button">マイクを開始</button>
+        <button id="stopButton" type="button" disabled>停止</button>
+        <button id="resetButton" type="button">ピークをリセット</button>
+      </div>
+      <div class="device-card">
+        <span class="dot"></span>
+        <div><strong id="deviceName">マイク未接続</strong><p id="deviceInfo">ステレオ入力を要求します。モノ入力の場合はL/Rへ複製して表示します。</p></div>
+        <span id="channelMode" class="channel-mode">—</span>
+      </div>
+    </section>
+
+    <section class="notes">
+      <p><b>PPM:</b> 波形の最大値を見るので、クリック音・打音・子音などの短いピークに強く反応します。</p>
+      <p><b>VU-like:</b> RMSを遅く平滑化するため、持続して聞こえる音量の変化を追いやすくしています。</p>
+      <p><b>注意:</b> これはdB SPL / LUFSの校正測定器ではなく、ブラウザ入力レベルの比較表示です。</p>
+    </section>
+  </main>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

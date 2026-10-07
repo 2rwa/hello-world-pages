@@ -1,0 +1,35 @@
+name: Stereo PPM VU Meter Smoke
+on:
+  push:
+    branches: [main]
+    paths:
+      - stereo-ppm-vu-meter/**
+      - .github/workflows/stereo-ppm-vu-meter-smoke.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Syntax and core model
+        run: |
+          node --check stereo-ppm-vu-meter/app.js
+          node --check stereo-ppm-vu-meter/meter-core.mjs
+          node stereo-ppm-vu-meter/tests/core-smoke.mjs
+      - name: Browser UI regression
+        run: |
+          python3 -m http.server 8765 >/tmp/ppm-vu-http.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID || true' EXIT
+          sleep 1
+          CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser)"
+          test -n "$CHROME"
+          "$CHROME" --headless --disable-gpu --no-sandbox --virtual-time-budget=1500 --dump-dom \
+            "http://127.0.0.1:8765/stereo-ppm-vu-meter/?ci=1" > /tmp/ppm-vu-dom.html
+          grep -q 'data-ci-status="ok"' /tmp/ppm-vu-dom.html
+          grep -q 'data-ci-checks="stereo-separation,ppm-ui,vu-ui,crest,clip-reset"' /tmp/ppm-vu-dom.html
