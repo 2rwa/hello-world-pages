@@ -82,6 +82,18 @@ async function init(){
   // CI: same shaders, buffers and draw path; render target is offscreen to avoid Chromium swapchain errors.
   resize();device.pushErrorScope('validation');step('submitted-work-wait');frameDraw(getCamera());await device.queue.onSubmittedWorkDone();
   const gpuErr=await device.popErrorScope();if(gpuErr)throw Error(gpuErr.message);
+  // Validate actual pixels, not just a successfully submitted draw call.
+  const pitch=Math.ceil(canvas.width*4/256)*256;
+  const readback=device.createBuffer({size:pitch*canvas.height,usage:GPUBufferUsage.COPY_DST|GPUBufferUsage.MAP_READ});
+  const copy=device.createCommandEncoder();
+  copy.copyTextureToBuffer({texture:offscreenTex},{buffer:readback,bytesPerRow:pitch,rowsPerImage:canvas.height},[canvas.width,canvas.height,1]);
+  device.queue.submit([copy.finish()]);await device.queue.onSubmittedWorkDone();
+  await readback.mapAsync(GPUMapMode.READ);
+  const pixels=new Uint8Array(readback.getMappedRange());let populated=0;
+  for(let y=0;y<canvas.height;y+=8)for(let x=0;x<canvas.width;x+=8){if(pixels[y*pitch+x*4+3]>5)populated++;}
+  readback.unmap();readback.destroy();
+  if(populated<20)throw Error('GPU rendered too few visible pixels: '+populated);
+  document.documentElement.dataset.gpuPixels=String(populated);
   step('ok');document.documentElement.dataset.gpuTest='ok';
  }else requestAnimationFrame(tick);
  }catch(e){setError(e);}
