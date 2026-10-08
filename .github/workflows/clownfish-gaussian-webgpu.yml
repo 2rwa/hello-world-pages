@@ -1,0 +1,33 @@
+name: Clownfish Gaussian WebGPU render test
+on:
+  push:
+    paths:
+      - gaussian-raymarch-clownfish/**
+      - .github/workflows/clownfish-gaussian-webgpu.yml
+  workflow_dispatch:
+jobs:
+  gpu:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: JavaScript syntax checks
+        run: |
+          node --check gaussian-raymarch-clownfish/app.js
+          node --check gaussian-raymarch-clownfish/scene.js
+          node --check gaussian-raymarch-clownfish/raymarch-shader.js
+          node --check gaussian-raymarch-clownfish/clownfish-data.js
+      - run: npm install --no-save playwright@1.58.0
+      - name: GPU rendering + UI regression
+        run: node gaussian-raymarch-clownfish/ci-test.mjs
+      - name: Upload actual GPU readback PNGs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: clownfish-gaussian-test-pngs
+          path: gaussian-raymarch-clownfish/test-screenshots/*.png
+          if-no-files-found: ignore
+          retention-days: 7
