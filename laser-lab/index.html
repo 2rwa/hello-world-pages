@@ -1,0 +1,22 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#080e1c"><title>PROJECT LOCK-ON · Laser Flight Lab</title><link rel="stylesheet" href="./style.css"></head><body>
+<div class="app"><header><div><b class="brand">PROJECT <em>LOCK-ON</em></b><span class="subtitle">HOMING LASER FLIGHT LAB · PHASE 1</span></div><div class="header-actions"><span id="engine">初期化中</span><button id="start">PLAY / RESTART</button></div></header>
+<main><section class="arena"><div id="viewport">
+<canvas id="scene" width="540" height="960" aria-label="縦スクロールシューティング画面"></canvas><canvas id="laser" width="540" height="960" aria-hidden="true"></canvas>
+<div class="game-top"><span id="score">00000000</span><span id="lockCount">LOCK 0 / 8</span></div><div id="notice">DEMO MODE<small>SPACE: PLAY · X: LOCK AND RELEASE</small></div>
+<div class="touch"><button id="touchShot">SHOT</button><button id="touchLock">LOCK</button></div></div>
+<div class="bottom-status"><span id="readout">FPS --</span><span id="wave">WAVE 01</span><span id="health">SHIELD ●●●●●</span></div></section>
+<aside class="controls"><div class="section-title"><span>LASER CHARACTERISTICS</span><span class="tag">LIVE TUNING</span></div>
+<label class="field">軌道アルゴリズム<select id="mode"><option value="hybrid">HYBRID · 展開 → 追尾</option><option value="homing">HOMING · 角速度制限</option><option value="bezier">BEZIER · 3次曲線</option></select></label>
+<div class="param"><label for="speed">レーザー速度 <output id="speedOut"></output></label><input id="speed" type="range" min="400" max="2400" value="1200" step="100"></div>
+<div class="param"><label for="turn">最大旋回速度 <output id="turnOut"></output></label><input id="turn" type="range" min="90" max="1080" value="540" step="30"></div>
+<div class="param"><label for="life">軌跡の寿命 <output id="lifeOut"></output></label><input id="life" type="range" min="0.1" max="1.5" value=".45" step=".05"></div>
+<div class="param"><label for="width">レーザーの太さ <output id="widthOut"></output></label><input id="width" type="range" min="1" max="16" value="5" step="1"></div>
+<div class="param"><label for="stagger">発射間隔 <output id="staggerOut"></output></label><input id="stagger" type="range" min="0" max="120" value="45" step="5"></div>
+<div class="divider"></div><div class="section-title">DISPLAY</div>
+<label class="field">内部解像度<select id="resolution"><option value="360">360 × 640 · LOW</option><option value="540" selected>540 × 960 · NORMAL</option><option value="720">720 × 1280 · HIGH</option><option value="1080">1080 × 1920 · ULTRA</option></select></label>
+<label class="check"><input type="checkbox" id="fullLaser" checked>レーザーのみ高解像度で表示</label>
+<label class="check"><input type="checkbox" id="autoShot" checked>通常ショット自動連射</label><label class="check"><input type="checkbox" id="allLayers" checked>レーザーで空中敵も捕捉</label>
+<button id="resetParams" class="secondary">パラメータを初期化</button><div class="divider"></div><div class="section-title">OPERATION</div>
+<div class="help"><p><kbd>WASD</kbd> / <kbd>↑←↓→</kbd> 移動</p><p><kbd>X</kbd> 長押しで捕捉、離して発射</p><p><kbd>Z</kbd> 通常ショット / <kbd>SPACE</kbd> 開始</p><p><kbd>D</kbd> デモ切替 / <kbd>P</kbd> 一時停止</p><p>スマホはドラッグで移動、LOCKボタンで捕捉・発射。</p></div>
+<p class="footnote">照準内で最大8ロック。ボスには多重ロック可能。追尾レーザーは位置履歴から残像を描画。</p><div id="debug" class="debug" role="status">GPU: checking…</div>
+</aside></main></div><script type="module" src="./js/main.mjs"></script></body></html>
