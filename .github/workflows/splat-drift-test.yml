@@ -1,0 +1,34 @@
+name: SPLAT DRIFT smoke tests
+on:
+  push:
+    paths:
+      - 'splat-drift/**'
+      - '.github/workflows/splat-drift-test.yml'
+  workflow_dispatch:
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Unit tests and syntax
+        run: |
+          node --check splat-drift/world.js
+          node --check splat-drift/game.js
+          node --check splat-drift/renderer.js
+          node --test splat-drift/tests/world.test.mjs
+      - name: Browser test
+        run: |
+          npm install --no-save --no-package-lock playwright-core@1.55.0
+          python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/splat-server.log 2>&1 &
+          node splat-drift/tests/browser.mjs
+      - name: Preserve screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: splat-drift-browser
+          path: splat-drift/test-output/
+          if-no-files-found: ignore
