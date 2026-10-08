@@ -8,8 +8,8 @@ const server = createServer((req,res)=>{
   const name = new URL(req.url,'http://localhost').pathname.slice(1)||'index.html';
   const path=resolve(join(root,name));
   if(!path.startsWith(root+'/')&&!path.startsWith(root+'\\')){res.writeHead(403).end();return;}
-  try{res.writeHead(200,{'Content-Type':name.endsWith('.html')?'text/html':'text/javascript'}).end(readFileSync(path));}
-  catch{res.writeHead(404).end();}
+  try{const body=readFileSync(path);res.writeHead(200,{'Content-Type':name.endsWith('.html')?'text/html':'text/javascript'}).end(body);}
+  catch{res.writeHead(404).end('Not found');}
 });
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const port=server.address().port;
