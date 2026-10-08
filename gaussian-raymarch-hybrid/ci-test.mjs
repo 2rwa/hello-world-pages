@@ -5,11 +5,12 @@ import { chromium } from 'playwright';
 const root=process.cwd();
 const server=createServer((req,res)=>{
  const pathname=new URL(req.url,'http://localhost').pathname;
+ if(pathname==='/favicon.ico'){res.writeHead(204).end();return;}
  const filename=resolve(root,'.'+decodeURIComponent(pathname));
  if(!filename.startsWith(root+'/')){res.writeHead(403).end();return;}
- try{let type=extname(filename)==='.html'?'text/html':'text/javascript';
-  res.writeHead(200,{'content-type':type}).end(readFileSync(filename));}
- catch{res.writeHead(404).end('missing');}
+ try{const bytes=readFileSync(filename);const type=extname(filename)==='.html'?'text/html':'text/javascript';
+  res.writeHead(200,{'content-type':type}).end(bytes);}
+ catch(e){console.log('HTTP 404',pathname);res.writeHead(404).end('missing');}
 });
 await new Promise(done=>server.listen(0,'127.0.0.1',done));
 const port=server.address().port;
