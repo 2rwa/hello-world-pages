@@ -1,11 +1,12 @@
 import { createServer } from 'node:http';
-import { readFileSync } from 'node:fs';
+import { readFileSync, mkdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { chromium } from 'playwright';
 
 const root = resolve('gaussian-splatting-demo');
 const server = createServer((req,res)=>{
   const name = new URL(req.url,'http://localhost').pathname.slice(1)||'index.html';
+  if(name==='favicon.ico'){res.writeHead(204).end();return;}
   const path=resolve(join(root,name));
   if(!path.startsWith(root+'/')&&!path.startsWith(root+'\\')){res.writeHead(403).end();return;}
   try{const body=readFileSync(path);res.writeHead(200,{'Content-Type':name.endsWith('.html')?'text/html':'text/javascript'}).end(body);}
@@ -30,10 +31,36 @@ try{
  const data=await page.evaluate(()=>({...document.documentElement.dataset}));
  console.log('GPU TEST',JSON.stringify(data));
  if(data.gpuStage!=='ok'||Number(data.gpuPixels)<20)throw Error(data.gpuError||'No rendered Gaussian pixels');
- await page.locator('#scene').selectOption('shell');
+ await page.locator('#auto').uncheck();
  await page.locator('#count').selectOption('1500');
- await page.locator('#points').check();
  if(await page.locator('#countVal').innerText()!=='1,500')throw Error('Count UI not updated');
+ mkdirSync('gaussian-splatting-demo/test-screenshots',{recursive:true});
+ const hashes=[];
+ for(const scene of ['galaxy','torus','flower','shell']){
+  await page.locator('#scene').selectOption(scene);
+  const result=await page.evaluate(()=>window.gsCiRender());
+  if(result.populated<20)throw Error(scene+' produced blank image');
+  hashes.push(result.hash);
+  await page.locator('#ciPreview').screenshot({path:'gaussian-splatting-demo/test-screenshots/'+scene+'.png'});
+  console.log('SCENE',scene,JSON.stringify(result));
+ }
+ if(new Set(hashes).size!==4)throw Error('Not all scenes generated distinct images');
+ const before=hashes[3];
+ await page.locator('#points').check();
+ const pts=await page.evaluate(()=>window.gsCiRender());
+ if(pts.hash===before||pts.populated<20)throw Error('Point mode did not change the rendered output');
+ await page.locator('#points').uncheck();
+ await page.locator('#opacity').evaluate(e=>{e.value='1.4';e.dispatchEvent(new Event('input',{bubbles:true}));});
+ if(await page.locator('#opacityVal').innerText()!=='1.40×')throw Error('Opacity UI did not update');
+ const opacity=await page.evaluate(()=>window.gsCiRender());
+ if(opacity.hash===before)throw Error('Opacity slider did not affect GPU output');
+ await page.locator('#size').evaluate(e=>{e.value='1.65';e.dispatchEvent(new Event('input',{bubbles:true}));});
+ if(await page.locator('#sizeVal').innerText()!=='1.65×')throw Error('Size UI did not update');
+ const size=await page.evaluate(()=>window.gsCiRender());
+ if(size.hash===opacity.hash)throw Error('Size slider did not affect GPU output');
+ await page.locator('#regen').click();
+ const regenerated=await page.evaluate(()=>window.gsCiRender());
+ if(regenerated.hash===size.hash)throw Error('Regenerate did not change scene data');
  if(errors.length)throw Error('Page JS exception: '+errors.join(' | '));
- console.log('PASS: WGSL, pipeline, draw, validation, GPU pixel readback and UI controls');
+ console.log('PASS: four scenes, actual GPU image readback, distinct pixels, UI and parameter changes');
 }finally{await browser?.close();server.close();}
