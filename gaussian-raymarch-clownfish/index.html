@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Clownfish Gaussian × Raymarch</title>
+<style>
+:root{color-scheme:dark;font:13px system-ui,-apple-system,sans-serif;background:#070d1b;color:#edf4ff}*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden}
+canvas{width:100%;height:100%;display:block;touch-action:none;cursor:grab}canvas:active{cursor:grabbing}
+.panel{position:fixed;z-index:2;top:12px;left:12px;width:min(330px,calc(100vw - 24px));max-height:calc(100vh - 24px);overflow:auto;background:#0b1527ef;border:1px solid #6d93be38;border-radius:16px;box-shadow:0 12px 48px #0008;backdrop-filter:blur(15px);padding:14px}
+.tiny{font-size:10px;letter-spacing:.14em;color:#74cffb;font-weight:bold}h1{font-size:18px;line-height:1.2;margin:5px 0 8px}.description{color:#a9c1d8;font-size:11px;line-height:1.55;margin:0 0 12px}
+label{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:11px 0 6px;font-size:12px;color:#d8e7f6}label output{color:#81deff;font-variant-numeric:tabular-nums}
+select,button{background:#1b2a42;color:#eaf4fc;border:1px solid #4b678b;border-radius:8px;font:inherit;padding:7px;cursor:pointer}select{width:100%}button:hover{background:#314b69}input[type=range]{width:100%;accent-color:#68d7ee}
+.top{display:flex;justify-content:space-between;align-items:flex-start}.top button{padding:4px 9px}.row{display:flex;gap:8px;margin-top:12px}.row button{flex:1}.toggle{justify-content:flex-start;gap:8px}
+.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:13px}.metric{padding:8px 5px;text-align:center;background:#ffffff10;border-radius:8px}.metric strong{display:block;font-size:15px;font-variant-numeric:tabular-nums}.metric span{display:block;color:#9db2cb;font-size:9px}
+.note{font-size:10px;line-height:1.55;color:#97a9c2;margin:10px 0 0}.error{position:fixed;z-index:6;top:50%;left:50%;transform:translate(-50%,-50%);padding:20px;border:1px solid #f77;background:#2b1725;border-radius:12px;max-width:90vw;white-space:pre-wrap}.error[hidden]{display:none}
+.panel.closed{width:auto}.panel.closed .controls{display:none}.panel.closed h1{font-size:14px}.panel.closed .tiny{display:none}.caption{position:fixed;right:13px;bottom:12px;font-size:11px;color:#bce2ff8c;pointer-events:none;text-align:right;text-shadow:0 1px 3px #000}
+.preview{display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:12px;background:#ffffff08;border:1px solid #ffffff10;margin-bottom:10px}.preview img{width:72px;height:72px;object-fit:cover;border-radius:10px;border:1px solid #ffffff18}.preview small{display:block;color:#a7c2da;line-height:1.5;font-size:10px}
+@media(max-width:560px){.panel{padding:11px;width:min(276px,calc(100vw - 16px));top:8px;left:8px}h1{font-size:16px}.caption{font-size:9px;bottom:6px;right:7px}.preview img{width:60px;height:60px}}
+</style></head><body>
+<canvas id="screen" aria-label="Interactive clownfish Gaussian and raymarch WebGPU scene"></canvas>
+<aside class="panel" id="panel">
+<div class="top"><div><div class="tiny">USER PHOTO → GAUSSIANS · WEBGPU</div><h1>Clownfish Gaussian × Raymarch</h1></div><button id="collapse" aria-label="設定の開閉">−</button></div>
+<div class="controls">
+<div class="preview"><img id="sourceImg" alt="source preview"><small>アップロード画像から中央の魚を優先して色付きGaussian群を生成。<br>その前にSDFガラス球を置いて屈折させます。</small></div>
+<p class="description">魚写真ベースのGaussian群を、3方式で表示しつつガラス球と合成します。手前の球はレイマーチしたSDFです。</p>
+<label for="mode">レンダリング方式</label>
+<select id="mode"><option value="0">① 写真Gaussianスプラット + ガラス球</option><option value="1">② 写真Gaussian体積積分 + ガラス球</option><option value="2">③ 写真Gaussian等値面 + ガラス球</option></select>
+<label for="resolution">内部レンダリング解像度</label>
+<select id="resolution"><option value="320x180">320 × 180（低負荷）</option><option value="480x270" selected>480 × 270</option><option value="640x360">640 × 360</option><option value="960x540">960 × 540</option><option value="1280x720">1280 × 720</option><option value="1920x1080">1920 × 1080</option><option value="2560x1440">2560 × 1440</option><option value="3840x2160">3840 × 2160（高負荷）</option></select>
+<label for="count">Gaussian数 <output id="countVal">900</output></label><select id="count"><option value="256">256</option><option value="512">512</option><option value="900" selected>900</option><option value="1200">1200</option></select>
+<label for="steps">体積積分ステップ <output id="stepsVal">24</output></label><select id="steps"><option value="12">12（テスト）</option><option value="24" selected>24</option><option value="40">40</option><option value="64">64</option></select>
+<label for="density">Gaussian濃度 <output id="densityVal">1.25×</output></label><input id="density" type="range" min="0.15" max="3.5" step="0.05" value="1.25">
+<label for="scale">Gaussian半径 <output id="scaleVal">1.00×</output></label><input id="scale" type="range" min="0.3" max="2.4" step="0.05" value="1">
+<label for="glass">ガラス球半径 <output id="glassVal">0.95×</output></label><input id="glass" type="range" min="0.45" max="1.5" step="0.05" value="0.95">
+<label class="toggle"><input id="auto" type="checkbox" checked> 自動回転</label>
+<div class="row"><button id="reset">視点リセット</button><button id="regen">Gaussian再生成</button></div>
+<div class="metrics"><div class="metric"><strong id="fps">—</strong><span>FPS</span></div><div class="metric"><strong id="resolutionVal">480×270</strong><span>内部解像度</span></div><div class="metric"><strong id="renderMode">Splat</strong><span>表示方式</span></div></div>
+<p class="note">ドラッグ：視点回転　ホイール/ピンチ：ズーム。画像由来のGaussian群は中央の魚を優先し、白いイソギンチャクや灰色背景は抑えています。<br>高解像度 + 体積積分 + 1200個はかなり重いです。</p></div></aside>
+<div id="error" class="error" hidden></div>
+<div class="caption">Uploaded photo → colored Gaussians · SDF glass sphere / ring<br>No Three.js · No external libraries</div>
+<script type="module" src="./app.js"></script>
+</body></html>
