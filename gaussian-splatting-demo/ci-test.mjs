@@ -1,5 +1,5 @@
 import { createServer } from 'node:http';
-import { readFileSync, mkdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { chromium } from 'playwright';
 
@@ -41,7 +41,8 @@ try{
   const result=await page.evaluate(()=>window.gsCiRender());
   if(result.populated<20)throw Error(scene+' produced blank image');
   hashes.push(result.hash);
-  await page.locator('#ciPreview').screenshot({path:'gaussian-splatting-demo/test-screenshots/'+scene+'.png'});
+  const png=await page.locator('#ciPreview').evaluate(canvas=>canvas.toDataURL('image/png'));
+  writeFileSync('gaussian-splatting-demo/test-screenshots/'+scene+'.png',Buffer.from(png.split(',')[1],'base64'));
   console.log('SCENE',scene,JSON.stringify(result));
  }
  if(new Set(hashes).size!==4)throw Error('Not all scenes generated distinct images');
@@ -61,6 +62,18 @@ try{
  await page.locator('#regen').click();
  const regenerated=await page.evaluate(()=>window.gsCiRender());
  if(regenerated.hash===size.hash)throw Error('Regenerate did not change scene data');
+ await page.mouse.move(650,420);
+ await page.mouse.down();
+ await page.mouse.move(770,460,{steps:4});
+ await page.mouse.up();
+ const rotated=await page.evaluate(()=>window.gsCiRender());
+ if(rotated.hash===regenerated.hash)throw Error('Pointer drag did not rotate camera');
+ await page.mouse.wheel(0,300);
+ const zoomed=await page.evaluate(()=>window.gsCiRender());
+ if(zoomed.hash===rotated.hash)throw Error('Mouse wheel did not zoom');
+ await page.locator('#reset').click();
+ const reset=await page.evaluate(()=>window.gsCiRender());
+ if(reset.hash!==regenerated.hash)throw Error('Reset camera did not restore view');
  if(errors.length)throw Error('Page JS exception: '+errors.join(' | '));
- console.log('PASS: four scenes, actual GPU image readback, distinct pixels, UI and parameter changes');
+ console.log('PASS: four scenes, GPU screenshots, pointer rotation, wheel zoom, camera reset and UI parameter changes');
 }finally{await browser?.close();server.close();}
