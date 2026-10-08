@@ -1,0 +1,32 @@
+name: Gaussian × SDF WebGPU render test
+on:
+  push:
+    paths:
+      - gaussian-raymarch-hybrid/**
+      - .github/workflows/gaussian-raymarch-hybrid.yml
+  workflow_dispatch:
+jobs:
+  gpu:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: JavaScript syntax checks
+        run: |
+          node --check gaussian-raymarch-hybrid/app.js
+          node --check gaussian-raymarch-hybrid/scene.js
+          node --check gaussian-raymarch-hybrid/raymarch-shader.js
+      - run: npm install --no-save playwright@1.58.0
+      - name: GPU rendering + UI regression
+        run: node gaussian-raymarch-hybrid/ci-test.mjs
+      - name: Upload actual GPU readback PNGs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gaussian-raymarch-test-pngs
+          path: gaussian-raymarch-hybrid/test-screenshots/*.png
+          if-no-files-found: ignore
+          retention-days: 7
