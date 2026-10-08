@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>ねこアトリエ — 3D Cat</title>
+<style>
+:root{color-scheme:light;--ink:#40382f;--muted:#8f847a;--paper:#fffaf2}*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;font-family:ui-rounded,"Hiragino Maru Gothic ProN","Yu Gothic",system-ui,sans-serif;color:var(--ink)}
+body{background:radial-gradient(ellipse at 58% 40%,#fff8e9 0%,#ffeadc 48%,#efdac9 100%)}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.34;background-image:radial-gradient(#fff 1px,transparent 1px);background-size:32px 32px}
+#scene{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:grab}#scene:active{cursor:grabbing}
+header{position:absolute;z-index:2;top:clamp(20px,4vw,42px);left:clamp(20px,5vw,72px);pointer-events:none}
+.eyebrow{font-size:11px;font-weight:800;letter-spacing:.3em;color:#a47d6d;text-transform:uppercase}.title{font-size:clamp(30px,4.5vw,60px);font-weight:900;letter-spacing:-.07em;margin:8px 0 4px}.sub{font-size:clamp(12px,1.3vw,15px);line-height:1.8;color:#8a786d}
+.controls{position:absolute;z-index:3;left:50%;bottom:max(20px,env(safe-area-inset-bottom));transform:translateX(-50%);background:rgba(255,251,244,.88);border:1px solid rgba(255,255,255,.85);box-shadow:0 16px 60px #8e66502c;backdrop-filter:blur(20px);border-radius:26px;display:flex;align-items:center;gap:20px;padding:15px 22px;max-width:calc(100% - 28px)}
+.panel-title{display:block;font-size:10px;color:var(--muted);font-weight:800;letter-spacing:.1em;margin-bottom:7px}.swatches{display:flex;gap:9px}.swatch{width:35px;height:35px;border:3px solid #fff;box-shadow:0 0 0 1px #e5d8cd;outline:0;border-radius:50%;cursor:pointer;transition:transform .2s,box-shadow .2s;position:relative}.swatch:hover{transform:translateY(-2px)}.swatch[aria-pressed=true]{box-shadow:0 0 0 2px #ac7767,0 4px 12px #ab7b6e55;transform:translateY(-2px)}.swatch[aria-pressed=true]:after{content:'✓';font-weight:900;color:#fff;text-shadow:0 1px 4px #0007;position:absolute;inset:0;display:grid;place-items:center}
+.separator{height:41px;width:1px;background:#eaddd1}.actions{display:flex;gap:8px}.action{font:inherit;font-weight:800;font-size:13px;color:#6b574e;background:#fff;border:1px solid #ebdfd5;border-radius:13px;padding:11px 13px;cursor:pointer;white-space:nowrap}.action:active{transform:scale(.97)}.action:hover{background:#fcf0e6}
+.hint{position:absolute;z-index:2;right:clamp(18px,4vw,50px);top:35px;display:flex;align-items:center;gap:8px;color:#9a8173;font-size:12px;pointer-events:none}
+.hint span{padding:7px 11px;border:1px solid #ffffff9a;background:#ffffff7a;border-radius:24px}
+.badge{position:absolute;z-index:2;right:28px;bottom:35px;color:#a58d7c;letter-spacing:.11em;font-size:10px;font-weight:800}
+#error{position:absolute;inset:0;display:none;place-items:center;text-align:center;padding:28px;z-index:10;background:#fff2e9;color:#835b50}
+@media(max-width:720px){header{top:19px;left:22px}.title{font-size:30px}.sub{max-width:210px;font-size:12px}.hint{right:14px;top:20px;font-size:10px}.hint span{padding:6px 8px}.hint span:first-child{display:none}.controls{bottom:max(14px,env(safe-area-inset-bottom));padding:12px 14px;gap:12px;border-radius:22px}.swatch{width:30px;height:30px}.swatches{gap:6px}.separator{height:36px}.action{padding:10px 9px;font-size:12px}.actions{gap:5px}.badge{display:none}}
+@media(max-width:385px){.controls{gap:8px}.swatch{width:28px;height:28px}.action{font-size:11px;padding:9px 7px}}
+</style>
+</head>
+<body>
+<canvas id="scene" aria-label="ドラッグで回転できる三次元の猫"></canvas>
+<header><div class="eyebrow">Tiny 3D Studio · No. 01</div><h1 class="title">ねこアトリエ<span style="color:#db9b82">.</span></h1><div class="sub">気まぐれな猫を、くるくる眺めよう。<br>耳も、ひげも、しっぽも全部3D。</div></header>
+<div class="hint"><span>↔ ドラッグで回転</span><span>⌕ スクロールで拡大</span></div>
+<div class="controls"><div><span class="panel-title">COAT COLOR</span><div class="swatches"><button class="swatch" style="background:#d99560" data-coat="ginger" aria-label="茶トラ" aria-pressed="true" title="茶トラ"></button><button class="swatch" style="background:#808992" data-coat="gray" aria-label="グレー" aria-pressed="false" title="グレー"></button><button class="swatch" style="background:#34363d" data-coat="black" aria-label="黒猫" aria-pressed="false" title="黒猫"></button><button class="swatch" style="background:#eee7d9" data-coat="cream" aria-label="クリーム" aria-pressed="false" title="クリーム"></button></div></div><div class="separator"></div><div class="actions"><button class="action" id="wave">🐾 おて</button><button class="action" id="pause">Ⅱ 停止</button><button class="action" id="reset">↺ 戻す</button></div></div>
+<div class="badge">100% PROCEDURAL · WEBGL2</div>
+<div id="error">WebGL2を利用できません。<br>対応ブラウザで開いてください。</div>
+<script src="./cat.js"></script>
+</body></html>
