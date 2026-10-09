@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#07091a"><title>STELLAR FLOCK — HOMING ARCADE</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,-apple-system,'Hiragino Kaku Gothic ProN',sans-serif}*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:#060816;color:#e9faff;overflow:hidden}
+body{display:flex;align-items:center;justify-content:center}
+.layout{display:flex;align-items:center;justify-content:center;width:100%;height:100dvh;gap:34px}
+.info{width:280px;flex-shrink:0}.eyebrow{font-size:11px;letter-spacing:.35em;color:#72e7f7}.info h1{font-size:44px;line-height:.96;margin:14px 0 18px;font-weight:900;letter-spacing:.04em}.info h1 span{color:#ff6dba}.info p{font-size:13px;line-height:1.9;color:#aab8d6}.feature{border-top:1px solid #273554;margin-top:22px;padding-top:16px}.feature strong{font-size:12px;color:#93f7ef;letter-spacing:.12em}
+.game{position:relative;height:100dvh;max-height:960px;width:min(100vw,560px);border-inline:1px solid #25315b;overflow:hidden;touch-action:none;background:#050919;isolation:isolate;box-shadow:0 0 85px #2441c620}
+canvas{display:block;width:100%;height:100%;touch-action:none}
+.hud{position:absolute;z-index:2;left:0;right:0;top:0;padding:calc(16px + env(safe-area-inset-top)) 18px 12px;display:flex;align-items:start;justify-content:space-between;pointer-events:none;background:linear-gradient(#06091ec9,transparent)}
+.stat{font-size:10px;letter-spacing:.18em;color:#8ca4cd}.stat b{display:block;font-size:23px;line-height:1.35;font-variant-numeric:tabular-nums;letter-spacing:.04em;color:#eefbff}.stat.mid{text-align:center}.stat.right{text-align:right}.hearts{color:#ff75ad;font-size:20px;letter-spacing:.08em}
+.top-actions{position:absolute;z-index:4;right:15px;top:calc(78px + env(safe-area-inset-top));display:flex;gap:7px}.tiny-btn{background:#0c183b99;color:#aecbf2;border:1px solid #4b729178;border-radius:9px;font-size:11px;padding:8px 11px;cursor:pointer}
+.barrage{position:absolute;z-index:3;right:16px;bottom:calc(24px + env(safe-area-inset-bottom));width:85px;height:85px;border-radius:50%;background:radial-gradient(circle at 35% 25%,#2c5f86,#102846 65%);border:2px solid #72e0f9;color:#e2ffff;box-shadow:0 0 22px #26e4ff60,inset 0 0 18px #20b7ef40;font-size:12px;font-weight:850;letter-spacing:.06em;touch-action:manipulation;cursor:pointer}
+.barrage:disabled{opacity:.55;border-color:#56758b;box-shadow:none}.barrage small{display:block;font-size:10px;margin-top:2px;color:#aee0ed}
+.joystick-hint{position:absolute;z-index:2;bottom:calc(26px + env(safe-area-inset-bottom));left:18px;color:#9ad4ec95;pointer-events:none;font-size:10px;letter-spacing:.08em;line-height:1.8}
+.overlay{position:absolute;z-index:5;inset:0;display:flex;align-items:center;justify-content:center;padding:25px;background:linear-gradient(#05091a66,#090a29a8 45%,#020513c9)}.overlay.hidden{display:none}
+.panel{text-align:center;width:min(100%,355px);padding:34px 20px;background:linear-gradient(155deg,#102043e9,#0b1436ee);border:1px solid #4282bb99;box-shadow:0 20px 70px #0009,0 0 70px #2155a030;border-radius:20px}
+.panel .small{color:#6be8ff;font-size:11px;letter-spacing:.35em;font-weight:750}.panel h2{font-size:42px;line-height:1.02;letter-spacing:.08em;margin:13px 0;color:white;text-shadow:0 0 34px #22befe60}.panel h2 em{font-style:normal;color:#ff79c4}.panel p{font-size:13px;line-height:1.85;color:#bed0e5;margin:15px 0 25px}.primary{padding:15px 35px;background:linear-gradient(120deg,#81f5ec,#62baff);border:0;border-radius:10px;color:#09182d;font-weight:900;font-size:15px;box-shadow:0 0 25px #49aefc66;cursor:pointer}.footer{font-size:11px;color:#7993b5;margin-top:20px;line-height:1.7}
+@media(max-width:980px){.info{display:none}.layout{gap:0}.game{max-height:none;max-width:620px;border:0}}
+</style>
+</head>
+<body>
+<div class="layout">
+<aside class="info"><div class="eyebrow">CANVAS 2D / EXPERIMENT 01</div><h1>STELLAR<br><span>FLOCK</span></h1><p>編隊を崩しながら襲いかかる敵群。<br>左右へ回避しつつ、自動ロックオンした敵を光跡の尾を引く誘導弾で撃ち落とせ。</p><div class="feature"><strong>FORMATION → DIVE → RETURN</strong><p>敵は隊列から急降下し、旋回して上空へ復帰。狙うべき敵が刻々と変わる。</p></div><div class="feature"><strong>HOMING MISSILE BALLET</strong><p>発射した弾が大きく弧を描いて目標を追う。攻撃は自動、操作は回避と一斉射撃に集中。</p></div></aside>
+<div class="game" id="game"><canvas id="screen" aria-label="Canvas 2Dシューティングゲーム"></canvas>
+<div class="hud"><div class="stat">SCORE<b id="score">000000</b></div><div class="stat mid">WAVE<b id="wave">01</b></div><div class="stat right">SHIELDS<div class="hearts" id="hearts">◆ ◆ ◆</div></div></div>
+<div class="top-actions"><button class="tiny-btn" id="sound" aria-label="サウンド切替">SOUND OFF</button><button class="tiny-btn" id="pause">Ⅱ PAUSE</button></div>
+<div class="joystick-hint">DRAG / MOUSE / ← →<br>AUTO LOCK + AUTO FIRE</div>
+<button class="barrage" id="barrage" aria-label="追尾ミサイル一斉射撃">BURST<small id="burst-time">READY</small></button>
+<div class="overlay" id="overlay"><div class="panel"><div class="small" id="overlay-cap">NEON FLEET DEFENSE</div><h2 id="overlay-title">STELLAR<br><em>FLOCK</em></h2><p id="overlay-text">隊列を組んだ敵が、次々と急降下。<br>機体を左右に動かして回避。<br>誘導弾は自動で敵を追いかけます。</p><button class="primary" id="start">START MISSION</button><div class="footer" id="overlay-foot">PC: マウス / ← →　・　SPACE: 一斉射撃<br>スマホ: スワイプで移動　・　BURST ボタン</div></div></div>
+</div></div>
+<script src="engine.js"></script><script src="logic.js"></script><script src="render.js"></script>
+</body></html>
