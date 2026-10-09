@@ -18,11 +18,30 @@ FlightGame.prototype.draw=function(){
   this.drawEnemy(c,e,t)
  }
  for(const b of this.enemyShots){c.save();c.shadowColor='#ff719c';c.shadowBlur=13;c.strokeStyle='#ff6eaa';c.lineWidth=3;c.beginPath();if(b.trail.length){c.moveTo(b.trail[0].x,b.trail[0].y);for(const p of b.trail)c.lineTo(p.x,p.y)}c.stroke();c.fillStyle='#fff1bd';c.beginPath();c.arc(b.x,b.y,3.6,0,TWO);c.fill();c.restore()}
- // Missile ballet: layered curved neon/smoke trails with independently homing rockets.
- for(const m of this.missiles){if(m.trail.length<2)continue;c.save();c.lineCap='round';c.lineJoin='round';const pts=m.trail;
-  c.globalCompositeOperation='lighter';c.shadowBlur=16;c.shadowColor=`hsla(${m.hue},100%,67%,.65)`;c.strokeStyle=`hsla(${m.hue},95%,56%,.30)`;c.lineWidth=m.burst?11:7;c.beginPath();c.moveTo(pts[0].x,pts[0].y);for(let i=1;i<pts.length;i++)c.lineTo(pts[i].x,pts[i].y);c.stroke();
-  c.shadowBlur=6;c.strokeStyle=`hsla(${m.hue},100%,80%,.9)`;c.lineWidth=m.burst?2.8:2.2;c.beginPath();c.moveTo(pts[0].x,pts[0].y);for(let i=1;i<pts.length;i++)c.lineTo(pts[i].x,pts[i].y);c.stroke();
-  c.fillStyle='#ffffff';c.shadowColor='#ffffff';c.shadowBlur=15;c.beginPath();c.arc(m.x,m.y,m.burst?3.5:2.8,0,TWO);c.fill();c.restore()
+ // Individually colored missiles: neon ribbons, hot engine points, directional heads.
+ for(const m of this.missiles){
+  if(m.trail.length<2)continue;
+  c.save();c.lineCap='round';c.lineJoin='round';
+  const pts=m.trail,head=m.personality?.name||'STRIKER';
+  c.globalCompositeOperation='lighter';
+  c.shadowColor='hsla('+m.hue+',100%,65%,.7)';c.shadowBlur=m.burst?19:13;
+  c.strokeStyle='hsla('+m.hue+',100%,62%,.28)';
+  c.lineWidth=m.burst?10:6;c.beginPath();c.moveTo(pts[0].x,pts[0].y);
+  for(let j=1;j<pts.length;j++)c.lineTo(pts[j].x,pts[j].y);c.stroke();
+  c.shadowBlur=5;c.strokeStyle='hsla('+m.hue+',100%,88%,.9)';
+  c.lineWidth=m.burst?2.6:1.9;c.beginPath();
+  c.moveTo(pts[0].x,pts[0].y);
+  for(let j=1;j<pts.length;j++)c.lineTo(pts[j].x,pts[j].y);c.stroke();
+  // Sparklets mark the staggered exhaust of the serpentine DANCER.
+  if(head==='DANCER'&&pts.length>12){
+   c.fillStyle='hsla('+m.hue+',100%,85%,.65)';
+   for(let j=pts.length-9;j>0;j-=9){const q=pts[j];c.fillRect(q.x-1,q.y-1,2,2)}
+  }
+  c.translate(m.x,m.y);c.rotate(Math.atan2(m.vy,m.vx)+Math.PI/2);
+  c.shadowColor='#ffffff';c.shadowBlur=12;
+  c.fillStyle='#fff';c.beginPath();c.moveTo(0,-5);c.lineTo(-2.7,3);
+  c.lineTo(0,1);c.lineTo(2.7,3);c.closePath();c.fill();
+  c.restore();
  }
  for(const r of this.rings){c.save();c.strokeStyle=`hsla(${r.hue},100%,75%,${r.life/.3*.7})`;c.lineWidth=2;c.shadowColor=c.strokeStyle;c.shadowBlur=16;c.beginPath();c.arc(r.x,r.y,r.r,0,TWO);c.stroke();c.restore()}
  for(const p of this.particles){c.fillStyle=`hsla(${p.hue},100%,73%,${clamp(p.life/.5,0,1)})`;c.fillRect(p.x-p.r/2,p.y-p.r/2,p.r,p.r)}

@@ -8,7 +8,7 @@ class FlightGame{
   this.stars=Array.from({length:135},()=>({x:rnd(0,480),y:Math.random(),r:rnd(.3,1.6),speed:rnd(.06,.25),light:rnd(.15,.95)}));
   this.bgDust=Array.from({length:18},()=>({x:rnd(0,480),y:Math.random(),r:rnd(16,75),s:rnd(.7,2.8)}));
   this.enemies=[];this.missiles=[];this.enemyShots=[];this.particles=[];this.rings=[];this.textPop=[];this.player={x:240,tx:240,y:700,invul:0};this.keys={};this.pointer=false;this.jolt=0;this.waveFlash=0;this.hitFlash=0;this.nextWaveTimer=0;
-  this.score=0;this.lives=3;this.wave=1;this.combo=0;this.comboTimer=0;this.fireTimer=.2;this.diveTimer=1;this.burstCD=0;this.lastHUD='';
+  this.score=0;this.lives=3;this.wave=1;this.combo=0;this.comboTimer=0;this.fireTimer=.2;this.diveTimer=1;this.burstCD=0;this.missileSerial=0;this.lastHUD='';
   this.bind();this.resize();this.setupWave();this.last=performance.now();requestAnimationFrame(this.loop.bind(this));
  }
  resize(){const r=this.root.getBoundingClientRect(),d=Math.min(devicePixelRatio||1,2);this.H=480*r.height/r.width;this.canvas.width=Math.round(r.width*d);this.canvas.height=Math.round(r.height*d);this.ctx.setTransform(this.canvas.width/480,0,0,this.canvas.height/this.H,0,0);this.player.y=this.H-105;this.player.x=clamp(this.player.x,34,446);this.player.tx=clamp(this.player.tx,34,446);}
@@ -32,7 +32,7 @@ class FlightGame{
   const v=Math.min(290,200+this.wave*8),secondsToHit=(l-23)/v;
   if(dy<240||secondsToHit<1.05)return false;
   this.enemyShots.push({x:e.x,y:e.y,vx:dx/l*v,vy:dy/l*v,life:4,trail:[]});return true}
- spawnMissile(target,index=0,total=1,isBurst=false){if(!target||!target.alive)return;const sx=this.player.x+(index%2?15:-15),sy=this.player.y-15;const sideways=(index-(total-1)/2)*(isBurst?100:320)+rnd(-38,38);this.missiles.push({x:sx,y:sy,vx:sideways,vy:-rnd(115,190),life:3.4,age:0,target,trail:[],hue:isBurst?rnd(285,333):rnd(169,207),burst:isBurst});if(this.missiles.length>125)this.missiles.shift()}
+ spawnMissile(target,index=0,total=1,isBurst=false){if(!target||!target.alive)return;const p=this.makeMissilePersonality(index,total,isBurst);const sx=this.player.x+(index%2?15:-15),sy=this.player.y-15;this.missiles.push({x:sx,y:sy,vx:p.side*p.launchSpeed,vy:-p.cruise,life:6,age:0,target,trail:[{x:sx,y:sy}],hue:p.hue+rnd(-7,7),burst:isBurst,personality:p});if(this.missiles.length>125)this.missiles.shift()}
  targets(){return this.enemies.filter(e=>e.alive).sort((a,b)=>(a.state==='dive'?-270:0)+(Math.abs(a.x-this.player.x)*.35+a.y*.18) - ((b.state==='dive'?-270:0)+(Math.abs(b.x-this.player.x)*.35+b.y*.18)))}
  burst(){if(this.mode!=='playing'||this.burstCD>0)return;const a=this.targets();if(!a.length)return;for(let n=0;n<12;n++)this.spawnMissile(a[n%Math.min(a.length,7)],n,12,true);this.burstCD=9;this.beep(920,.24,.07);this.jolt=Math.max(this.jolt,5);this.waveFlash=Math.max(this.waveFlash,.22);this.syncHUD()}
  impact(x,y,hue=180,count=9,scale=1){this.rings.push({x,y,r:2,life:.3,hue});for(let k=0;k<count;k++){const a=rnd(0,TWO),v=rnd(35,165)*scale;this.particles.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,life:rnd(.24,.72),max:.72,r:rnd(1.3,3.8)*scale,hue});}if(this.particles.length>300)this.particles.splice(0,this.particles.length-300)}

@@ -29,9 +29,9 @@ canvas{display:block;width:100%;height:100%;touch-action:none}
 <div class="game" id="game"><canvas id="screen" aria-label="Canvas 2Dシューティングゲーム"></canvas>
 <div class="hud"><div class="stat">SCORE<b id="score">000000</b></div><div class="stat mid">WAVE<b id="wave">01</b></div><div class="stat right">SHIELDS<div class="hearts" id="hearts">◆ ◆ ◆</div></div></div>
 <div class="top-actions"><button class="tiny-btn" id="sound" aria-label="サウンド切替">SOUND OFF</button><button class="tiny-btn" id="pause">Ⅱ PAUSE</button></div>
-<div class="joystick-hint">DRAG / MOUSE / ← →<br>AUTO LOCK + AUTO FIRE</div>
+<div class="joystick-hint">DRAG / MOUSE / ← →<br>AUTO LOCK + AUTO FIRE<br>4 MISSILE PERSONALITIES</div>
 <button class="barrage" id="barrage" aria-label="追尾ミサイル一斉射撃">BURST<small id="burst-time">READY</small></button>
 <div class="overlay" id="overlay"><div class="panel"><div class="small" id="overlay-cap">NEON FLEET DEFENSE</div><h2 id="overlay-title">STELLAR<br><em>FLOCK</em></h2><p id="overlay-text">隊列を組んだ敵が、次々と急降下。<br>機体を左右に動かして回避。<br>誘導弾は自動で敵を追いかけます。</p><button class="primary" id="start">START MISSION</button><div class="footer" id="overlay-foot">PC: マウス / ← →　・　SPACE: 一斉射撃<br>スマホ: スワイプで移動　・　BURST ボタン</div></div></div>
 </div></div>
-<script src="engine.js"></script><script src="logic.js"></script><script src="render.js"></script>
+<script src="engine.js"></script><script src="guidance.js"></script><script src="logic.js"></script><script src="render.js"></script>
 </body></html>

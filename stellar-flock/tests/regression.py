@@ -6,7 +6,7 @@ from missile_ballet import assert_missile_ballet
 HERE=Path(__file__).resolve().parents[1]
 REPO=HERE.parent
 BASE="https://2rwa.github.io/hello-world-pages/stellar-flock/"
-NAMES=("index.html","engine.js","logic.js","render.js")
+NAMES=("index.html","engine.js","guidance.js","logic.js","render.js")
 OUT=HERE/"test-artifacts"
 
 def guard():
