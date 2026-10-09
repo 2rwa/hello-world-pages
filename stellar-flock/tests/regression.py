@@ -43,6 +43,51 @@ def remote_ready():
         time.sleep(12)
     raise AssertionError("Published Pages content was not updated to this commit")
 
+def assert_enemy_fire_dodgeable(page, label):
+    """Use the real production enemyPos/shootEnemy logic across viewports and waves."""
+    result = page.evaluate("""() => {
+      const g=window.flockGame;
+      const original={H:g.H,wave:g.wave,y:g.player.y,x:g.player.x,
+          tx:g.player.tx,shots:g.enemyShots,time:g.time};
+      const cases=[], forbidden=[], safe=[];
+      try {
+        for(const H of [680,1040]) for(const wave of [1,12,30])
+          for(const slotY of [159,261,363]) {
+            g.H=H;g.wave=wave;g.player.x=240;g.player.tx=240;
+            g.player.y=H-105;g.enemyShots=[];
+            const low={x:240,y:g.player.y-65,alive:true};
+            g.shootEnemy(low);
+            if(g.enemyShots.length) forbidden.push({H,wave,slotY,type:'low-shot',bullet:g.enemyShots[0]});
+            g.enemyShots=[];
+            const e={x:240,y:slotY,slotX:240,slotY,col:3,row:0,
+                phase:0,variant:0,state:'formation',shot:false,alive:true};
+            g.beginDive(e);e.diveLen=3.2;
+            for(let i=0;i<220;i++){
+              const was=g.enemyShots.length;
+              g.enemyPos(e,1/60);
+              if(g.enemyShots.length>was){
+                const b=g.enemyShots[g.enemyShots.length-1];
+                const speed=Math.hypot(b.vx,b.vy);
+                const seconds=(Math.hypot(g.player.x-b.x,g.player.y-b.y)-23)/speed;
+                const verticalGap=g.player.y-b.y;
+                cases.push({H,wave,slotY,seconds,verticalGap,speed});
+                if(seconds<.95 || verticalGap<220)
+                    forbidden.push({H,wave,slotY,type:'too-late',seconds,verticalGap,speed});
+              }
+            }
+          }
+      }finally {
+        g.H=original.H;g.wave=original.wave;g.player.y=original.y;
+        g.player.x=original.x;g.player.tx=original.tx;
+        g.enemyShots=original.shots;g.time=original.time;
+      }
+      return {cases,forbidden};
+    }""")
+    assert result["cases"], (label, "no enemy fire sampled")
+    assert not result["forbidden"], (label, "unavoidable enemy projectiles", result["forbidden"][:8])
+    print("PASS:",label,"enemy-shot reaction time / distance for",
+          len(result["cases"]),"diving shots, low-altitude blocked",flush=True)
+
 def play(url):
     from playwright.sync_api import sync_playwright
     OUT.mkdir(exist_ok=True)
@@ -80,6 +125,7 @@ def play(url):
             p.evaluate("""() => {for(const e of flockGame.enemies)e.alive=false;
                 for(const m of flockGame.missiles)m.target=null;flockGame.nextWaveTimer=.03}""")
             p.wait_for_function("() => flockGame.wave>=2",timeout=6000)
+            assert_enemy_fire_dodgeable(p, 'mobile' if mobile else 'desktop')
             assert not (errors or failed or http),("browser errors",errors,failed,http)
             p.screenshot(path=str(OUT/("mobile.png" if mobile else "desktop.png")))
             print("PASS",("mobile" if mobile else "desktop"),"loaded JS/canvas/start/autofire/touch/burst/pause/retarget/wave",flush=True)
