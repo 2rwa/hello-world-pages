@@ -2,6 +2,7 @@
 """Canvas2D game end-to-end regression; do not inline external JS."""
 import argparse, contextlib, hashlib, http.server, re, threading, time, urllib.request
 from pathlib import Path
+from missile_ballet import assert_missile_ballet
 HERE=Path(__file__).resolve().parents[1]
 REPO=HERE.parent
 BASE="https://2rwa.github.io/hello-world-pages/stellar-flock/"
@@ -156,6 +157,7 @@ def play(url):
             p.wait_for_function("() => flockGame.wave>=2",timeout=6000)
             assert_enemy_fire_dodgeable(p, 'mobile' if mobile else 'desktop')
             assert_reaction_dodge(p, 'mobile' if mobile else 'desktop')
+            assert_missile_ballet(p, 'mobile' if mobile else 'desktop')
             assert not (errors or failed or http),("browser errors",errors,failed,http)
             p.screenshot(path=str(OUT/("mobile.png" if mobile else "desktop.png")))
             print("PASS",("mobile" if mobile else "desktop"),"loaded JS/canvas/start/autofire/touch/burst/pause/retarget/wave",flush=True)
