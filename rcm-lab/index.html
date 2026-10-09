@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0e1425"><meta name="description" content="PCM波形でFMを変調するRCM風のWeb Audioシンセ実験室">
+<title>RCM Synth Lab | PCM × FM</title><link rel="stylesheet" href="./style.css"></head>
+<body><main class="shell">
+<header class="top"><div><div class="eyebrow">SYNTHESIS EXPERIMENT / WEB AUDIO</div><h1>RCM <em>Synth Lab</em></h1>
+<p class="subtitle">PCM波形でFMを変調する、あのハイブリッド音源をブラウザで実験。</p></div>
+<div class="topright"><button id="start" class="primary">▶ 音声を有効化</button><div id="status" role="status">音声停止中</div></div></header>
+<section class="hero"><div class="hero-head"><span class="dot"></span><span>LIVE SIGNAL</span><span id="note-display" class="note-display">--</span><span id="voice-display">0 voices</span></div>
+<canvas id="scope" width="960" height="200" aria-label="出力波形のリアルタイム表示"></canvas>
+<div class="flowline"><span>AWM2 / PCM</span><b id="signal-route">→ AFM / FM → FILTER → OUT</b><span>OUTPUT</span></div></section>
+<section class="panel"><div class="panel-title"><h2>01 / 合成モード</h2><span>音の違いを切り替える</span></div>
+<div class="modes" role="group" aria-label="合成モード">
+<button class="mode is-active" data-mode="rcm"><strong>RCM</strong><small>PCM → FM変調</small></button>
+<button class="mode" data-mode="fm"><strong>FM</strong><small>FM合成のみ</small></button>
+<button class="mode" data-mode="pcm"><strong>PCM</strong><small>サンプル再生のみ</small></button>
+<button class="mode" data-mode="layer"><strong>Layer</strong><small>FM + PCM加算</small></button></div>
+<div class="presets"><label for="preset">音色プリセット</label><select id="preset"></select><button id="demo" class="secondary">♫ デモ演奏</button><button id="panic" class="quiet">全音停止</button></div></section>
+<div class="split"><section class="panel"><div class="panel-title"><h2>02 / PCMサンプル</h2><span>AWM2 相当</span></div>
+<div class="selectrow"><label for="wave">波形</label><select id="wave"><option value="bell">Metal Bell</option><option value="vowel">Vowel / あ</option><option value="strings">Bowed Strings</option><option value="pluck">Soft Pluck</option><option value="organ">Organ</option></select></div>
+<div class="upload"><label for="audiofile" class="filebutton">音声ファイルを読み込む</label><input id="audiofile" type="file" accept="audio/*"><div id="sample-info">内蔵波形（2048サンプル・ループ）</div></div>
+<div class="hint">読み込み音声は先頭最大2秒をPCMとして使用。C4を基準に移調してループ再生します。端点に短いフェードを適用します。</div></section>
+<section class="panel"><div class="panel-title"><h2>03 / 音作り</h2><span>スライダーは演奏中も変更可能</span></div>
+<div id="controls" class="controls"></div></section></div>
+<section class="panel keyboard-panel"><div class="panel-title"><h2>04 / PLAY</h2><span>タッチ・マウス・PCキーボード対応</span></div>
+<div class="kbd-top"><span>C3 – B4 / 24 keys</span><span class="kbd-help">PC: A W S E D F T G Y H U J K …</span></div>
+<div class="keyboard-scroll"><div id="keyboard" class="keyboard" aria-label="演奏鍵盤"></div></div></section>
+<footer>RCMの原理を学ぶ独立実験作。SY77実機・プリセット音色の完全エミュレーションではありません。<a href="https://jp.yamaha.com/products/contents/music_production/synth_50th/history/chapter003.html" target="_blank" rel="noopener">ヤマハ公式のRCM解説 ↗</a></footer>
+</main><script type="module" src="./app.js"></script></body></html>
