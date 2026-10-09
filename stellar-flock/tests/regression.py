@@ -88,6 +88,35 @@ def assert_enemy_fire_dodgeable(page, label):
     print("PASS:",label,"enemy-shot reaction time / distance for",
           len(result["cases"]),"diving shots, low-altitude blocked",flush=True)
 
+def assert_reaction_dodge(page, label):
+    """Confirm actual hit/miss physics after a 350 ms human reaction delay."""
+    result=page.evaluate("""() => {
+      const g=window.flockGame, fields=['H','wave','mode','player','enemies','enemyShots',
+        'missiles','particles','rings','textPop','nextWaveTimer','fireTimer',
+        'diveTimer','lives','combo','comboTimer','time','hitFlash','jolt'];
+      const saved={};for(const k of fields)saved[k]=g[k];
+      function run(dodge){
+        g.H=880;g.wave=1;g.mode='playing';g.lives=3;
+        g.player={x:240,tx:240,y:775,invul:0};
+        g.enemies=[];g.enemyShots=[];g.missiles=[];g.particles=[];
+        g.rings=[];g.textPop=[];g.nextWaveTimer=100;
+        g.fireTimer=100;g.diveTimer=100;g.combo=0;g.comboTimer=0;
+        const fired=g.shootEnemy({x:240,y:475});
+        for(let i=0;i<105;i++){
+          if(dodge&&i===21)g.player.tx=380;
+          g.update(1/60);
+        }
+        return {fired,lives:g.lives,position:g.player.x};
+      }
+      try{return {stationary:run(false),dodged:run(true)}}
+      finally{for(const k of fields)g[k]=saved[k];g.syncHUD()}
+    }""")
+    assert result["stationary"]["fired"] and result["dodged"]["fired"],result
+    assert result["stationary"]["lives"]==2,("stationary must be hit",label,result)
+    assert result["dodged"]["lives"]==3,("350 ms reaction should be sufficient",label,result)
+    assert result["dodged"]["position"]>335,("player did not move",label,result)
+    print("PASS:",label,"actual projectile collision; still=hit, reaction350ms=dodged",flush=True)
+
 def play(url):
     from playwright.sync_api import sync_playwright
     OUT.mkdir(exist_ok=True)
@@ -126,6 +155,7 @@ def play(url):
                 for(const m of flockGame.missiles)m.target=null;flockGame.nextWaveTimer=.03}""")
             p.wait_for_function("() => flockGame.wave>=2",timeout=6000)
             assert_enemy_fire_dodgeable(p, 'mobile' if mobile else 'desktop')
+            assert_reaction_dodge(p, 'mobile' if mobile else 'desktop')
             assert not (errors or failed or http),("browser errors",errors,failed,http)
             p.screenshot(path=str(OUT/("mobile.png" if mobile else "desktop.png")))
             print("PASS",("mobile" if mobile else "desktop"),"loaded JS/canvas/start/autofire/touch/burst/pause/retarget/wave",flush=True)
