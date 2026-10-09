@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<meta name="theme-color" content="#080d17"/><title>METABALL / GLASS GLOBE</title>
+<style>
+:root{color-scheme:dark;--line:#ffffff23;--faded:#b2c2d9}*{box-sizing:border-box}
+html,body{height:100%;margin:0;overflow:hidden;background:#080d17;color:#f2f6ff;font-family:Inter,ui-sans-serif,system-ui,-apple-system,'Hiragino Kaku Gothic ProN',sans-serif}
+canvas{display:block;width:100vw;height:100dvh;touch-action:none;cursor:grab}canvas:active{cursor:grabbing}
+.shade{pointer-events:none;position:fixed;inset:0;background:linear-gradient(90deg,#08101ba6,transparent 38%),linear-gradient(0deg,#070b1478,transparent 35%)}
+.brand{position:fixed;left:clamp(17px,4vw,68px);top:clamp(22px,5vh,60px);pointer-events:none}
+.eyebrow{font-size:10px;letter-spacing:.36em;font-weight:700;color:#77c6cb}.brand h1{margin:12px 0 5px;font-size:clamp(27px,4vw,53px);line-height:1.02;letter-spacing:-.07em;font-weight:700}
+.brand h1 em{font-style:normal;color:#90dadd}.brand p{margin:13px 0;color:#c6d1e3ab;font-size:12px;line-height:1.8;max-width:280px}
+.panel{position:fixed;right:clamp(12px,3vw,42px);top:clamp(14px,4vh,42px);width:min(280px,calc(100vw - 24px));padding:20px 20px 17px;background:#0a1525ba;border:1px solid var(--line);border-radius:18px;box-shadow:0 18px 60px #0309158c;backdrop-filter:blur(22px)}
+.panelHead{display:flex;justify-content:space-between;align-items:center;gap:12px}.panelHead strong{font-size:10px;font-weight:700;letter-spacing:.26em;color:#a1bfd1}.little{font-size:10px;color:#5ed2b7}.ctrl{margin-top:22px}.ctrl label{display:flex;justify-content:space-between;margin-bottom:11px;color:#c3d1df;font-size:11px}.ctrl output{font-variant-numeric:tabular-nums;color:#80dce2}
+input[type=range]{width:100%;height:4px;margin:0;accent-color:#79d2d3;cursor:pointer}select{width:100%;padding:9px 11px;background:#101e30;border:1px solid var(--line);border-radius:8px;color:#e3f2fb;font-size:12px}
+.buttons{display:flex;gap:9px;margin-top:23px}.buttons button{flex:1;padding:11px 8px;border:1px solid #82d6d447;color:#ddfeff;background:#66cfc91a;letter-spacing:.06em;border-radius:10px;cursor:pointer;font-size:11px}.buttons button:hover{background:#66cfc940}
+.metrics{margin-top:17px;border-top:1px solid var(--line);padding-top:13px;display:flex;justify-content:space-between;font-size:10px;color:#95b1c2}.metrics span:last-child{color:#8de6d2}
+.footer{position:fixed;left:clamp(17px,4vw,68px);bottom:clamp(16px,4vh,38px);display:flex;gap:22px;color:#c4d7e08a;font-size:10px;pointer-events:none;letter-spacing:.05em}.footer b{color:#9ddce3}
+#status{position:fixed;left:50%;bottom:25px;transform:translateX(-50%);padding:9px 15px;border:1px solid #e8a5a56b;border-radius:8px;background:#401723d9;color:#fff;font-size:12px;display:none;max-width:80vw}
+@media(max-width:680px){.brand{top:20px;left:18px}.brand h1{font-size:27px}.brand p{display:none}.panel{top:auto;bottom:58px;right:12px;width:min(250px,calc(100vw - 24px));padding:12px 14px}.panel .ctrl{margin-top:12px}.panel .ctrl label{margin-bottom:7px}.panel .buttons{margin-top:13px}.panel .metrics{margin-top:10px;padding-top:8px}.footer{left:18px;bottom:18px;gap:14px}}
+@media(max-height:630px){.panel{max-height:calc(100dvh - 76px);overflow:auto}}
+</style></head><body>
+<canvas id="view" aria-label="ガラスの大球の中でメタボールが跳ねる3D描画"></canvas><div class="shade"></div>
+<header class="brand"><div class="eyebrow">REAL-TIME WEBGPU EXPERIMENT</div><h1>METABALL<br/><em>GLOBE.</em></h1><p>透明な球の内部で、色のあるメタボールと<br/>ガラス球がぶつかり、跳ね、流れる。</p></header>
+<aside class="panel"><div class="panelHead"><strong>SIMULATION CONTROL</strong><span class="little">● LIVE</span></div>
+<div class="ctrl"><label for="speed">運動速度 <output id="speedOut">1.0×</output></label><input id="speed" type="range" min="0" max="2.5" step="0.1" value="1"/></div>
+<div class="ctrl"><label for="blend">メタボールの融合度 <output id="blendOut">0.20</output></label><input id="blend" type="range" min="0.01" max="0.35" step="0.01" value="0.2"/></div>
+<div class="ctrl"><label for="glass">ガラス球の数 <output id="glassOut">3</output></label><input id="glass" type="range" min="0" max="5" step="1" value="3"/></div>
+<div class="ctrl"><label for="quality">内部解像度</label><select id="quality"><option value="0.5">低（軽量）</option><option value="0.7" selected>中（推奨）</option><option value="1">高</option></select></div>
+<div class="buttons"><button id="toggle">Ⅱ 一時停止</button><button id="reset">↺ 配置し直す</button></div>
+<div class="metrics"><span id="fps">GPU STARTING…</span><span id="collisions">SOLID COLLISION ON</span></div></aside>
+<div class="footer"><span><b>DRAG</b> 視点回転</span><span><b>SCROLL</b> 拡大縮小</span><span>WebGPU · WGSL · JavaScript</span></div>
+<div id="status" role="alert"></div><script type="module" src="./app.js"></script>
+</body></html>
