@@ -14,7 +14,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - uses: browser-actions/setup-chrome@v1
+      - id: chrome
+        uses: browser-actions/setup-chrome@v1
         with:
           chrome-version: stable
       - name: Install browser smoke dependency
@@ -28,7 +29,7 @@ jobs:
       - name: Test DSP PCM modulation and browser AudioWorklet
         env:
           RCM_BROWSER: '1'
-          CHROME_PATH: /opt/hostedtoolcache/setup-chrome/chromium/stable/x64/chrome
+          CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
         run: |
           CHROME_BIN="$(command -v chrome || command -v google-chrome || true)"
           if test -n "$CHROME_BIN"; then export CHROME_PATH="$CHROME_BIN"; fi
