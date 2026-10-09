@@ -1,0 +1,35 @@
+name: RCM Synth Lab Smoke Test
+on:
+  push:
+    paths:
+      - 'rcm-lab/**'
+      - '.github/workflows/rcm-lab-ci.yml'
+  workflow_dispatch:
+jobs:
+  rcm-browser-and-dsp:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: stable
+      - name: Install browser smoke dependency
+        run: npm install --no-save --no-package-lock puppeteer-core@24
+      - name: Start static site
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/rcm-http.log 2>&1 &
+          for i in {1..30}; do curl -fsS http://127.0.0.1:8765/rcm-lab/ -o /dev/null && exit 0; sleep 1; done
+          cat /tmp/rcm-http.log
+          exit 1
+      - name: Test DSP PCM modulation and browser AudioWorklet
+        env:
+          RCM_BROWSER: '1'
+          CHROME_PATH: /opt/hostedtoolcache/setup-chrome/chromium/stable/x64/chrome
+        run: |
+          CHROME_BIN="$(command -v chrome || command -v google-chrome || true)"
+          if test -n "$CHROME_BIN"; then export CHROME_PATH="$CHROME_BIN"; fi
+          node rcm-lab/tests/smoke.cjs
