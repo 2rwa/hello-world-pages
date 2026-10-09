@@ -25,9 +25,13 @@ class FlightGame{
  beginDive(e){e.state='dive';e.diveT=0;e.diveLen=rnd(2.9,3.7);e.diveX=e.x;e.diveY=e.y;e.side=e.x>240?-1:1;e.shot=false;}
  enemyPos(e,dt){if(e.state==='formation'){e.x=e.slotX+Math.sin(this.time*.78)*20+Math.sin(this.time*1.7+e.phase)*2.5;e.y=e.slotY+Math.sin(this.time*1.5+e.col*.6)*5;return;}e.diveT+=dt;const p=e.diveT/e.diveLen;if(p>=1){e.state='formation';return}
    if(p<.59){const q=p/.59;e.y=e.diveY+(this.H+85-e.diveY)*(q*q*(3-2*q));e.x=clamp(e.diveX+e.side*(Math.sin(q*Math.PI)*115+q*75),25,455)}else{const q=(p-.59)/.41;e.y=-55+(e.slotY+55)*(q*q*(3-2*q));e.x=clamp(e.slotX+Math.sin((1-q)*Math.PI*1.3)*145*e.side,25,455)}
-  if(!e.shot&&p>.34&&p<.59&&e.y<this.H-90){e.shot=true;this.shootEnemy(e)}
+  if(!e.shot&&p>.14&&p<.46&&this.shootEnemy(e)){e.shot=true}
  }
- shootEnemy(e){let dx=this.player.x-e.x,dy=this.player.y-e.y,l=Math.hypot(dx,dy)||1,v=200+this.wave*8;this.enemyShots.push({x:e.x,y:e.y,vx:dx/l*v,vy:dy/l*v,life:4,trail:[]})}
+ shootEnemy(e){const dx=this.player.x-e.x,dy=this.player.y-e.y,l=Math.hypot(dx,dy)||1;
+  // Never fire at point-blank range: reserve enough time for a human to react and move.
+  const v=Math.min(290,200+this.wave*8),secondsToHit=(l-23)/v;
+  if(dy<240||secondsToHit<1.05)return false;
+  this.enemyShots.push({x:e.x,y:e.y,vx:dx/l*v,vy:dy/l*v,life:4,trail:[]});return true}
  spawnMissile(target,index=0,total=1,isBurst=false){if(!target||!target.alive)return;const sx=this.player.x+(index%2?15:-15),sy=this.player.y-15;const sideways=(index-(total-1)/2)*(isBurst?100:320)+rnd(-38,38);this.missiles.push({x:sx,y:sy,vx:sideways,vy:-rnd(115,190),life:3.4,age:0,target,trail:[],hue:isBurst?rnd(285,333):rnd(169,207),burst:isBurst});if(this.missiles.length>125)this.missiles.shift()}
  targets(){return this.enemies.filter(e=>e.alive).sort((a,b)=>(a.state==='dive'?-270:0)+(Math.abs(a.x-this.player.x)*.35+a.y*.18) - ((b.state==='dive'?-270:0)+(Math.abs(b.x-this.player.x)*.35+b.y*.18)))}
  burst(){if(this.mode!=='playing'||this.burstCD>0)return;const a=this.targets();if(!a.length)return;for(let n=0;n<12;n++)this.spawnMissile(a[n%Math.min(a.length,7)],n,12,true);this.burstCD=9;this.beep(920,.24,.07);this.jolt=Math.max(this.jolt,5);this.waveFlash=Math.max(this.waveFlash,.22);this.syncHUD()}
