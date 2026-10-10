@@ -48,5 +48,14 @@ if(report.nativeScreenshot<2000) {
  console.error('FAIL: Native Safari desktop screenshot not available');
  process.exitCode=1;
 }else console.log('Native Safari screenshot captured',report.nativeScreenshot,'bytes');
-// This is only a GUI smoke test; native Safari WebGPU must be confirmed by
-// a SafariDriver session or manual real-device verification. WebKit is separate.
+if(report.webkit?.gpu && report.webkit?.status==='error'){
+ console.error('FAIL: Apple WebKit WebGPU compile/runtime error:',report.webkit.error);
+ process.exitCode=1;
+}else if(report.webkit?.gpu && report.webkit?.status==='ok' && report.webkit.frames>=2){
+ console.log('PASS: Apple Silicon WebKit WebGPU pipeline, GUI scene and animation');
+}else{
+ console.warn('Apple WebKit WebGPU not fully validated; state=',report.webkit?.status,
+  'GPU exposed=',report.webkit?.gpu,'error=',report.error);
+}
+// Native Safari.app and Playwright WebKit are separate: Native screenshots alone
+// cannot establish successful native Safari WebGPU rendering.
