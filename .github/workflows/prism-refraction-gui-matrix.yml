@@ -6,6 +6,7 @@ on:
       - '.github/workflows/prism-refraction-gui-matrix.yml'
       - '.github/scripts/prism-refraction-gui-chromium.mjs'
       - '.github/scripts/prism-refraction-safari-macos.mjs'
+      - 'prism-refraction-lab/index.html'
   workflow_dispatch:
 permissions:
   contents: read
@@ -35,20 +36,7 @@ jobs:
           for i in {1..20}; do xdpyinfo -display :99 >/dev/null 2>&1 && break || sleep 0.3; done
           xdpyinfo -display :99 | head -15
           openbox >artifacts/gui/window-manager.log 2>&1 &
-          google-chrome --no-sandbox --disable-dev-shm-usage \
-            --user-data-dir=/tmp/prism-gui-profile \
-            --remote-debugging-address=127.0.0.1 --remote-debugging-port=9222 \
-            --remote-allow-origins='*' --window-size=1280,800 \
-            --enable-unsafe-webgpu --enable-features=Vulkan \
-            --use-vulkan=swiftshader --disable-vulkan-fallback-to-gl-for-testing \
-            --use-webgpu-adapter=swiftshader --enable-webgpu-developer-features \
-            --enable-dawn-features=allow_unsafe_apis --disable-dawn-features=use_dxc \
-            --use-gpu-in-tests --enable-unsafe-swiftshader \
-            about:blank >artifacts/gui/chrome.log 2>&1 &
-          for i in {1..80}; do
-            if curl -fsS http://127.0.0.1:9222/json/version >/dev/null 2>&1; then break; fi
-            sleep 0.4
-          done
+          # Playwright starts a real non-headless Chrome process on DISPLAY=:99.
           node .github/scripts/prism-refraction-gui-chromium.mjs
       - name: Upload GUI screenshots and detailed errors
         if: always()
