@@ -68,6 +68,7 @@ const result=await evaluate(`(async () => {
  slider('dispersion',0.09);const dispersion=await test.capture();
  if(dispersion.checksum===ior.checksum)throw Error('Dispersion did not alter rendered pixels');
  choose('quality','low');
+ await test.capture();
  if(test.currentParams.quality!=='low')throw Error('Resolution selector ignored');
  document.getElementById('pause').click();
  if(document.getElementById('pause').getAttribute('aria-pressed')!=='true')throw Error('Pause not toggled');
