@@ -564,6 +564,40 @@ async function capture(){
  return results;
 }
 
+async function snapshotPng(source='composite'){
+ if(!isCI)throw Error('GPU snapshot is intended for offscreen CI only');
+ renderFrame();
+ await device.queue.onSubmittedWorkDone();
+ const sourceTexture=source==='background'?backgroundTexture:finalTexture;
+ const stride=Math.ceil(pixelWidth*4/256)*256;
+ const stage=device.createBuffer({
+  size:stride*pixelHeight,
+  usage:GPUBufferUsage.COPY_DST|GPUBufferUsage.MAP_READ
+ });
+ const commandEncoder=device.createCommandEncoder();
+ commandEncoder.copyTextureToBuffer(
+  {texture:sourceTexture},
+  {buffer:stage,bytesPerRow:stride,rowsPerImage:pixelHeight},
+  [pixelWidth,pixelHeight,1]
+ );
+ device.queue.submit([commandEncoder.finish()]);
+ await stage.mapAsync(GPUMapMode.READ);
+ const bytes=new Uint8Array(stage.getMappedRange());
+ const packed=new Uint8ClampedArray(pixelWidth*pixelHeight*4);
+ for(let y=0;y<pixelHeight;y++){
+  const input=bytes.subarray(y*stride,y*stride+pixelWidth*4);
+  packed.set(input,y*pixelWidth*4);
+ }
+ stage.unmap();stage.destroy();
+ const screenshotCanvas=document.createElement('canvas');
+ screenshotCanvas.width=pixelWidth;
+ screenshotCanvas.height=pixelHeight;
+ const context2D=screenshotCanvas.getContext('2d',{willReadFrequently:true});
+ context2D.putImageData(new ImageData(packed,pixelWidth,pixelHeight),0,0);
+ return screenshotCanvas.toDataURL('image/png');
+}
+diagnostics.snapshot=snapshotPng;
+
 function bindControls(){
  for(const id of ['morph','twist','ior','dispersion','absorption','caustics']){
   const input=document.getElementById(id);
