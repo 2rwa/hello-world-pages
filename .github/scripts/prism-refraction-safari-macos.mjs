@@ -13,8 +13,8 @@ try{
  const opened=shell('open',['-a','Safari',url]);
  report.steps.push({action:'open Safari',result:opened});
  await new Promise(r=>setTimeout(r,6500));
- report.nativeURL=shell('osascript',['-e','tell application "Safari" to get URL of front document'],12000);
- report.nativeVersion=shell('osascript',['-e','tell application "Safari" to get version'],12000);
+ // Do not call osascript: macOS TCC displays a modal "Allow automation" popup
+ // that occludes the live page and prevents an honest desktop screenshot.
  report.screenshotResult=shell('/usr/sbin/screencapture',['-x','artifacts/safari/native-safari-desktop.png'],15000);
  report.nativeScreenshot=existsSync('artifacts/safari/native-safari-desktop.png')?statSync('artifacts/safari/native-safari-desktop.png').size:0;
  const browser=await webkit.launch({headless:true,timeout:60000});
