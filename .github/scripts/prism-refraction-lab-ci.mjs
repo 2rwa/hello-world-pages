@@ -95,8 +95,8 @@ const tests=await evaluate(`(async()=>{
  assertDifferent(normals,thickness,'Normal versus thickness diagnostic');
  assertDifferent(thickness,reflectionDebug,'Thickness versus reflections diagnostic');
  change('debug',0,'change');
- change('quality',0.4,'change');const low=await d.capture();
- change('quality',0.85,'change');const high=await d.capture();
+ change('quality','.4','change');const low=await d.capture();
+ change('quality','.85','change');const high=await d.capture();
  if(high.color.width<=low.color.width)throw Error('Resolution selector did not resize GPU targets');
  document.getElementById('pause').click();
  if(!d.params.paused)throw Error('Pause button ignored');
