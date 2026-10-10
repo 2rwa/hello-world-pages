@@ -4,15 +4,34 @@ import {mkdirSync,writeFileSync} from 'node:fs';
 import assert from 'node:assert/strict';
 
 mkdirSync('artifacts/gui',{recursive:true});
-const browser=await chromium.connectOverCDP('http://127.0.0.1:9222',{timeout:30000});
-const context=browser.contexts()[0];
-const page=context.pages()[0]??await context.newPage();
+let browser;
+let launchMethod='graphical-swiftshader';
+const configurations=[
+ ['--enable-unsafe-webgpu','--enable-features=Vulkan',
+  '--use-vulkan=swiftshader','--disable-vulkan-fallback-to-gl-for-testing',
+  '--use-webgpu-adapter=swiftshader','--enable-webgpu-developer-features',
+  '--enable-dawn-features=allow_unsafe_apis','--disable-dawn-features=use_dxc',
+  '--use-gpu-in-tests','--enable-unsafe-swiftshader','--no-first-run'],
+ ['--enable-unsafe-webgpu','--use-webgpu-adapter=swiftshader',
+  '--enable-unsafe-swiftshader','--disable-gpu-sandbox','--no-first-run']
+];
+for(let i=0;i<configurations.length;i++){
+ try{
+  browser=await chromium.launch({channel:'chrome',headless:false,
+   args:configurations[i],timeout:35000});
+  launchMethod=i===0?'graphical-swiftshader-vulkan':'graphical-swiftshader-compat';
+  break;
+ }catch(e){console.warn('GUI Chrome launch attempt',i,'failed:',String(e).slice(0,1800))}
+}
+assert.ok(browser,'Graphical Chrome could not start on Xvfb');
+const context=await browser.newContext({viewport:{width:1280,height:800},deviceScaleFactor:1});
+const page=await context.newPage();
 const runtimeErrors=[];
 page.on('console',msg=>{if(msg.type()==='error')runtimeErrors.push(msg.text())});
 page.on('pageerror',e=>runtimeErrors.push('JS: '+e.message));
 const target=process.env.PRISM_TEST_URL||
  'https://2rwa.github.io/hello-world-pages/prism-refraction-lab/?ubuntu-gui=1';
-let report={target,engine:'graphical-chrome-under-xvfb'};
+let report={target,engine:'graphical-chrome-under-xvfb',launchMethod};
 try{
  const response=await page.goto(target,{waitUntil:'domcontentloaded',timeout:45000});
  report.httpStatus=response?.status()??null;
