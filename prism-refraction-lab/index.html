@@ -1,0 +1,718 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#060c18">
+<title>PRISM / REFRACTION LAB — WebGPU</title>
+<style>
+:root{color-scheme:dark;font-family:Inter,system-ui,-apple-system,"Hiragino Kaku Gothic ProN",sans-serif;background:#050915;color:#eaf6ff}
+*{box-sizing:border-box}html,body{margin:0;height:100%;overflow:hidden}
+canvas{width:100%;height:100%;display:block;touch-action:none;cursor:grab}canvas:active{cursor:grabbing}
+.bg{position:fixed;inset:0;background:radial-gradient(ellipse at 55% 42%,#12364b,#060916 62%,#03040a);z-index:-1}
+.top{position:fixed;top:25px;left:clamp(15px,4vw,58px);pointer-events:none;text-shadow:0 3px 30px #000a}
+.eyebrow{color:#8bdcdd;font-size:10px;letter-spacing:.3em;font-weight:700}
+h1{font-weight:250;font-size:clamp(29px,4.4vw,58px);letter-spacing:.11em;margin:10px 0 8px}
+.subtitle{font-size:12px;letter-spacing:.09em;line-height:1.8;color:#bad5e0;max-width:470px}
+.status{position:fixed;right:clamp(14px,3vw,37px);top:30px;font-size:11px;color:#a3dbd2;background:#05121ba9;padding:11px 15px;border-radius:30px;border:1px solid #83cad522;letter-spacing:.04em}
+.status::before{content:"";display:inline-block;width:6px;height:6px;background:#70f4cb;box-shadow:0 0 11px #6ef5cb;border-radius:50%;margin-right:9px}
+.status.error{color:#ff98a7}.status.error::before{background:#ff7284;box-shadow:none}
+.panel{position:fixed;bottom:clamp(13px,3vh,32px);left:clamp(13px,4vw,56px);width:min(355px,calc(100vw - 26px));max-height:min(72vh,680px);overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;padding:19px 20px 16px;border-radius:19px;background:linear-gradient(135deg,#0b1b2cef,#071020eb);backdrop-filter:blur(20px);border:1px solid #a7dff324;box-shadow:0 15px 75px #0008}
+.panelhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:11px}.paneltitle{font-size:12px;font-weight:750;letter-spacing:.14em}.chip{font-size:9px;color:#71e5cc;letter-spacing:.15em;border:1px solid #55beaf55;padding:5px 8px;border-radius:10px}
+.control{margin:14px 0}.controlhead{display:flex;justify-content:space-between;font-size:11px;letter-spacing:.03em;color:#b4c9d4;margin-bottom:8px}.value{font-variant-numeric:tabular-nums;color:#97e7df}
+input[type=range]{appearance:none;width:100%;height:4px;border-radius:9px;background:linear-gradient(90deg,#6cdecf var(--fill,50%),#254355 var(--fill,50%));cursor:pointer;margin:6px 0}
+input[type=range]::-webkit-slider-thumb{appearance:none;width:15px;height:15px;border-radius:50%;background:#ecffff;box-shadow:0 0 0 4px #77e9d32a}
+select,button{font-family:inherit;color:#e5f6ff;background:#112d3e;border:1px solid #70c4c43c;border-radius:9px;padding:9px 10px;cursor:pointer;font-size:11px}
+select{width:100%}button:hover{background:#1e4754}button[aria-pressed=true]{color:#05202a;background:#91e6d9;border-color:#91e6d9}
+.controls2{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:14px 0}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:15px}.actions button{flex:1}
+.rule{height:1px;background:#a0d0e51e;margin:15px 0}.help{font-size:10px;color:#829aa8;line-height:1.7}
+.bottomright{position:fixed;bottom:23px;right:30px;color:#96bdca;font-size:10px;letter-spacing:.07em;text-align:right;text-shadow:0 2px 9px #000}
+#error{position:fixed;bottom:15px;left:50%;transform:translateX(-50%);max-width:90vw;background:#361927;color:#ffe6ea;border:1px solid #fa8eae55;border-radius:10px;padding:12px 16px;font:12px/1.6 ui-monospace,monospace;white-space:pre-wrap;display:none}
+@media(max-width:700px){.panel{max-height:49vh;width:min(360px,calc(100vw - 26px));padding:13px 16px}.top{top:15px}.subtitle{font-size:10px}.status{top:108px;right:13px;font-size:9px;padding:8px}.bottomright{right:14px;bottom:8px;font-size:9px}.control{margin:10px 0}}
+</style></head><body>
+<div class="bg"></div><canvas id="screen" aria-label="WebGPU refractive prism"></canvas>
+<div class="top"><div class="eyebrow">WEBGPU / RAY MARCHING / TWO PASSES</div><h1>PRISM / REFRACTION</h1><div class="subtitle">三角柱から円柱へ変形する光学彫刻。<br>入射・出射・内部反射・色分散をレイで追跡。</div></div>
+<div class="status" id="status">INITIALIZING</div>
+<aside class="panel" id="panel">
+ <div class="panelhead"><span class="paneltitle">OPTICAL CONTROLS</span><span class="chip">EXPERIMENT 02</span></div>
+ <div class="control"><div class="controlhead"><label for="morph">断面変形 · TRIANGLE → HEXAGON → CIRCLE</label><output id="morphVal" class="value">0.00</output></div><input id="morph" type="range" min="0" max="1" step=".01" value=".16"></div>
+ <div class="control"><div class="controlhead"><label for="twist">TWIST · ねじれ</label><output id="twistVal" class="value">0.32</output></div><input id="twist" type="range" min="0" max="1.5" step=".01" value=".32"></div>
+ <div class="control"><div class="controlhead"><label for="ior">INDEX OF REFRACTION</label><output id="iorVal" class="value">1.52</output></div><input id="ior" type="range" min="1.02" max="2.1" step=".01" value="1.52"></div>
+ <div class="control"><div class="controlhead"><label for="dispersion">CHROMATIC DISPERSION</label><output id="dispersionVal" class="value">0.055</output></div><input id="dispersion" type="range" min="0" max=".14" step=".005" value=".055"></div>
+ <div class="control"><div class="controlhead"><label for="absorption">VOLUME ABSORPTION</label><output id="absorptionVal" class="value">0.34</output></div><input id="absorption" type="range" min="0" max="1.5" step=".01" value=".34"></div>
+ <div class="control"><div class="controlhead"><label for="caustics">FLOOR CAUSTICS · 疑似集光</label><output id="causticsVal" class="value">0.75</output></div><input id="caustics" type="range" min="0" max="2" step=".05" value=".75"></div>
+ <div class="controls2"><label class="controlhead" style="display:block">PALETTE<select id="palette"><option value="0">Arctic cyan / violet</option><option value="1">Warm amber / ruby</option><option value="2">Quartz / emerald</option></select></label><label class="controlhead" style="display:block">RENDER RESOLUTION<select id="quality"><option value=".6">60% · balanced</option><option value=".4">40% · mobile</option><option value=".85">85% · detailed</option><option value="1">100% · native</option></select></label></div>
+ <div class="controls2"><label class="controlhead" style="display:block">DIAGNOSTIC VIEW<select id="debug"><option value="0">Beauty / composite</option><option value="1">Entry normals</option><option value="2">Interior thickness</option><option value="3">Internal reflections</option></select></label><label class="controlhead" style="display:block">BOUNCE LIMIT<select id="bounces"><option value="0">0 · transmit only</option><option value="1" selected>1 · reflected path</option><option value="2">2 · reflected paths</option></select></label></div>
+ <div class="actions"><button id="auto" aria-pressed="true">AUTO MORPH</button><button id="pause" aria-pressed="false">PAUSE</button><button id="reset">RESET VIEW</button></div>
+ <div class="rule"></div><div class="help">ドラッグ / スワイプ：視点回転　·　ホイール：ズーム<br>2-pass: background texture → refractive glass composite.<br>内部 SDF を追跡し、出口で Snell の法則と Fresnel を評価。疑似コースティクスは床の演出です。</div>
+</aside>
+<div class="bottomright" id="metrics">RAY MARCHING · WAITING FOR GPU</div><div id="error"></div>
+<script id="shader" type="text/plain">
+struct Parameters {
+  frame: vec4<f32>,     // elapsed, width, height, morph
+  shape: vec4<f32>,     // twist, yaw, pitch, camera radius
+  optical: vec4<f32>,   // ior, dispersion, absorption, max internal bounces
+  style: vec4<f32>,     // palette, caustics, debug mode, reserved
+};
+@group(0) @binding(0) var<uniform> config: Parameters;
+const PI: f32 = 3.14159265359;
+const MAX_TRAVEL: f32 = 20.0;
+const TRACE_EPS: f32 = 0.0025;
+
+struct VsOut {
+  @builtin(position) position: vec4<f32>,
+};
+@vertex
+fn fullscreenVertex(@builtin(vertex_index) vertexIndex: u32) -> VsOut {
+  var outputValue: VsOut;
+  let px = f32((vertexIndex << 1u) & 2u);
+  let py = f32(vertexIndex & 2u);
+  outputValue.position = vec4<f32>(px * 2.0 - 1.0, 1.0 - py * 2.0, 0.0, 1.0);
+  return outputValue;
+}
+
+fn rotatePlane(p: vec2<f32>, angle: f32) -> vec2<f32> {
+  let cosine = cos(angle);
+  let sine = sin(angle);
+  return vec2<f32>(cosine * p.x - sine * p.y,
+                   sine * p.x + cosine * p.y);
+}
+
+fn polygonLowerDistance(p: vec2<f32>, radius: f32, sides: f32) -> f32 {
+  // Distance to the closest supporting edge plane.
+  // Conservatively underestimates outside corner distance.
+  let sector = 2.0 * PI / sides;
+  let polarAngle = atan2(p.y, p.x);
+  let folded = polarAngle - sector * floor(polarAngle / sector + 0.5);
+  return length(p) * cos(folded) - radius * cos(PI / sides);
+}
+
+fn extrude2D(sectionDistance: f32, height: f32, halfHeight: f32) -> f32 {
+  let separated = vec2<f32>(sectionDistance, abs(height) - halfHeight);
+  return length(max(separated, vec2<f32>(0.0)))
+       + min(max(separated.x, separated.y), 0.0);
+}
+
+fn mapGlass(point: vec3<f32>) -> f32 {
+  var shapePoint = point;
+  shapePoint.xz = rotatePlane(shapePoint.xz, 0.20 + config.frame.x * 0.23);
+  shapePoint.xz = rotatePlane(shapePoint.xz, shapePoint.y * config.shape.x);
+
+  let tri = polygonLowerDistance(shapePoint.xz, 0.97, 3.0);
+  let hex = polygonLowerDistance(shapePoint.xz, 0.93, 6.0);
+  let cyl = length(shapePoint.xz) - 0.89;
+  let phase = clamp(config.frame.w, 0.0, 1.0);
+  let shapeD = mix(tri, hex, smoothstep(0.0, 0.55, phase));
+  shapeD = mix(shapeD, cyl, smoothstep(0.48, 1.0, phase));
+  let lengthD = extrude2D(shapeD, shapePoint.y, 1.16);
+  return lengthD - 0.022;
+}
+
+fn glassNormal(point: vec3<f32>) -> vec3<f32> {
+  let e = 0.002;
+  let ex = vec3<f32>(e, 0.0, 0.0);
+  let ey = vec3<f32>(0.0, e, 0.0);
+  let ez = vec3<f32>(0.0, 0.0, e);
+  return normalize(vec3<f32>(
+    mapGlass(point + ex) - mapGlass(point - ex),
+    mapGlass(point + ey) - mapGlass(point - ey),
+    mapGlass(point + ez) - mapGlass(point - ez)
+  ));
+}
+
+struct HitResult {
+  distance: f32,
+  hit: f32,
+  iterations: f32,
+};
+fn traceOutside(origin: vec3<f32>, direction: vec3<f32>) -> HitResult {
+  var result: HitResult;
+  result.distance = 0.0;
+  result.hit = 0.0;
+  result.iterations = 0.0;
+
+  for (var iteration: i32 = 0; iteration < 92; iteration = iteration + 1) {
+    let testPoint = origin + direction * result.distance;
+    let distanceValue = mapGlass(testPoint);
+    result.iterations = f32(iteration + 1);
+    if (distanceValue <= TRACE_EPS) {
+      result.hit = 1.0;
+      return result;
+    }
+    // shape interpolation and twist are not exact SDFs: conservative steps.
+    let safeStep = max(distanceValue * 0.46, 0.0015);
+    result.distance += safeStep;
+    if (result.distance > MAX_TRAVEL) {
+      break;
+    }
+  }
+  return result;
+}
+
+fn traceInside(origin: vec3<f32>, direction: vec3<f32>) -> HitResult {
+  var result: HitResult;
+  result.distance = 0.0;
+  result.hit = 0.0;
+  result.iterations = 0.0;
+  // Starting slightly inside a boundary avoids immediate self-intersections.
+  for (var iteration: i32 = 0; iteration < 86; iteration = iteration + 1) {
+    let testPoint = origin + direction * result.distance;
+    let distanceValue = mapGlass(testPoint);
+    result.iterations = f32(iteration + 1);
+    if (result.distance > 0.008 && distanceValue >= -TRACE_EPS) {
+      result.hit = 1.0;
+      return result;
+    }
+    result.distance += max(-distanceValue * 0.42, 0.0025);
+    if (result.distance > 6.0) {
+      break;
+    }
+  }
+  return result;
+}
+
+struct CameraFrame {
+  origin: vec3<f32>,
+  forwardVec: vec3<f32>,
+  rightVec: vec3<f32>,
+  upVec: vec3<f32>,
+};
+fn viewFrame() -> CameraFrame {
+  var camera: CameraFrame;
+  let yaw = config.shape.y;
+  let pitch = config.shape.z;
+  let zoom = config.shape.w;
+  camera.origin = vec3<f32>(
+    sin(yaw) * cos(pitch), sin(pitch), cos(yaw) * cos(pitch)
+  ) * zoom;
+  camera.forwardVec = normalize(-camera.origin);
+  camera.rightVec = normalize(cross(camera.forwardVec, vec3<f32>(0.0,1.0,0.0)));
+  camera.upVec = normalize(cross(camera.rightVec,camera.forwardVec));
+  return camera;
+}
+
+fn viewRay(camera: CameraFrame, pixelXY: vec2<f32>) -> vec3<f32> {
+  let viewport = config.frame.yz;
+  let coord = (pixelXY / viewport) * 2.0 - vec2<f32>(1.0);
+  let screenPlane = vec2<f32>(coord.x * viewport.x / viewport.y, -coord.y);
+  return normalize(camera.forwardVec * 1.95
+                  + camera.rightVec * screenPlane.x
+                  + camera.upVec * screenPlane.y);
+}
+
+fn spectrumTint() -> vec3<f32> {
+  let palette = config.style.x;
+  if (palette > 1.5) {return vec3<f32>(0.63, 1.0, 0.81);}
+  if (palette > 0.5) {return vec3<f32>(1.0, 0.75, 0.58);}
+  return vec3<f32>(0.67, 0.90, 1.0);
+}
+@group(1) @binding(0) var sceneTexture: texture_2d<f32>;
+@group(1) @binding(1) var sceneSampler: sampler;
+
+fn environment(direction: vec3<f32>) -> vec3<f32> {
+  let horizon = smoothstep(-0.65, 0.9, direction.y);
+  var sky = mix(vec3<f32>(0.016,0.028,0.064), vec3<f32>(0.072,0.158,0.223), horizon);
+  let sunDirection = normalize(vec3<f32>(-0.39,0.64,-0.66));
+  let broadGlow = pow(max(dot(direction,sunDirection),0.0),10.0);
+  let fineGlow = pow(max(dot(direction,sunDirection),0.0),140.0);
+  sky += spectrumTint() * broadGlow * 0.24 + vec3<f32>(1.0,0.95,0.83) * fineGlow * 3.0;
+
+  // Studio light strips reflected across curved/faceted glass.
+  let beamA = exp(-170.0 * pow(direction.x + 0.42,2.0));
+  let beamB = exp(-390.0 * pow(direction.x - 0.55,2.0));
+  let ceilingMask = smoothstep(-0.35,0.3,direction.y);
+  sky += vec3<f32>(0.30,0.86,1.0) * beamA * ceilingMask * 0.44;
+  sky += vec3<f32>(0.88,0.34,0.94) * beamB * ceilingMask * 0.37;
+  return sky;
+}
+
+fn proceduralScene(origin: vec3<f32>, direction: vec3<f32>) -> vec3<f32> {
+  var worldColor = environment(direction);
+  if (direction.y < -0.003) {
+    let floorTime = (-1.43 - origin.y) / direction.y;
+    if (floorTime > 0.0 && floorTime < 90.0) {
+      let floorPos = origin + direction * floorTime;
+      let radialDistance = length(floorPos.xz);
+      let tileCoords = floorPos.xz * 1.55;
+      let lineU = abs(fract(tileCoords.x) - 0.5);
+      let lineV = abs(fract(tileCoords.y) - 0.5);
+      let lineMask = 1.0 - smoothstep(0.478,0.498,max(lineU,lineV));
+      let floorBase = mix(vec3<f32>(0.008,0.020,0.038),
+                          vec3<f32>(0.022,0.052,0.071),
+                          exp(-radialDistance * 0.16));
+      floorBase += spectrumTint() * lineMask * 0.08;
+      let projectionGlow = exp(-radialDistance * radialDistance * 0.36);
+      floorBase += spectrumTint() * projectionGlow * 0.085;
+      // Artistic approximation, not physical photon caustics.
+      let wave1 = sin(floorPos.x * 11.0 + config.frame.x * 0.8
+                      + sin(floorPos.z * 5.0));
+      let wave2 = sin(floorPos.z * 12.0 - config.frame.x * 0.57
+                      + sin(floorPos.x * 6.0));
+      let focuses = pow(max(0.0, wave1 * wave2), 8.0);
+      floorBase += spectrumTint() * focuses * projectionGlow * config.style.y * 0.95;
+      worldColor = mix(floorBase, worldColor, smoothstep(20.0,60.0,floorTime));
+    }
+  }
+  return worldColor;
+}
+
+fn filmic(colorValue: vec3<f32>) -> vec3<f32> {
+  let v = max(colorValue,vec3<f32>(0.0));
+  return pow(v / (vec3<f32>(1.0) + v),vec3<f32>(0.84));
+}
+
+@fragment
+fn backgroundFragment(@builtin(position) pos: vec4<f32>) -> @location(0) vec4<f32> {
+  let camera = viewFrame();
+  let viewDir = viewRay(camera,pos.xy);
+  let backgroundColor = proceduralScene(camera.origin,viewDir);
+  return vec4<f32>(filmic(backgroundColor),1.0);
+}
+
+fn projectRefractedUv(entryPixel: vec2<f32>,
+                      originalDirection: vec3<f32>,
+                      transmittedDirection: vec3<f32>,
+                      outgoingPosition: vec3<f32>,
+                      camera: CameraFrame) -> vec2<f32> {
+  let changed = transmittedDirection - originalDirection;
+  let projection = vec2<f32>(
+    dot(changed,camera.rightVec),
+    -dot(changed,camera.upVec)
+  );
+  // The exit point supplies a smaller lateral parallax contribution.
+  let side = outgoingPosition - camera.origin;
+  let parallax = vec2<f32>(
+    dot(side,camera.rightVec),
+    -dot(side,camera.upVec)
+  ) * 0.007;
+  return entryPixel / config.frame.yz + projection * 0.29 + parallax;
+}
+
+fn sceneChannel(sampleUv: vec2<f32>, channelIndex: u32,
+                externalDirection: vec3<f32>) -> f32 {
+  var colorSample: vec3<f32>;
+  if (all(sampleUv >= vec2<f32>(0.002)) &&
+      all(sampleUv <= vec2<f32>(0.998))) {
+    colorSample = textureSampleLevel(sceneTexture,sceneSampler,sampleUv,0.0).rgb;
+  } else {
+    colorSample = filmic(environment(externalDirection));
+  }
+  if (channelIndex == 0u) {return colorSample.r;}
+  if (channelIndex == 1u) {return colorSample.g;}
+  return colorSample.b;
+}
+
+struct SpectralTrace {
+  energy: f32,
+  thickness: f32,
+  reflections: f32,
+};
+
+fn traceSpectrum(entryPoint: vec3<f32>, entryNormal: vec3<f32>,
+                 viewDirection: vec3<f32>, entryPixel: vec2<f32>,
+                 camera: CameraFrame, wavelength: u32) -> SpectralTrace {
+  var outcome: SpectralTrace;
+  outcome.energy = 0.0;
+  outcome.thickness = 0.0;
+  outcome.reflections = 0.0;
+  var refractiveIndex = config.optical.x;
+  let dispersion = config.optical.y;
+  if (wavelength == 0u) {refractiveIndex -= dispersion;}
+  if (wavelength == 2u) {refractiveIndex += dispersion;}
+  refractiveIndex = max(refractiveIndex,1.001);
+
+  let enterDirection = refract(viewDirection,entryNormal,1.0/refractiveIndex);
+  if (dot(enterDirection,enterDirection) < 0.0001) {return outcome;}
+  var internalDirection = normalize(enterDirection);
+  var internalPosition = entryPoint + internalDirection * 0.016;
+  var energyWeight: f32 = 1.0;
+  let allowedBounces = i32(clamp(config.optical.w,0.0,2.0));
+
+  for (var bounceIndex: i32 = 0; bounceIndex < 3; bounceIndex = bounceIndex + 1) {
+    let interiorHit = traceInside(internalPosition,internalDirection);
+    if (interiorHit.hit < 0.5) {
+      // Fallback: prevent a black facet when a strongly warped SDF misses exit.
+      outcome.energy += energyWeight * sceneChannel(
+        entryPixel / config.frame.yz, wavelength,viewDirection);
+      break;
+    }
+    let exitPoint = internalPosition + internalDirection * interiorHit.distance;
+    let outerNormal = glassNormal(exitPoint);
+    let extinction = exp(-config.optical.z * (0.47 + f32(wavelength)*0.20)
+                            * interiorHit.distance);
+    outcome.thickness += interiorHit.distance * energyWeight;
+    let incidence = max(dot(internalDirection,outerNormal),0.0);
+    let r0 = pow((refractiveIndex-1.0)/(refractiveIndex+1.0),2.0);
+    let internalFresnel = r0 + (1.0-r0)*pow(1.0-incidence,5.0);
+    let exitDirection = refract(internalDirection,-outerNormal,refractiveIndex);
+    let totalInternalReflection = dot(exitDirection,exitDirection) < 0.000001;
+
+    if (!totalInternalReflection) {
+      let externalDirection = normalize(exitDirection);
+      let uv = projectRefractedUv(entryPixel,viewDirection,externalDirection,exitPoint,camera);
+      outcome.energy += energyWeight * extinction * (1.0-internalFresnel)
+                        * sceneChannel(uv,wavelength,externalDirection);
+    }
+    if (bounceIndex >= allowedBounces) {
+      if (totalInternalReflection) {
+        outcome.energy += energyWeight * extinction * 0.25
+                          * sceneChannel(entryPixel / config.frame.yz,
+                                         wavelength,internalDirection);
+      }
+      break;
+    }
+    // Explicitly follow the internally reflected branch to a later exit.
+    // Add a small stylized minimum reflection weight to expose the feature.
+    energyWeight *= extinction * min(0.89,internalFresnel+0.16);
+    internalDirection = normalize(reflect(internalDirection,outerNormal));
+    internalPosition = exitPoint + internalDirection * 0.016;
+    outcome.reflections += 1.0;
+    if (energyWeight < 0.008) {break;}
+  }
+  return outcome;
+}
+
+@fragment
+fn glassFragment(@builtin(position) position: vec4<f32>) -> @location(0) vec4<f32> {
+  let camera = viewFrame();
+  let incident = viewRay(camera,position.xy);
+  let uv = position.xy / config.frame.yz;
+  let bg = textureSampleLevel(sceneTexture,sceneSampler,uv,0.0).rgb;
+  let outsideHit = traceOutside(camera.origin,incident);
+  if (outsideHit.hit < 0.5) {
+    return vec4<f32>(bg,1.0);
+  }
+
+  let entryPosition = camera.origin + incident * outsideHit.distance;
+  let incomingNormal = glassNormal(entryPosition);
+  let dotIN = clamp(dot(-incident,incomingNormal),0.0,1.0);
+  let fresnelR0 = pow((config.optical.x - 1.0)/(config.optical.x + 1.0),2.0);
+  let surfaceReflection = fresnelR0+(1.0-fresnelR0)*pow(1.0-dotIN,5.0);
+  let reflected = filmic(environment(reflect(incident,incomingNormal)));
+
+  let tracedR = traceSpectrum(entryPosition,incomingNormal,incident,position.xy,camera,0u);
+  let tracedG = traceSpectrum(entryPosition,incomingNormal,incident,position.xy,camera,1u);
+  let tracedB = traceSpectrum(entryPosition,incomingNormal,incident,position.xy,camera,2u);
+
+  let glassTransmission = vec3<f32>(tracedR.energy,tracedG.energy,tracedB.energy);
+  var finalColor = mix(glassTransmission,reflected,surfaceReflection);
+  let facingHighlight = pow(1.0-dotIN,4.0);
+  finalColor += spectrumTint() * facingHighlight * 0.13;
+  let specular = pow(max(dot(reflect(incident,incomingNormal),
+      normalize(vec3<f32>(-0.3,0.65,-0.5))),0.0),36.0);
+  finalColor += vec3<f32>(1.0,0.92,0.83) * specular * 0.35;
+
+  let debugMode = config.style.z;
+  if (debugMode > 2.5) {
+    let count = (tracedR.reflections+tracedG.reflections+tracedB.reflections)/6.0;
+    finalColor = vec3<f32>(count, count*0.35,1.0-count);
+  } else if (debugMode > 1.5) {
+    let thickness = (tracedR.thickness+tracedG.thickness+tracedB.thickness)/3.0;
+    finalColor = vec3<f32>(thickness*0.24,thickness*0.10,thickness*0.36);
+  } else if (debugMode > 0.5) {
+    finalColor = incomingNormal * 0.5 + vec3<f32>(0.5);
+  }
+  return vec4<f32>(clamp(finalColor,vec3<f32>(0.0),vec3<f32>(1.0)),1.0);
+}
+</script>
+<script type="module">
+'use strict';
+const canvas = document.getElementById('screen');
+const statusNode = document.getElementById('status');
+const errorNode = document.getElementById('error');
+const metricsNode = document.getElementById('metrics');
+const isCI = new URLSearchParams(location.search).has('ci');
+const shaderCode = document.getElementById('shader').textContent;
+const diagnostics = {status:'pending',stage:'script-start',errors:[],frames:0,readbacks:0};
+window.__labTest = diagnostics;
+function phase(stageName){diagnostics.stage=stageName;document.documentElement.dataset.webgpuStage=stageName;}
+function fail(errorValue){
+ const message = errorValue?.stack || errorValue?.message || String(errorValue);
+ diagnostics.status='error';diagnostics.error=message;phase('error');
+ document.documentElement.dataset.webgpuStatus='error';
+ document.documentElement.dataset.webgpuError=message;
+ statusNode.classList.add('error');
+ statusNode.textContent='WEBGPU ERROR';
+ errorNode.textContent=message;errorNode.style.display='block';
+ console.error(errorValue);
+}
+const params = {
+ elapsed:1.3, morph:.16, twist:.32, ior:1.52, dispersion:.055,
+ absorption:.34, caustics:.75, yaw:.36, pitch:.23, zoom:4.55,
+ palette:0, debug:0, bounces:1, quality:.6, auto:true, paused:false
+};
+diagnostics.params=params;
+let device,context,backgroundPipeline,glassPipeline,backgroundBind,glassUniformBind,glassSceneBind;
+let uniforms,backgroundTexture,finalTexture,textureSampler;
+let pixelWidth=0,pixelHeight=0,canvasFormat;
+let lastTime=0,displayFrames=0,displayStart=0;
+function status(textValue){statusNode.textContent=textValue;}
+function makeTexture(width,height,usage){
+ return device.createTexture({size:[width,height],format:'rgba8unorm',usage});
+}
+function updateUI(id){
+ const val=Number(params[id]);
+ const output=document.getElementById(id+'Val');
+ if(output)output.textContent=id==='dispersion'?val.toFixed(3):val.toFixed(2);
+ const input=document.getElementById(id);
+ if(input&&input.type==='range'){
+  const min=Number(input.min),max=Number(input.max);
+  input.value=String(val);input.style.setProperty('--fill',((val-min)/(max-min)*100)+'%');
+ }
+}
+function resetTargets(){
+ const multiplier=Number(params.quality);
+ const logicalWidth=isCI?400:window.innerWidth;
+ const logicalHeight=isCI?250:window.innerHeight;
+ const density=isCI?1:Math.min(2,window.devicePixelRatio||1);
+ let proposedWidth=Math.max(64,Math.round(logicalWidth*density*multiplier));
+ let proposedHeight=Math.max(64,Math.round(logicalHeight*density*multiplier));
+ const pixels=proposedWidth*proposedHeight;
+ if(pixels>690000){
+  const ratio=Math.sqrt(690000/pixels);
+  proposedWidth=Math.max(64,Math.round(proposedWidth*ratio));
+  proposedHeight=Math.max(64,Math.round(proposedHeight*ratio));
+ }
+ proposedWidth=Math.min(device.limits.maxTextureDimension2D,proposedWidth);
+ proposedHeight=Math.min(device.limits.maxTextureDimension2D,proposedHeight);
+ if(proposedWidth===pixelWidth && proposedHeight===pixelHeight && backgroundTexture)return;
+ pixelWidth=proposedWidth;pixelHeight=proposedHeight;
+ canvas.width=pixelWidth;canvas.height=pixelHeight;
+ if(backgroundTexture)backgroundTexture.destroy();
+ if(finalTexture)finalTexture.destroy();
+ backgroundTexture=makeTexture(pixelWidth,pixelHeight,
+    GPUTextureUsage.RENDER_ATTACHMENT|GPUTextureUsage.TEXTURE_BINDING|GPUTextureUsage.COPY_SRC);
+ if(isCI)finalTexture=makeTexture(pixelWidth,pixelHeight,
+    GPUTextureUsage.RENDER_ATTACHMENT|GPUTextureUsage.COPY_SRC);
+ glassSceneBind=device.createBindGroup({
+    layout:glassPipeline.getBindGroupLayout(1),
+    entries:[
+      {binding:0,resource:backgroundTexture.createView()},
+      {binding:1,resource:textureSampler}
+    ]
+ });
+ diagnostics.dimensions=[pixelWidth,pixelHeight];
+}
+function writeUniforms(){
+ const data = new Float32Array([
+  params.elapsed,pixelWidth,pixelHeight,params.morph,
+  params.twist,params.yaw,params.pitch,params.zoom,
+  params.ior,params.dispersion,params.absorption,params.bounces,
+  params.palette,params.caustics,params.debug,0
+ ]);
+ device.queue.writeBuffer(uniforms,0,data);
+}
+function renderFrame(){
+ resetTargets();writeUniforms();
+ const encoder=device.createCommandEncoder();
+ const backgroundPass=encoder.beginRenderPass({colorAttachments:[{
+  view:backgroundTexture.createView(),
+  loadOp:'clear',clearValue:{r:0,g:0,b:0,a:1},storeOp:'store'
+ }]});
+ backgroundPass.setPipeline(backgroundPipeline);
+ backgroundPass.setBindGroup(0,backgroundBind);
+ backgroundPass.draw(3);backgroundPass.end();
+ const finalView = isCI?finalTexture.createView():context.getCurrentTexture().createView();
+ const glassPass=encoder.beginRenderPass({colorAttachments:[{
+  view:finalView,loadOp:'clear',clearValue:{r:0,g:0,b:0,a:1},storeOp:'store'
+ }]});
+ glassPass.setPipeline(glassPipeline);
+ glassPass.setBindGroup(0,glassUniformBind);
+ glassPass.setBindGroup(1,glassSceneBind);
+ glassPass.draw(3);glassPass.end();
+ device.queue.submit([encoder.finish()]);
+ diagnostics.frames++;
+}
+async function readPixels(texture){
+ const bytesPerRow=Math.ceil(pixelWidth*4/256)*256;
+ const buffer=device.createBuffer({
+  size:bytesPerRow*pixelHeight,
+  usage:GPUBufferUsage.COPY_DST|GPUBufferUsage.MAP_READ
+ });
+ const encoder=device.createCommandEncoder();
+ encoder.copyTextureToBuffer(
+  {texture},{buffer,bytesPerRow,rowsPerImage:pixelHeight},[pixelWidth,pixelHeight,1]
+ );
+ device.queue.submit([encoder.finish()]);
+ await buffer.mapAsync(GPUMapMode.READ);
+ const raw = new Uint8Array(buffer.getMappedRange());
+ let min=765,max=0,nonblack=0,checksum=2166136261;
+ for(let yy=0; yy<pixelHeight; yy+=Math.max(1,Math.floor(pixelHeight/64))){
+  for(let xx=0; xx<pixelWidth; xx+=Math.max(1,Math.floor(pixelWidth/90))){
+   const offset=yy*bytesPerRow+xx*4;
+   const v0=raw[offset],v1=raw[offset+1],v2=raw[offset+2];
+   const light=v0+v1+v2;
+   min=Math.min(min,light);max=Math.max(max,light);
+   if(light>10)nonblack++;
+   checksum=Math.imul(checksum^v0,16777619)>>>0;
+   checksum=Math.imul(checksum^v1,16777619)>>>0;
+   checksum=Math.imul(checksum^v2,16777619)>>>0;
+  }
+ }
+ buffer.unmap();buffer.destroy();
+ return {min,max,checksum,nonblack,width:pixelWidth,height:pixelHeight};
+}
+async function capture(){
+ renderFrame();
+ await device.queue.onSubmittedWorkDone();
+ const color=await readPixels(finalTexture);
+ const scene=await readPixels(backgroundTexture);
+ diagnostics.readbacks++;
+ const results={color,scene,frames:diagnostics.frames,params:{...params}};
+ diagnostics.lastCapture=results;
+ return results;
+}
+
+function bindControls(){
+ for(const id of ['morph','twist','ior','dispersion','absorption','caustics']){
+  const input=document.getElementById(id);
+  input.addEventListener('input',()=>{
+   params[id]=Number(input.value);
+   if(id==='morph'){params.auto=false;document.getElementById('auto').setAttribute('aria-pressed','false');}
+   updateUI(id);
+  });
+  updateUI(id);
+ }
+ for(const id of ['palette','debug','bounces']){
+  const element=document.getElementById(id);
+  element.addEventListener('change',()=>{params[id]=Number(element.value);});
+ }
+ document.getElementById('quality').addEventListener('change',event=>{
+  params.quality=Number(event.target.value);
+ });
+ document.getElementById('auto').addEventListener('click',event=>{
+  params.auto=!params.auto;event.currentTarget.setAttribute('aria-pressed',String(params.auto));
+ });
+ document.getElementById('pause').addEventListener('click',event=>{
+  params.paused=!params.paused;event.currentTarget.setAttribute('aria-pressed',String(params.paused));
+ });
+ document.getElementById('reset').addEventListener('click',()=>{
+  params.yaw=.36;params.pitch=.23;params.zoom=4.55;
+ });
+ let moving=false,lastX=0,lastY=0;
+ canvas.addEventListener('pointerdown',event=>{
+  moving=true;lastX=event.clientX;lastY=event.clientY;
+  canvas.setPointerCapture(event.pointerId);
+ });
+ canvas.addEventListener('pointermove',event=>{
+  if(!moving)return;
+  params.yaw-=(event.clientX-lastX)*.007;
+  params.pitch=Math.max(-1.2,Math.min(1.2,params.pitch+(event.clientY-lastY)*.006));
+  lastX=event.clientX;lastY=event.clientY;
+ });
+ canvas.addEventListener('pointerup',()=>{moving=false;});
+ canvas.addEventListener('pointercancel',()=>{moving=false;});
+ canvas.addEventListener('wheel',event=>{
+  event.preventDefault();
+  params.zoom=Math.max(2.8,Math.min(7.5,params.zoom+event.deltaY*.004));
+ },{passive:false});
+ window.addEventListener('resize',()=>{if(device)resetTargets();});
+}
+function animationFrame(now){
+ requestAnimationFrame(animationFrame);
+ if(!device || isCI || diagnostics.status!=='ok')return;
+ if(now-lastTime<30)return;
+ const delta=Math.min(.085,Math.max(0,(now-lastTime)/1000));
+ lastTime=now;
+ if(!params.paused){
+  params.elapsed+=delta;
+  if(params.auto){
+   params.morph=.5+.5*Math.sin(params.elapsed*.58-.3);
+   updateUI('morph');
+  }
+ }
+ try{renderFrame();}catch(errorValue){fail(errorValue);return;}
+ displayFrames++;
+ if(now-displayStart>1600){
+  const fps=displayFrames*1000/(now-displayStart);
+  metricsNode.textContent=`TWO-PASS · ${fps.toFixed(0)} FPS · ${pixelWidth}×${pixelHeight}`;
+  displayFrames=0;displayStart=now;
+ }
+}
+async function initialize(){
+ bindControls();
+ phase('request-adapter');
+ if(!navigator.gpu)throw new Error('WebGPUが使用できません。HTTPSのChrome/Safariで開いてください。');
+ const adapter=await navigator.gpu.requestAdapter({powerPreference:'high-performance'});
+ if(!adapter)throw new Error('GPU adapterが利用できません');
+ phase('request-device');
+ device=await adapter.requestDevice();
+ device.lost.then(info=>{
+  if(info.reason!=='destroyed'){
+   diagnostics.lost=`${info.reason}: ${info.message}`;
+   document.documentElement.dataset.webgpuLost=diagnostics.lost;
+   fail(Error('GPU device lost: '+diagnostics.lost));
+  }
+ });
+ const shaderModule=device.createShaderModule({code:shaderCode,label:'Prism Refraction WGSL'});
+ phase('shader-compilation-info');
+ const info=await shaderModule.getCompilationInfo();
+ diagnostics.errors=info.messages.map(message=>({
+  type:message.type,line:message.lineNum,column:message.linePos,
+  message:message.message
+ }));
+ const shaderErrors=diagnostics.errors.filter(message=>message.type==='error');
+ if(shaderErrors.length)throw Error('WGSL compilation: '+JSON.stringify(shaderErrors));
+ if(!isCI){
+  context=canvas.getContext('webgpu');
+  if(!context)throw Error('WebGPU canvas context unavailable');
+  canvasFormat=navigator.gpu.getPreferredCanvasFormat();
+  context.configure({device,format:canvasFormat,alphaMode:'opaque'});
+ }else{
+  canvasFormat='rgba8unorm';
+ }
+ uniforms=device.createBuffer({
+  size:64,usage:GPUBufferUsage.UNIFORM|GPUBufferUsage.COPY_DST
+ });
+ textureSampler=device.createSampler({
+  magFilter:'linear',minFilter:'linear',addressModeU:'clamp-to-edge',addressModeV:'clamp-to-edge'
+ });
+ phase('create-pipeline');
+ device.pushErrorScope('validation');
+ backgroundPipeline=await device.createRenderPipelineAsync({
+  label:'Pass A studio background',
+  layout:'auto',
+  vertex:{module:shaderModule,entryPoint:'fullscreenVertex'},
+  fragment:{module:shaderModule,entryPoint:'backgroundFragment',
+            targets:[{format:'rgba8unorm'}]},
+  primitive:{topology:'triangle-list'}
+ });
+ glassPipeline=await device.createRenderPipelineAsync({
+  label:'Pass B multi-bounce prism refraction',
+  layout:'auto',
+  vertex:{module:shaderModule,entryPoint:'fullscreenVertex'},
+  fragment:{module:shaderModule,entryPoint:'glassFragment',
+            targets:[{format:canvasFormat}]},
+  primitive:{topology:'triangle-list'}
+ });
+ backgroundBind=device.createBindGroup({
+  layout:backgroundPipeline.getBindGroupLayout(0),
+  entries:[{binding:0,resource:{buffer:uniforms}}]
+ });
+ glassUniformBind=device.createBindGroup({
+  layout:glassPipeline.getBindGroupLayout(0),
+  entries:[{binding:0,resource:{buffer:uniforms}}]
+ });
+ resetTargets();
+ diagnostics.capture=isCI?capture:null;
+ phase('submitted-work-wait');
+ if(isCI){
+  const sample=await capture();
+  if(sample.color.max-sample.color.min<20 ||sample.scene.max-sample.scene.min<20){
+   throw Error('Flat/blank render, two-pass scene contrast missing: '+JSON.stringify(sample));
+  }
+ }else{
+  renderFrame();
+  await device.queue.onSubmittedWorkDone();
+ }
+ const validation=await device.popErrorScope();
+ if(validation)throw Error('WebGPU validation: '+validation.message);
+ diagnostics.status='ok';
+ document.documentElement.dataset.webgpuStatus='ok';
+ phase('ok');status('WEBGPU · REFRACTION LIVE');
+ displayStart=performance.now();lastTime=displayStart;
+ if(!isCI)requestAnimationFrame(animationFrame);
+}
+initialize().catch(fail);
+</script></body></html>
