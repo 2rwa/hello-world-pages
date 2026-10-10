@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#070b19">
+<title>PRISM / MORPH — WebGPU glass sculpture</title>
+<style>
+  :root{color-scheme:dark;font-family:Inter,-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN",sans-serif;color:#e9f5ff;background:#060914}
+  *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden}
+  body{background:radial-gradient(ellipse at 50% 43%,#152b46 0,#080b1a 58%,#05070f 100%)}
+  canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+  canvas:active{cursor:grabbing}
+  .hud{position:fixed;inset:0;pointer-events:none}
+  .top{position:absolute;left:clamp(18px,4vw,56px);top:clamp(24px,5vh,50px)}
+  .eyebrow{font-size:10px;letter-spacing:.33em;color:#8dbacb;font-weight:700}
+  h1{margin:11px 0 8px;font-size:clamp(28px,4.6vw,58px);line-height:1;font-weight:250;letter-spacing:.13em;text-shadow:0 3px 30px #0008}
+  .sub{color:#9db8c8;font-size:12px;letter-spacing:.08em;max-width:370px;line-height:1.7}
+  .status{position:absolute;right:clamp(16px,3vw,36px);top:clamp(25px,5vh,50px);display:flex;align-items:center;gap:9px;font-size:11px;color:#aed1dc;letter-spacing:.09em}
+  .dot{width:7px;height:7px;border-radius:50%;background:#8ce5c9;box-shadow:0 0 12px #65dabb}
+  .status[data-state="error"] .dot{background:#f38c9d;box-shadow:0 0 12px #f38c9d}
+  .panel{position:absolute;left:clamp(14px,4vw,55px);bottom:clamp(15px,3vh,40px);width:min(340px,calc(100vw - 28px));max-height:min(70vh,620px);overflow-y:auto;pointer-events:auto;background:linear-gradient(145deg,#111b2cbf,#0b1222d9);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid #8dcff52d;border-radius:18px;box-shadow:0 20px 80px #0005}
+  .panel summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;padding:16px 18px;letter-spacing:.19em;font-size:10px;font-weight:700;color:#d5ebf6;user-select:none}
+  .panel summary::-webkit-details-marker{display:none}.panel summary::after{content:'−';font-size:18px;line-height:10px;color:#91bdd1}.panel:not([open]) summary::after{content:'+'}
+  .inside{border-top:1px solid #c5e5fa1c;padding:15px 18px 18px}
+  .control{margin-bottom:15px}.control-head{display:flex;justify-content:space-between;margin-bottom:9px;font-size:12px;color:#c2d4e1}.control output{font:11px ui-monospace,SFMono-Regular,Menlo,monospace;color:#83cdec}
+  input[type=range]{appearance:none;-webkit-appearance:none;width:100%;height:3px;border-radius:5px;background:linear-gradient(to right,#61c1df var(--fill,50%),#66849b51 var(--fill,50%));outline:0;cursor:pointer;display:block;margin:8px 0 1px}
+  input[type=range]::-webkit-slider-thumb{appearance:none;width:13px;height:13px;border-radius:50%;background:#d8f6ff;border:2px solid #80d8ef;box-shadow:0 0 14px #5cc6ea80}
+  input[type=range]::-moz-range-thumb{width:11px;height:11px;border-radius:50%;background:#d8f6ff;border:2px solid #80d8ef}
+  .line{border-top:1px solid #a4daf122;margin:16px 0}
+  .toggles{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:16px}
+  button,select{border:1px solid #8ac8e653;background:#18283bd9;color:#cee9f7;border-radius:9px;padding:10px 11px;min-height:36px;cursor:pointer;font:11px inherit;letter-spacing:.03em}
+  button:hover,select:hover{border-color:#91dcf4;background:#21394d}button[aria-pressed="true"]{background:#347b94a8;border-color:#82dff5;color:white}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:9px}.field small{display:block;color:#90a8b8;font-size:10px;margin:0 0 6px}.field select{width:100%;font-size:12px}
+  .foot{position:absolute;right:clamp(15px,3vw,37px);bottom:clamp(20px,4vh,40px);font-size:11px;color:#90adbb;text-align:right;line-height:1.8;letter-spacing:.05em}
+  .foot b{color:#d1e9ee;font-weight:500}.errorbox{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);padding:20px 25px;max-width:550px;width:calc(100vw - 30px);border:1px solid #f19eaa66;background:#1b1625ec;border-radius:15px;color:#ffced4;line-height:1.7;font-size:13px;pointer-events:auto;white-space:pre-wrap;display:none}
+  @media(max-width:650px){.top{top:22px;left:20px}.eyebrow{font-size:8px}.sub{font-size:10px;max-width:220px}.status{right:16px;top:28px;font-size:9px}.panel{bottom:12px;max-height:55vh}.foot{right:15px;bottom:auto;top:106px;font-size:9px}.panel .inside{padding-top:12px}}
+  @media(max-height:600px){.panel{max-height:70vh}.top{top:12px}.sub{display:none}}
+</style>
+</head>
+<body>
+<canvas id="scene" aria-label="変形するガラスプリズム。ドラッグで視点変更、ホイールで拡大縮小"></canvas>
+<div class="hud">
+  <header class="top"><div class="eyebrow">PROCEDURAL GLASS STUDY · WEBGPU</div><h1>PRISM<span style="color:#81ddec">/</span>MORPH</h1><div class="sub">Triangle → Hexagon → Circle<br>光と形が、連続的に変わる。</div></header>
+  <div class="status" id="status" data-state="pending"><span class="dot"></span><span id="statusText">GPU INITIALIZING</span></div>
+  <details class="panel" open>
+    <summary>SHAPE &amp; LIGHT CONTROLS</summary>
+    <div class="inside">
+      <div class="control"><div class="control-head"><label for="morph">断面の変形</label><output id="morphOut">0.35</output></div><input id="morph" type="range" min="0" max="1" step="0.005" value="0.35"></div>
+      <div class="control"><div class="control-head"><label for="twist">ねじれ Twist</label><output id="twistOut">0.42</output></div><input id="twist" type="range" min="0" max="1.4" step="0.01" value="0.42"></div>
+      <div class="control"><div class="control-head"><label for="ior">屈折率 IOR</label><output id="iorOut">1.46</output></div><input id="ior" type="range" min="1.05" max="1.8" step="0.01" value="1.46"></div>
+      <div class="control"><div class="control-head"><label for="dispersion">色分散 Dispersion</label><output id="dispersionOut">0.035</output></div><input id="dispersion" type="range" min="0" max="0.1" step="0.001" value="0.035"></div>
+      <div class="toggles"><button id="auto" aria-pressed="true">↻ 自動変形 ON</button><button id="pause" aria-pressed="false">Ⅱ 一時停止</button><button id="reset">↺ 視点を戻す</button></div>
+      <div class="two">
+        <div class="field"><small>カラー</small><select id="palette"><option value="0">Aurora / 青緑</option><option value="1">Amethyst / 紫</option><option value="2">Sunset / 琥珀</option></select></div>
+        <div class="field"><small>内部解像度</small><select id="quality"><option value="auto">自動</option><option value="low">320 × 180 相当</option><option value="mid">480 × 270 相当</option><option value="high">960 × 540 相当</option></select></div>
+      </div>
+    </div>
+  </details>
+  <div class="foot"><b>DRAG</b> 回転 · <b>SCROLL</b> 拡大縮小<br><span id="metrics">WebGPU Ray Marching · — fps</span></div>
+  <div class="errorbox" id="errorbox"></div>
+</div>
+<script type="module">
+'use strict';
+const canvasEl = document.getElementById('scene');
+const statusEl = document.getElementById('status');
+const statusTextEl = document.getElementById('statusText');
+const errorBoxEl = document.getElementById('errorbox');
+const metricsEl = document.getElementById('metrics');
+const params = { morph:0.35, twist:0.42, ior:1.46, dispersion:0.035, palette:0, quality:'auto', auto:true, paused:false, azimuth:0.38, elevation:0.19, distance:4.65, elapsed:0 };
+window.__prismTest = {phase:'script-start', frames:0, shaderErrors:[], error:null};
+function setPhase(message){window.__prismTest.phase=message;}
+function setStatus(message, failed=false){statusTextEl.textContent=message;statusEl.dataset.state=failed?'error':'ok';}
+function fail(err){console.error(err);window.__prismTest.error=String(err?.stack||err);setPhase('error');setStatus('GPU ERROR',true);errorBoxEl.style.display='block';errorBoxEl.textContent='WebGPUを開始できませんでした。\n\n'+String(err?.message||err)+'\n\nHTTPS / localhost と、WebGPU対応ブラウザをご確認ください。';}
+for(const id of ['morph','twist','ior','dispersion']){
+  const el=document.getElementById(id),out=document.getElementById(id+'Out');
+  function update(){const val=Number(el.value);params[id]=val;out.textContent=id==='dispersion'?val.toFixed(3):val.toFixed(2);el.style.setProperty('--fill',((val-Number(el.min))/(Number(el.max)-Number(el.min))*100)+'%');}
+  el.addEventListener('input',()=>{update();if(id==='morph'&&params.auto){params.auto=false;updateAutoButton();}});update();
+}
+function updateAutoButton(){const el=document.getElementById('auto');el.setAttribute('aria-pressed',String(params.auto));el.textContent=params.auto?'↻ 自動変形 ON':'↻ 自動変形 OFF';}
+document.getElementById('auto').onclick=()=>{params.auto=!params.auto;updateAutoButton();};
+document.getElementById('pause').onclick=()=>{params.paused=!params.paused;const el=document.getElementById('pause');el.setAttribute('aria-pressed',String(params.paused));el.textContent=params.paused?'▶ 再開':'Ⅱ 一時停止';};
+document.getElementById('reset').onclick=()=>{params.azimuth=0.38;params.elevation=0.19;params.distance=4.65;};
+document.getElementById('palette').onchange=e=>{params.palette=Number(e.target.value);};
+document.getElementById('quality').onchange=e=>{params.quality=e.target.value;resizeRenderTarget(true);};
+let dragState=null;
+canvasEl.addEventListener('pointerdown',e=>{dragState={id:e.pointerId,x:e.clientX,y:e.clientY};canvasEl.setPointerCapture(e.pointerId);});
+canvasEl.addEventListener('pointermove',e=>{if(!dragState||e.pointerId!==dragState.id)return;params.azimuth+=(e.clientX-dragState.x)*0.008;params.elevation=Math.max(-1.25,Math.min(1.25,params.elevation+(e.clientY-dragState.y)*0.007));dragState.x=e.clientX;dragState.y=e.clientY;});
+for(const type of ['pointerup','pointercancel','lostpointercapture'])canvasEl.addEventListener(type,()=>{dragState=null;});
+canvasEl.addEventListener('wheel',e=>{e.preventDefault();params.distance=Math.max(2.9,Math.min(8.0,params.distance+e.deltaY*0.005));},{passive:false});
+
+// Every shader, pipeline, and bind group is shared by the normal canvas render and ?test=1 offscreen validation.
+const shaderSource = /* wgsl */ `
+struct UniformData {
+  resolution: vec2<f32>,
+  timeSeconds: f32,
+  morphFactor: f32,
+  twistAmount: f32,
+  glassIor: f32,
+  dispersionAmount: f32,
+  cameraAzimuth: f32,
+  cameraElevation: f32,
+  cameraDistance: f32,
+  paletteIndex: f32,
+  paddingA: f32,
+  paddingB: f32,
+  paddingC: f32,
+  paddingD: f32,
+  paddingE: f32,
+};
+@group(0) @binding(0) var<uniform> uniforms: UniformData;
+const PI: f32 = 3.141592653589793;
+const TAU: f32 = 6.283185307179586;
+
+@vertex fn vertexMain(@builtin(vertex_index) vertexIndex: u32) -> @builtin(position) vec4<f32> {
+  var vertexCoords = array<vec2<f32>,3>(vec2<f32>(-1.0,-1.0),vec2<f32>(3.0,-1.0),vec2<f32>(-1.0,3.0));
+  return vec4<f32>(vertexCoords[vertexIndex],0.0,1.0);
+}
+
+fn polygonBound(pos2: vec2<f32>, sides: f32, circumRadius: f32) -> f32 {
+  // Exact inside distance; outside a conservative distance bound near vertices.
+  let sectorAngle = TAU / sides;
+  let polarAngle = atan2(pos2.y, pos2.x);
+  let foldedAngle = polarAngle - sectorAngle * floor(polarAngle / sectorAngle + 0.5);
+  let apothem = circumRadius * cos(PI / sides);
+  return length(pos2) * cos(foldedAngle) - apothem;
+}
+fn sectionDistance(pos2: vec2<f32>) -> f32 {
+  let triDistance = polygonBound(pos2, 3.0, 0.87);
+  let hexDistance = polygonBound(pos2, 6.0, 0.87);
+  let cirDistance = length(pos2) - 0.87;
+  let interpFactor = clamp(uniforms.morphFactor,0.0,1.0);
+  if(interpFactor < 0.5){
+    return mix(triDistance,hexDistance,smoothstep(0.0,0.5,interpFactor));
+  }
+  return mix(hexDistance,cirDistance,smoothstep(0.5,1.0,interpFactor));
+}
+fn extrudedDistance(pos2Dist: f32, verticalPos: f32, halfHeight: f32) -> f32 {
+  let extrudePair = vec2<f32>(pos2Dist,abs(verticalPos)-halfHeight);
+  return min(max(extrudePair.x,extrudePair.y),0.0)+length(max(extrudePair,vec2<f32>(0.0)));
+}
+fn mapSculpture(worldPos: vec3<f32>) -> f32 {
+  let timePhase = uniforms.timeSeconds;
+  let twistPhase = worldPos.y * uniforms.twistAmount;
+  let cosTwist = cos(twistPhase);
+  let sinTwist = sin(twistPhase);
+  let localCross = vec2<f32>(worldPos.x*cosTwist-worldPos.z*sinTwist,worldPos.x*sinTwist+worldPos.z*cosTwist);
+  let sectionDist = sectionDistance(localCross);
+  let halfHeight = 1.14 + 0.055*sin(timePhase*0.67);
+  return extrudedDistance(sectionDist,worldPos.y,halfHeight)-0.027;
+}
+fn sceneNormal(worldPos:vec3<f32>)->vec3<f32>{
+  let eps=0.002;
+  let offsetX=vec3<f32>(eps,0.0,0.0);
+  let offsetY=vec3<f32>(0.0,eps,0.0);
+  let offsetZ=vec3<f32>(0.0,0.0,eps);
+  return normalize(vec3<f32>(mapSculpture(worldPos+offsetX)-mapSculpture(worldPos-offsetX),mapSculpture(worldPos+offsetY)-mapSculpture(worldPos-offsetY),mapSculpture(worldPos+offsetZ)-mapSculpture(worldPos-offsetZ)));
+}
+fn paletteA()->vec3<f32>{
+  if(uniforms.paletteIndex<0.5){return vec3<f32>(0.20,0.92,0.95);}
+  if(uniforms.paletteIndex<1.5){return vec3<f32>(0.79,0.45,1.00);}
+  return vec3<f32>(1.0,0.63,0.30);
+}
+fn paletteB()->vec3<f32>{
+  if(uniforms.paletteIndex<0.5){return vec3<f32>(0.80,0.35,1.00);}
+  if(uniforms.paletteIndex<1.5){return vec3<f32>(0.35,0.76,1.00);}
+  return vec3<f32>(1.00,0.28,0.54);
+}
+fn studioEnvironment(originPos:vec3<f32>,rayDir:vec3<f32>)->vec3<f32>{
+  let vividA=paletteA();
+  let vividB=paletteB();
+  let horizon=clamp(0.48+0.5*rayDir.y,0.0,1.0);
+  var envColor=mix(vec3<f32>(0.010,0.015,0.037),vec3<f32>(0.052,0.075,0.12),horizon);
+  let softBoxA=pow(max(dot(rayDir,normalize(vec3<f32>(-0.78,0.56,0.38))),0.0),17.0);
+  let softBoxB=pow(max(dot(rayDir,normalize(vec3<f32>(0.88,0.29,0.37))),0.0),30.0);
+  let overhead=pow(max(dot(rayDir,vec3<f32>(0.0,1.0,0.0)),0.0),5.0);
+  envColor+=softBoxA*vec3<f32>(0.63,0.87,1.0)*1.4+softBoxB*vividB*1.05+overhead*vividA*0.10;
+  if(rayDir.z< -0.012){
+    let wallDistance=(-3.6-originPos.z)/rayDir.z;
+    if(wallDistance>0.0 && wallDistance<100.0){
+      let wallPt=originPos+rayDir*wallDistance;
+      let wallPos=wallPt.xy;
+      let ambientHalo=exp(-dot(wallPos*vec2<f32>(0.53,0.64),wallPos*vec2<f32>(0.53,0.64)))*0.095;
+      envColor+=ambientHalo*(vividA*0.21+vividB*0.22);
+      let stripA=exp(-pow((wallPos.x+1.48-0.11*sin(wallPos.y*1.7))*6.0,2.0));
+      let stripB=exp(-pow((wallPos.x-1.52+0.16*sin(wallPos.y))*5.0,2.0));
+      envColor+=stripA*vividA*0.61+stripB*vividB*0.62;
+      let ringRadius=length((wallPos-vec2<f32>(0.10,0.02))*vec2<f32>(1.0,1.15));
+      let luminousRing=exp(-pow((ringRadius-1.75)*9.0,2.0));
+      envColor+=luminousRing*(vividA*0.19+vividB*0.19);
+      let horizonStripe=exp(-pow((wallPos.y+1.19+0.055*sin(wallPos.x*3.4))*10.0,2.0));
+      envColor+=horizonStripe*vividA*0.18;
+    }
+  }
+  return envColor;
+}
+fn marchOuter(originPos:vec3<f32>,rayDir:vec3<f32>)->vec2<f32>{
+  var rayLength=0.0;
+  for(var stepIndex=0;stepIndex<112;stepIndex++){
+    let signedDist=mapSculpture(originPos+rayLength*rayDir);
+    if(signedDist<0.0016){return vec2<f32>(rayLength,1.0);}
+    // Conservative stepping: morph field is a distance bound, twist makes it non-SDF.
+    rayLength+=max(signedDist*0.48,0.0020);
+    if(rayLength>12.0){break;}
+  }
+  return vec2<f32>(rayLength,0.0);
+}
+fn marchInterior(insideStart:vec3<f32>,insideDir:vec3<f32>)->vec2<f32>{
+  var rayLength=0.0;
+  for(var stepIndex=0;stepIndex<86;stepIndex++){
+    let signedDist=mapSculpture(insideStart+insideDir*rayLength);
+    if(rayLength>0.004 && signedDist > -0.0015){return vec2<f32>(rayLength,1.0);}
+    rayLength+=max(abs(signedDist)*0.44,0.0030);
+    if(rayLength>4.0){break;}
+  }
+  return vec2<f32>(rayLength,0.0);
+}
+fn fresnelGlass(cosIncident:f32,ior:f32)->f32{
+  let normalF0=pow((ior-1.0)/(ior+1.0),2.0);
+  return normalF0+(1.0-normalF0)*pow(1.0-clamp(cosIncident,0.0,1.0),5.0);
+}
+fn crystalShader(hitPoint:vec3<f32>,rayDir:vec3<f32>)->vec3<f32>{
+  let faceNormal=sceneNormal(hitPoint);
+  let refrIor=uniforms.glassIor;
+  let channelGap=uniforms.dispersionAmount;
+  let innerGreen=refract(rayDir,faceNormal,1.0/refrIor);
+  let reflectedDir=reflect(rayDir,faceNormal);
+  var reflectedColor=studioEnvironment(hitPoint+faceNormal*0.006,reflectedDir);
+  let frontFresnel=fresnelGlass(dot(-rayDir,faceNormal),refrIor);
+  // Soft studio lighting plus sharp crystalline highlights.
+  let reflectLight=pow(max(dot(reflectedDir,normalize(vec3<f32>(-0.46,0.83,0.35))),0.0),100.0);
+  let rimPower=pow(1.0-clamp(dot(-rayDir,faceNormal),0.0,1.0),3.5);
+  reflectedColor+=reflectLight*vec3<f32>(0.87,0.98,1.00)*2.1+rimPower*paletteA()*0.12;
+  var transmission=vec3<f32>(0.0);
+  let interiorStart=hitPoint+innerGreen*0.010;
+  let exitHit=marchInterior(interiorStart,innerGreen);
+  if(exitHit.y>0.5){
+    let exitPoint=interiorStart+innerGreen*exitHit.x;
+    let exitNormal=sceneNormal(exitPoint);
+    let iorRed=max(1.01,refrIor-channelGap);
+    let iorBlue=refrIor+channelGap;
+    let innerRed=refract(rayDir,faceNormal,1.0/iorRed);
+    let innerBlue=refract(rayDir,faceNormal,1.0/iorBlue);
+    var exitRed=refract(innerRed,-exitNormal,iorRed);
+    var exitGreen=refract(innerGreen,-exitNormal,refrIor);
+    var exitBlue=refract(innerBlue,-exitNormal,iorBlue);
+    if(dot(exitRed,exitRed)<0.01){exitRed=reflect(innerRed,-exitNormal);}
+    if(dot(exitGreen,exitGreen)<0.01){exitGreen=reflect(innerGreen,-exitNormal);}
+    if(dot(exitBlue,exitBlue)<0.01){exitBlue=reflect(innerBlue,-exitNormal);}
+    let redScene=studioEnvironment(exitPoint+exitRed*0.015,normalize(exitRed));
+    let greenScene=studioEnvironment(exitPoint+exitGreen*0.015,normalize(exitGreen));
+    let blueScene=studioEnvironment(exitPoint+exitBlue*0.015,normalize(exitBlue));
+    let absorption=exp(-exitHit.x*vec3<f32>(0.24,0.11,0.085));
+    transmission=vec3<f32>(redScene.r,greenScene.g,blueScene.b)*absorption;
+    // Reflected light at the back interface, approximated as extra energy.
+    let exitFresnel=fresnelGlass(max(dot(innerGreen,exitNormal),0.0),refrIor);
+    transmission*=1.0-0.45*exitFresnel;
+    let internalGlow=pow(max(dot(exitNormal,normalize(vec3<f32>(-0.7,0.75,-0.4))),0.0),11.0);
+    transmission+=internalGlow*paletteB()*0.10;
+  }else{
+    transmission=studioEnvironment(hitPoint,innerGreen)*vec3<f32>(0.32,0.45,0.60);
+  }
+  var finalColor=mix(transmission,reflectedColor,frontFresnel);
+  finalColor+=rimPower*paletteB()*0.052;
+  return finalColor;
+}
+
+@fragment fn fragmentMain(@builtin(position) fragmentPos:vec4<f32>)->@location(0) vec4<f32>{
+  // Frag Y grows down; view-space Y grows up. Flip exactly once here.
+  let filmUv=vec2<f32>((fragmentPos.x-0.5*uniforms.resolution.x)/uniforms.resolution.y,(0.5*uniforms.resolution.y-fragmentPos.y)/uniforms.resolution.y);
+  let az=uniforms.cameraAzimuth;
+  let el=uniforms.cameraElevation;
+  let cameraPos=uniforms.cameraDistance*vec3<f32>(sin(az)*cos(el),sin(el),cos(az)*cos(el));
+  let cameraForward=normalize(-cameraPos);
+  let cameraRight=normalize(cross(cameraForward,vec3<f32>(0.0,1.0,0.0)));
+  let cameraUp=cross(cameraRight,cameraForward);
+  let rayDir=normalize(cameraForward+filmUv.x*cameraRight*1.72+filmUv.y*cameraUp*1.72);
+  var resultColor=studioEnvironment(cameraPos,rayDir);
+  let hitInfo=marchOuter(cameraPos,rayDir);
+  if(hitInfo.y>0.5){
+    let hitPoint=cameraPos+rayDir*hitInfo.x;
+    resultColor=crystalShader(hitPoint,rayDir);
+  }
+  // Filmic tone map and vignette.
+  resultColor=vec3<f32>(1.0)-exp(-resultColor*1.30);
+  resultColor=pow(max(resultColor,vec3<f32>(0.0)),vec3<f32>(0.86));
+  let radialFade=clamp(1.0-0.31*dot(filmUv,filmUv),0.65,1.0);
+  resultColor*=radialFade;
+  return vec4<f32>(resultColor,1.0);
+}
+`;
+
+let device=null, renderPipeline=null, bindGroup=null, uniformBuffer=null, canvasContext=null, offscreenTexture=null, screenWidth=0,screenHeight=0, frameHandle=0;
+const testMode=new URLSearchParams(location.search).has('test');
+const GPUTextureUsageConst=globalThis.GPUTextureUsage;
+const GPUBufferUsageConst=globalThis.GPUBufferUsage;
+const uniformArray=new Float32Array(16);
+const gpuFormat='bgra8unorm';
+function dimensions(){
+  const rect=canvasEl.getBoundingClientRect(), pixelRatio=Math.min(devicePixelRatio||1,2);
+  const maxH=params.quality==='low'?180:params.quality==='mid'?270:params.quality==='high'?540:(Math.min(window.innerWidth,720)<500?270:480);
+  const scale=Math.min(1,maxH/Math.max(1,rect.height*pixelRatio));
+  let width=Math.max(64,Math.round(rect.width*pixelRatio*scale/2)*2);
+  let height=Math.max(64,Math.round(rect.height*pixelRatio*scale/2)*2);
+  if(testMode){width=256;height=160;}
+  const maxDim=device?.limits.maxTextureDimension2D||8192;
+  const limitFactor=Math.min(1,maxDim/width,maxDim/height);width=Math.max(64,Math.floor(width*limitFactor/2)*2);height=Math.max(64,Math.floor(height*limitFactor/2)*2);
+  return [width,height];
+}
+function resizeRenderTarget(force=false){
+  if(!device)return;
+  const [width,height]=dimensions();
+  if(!force&&width===screenWidth&&height===screenHeight)return;
+  screenWidth=width;screenHeight=height;canvasEl.width=width;canvasEl.height=height;
+  if(offscreenTexture){offscreenTexture.destroy();offscreenTexture=null;}
+  if(testMode){offscreenTexture=device.createTexture({size:[width,height],format:gpuFormat,usage:GPUTextureUsageConst.RENDER_ATTACHMENT|GPUTextureUsageConst.COPY_SRC});}
+}
+function drawFrame(){
+  uniformArray[0]=screenWidth;uniformArray[1]=screenHeight;uniformArray[2]=params.elapsed;
+  uniformArray[3]=params.morph;uniformArray[4]=params.twist;uniformArray[5]=params.ior;uniformArray[6]=params.dispersion;
+  uniformArray[7]=params.azimuth;uniformArray[8]=params.elevation;uniformArray[9]=params.distance;uniformArray[10]=params.palette;
+  device.queue.writeBuffer(uniformBuffer,0,uniformArray);
+  const encoder=device.createCommandEncoder();
+  const colorView=testMode?offscreenTexture.createView():canvasContext.getCurrentTexture().createView();
+  const renderPass=encoder.beginRenderPass({colorAttachments:[{view:colorView,clearValue:{r:0,g:0,b:0,a:1},loadOp:'clear',storeOp:'store'}]});
+  renderPass.setPipeline(renderPipeline);renderPass.setBindGroup(0,bindGroup);renderPass.draw(3);renderPass.end();
+  device.queue.submit([encoder.finish()]);
+  window.__prismTest.frames++;
+}
+async function initialize(){
+  if(!navigator.gpu)throw Error('navigator.gpu がありません。WebGPU対応のブラウザを使用してください。');
+  setPhase('request-adapter');
+  const adapter=await navigator.gpu.requestAdapter({powerPreference:'high-performance'});
+  if(!adapter)throw Error('WebGPUアダプターが見つかりません。');
+  setPhase('request-device');device=await adapter.requestDevice();
+  device.lost.then(info=>{if(info.reason!=='destroyed')fail(Error('GPU device lost: '+info.message));});
+  device.addEventListener('uncapturederror',event=>fail(event.error));
+  if(!testMode){canvasContext=canvasEl.getContext('webgpu');if(!canvasContext)throw Error('WebGPU Canvas コンテキストが利用できません。');canvasContext.configure({device,format:gpuFormat,alphaMode:'opaque'});}
+  const shaderModule=device.createShaderModule({code:shaderSource,label:'Prism Morph Raymarch Shader'});
+  setPhase('shader-compilation-info');
+  const info=await shaderModule.getCompilationInfo();
+  window.__prismTest.shaderErrors=info.messages.map(m=>({type:m.type,line:m.lineNum,text:m.message}));
+  for(const message of info.messages)console[message.type==='error'?'error':'warn']('WGSL',message.lineNum,message.message);
+  const compilationErrors=info.messages.filter(m=>m.type==='error');
+  if(compilationErrors.length)throw Error(compilationErrors.map(m=>`WGSL:${m.lineNum}:${m.linePos} ${m.message}`).join('\n'));
+  setPhase('create-pipeline');
+  device.pushErrorScope('validation');
+  renderPipeline=await device.createRenderPipelineAsync({label:'Glass Raymarch Pipeline',layout:'auto',vertex:{module:shaderModule,entryPoint:'vertexMain'},fragment:{module:shaderModule,entryPoint:'fragmentMain',targets:[{format:gpuFormat}]},primitive:{topology:'triangle-list'}});
+  uniformBuffer=device.createBuffer({label:'Render controls',size:64,usage:GPUBufferUsageConst.UNIFORM|GPUBufferUsageConst.COPY_DST});
+  bindGroup=device.createBindGroup({layout:renderPipeline.getBindGroupLayout(0),entries:[{binding:0,resource:{buffer:uniformBuffer}}]});
+  const pipelineValidation=await device.popErrorScope();if(pipelineValidation)throw Error('Pipeline: '+pipelineValidation.message);
+  resizeRenderTarget(true);
+  setPhase('submitted-work-wait');device.pushErrorScope('validation');drawFrame();await device.queue.onSubmittedWorkDone();
+  const submitValidation=await device.popErrorScope();if(submitValidation)throw Error('Draw: '+submitValidation.message);
+  setStatus('WEBGPU · LIVE');setPhase('done');
+  if(testMode){
+    // UI regression tests can request more GPU frames after changing DOM inputs.
+    window.__prismTest.capture = async () => {
+      resizeRenderTarget();
+      device.pushErrorScope('validation');
+      drawFrame();
+      await device.queue.onSubmittedWorkDone();
+      const drawValidation=await device.popErrorScope();
+      if(drawValidation)throw Error('Draw validation: '+drawValidation.message);
+      const bytesPerRow=Math.ceil(screenWidth*4/256)*256;
+      const readbackBuffer=device.createBuffer({size:bytesPerRow*screenHeight,usage:GPUBufferUsageConst.COPY_DST|GPUBufferUsageConst.MAP_READ});
+      const encoder=device.createCommandEncoder();
+      encoder.copyTextureToBuffer({texture:offscreenTexture},{buffer:readbackBuffer,bytesPerRow,rowsPerImage:screenHeight},[screenWidth,screenHeight]);
+      device.pushErrorScope('validation');
+      device.queue.submit([encoder.finish()]);
+      await device.queue.onSubmittedWorkDone();
+      const copyValidation=await device.popErrorScope();
+      if(copyValidation)throw Error('Copy validation: '+copyValidation.message);
+      await readbackBuffer.mapAsync(GPUMapMode.READ);
+      const values=new Uint8Array(readbackBuffer.getMappedRange());
+      let min=765,max=0,checksum=2166136261,samples=0,nonblack=0;
+      for(let row=0;row<screenHeight;row+=4){
+        for(let col=0;col<screenWidth;col+=4){
+          const offset=row*bytesPerRow+col*4;
+          const brightness=values[offset]+values[offset+1]+values[offset+2];
+          min=Math.min(min,brightness);max=Math.max(max,brightness);samples++;
+          if(brightness>30)nonblack++;
+          for(let channel=0;channel<3;channel++){
+            checksum=Math.imul(checksum^values[offset+channel],16777619)>>>0;
+          }
+        }
+      }
+      readbackBuffer.unmap();readbackBuffer.destroy();
+      const stats={min,max,checksum,samples,nonblack,width:screenWidth,height:screenHeight};
+      window.__prismTest.pixelStats=stats;
+      window.__prismTest.currentParams={...params};
+      return stats;
+    };
+    await window.__prismTest.capture();
+    setPhase('ok');return;
+  }
+
+  let lastFrame=performance.now(),fpsStart=lastFrame,frameCounter=0;
+  function animateFrame(now){
+    frameHandle=requestAnimationFrame(animateFrame);
+    if(now-lastFrame<28)return; // ~30 fps cap; resolution options control GPU cost
+    const dt=Math.min(0.08,(now-lastFrame)/1000);lastFrame=now;
+    if(!params.paused){params.elapsed+=dt;if(params.auto){params.morph=0.5+0.5*Math.sin(params.elapsed*0.68-0.35);const input=document.getElementById('morph');input.value=String(params.morph);document.getElementById('morphOut').textContent=params.morph.toFixed(2);input.style.setProperty('--fill',(params.morph*100)+'%');}}
+    resizeRenderTarget();drawFrame();frameCounter++;
+    if(now-fpsStart>1600){metricsEl.textContent=`WebGPU Ray Marching · ${(1000*frameCounter/(now-fpsStart)).toFixed(0)} fps · ${screenWidth}×${screenHeight}`;fpsStart=now;frameCounter=0;}
+  }
+  frameHandle=requestAnimationFrame(animateFrame);
+}
+window.addEventListener('resize',()=>resizeRenderTarget());
+initialize().catch(fail);
+</script>
+</body>
+</html>
