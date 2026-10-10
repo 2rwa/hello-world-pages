@@ -453,7 +453,9 @@ const canvas = document.getElementById('screen');
 const statusNode = document.getElementById('status');
 const errorNode = document.getElementById('error');
 const metricsNode = document.getElementById('metrics');
-const isCI = new URLSearchParams(location.search).has('ci');
+const URL_OPTIONS = new URLSearchParams(location.search);
+const isCI = URL_OPTIONS.has('ci');
+const forceCpuPresentation = URL_OPTIONS.get('present') === 'cpu';
 const shaderCode = document.getElementById('shader').textContent;
 const diagnostics = {status:'pending',stage:'script-start',errors:[],frames:0,readbacks:0};
 window.__labTest = diagnostics;
@@ -477,6 +479,7 @@ diagnostics.params=params;
 let device,context,backgroundPipeline,glassPipeline,backgroundBind,glassUniformBind,glassSceneBind;
 let uniforms,backgroundTexture,finalTexture,textureSampler;
 let pixelWidth=0,pixelHeight=0,canvasFormat;
+let cpuPresentation=false,cpuCanvas=null,cpuContext=null,cpuReadbackBusy=false;
 let lastTime=0,displayFrames=0,displayStart=0;
 function status(textValue){statusNode.textContent=textValue;}
 function makeTexture(width,height,usage){
@@ -514,7 +517,7 @@ function resetTargets(){
  if(finalTexture)finalTexture.destroy();
  backgroundTexture=makeTexture(pixelWidth,pixelHeight,
     GPUTextureUsage.RENDER_ATTACHMENT|GPUTextureUsage.TEXTURE_BINDING|GPUTextureUsage.COPY_SRC);
- if(isCI)finalTexture=makeTexture(pixelWidth,pixelHeight,
+ if(isCI || cpuPresentation)finalTexture=makeTexture(pixelWidth,pixelHeight,
     GPUTextureUsage.RENDER_ATTACHMENT|GPUTextureUsage.COPY_SRC);
  glassSceneBind=device.createBindGroup({
     layout:glassPipeline.getBindGroupLayout(1),
@@ -535,6 +538,7 @@ function writeUniforms(){
  device.queue.writeBuffer(uniforms,0,data);
 }
 function renderFrame(){
+ if(cpuPresentation && cpuReadbackBusy)return;
  resetTargets();writeUniforms();
  const encoder=device.createCommandEncoder();
  const backgroundPass=encoder.beginRenderPass({colorAttachments:[{
@@ -544,7 +548,7 @@ function renderFrame(){
  backgroundPass.setPipeline(backgroundPipeline);
  backgroundPass.setBindGroup(0,backgroundBind);
  backgroundPass.draw(3);backgroundPass.end();
- const finalView = isCI?finalTexture.createView():context.getCurrentTexture().createView();
+ const finalView = (isCI || cpuPresentation)?finalTexture.createView():context.getCurrentTexture().createView();
  const glassPass=encoder.beginRenderPass({colorAttachments:[{
   view:finalView,loadOp:'clear',clearValue:{r:0,g:0,b:0,a:1},storeOp:'store'
  }]});
@@ -554,6 +558,7 @@ function renderFrame(){
  glassPass.draw(3);glassPass.end();
  device.queue.submit([encoder.finish()]);
  diagnostics.frames++;
+ if(cpuPresentation)presentCpuFrame().catch(fail);
 }
 async function readPixels(texture){
  const bytesPerRow=Math.ceil(pixelWidth*4/256)*256;
@@ -593,6 +598,79 @@ async function capture(){
  const results={color,scene,frames:diagnostics.frames,params:{...params}};
  diagnostics.lastCapture=results;
  return results;
+}
+
+function activateCpuPresentation(reason){
+ cpuPresentation=true;
+ canvasFormat='rgba8unorm';
+ diagnostics.presentation='offscreen-webgpu-canvas2d';
+ diagnostics.presentationReason=String(reason?.message||reason||'Compatibility requested');
+ console.warn('GPU canvas presentation unavailable; using WebGPU offscreen + 2D display', diagnostics.presentationReason);
+ if(!cpuCanvas){
+  cpuCanvas=document.createElement('canvas');
+  cpuCanvas.id='fallback-display';
+  cpuCanvas.style.cssText='position:fixed;inset:0;width:100%;height:100%;touch-action:none;pointer-events:none;z-index:1';
+  canvas.insertAdjacentElement('afterend',cpuCanvas);
+  canvas.style.opacity='0';
+  for(const selector of ['.top','.status','.panel','.bottomright','#error']){
+   const element=document.querySelector(selector);
+   if(element)element.style.zIndex='2';
+  }
+  cpuContext=cpuCanvas.getContext('2d',{alpha:false,desynchronized:true});
+  if(!cpuContext)throw Error('CPU display Canvas2D unavailable');
+ }
+ status('WEBGPU · COMPATIBILITY DISPLAY');
+}
+
+async function probeCanvasPresentation(){
+ // Draw a real blank frame and await GPU completion. Simply configuring
+ // the context did not detect broken swapchains in Linux headless Chrome.
+ const encoder=device.createCommandEncoder();
+ const colorTarget=context.getCurrentTexture();
+ const pass=encoder.beginRenderPass({colorAttachments:[{
+  view:colorTarget.createView(),loadOp:'clear',
+  clearValue:{r:0.02,g:0.04,b:0.08,a:1},storeOp:'store'
+ }]});
+ pass.end();
+ device.queue.submit([encoder.finish()]);
+ await device.queue.onSubmittedWorkDone();
+}
+
+async function presentCpuFrame(){
+ if(cpuReadbackBusy || !cpuCanvas)return;
+ cpuReadbackBusy=true;
+ let stagingBuffer=null;
+ try{
+  const bytesPerRow=Math.ceil(pixelWidth*4/256)*256;
+  stagingBuffer=device.createBuffer({
+   size:bytesPerRow*pixelHeight,
+   usage:GPUBufferUsage.COPY_DST|GPUBufferUsage.MAP_READ
+  });
+  const encoder=device.createCommandEncoder();
+  encoder.copyTextureToBuffer(
+   {texture:finalTexture},
+   {buffer:stagingBuffer,bytesPerRow,rowsPerImage:pixelHeight},
+   [pixelWidth,pixelHeight,1]
+  );
+  device.queue.submit([encoder.finish()]);
+  await stagingBuffer.mapAsync(GPUMapMode.READ);
+  const mapped=new Uint8Array(stagingBuffer.getMappedRange());
+  const rgba=new Uint8ClampedArray(pixelWidth*pixelHeight*4);
+  for(let yy=0;yy<pixelHeight;yy++){
+   rgba.set(mapped.subarray(yy*bytesPerRow, yy*bytesPerRow+pixelWidth*4),
+            yy*pixelWidth*4);
+  }
+  stagingBuffer.unmap();
+  if(cpuCanvas.width!==pixelWidth || cpuCanvas.height!==pixelHeight){
+   cpuCanvas.width=pixelWidth;cpuCanvas.height=pixelHeight;
+  }
+  cpuContext.putImageData(new ImageData(rgba,pixelWidth,pixelHeight),0,0);
+  diagnostics.presentedFrames=(diagnostics.presentedFrames||0)+1;
+ }finally{
+  if(stagingBuffer && stagingBuffer.mapState==='mapped')stagingBuffer.unmap();
+  stagingBuffer?.destroy();
+  cpuReadbackBusy=false;
+ }
 }
 
 async function snapshotPng(source='composite'){
@@ -699,11 +777,39 @@ async function initialize(){
  bindControls();
  phase('request-adapter');
  if(!navigator.gpu)throw new Error('WebGPUが使用できません。HTTPSのChrome/Safariで開いてください。');
- const adapter=await navigator.gpu.requestAdapter({powerPreference:'high-performance'});
+ let adapter=await navigator.gpu.requestAdapter({powerPreference:'high-performance'});
+ if(!adapter)adapter=await navigator.gpu.requestAdapter();
  if(!adapter)throw new Error('GPU adapterが利用できません');
  phase('request-device');
  device=await adapter.requestDevice();
+ if(!isCI){
+  if(forceCpuPresentation){
+   activateCpuPresentation('explicit ?present=cpu');
+  }else{
+   try{
+    context=canvas.getContext('webgpu');
+    if(!context)throw Error('WebGPU CanvasContext unavailable');
+    canvasFormat=navigator.gpu.getPreferredCanvasFormat();
+    context.configure({device,format:canvasFormat,alphaMode:'opaque'});
+    phase('probe-canvas');
+    await probeCanvasPresentation();
+    diagnostics.presentation='webgpu-canvas';
+   }catch(canvasError){
+    activateCpuPresentation(canvasError);
+    // Some drivers invalidate the previous device on a swapchain error.
+    // Request a fresh device before constructing render pipelines.
+    adapter=await navigator.gpu.requestAdapter();
+    if(!adapter)throw Error('Cannot reacquire WebGPU adapter after canvas error: '+canvasError);
+    device=await adapter.requestDevice();
+   }
+  }
+ }else{
+  canvasFormat='rgba8unorm';
+  diagnostics.presentation='offscreen-ci';
+ }
+ const activeDevice=device;
  device.lost.then(info=>{
+  if(device!==activeDevice)return;
   if(info.reason!=='destroyed'){
    diagnostics.lost=`${info.reason}: ${info.message}`;
    document.documentElement.dataset.webgpuLost=diagnostics.lost;
@@ -719,14 +825,6 @@ async function initialize(){
  }));
  const shaderErrors=diagnostics.errors.filter(message=>message.type==='error');
  if(shaderErrors.length)throw Error('WGSL compilation: '+JSON.stringify(shaderErrors));
- if(!isCI){
-  context=canvas.getContext('webgpu');
-  if(!context)throw Error('WebGPU canvas context unavailable');
-  canvasFormat=navigator.gpu.getPreferredCanvasFormat();
-  context.configure({device,format:canvasFormat,alphaMode:'opaque'});
- }else{
-  canvasFormat='rgba8unorm';
- }
  uniforms=device.createBuffer({
   size:64,usage:GPUBufferUsage.UNIFORM|GPUBufferUsage.COPY_DST
  });
