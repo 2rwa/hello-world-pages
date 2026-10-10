@@ -34,9 +34,25 @@ while(Date.now()<expires){
   result=await evalJS(`({status:window.__labTest?.status,stage:window.__labTest?.stage,
   frames:window.__labTest?.frames,error:window.__labTest?.error||'',
   deviceLost:window.__labTest?.lost||'',context:document.querySelector('canvas')?.getContext('webgpu')!==null,
+  presentation:window.__labTest?.presentation||'unknown',
+  fallbackReason:window.__labTest?.presentationReason||'',
+  presentedFrames:window.__labTest?.presentedFrames||0,
+  cpuDisplay:(()=>{const el=document.getElementById('fallback-display');
+    if(!el)return null;
+    const image=el.getContext('2d').getImageData(0,0,el.width,el.height).data;
+    let minimum=255,maximum=0,nonblack=0;
+    for(let i=0;i<image.length;i+=64){
+      const intensity=image[i]+image[i+1]+image[i+2];
+      minimum=Math.min(minimum,intensity);
+      maximum=Math.max(maximum,intensity);
+      if(intensity>10)nonblack++;
+    }
+    return {width:el.width,height:el.height,minimum,maximum,nonblack};
+  })(),
   frameSize:[document.querySelector('canvas')?.width,document.querySelector('canvas')?.height]})`);
  }catch(e){console.log('Read transient:',String(e).slice(0,120))}
- if(result?.status==='ok' && result?.frames>=3)break;
+ if(result?.status==='ok' && result?.frames>=3 &&
+    (result.presentation!=='offscreen-webgpu-canvas2d' || result.presentedFrames>=2))break;
  if(result?.status==='error')break;
  await sleep(600);
 }
@@ -46,5 +62,14 @@ if(result?.status==='error')throw Error('Production Canvas path error: '+result.
 assert.equal(result?.status,'ok','Canvas renderer never became ready');
 assert.ok(result.frames>=3,'Animation loop did not submit multiple canvas frames');
 assert.ok(result.frameSize[0]>0&&result.frameSize[1]>0,'Bad canvas dimensions');
-console.log('PASS WebGPU canvas path and animation',result.frames);
+assert.ok(['webgpu-canvas','offscreen-webgpu-canvas2d'].includes(result.presentation),
+  'Unknown production presentation: '+result.presentation);
+if(result.presentation==='offscreen-webgpu-canvas2d'){
+  assert.ok(result.presentedFrames>=2,'Offscreen GPU-to-Canvas2D copy did not complete');
+  assert.ok(result.cpuDisplay?.maximum-result.cpuDisplay?.minimum>25,
+    'CPU fallback presented flat/blank image '+JSON.stringify(result.cpuDisplay));
+  assert.ok(result.cpuDisplay.nonblack>100,'CPU fallback pixels are blank');
+}
+console.log('PASS real production WebGPU presentation:',result.presentation,
+  'frames',result.frames,'displayed',result.presentedFrames);
 socket.close();
