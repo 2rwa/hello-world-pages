@@ -96,8 +96,9 @@ fn extrude2D(sectionDistance: f32, height: f32, halfHeight: f32) -> f32 {
 
 fn mapGlass(point: vec3<f32>) -> f32 {
   var shapePoint = point;
-  shapePoint.xz = rotatePlane(shapePoint.xz, 0.20 + config.frame.x * 0.23);
-  shapePoint.xz = rotatePlane(shapePoint.xz, shapePoint.y * config.shape.x);
+  let rotatedXZ = rotatePlane(shapePoint.xz, 0.20 + config.frame.x * 0.23);
+  let twistedXZ = rotatePlane(rotatedXZ, shapePoint.y * config.shape.x);
+  shapePoint = vec3<f32>(twistedXZ.x, shapePoint.y, twistedXZ.y);
 
   let tri = polygonLowerDistance(shapePoint.xz, 0.97, 3.0);
   let hex = polygonLowerDistance(shapePoint.xz, 0.93, 6.0);
