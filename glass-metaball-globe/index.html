@@ -28,7 +28,7 @@ input[type=range]{width:100%;height:4px;margin:0;accent-color:#79d2d3;cursor:poi
 <div class="ctrl"><label for="opaque">カラー球の数 <output id="opaqueOut">7</output></label><input id="opaque" type="range" min="0" max="10" step="1" value="7"/></div>
 <div class="ctrl"><label for="quality">内部解像度</label><select id="quality"><option value="0.38">低（大量向け）</option><option value="0.58" selected>中（推奨）</option><option value="0.82">高</option><option value="1.0">最高</option></select></div>
 <div class="buttons"><button id="toggle">Ⅱ 一時停止</button><button id="reset">↺ 配置し直す</button></div>
-<div class="metrics"><span id="fps">GPU STARTING…</span><span id="collisions">GLASS FUSION ON</span></div></aside>
+<div class="metrics"><span id="fps">GPU STARTING…</span><span>GLASS <span id="actual">24 / 24</span></span></div></aside>
 <div class="footer"><span><b>DRAG</b> 視点回転</span><span><b>SCROLL</b> 拡大縮小</span><span>WebGPU · glass metaballs · 最大64滴</span></div>
 <div id="status" role="alert"></div><script type="module" src="./app.js"></script>
 </body></html>
