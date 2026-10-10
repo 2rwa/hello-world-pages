@@ -1,5 +1,6 @@
 import WebSocket from 'ws';
 import assert from 'node:assert/strict';
+import {writeFileSync} from 'node:fs';
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 const until=Date.now()+180000;
 let page;
@@ -118,4 +119,26 @@ const tests=await evaluate(`(async()=>{
 })()`,true);
 assert.ok(tests.frames>=15 && tests.readbacks>=15);
 console.log('PASS real GPU two-pass, multi-refraction, UI regression:',JSON.stringify(tests));
+const screenshotResult=await evaluate(`(async()=>{
+ const set=(id,value,ev='input')=>{
+  const node=document.getElementById(id);
+  node.value=String(value);node.dispatchEvent(new Event(ev,{bubbles:true}));
+ };
+ set('morph',0.22);set('twist',0.32);set('ior',1.52);
+ set('dispersion',0.055);set('absorption',0.34);set('caustics',1.05);
+ set('palette',0,'change');set('debug',0,'change');
+ set('bounces',2,'change');set('quality','.85','change');
+ return {
+  composite:await window.__labTest.snapshot('composite'),
+  background:await window.__labTest.snapshot('background')
+ };
+})()`,true);
+for(const [name,encoded] of Object.entries(screenshotResult)){
+ assert.ok(encoded.startsWith('data:image/png;base64,'),'PNG screenshot missing: '+name);
+ const output=Buffer.from(encoded.split(',')[1],'base64');
+ assert.equal(output.toString('hex',0,8),'89504e470d0a1a0a','Invalid PNG header');
+ assert.ok(output.length>3000,'Unusually small screenshot: '+name);
+ writeFileSync(`prism-refraction-${name}.png`,output);
+ console.log('GPU screenshot:',name,output.length,'bytes');
+}
 socket.close();
