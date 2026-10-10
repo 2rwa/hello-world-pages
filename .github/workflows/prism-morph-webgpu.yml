@@ -1,0 +1,55 @@
+name: Prism Morph WebGPU CI
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'prism-morph/**'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  webgpu:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check JavaScript syntax
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          raw=Path('prism-morph/index.html').read_text()
+          script=re.search(r'<script type="module">([\s\S]*?)</script>',raw)
+          assert script, 'Missing module script'
+          Path('/tmp/prism-module.mjs').write_text(script.group(1))
+          PY
+          node --check /tmp/prism-module.mjs
+      - name: Start Chrome with SwiftShader WebGPU
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/prism-http.log 2>&1 &
+          for i in {1..30}; do curl -fsS http://127.0.0.1:8765/prism-morph/?test=1 >/dev/null && break || sleep 0.3; done
+          google-chrome --version
+          google-chrome --headless=new --no-sandbox --disable-dev-shm-usage \
+            --remote-debugging-address=127.0.0.1 --remote-debugging-port=9222 \
+            --remote-allow-origins='*' --user-data-dir=/tmp/prism-chrome-profile \
+            --enable-unsafe-webgpu --enable-features=Vulkan \
+            --use-vulkan=swiftshader --disable-vulkan-fallback-to-gl-for-testing \
+            --use-webgpu-adapter=swiftshader --enable-webgpu-developer-features \
+            --enable-dawn-features=allow_unsafe_apis --disable-dawn-features=use_dxc \
+            --use-gpu-in-tests --enable-unsafe-swiftshader \
+            'http://127.0.0.1:8765/prism-morph/?test=1' >/tmp/prism-chrome.log 2>&1 &
+          for i in {1..60}; do curl -fsS http://127.0.0.1:9222/json/version >/dev/null && exit 0 || sleep 0.3; done
+          cat /tmp/prism-chrome.log; exit 1
+      - name: Verify GPU readback and UI interactions
+        shell: bash
+        run: |
+          npm install --no-save --no-package-lock ws@8
+          node .github/scripts/prism-morph-ci.mjs
+      - name: Diagnostics
+        if: always()
+        run: |
+          echo '--- Chrome ---'; tail -120 /tmp/prism-chrome.log 2>/dev/null || true
+          echo '--- HTTP ---'; tail -50 /tmp/prism-http.log 2>/dev/null || true
