@@ -11,7 +11,7 @@ async function api(path,method='GET',data){
   signal:AbortSignal.timeout(17000)
  });
  const body=await res.json();
- if(body.value?.error)throw Error('SafariDriver '+body.value.error+': '+body.value.message);
+ if(body.value?.error && body.value?.message && !('status' in body.value))throw Error('SafariDriver '+body.value.error+': '+body.value.message);
  return body;
 }
 try{
