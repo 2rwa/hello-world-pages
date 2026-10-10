@@ -207,6 +207,36 @@ fn spectrumTint() -> vec3<f32> {
   if (palette > 0.5) {return vec3<f32>(1.0, 0.75, 0.58);}
   return vec3<f32>(0.67, 0.90, 1.0);
 }
+// Aesthetic studio-light term, deliberately separated from physical Fresnel.
+// The transmitted RGB rays and internal exits remain computed independently.
+fn artisticGlassLighting(surfacePoint: vec3<f32>,
+                         surfaceNormal: vec3<f32>,
+                         incomingDirection: vec3<f32>) -> vec3<f32> {
+  let facing = clamp(dot(-incomingDirection,surfaceNormal),0.0,1.0);
+  let rim = pow(1.0-facing,1.45);
+
+  let keyDir = normalize(vec3<f32>(-0.72,0.46,0.64));
+  let fillDir = normalize(vec3<f32>(0.66,0.25,0.80));
+  let keyLight = pow(max(dot(surfaceNormal,keyDir),0.0),3.5);
+  let fillLight = pow(max(dot(surfaceNormal,fillDir),0.0),4.5);
+
+  let reflectedDir = reflect(incomingDirection,surfaceNormal);
+  let stripDir = normalize(vec3<f32>(-0.43,0.91,-0.04));
+  let stripHighlight = pow(max(dot(reflectedDir,stripDir),0.0),22.0);
+  let secondaryDir = normalize(vec3<f32>(0.69,0.39,-0.59));
+  let secondaryHighlight = pow(max(dot(reflectedDir,secondaryDir),0.0),38.0);
+
+  let capMask = 1.0 - smoothstep(0.01,0.12,abs(abs(surfacePoint.y)-1.16));
+  let movingRibbon = exp(-150.0*pow(surfacePoint.y-0.08
+                   -0.18*sin(surfacePoint.x*2.6+config.frame.x*0.44),2.0));
+
+  let tint = spectrumTint();
+  let cool = vec3<f32>(0.40,0.73,1.0);
+  let hot  = vec3<f32>(0.99,0.47,0.91);
+  return tint*(0.058+0.52*rim+0.19*keyLight+0.26*fillLight
+              +0.16*capMask+0.055*movingRibbon)
+       +cool*(0.55*stripHighlight)+hot*(0.47*secondaryHighlight);
+}
 @group(1) @binding(0) var sceneTexture: texture_2d<f32>;
 @group(1) @binding(1) var sceneSampler: sampler;
 
@@ -216,7 +246,7 @@ fn environment(direction: vec3<f32>) -> vec3<f32> {
   let sunDirection = normalize(vec3<f32>(-0.39,0.64,-0.66));
   let broadGlow = pow(max(dot(direction,sunDirection),0.0),10.0);
   let fineGlow = pow(max(dot(direction,sunDirection),0.0),140.0);
-  sky += spectrumTint() * broadGlow * 0.24 + vec3<f32>(1.0,0.95,0.83) * fineGlow * 3.0;
+  sky = sky * 1.45 + spectrumTint() * broadGlow * 0.36 + vec3<f32>(1.0,0.95,0.83) * fineGlow * 3.0;
 
   // Studio light strips reflected across curved/faceted glass.
   let beamA = exp(-170.0 * pow(direction.x + 0.42,2.0));
@@ -237,7 +267,7 @@ fn proceduralScene(origin: vec3<f32>, direction: vec3<f32>) -> vec3<f32> {
       let tileCoords = floorPos.xz * 1.55;
       let lineU = abs(fract(tileCoords.x) - 0.5);
       let lineV = abs(fract(tileCoords.y) - 0.5);
-      let lineMask = 1.0 - smoothstep(0.478,0.498,max(lineU,lineV));
+      let lineMask = smoothstep(0.468,0.495,max(lineU,lineV));
       var floorBase = mix(vec3<f32>(0.008,0.020,0.038),
                           vec3<f32>(0.022,0.052,0.071),
                           exp(-radialDistance * 0.16));
@@ -395,8 +425,9 @@ fn glassFragment(@builtin(position) position: vec4<f32>) -> @location(0) vec4<f3
   let tracedG = traceSpectrum(entryPosition,incomingNormal,incident,position.xy,camera,1u);
   let tracedB = traceSpectrum(entryPosition,incomingNormal,incident,position.xy,camera,2u);
 
-  let glassTransmission = vec3<f32>(tracedR.energy,tracedG.energy,tracedB.energy);
+  let glassTransmission = vec3<f32>(tracedR.energy,tracedG.energy,tracedB.energy) * 1.20;
   var finalColor = mix(glassTransmission,reflected,surfaceReflection);
+  finalColor += artisticGlassLighting(entryPosition,incomingNormal,incident);
   let facingHighlight = pow(1.0-dotIN,4.0);
   finalColor += spectrumTint() * facingHighlight * 0.13;
   let specular = pow(max(dot(reflect(incident,incomingNormal),
