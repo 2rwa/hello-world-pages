@@ -5,6 +5,7 @@ on:
     paths:
       - 'prism-refraction-lab/**'
       - '.github/scripts/prism-refraction-lab-ci.mjs'
+      - '.github/scripts/prism-refraction-canvas-ci.mjs'
       - '.github/workflows/prism-refraction-lab-ci.yml'
   workflow_dispatch:
 permissions:
@@ -66,6 +67,9 @@ jobs:
             prism-refraction-background.png
           if-no-files-found: error
           retention-days: 30
+      - name: Exercise production WebGPU Canvas path
+        shell: bash
+        run: node .github/scripts/prism-refraction-canvas-ci.mjs
       - name: Diagnostics
         if: always()
         shell: bash
