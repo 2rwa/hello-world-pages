@@ -1,0 +1,27 @@
+name: Liquid Glass Metaball Globe WebGPU CI
+on:
+  push:
+    paths:
+      - 'glass-metaball-globe/**'
+      - '.github/workflows/glass-metaball-globe-ci.yml'
+  workflow_dispatch:
+jobs:
+  webgpu-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: stable
+      - name: Test deterministic collision bounds
+        run: node glass-metaball-globe/tests/physics-smoke.mjs
+      - name: Install browser driver
+        run: npm install --no-save --no-package-lock puppeteer-core@24
+      - name: Launch static server
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/glass-meta-server.log 2>&1 &
+          sleep 2
+          curl -fsS http://127.0.0.1:8765/glass-metaball-globe/ -o /dev/null
+      - name: Compile WGSL and verify actual GPU render at 0, 24, and 64 droplets
+        run: node glass-metaball-globe/tests/webgpu-smoke.cjs
