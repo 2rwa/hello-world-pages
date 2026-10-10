@@ -462,7 +462,7 @@ const diagnostics = {status:'pending',stage:'script-start',errors:[],frames:0,re
 window.__labTest = diagnostics;
 function phase(stageName){diagnostics.stage=stageName;document.documentElement.dataset.webgpuStage=stageName;}
 function fail(errorValue){
- const message = errorValue?.stack || errorValue?.message || String(errorValue);
+ const message = `${errorValue?.name || 'Error'}: ${errorValue?.message || String(errorValue)}${errorValue?.stack ? '\n' + errorValue.stack : ''}`;
  diagnostics.status='error';diagnostics.error=message;phase('error');
  document.documentElement.dataset.webgpuStatus='error';
  document.documentElement.dataset.webgpuError=message;
