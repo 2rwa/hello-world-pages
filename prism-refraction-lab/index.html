@@ -103,7 +103,7 @@ fn mapGlass(point: vec3<f32>) -> f32 {
   let hex = polygonLowerDistance(shapePoint.xz, 0.93, 6.0);
   let cyl = length(shapePoint.xz) - 0.89;
   let phase = clamp(config.frame.w, 0.0, 1.0);
-  let shapeD = mix(tri, hex, smoothstep(0.0, 0.55, phase));
+  var shapeD = mix(tri, hex, smoothstep(0.0, 0.55, phase));
   shapeD = mix(shapeD, cyl, smoothstep(0.48, 1.0, phase));
   let lengthD = extrude2D(shapeD, shapePoint.y, 1.16);
   return lengthD - 0.022;
