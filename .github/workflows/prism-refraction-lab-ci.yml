@@ -56,6 +56,16 @@ jobs:
         run: |
           npm install --no-save --no-package-lock ws@8
           node .github/scripts/prism-refraction-lab-ci.mjs
+      - name: Archive actual GPU screenshots
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: prism-refraction-lab-gpu-frames
+          path: |
+            prism-refraction-composite.png
+            prism-refraction-background.png
+          if-no-files-found: error
+          retention-days: 30
       - name: Diagnostics
         if: always()
         shell: bash
