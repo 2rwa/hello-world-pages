@@ -1,0 +1,66 @@
+name: Prism Refraction Lab WebGPU CI
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'prism-refraction-lab/**'
+      - '.github/scripts/prism-refraction-lab-ci.mjs'
+      - '.github/workflows/prism-refraction-lab-ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  real-webgpu:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check compiled single-file JavaScript syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          raw=Path('prism-refraction-lab/index.html').read_text()
+          match=re.search(r'<script type="module">([\s\S]*?)</script>',raw)
+          assert match
+          Path('/tmp/lab-ci.mjs').write_text(match.group(1))
+          assert raw.count('fn traceInside')==1
+          assert raw.count('fn backgroundFragment')==1
+          assert raw.count('fn glassFragment')==1
+          PY
+          node --check /tmp/lab-ci.mjs
+          node --check .github/scripts/prism-refraction-lab-ci.mjs
+      - name: Start HTTP and Chromium WebGPU SwiftShader
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m http.server 8766 --bind 127.0.0.1 >/tmp/prism-lab-http.log 2>&1 &
+          for i in {1..30}; do curl -fsS 'http://127.0.0.1:8766/prism-refraction-lab/?ci=1' >/dev/null && break || sleep .3; done
+          google-chrome --version
+          google-chrome --headless=new --no-sandbox --disable-dev-shm-usage \
+            --remote-debugging-address=127.0.0.1 --remote-debugging-port=9222 \
+            --remote-allow-origins='*' --user-data-dir=/tmp/prism-lab-chrome \
+            --enable-unsafe-webgpu --enable-features=Vulkan \
+            --use-vulkan=swiftshader --disable-vulkan-fallback-to-gl-for-testing \
+            --use-webgpu-adapter=swiftshader --enable-webgpu-developer-features \
+            --enable-dawn-features=allow_unsafe_apis --disable-dawn-features=use_dxc \
+            --use-gpu-in-tests --enable-unsafe-swiftshader \
+            'http://127.0.0.1:8766/prism-refraction-lab/?ci=1' \
+            >/tmp/prism-lab-chrome.log 2>&1 &
+          for i in {1..100}; do curl -fsS http://127.0.0.1:9222/json/version >/dev/null && exit 0 || sleep .3; done
+          cat /tmp/prism-lab-chrome.log; exit 1
+      - name: GPU pixels and interactivity regression
+        shell: bash
+        run: |
+          npm install --no-save --no-package-lock ws@8
+          node .github/scripts/prism-refraction-lab-ci.mjs
+      - name: Diagnostics
+        if: always()
+        shell: bash
+        run: |
+          echo '--- Chrome ---'
+          tail -120 /tmp/prism-lab-chrome.log 2>/dev/null || true
+          echo '--- HTTP ---'
+          tail -40 /tmp/prism-lab-http.log 2>/dev/null || true
