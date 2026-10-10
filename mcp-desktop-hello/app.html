@@ -1,0 +1,21 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Desktop Hello World</title><style>
+:root{color-scheme:light dark;font-family:system-ui,-apple-system,sans-serif}
+body{margin:0;padding:clamp(20px,4vw,40px)}
+main{max-width:640px;margin:5vh auto;border:1px solid #8886;border-radius:18px;padding:30px}
+h1{font-size:clamp(32px,5vw,52px);margin:12px 0}
+p{line-height:1.6;opacity:.8}
+button{border:0;border-radius:99px;padding:12px 18px;background:#10a37f;color:white;cursor:pointer}
+button:focus-visible{outline:3px solid #10a37f;outline-offset:3px}
+</style></head><body><main><small>ChatGPT Desktop · MCP Extensions</small>
+<h1>Hello World!</h1>
+<p>ローカルMCPサーバーが提供したChatGPT内の独自HTML画面です。</p>
+<button id="hello">クリックして確認</button>
+<p id="counter" aria-live="polite">クリック回数: 0</p>
+</main><script>
+let count=0;
+document.getElementById("hello").addEventListener("click",()=>{
+ document.getElementById("counter").textContent="クリック回数: "+(++count);
+});
+</script></body></html>

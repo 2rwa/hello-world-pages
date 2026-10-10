@@ -1,0 +1,28 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "desktop-hello-world",
+  "version": "0.1.0",
+  "description": "Minimal local MCP Extensions Hello World.",
+  "author": {
+    "name": "2rwa"
+  },
+  "repository": "https://github.com/2rwa/hello-world-pages",
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "Desktop Hello World",
+        "shortDescription": "ChatGPT Desktop MCP UI smoke test",
+        "longDescription": "Dependency-free local MCP server with sidebar and thread entrypoints.",
+        "developerName": "2rwa",
+        "category": "Developer Tools",
+        "capabilities": [
+          "Interactive",
+          "Read"
+        ],
+        "defaultPrompt": [
+          "Open Hello World from Desktop Hello World."
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "name": "hello-world-pages",
+  "interface": {
+    "displayName": "Hello World Pages Experiments"
+  },
+  "plugins": [
+    {
+      "name": "desktop-hello-world",
+      "source": {
+        "source": "local",
+        "path": "./mcp-desktop-hello"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    }
+  ]
+}
