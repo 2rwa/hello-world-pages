@@ -6,6 +6,7 @@ on:
       - '.github/workflows/prism-refraction-gui-matrix.yml'
       - '.github/scripts/prism-refraction-gui-chromium.mjs'
       - '.github/scripts/prism-refraction-safari-macos.mjs'
+      - '.github/scripts/prism-refraction-safaridriver-ci.mjs'
       - 'prism-refraction-lab/index.html'
   workflow_dispatch:
 permissions:
@@ -68,6 +69,13 @@ jobs:
           npx playwright install webkit
       - name: Display live Pages in native Safari, screenshot and WebKit probe
         run: node .github/scripts/prism-refraction-safari-macos.mjs
+      - name: Enable native SafariDriver automation
+        shell: bash
+        run: |
+          sudo /usr/bin/safaridriver --enable || echo 'SafariDriver enablement unavailable'
+      - name: Probe Safari.app WebGPU through native SafariDriver
+        continue-on-error: true
+        run: node .github/scripts/prism-refraction-safaridriver-ci.mjs
       - name: Upload Safari desktop screenshots, WebKit screenshots and diagnostics
         if: always()
         uses: actions/upload-artifact@v4
