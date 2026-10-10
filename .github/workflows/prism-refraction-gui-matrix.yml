@@ -1,0 +1,90 @@
+name: Prism Refraction graphical browser matrix
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/prism-refraction-gui-matrix.yml'
+      - '.github/scripts/prism-refraction-gui-chromium.mjs'
+      - '.github/scripts/prism-refraction-safari-macos.mjs'
+  workflow_dispatch:
+permissions:
+  contents: read
+
+jobs:
+  ubuntu-graphical-chromium:
+    name: Ubuntu graphical Chromium (Xvfb/Openbox)
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install display server, LXDE window manager, browser driver
+        shell: bash
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq xvfb openbox
+          npm install --no-save --no-package-lock playwright pngjs
+          google-chrome --version
+          node --version
+      - name: Launch actual GUI Chrome and screenshot Pages
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/gui
+          Xvfb :99 -screen 0 1360x900x24 -ac >artifacts/gui/xvfb.log 2>&1 &
+          export DISPLAY=:99
+          for i in {1..20}; do xdpyinfo -display :99 >/dev/null 2>&1 && break || sleep 0.3; done
+          xdpyinfo -display :99 | head -15
+          openbox >artifacts/gui/window-manager.log 2>&1 &
+          google-chrome --no-sandbox --disable-dev-shm-usage \
+            --user-data-dir=/tmp/prism-gui-profile \
+            --remote-debugging-address=127.0.0.1 --remote-debugging-port=9222 \
+            --remote-allow-origins='*' --window-size=1280,800 \
+            --enable-unsafe-webgpu --enable-features=Vulkan \
+            --use-vulkan=swiftshader --disable-vulkan-fallback-to-gl-for-testing \
+            --use-webgpu-adapter=swiftshader --enable-webgpu-developer-features \
+            --enable-dawn-features=allow_unsafe_apis --disable-dawn-features=use_dxc \
+            --use-gpu-in-tests --enable-unsafe-swiftshader \
+            about:blank >artifacts/gui/chrome.log 2>&1 &
+          for i in {1..80}; do
+            if curl -fsS http://127.0.0.1:9222/json/version >/dev/null 2>&1; then break; fi
+            sleep 0.4
+          done
+          node .github/scripts/prism-refraction-gui-chromium.mjs
+      - name: Upload GUI screenshots and detailed errors
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: prism-refraction-ubuntu-graphical-chromium
+          path: artifacts/gui/
+          if-no-files-found: warn
+          retention-days: 30
+
+  macos-safari:
+    name: Apple Silicon macOS 26 / native Safari and WebKit
+    runs-on: macos-26
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Machine and browser versions
+        shell: bash
+        run: |
+          sw_vers
+          echo "architecture: $(uname -m)"
+          sysctl -n machdep.cpu.brand_string || true
+          test "$(uname -m)" = "arm64"
+          ls -ld /Applications/Safari.app
+          mkdir -p artifacts/safari
+      - name: Install Playwright WebKit for comparison
+        run: |
+          npm install --no-save --no-package-lock playwright
+          npx playwright install webkit
+      - name: Display live Pages in native Safari, screenshot and WebKit probe
+        run: node .github/scripts/prism-refraction-safari-macos.mjs
+      - name: Upload Safari desktop screenshots, WebKit screenshots and diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: prism-refraction-m1-safari-and-webkit
+          path: artifacts/safari/
+          if-no-files-found: warn
+          retention-days: 30
