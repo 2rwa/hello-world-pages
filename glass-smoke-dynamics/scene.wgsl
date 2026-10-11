@@ -146,7 +146,7 @@ fn lightSpec(normal:vec3<f32>,viewDir:vec3<f32>)->vec3<f32>{
   }else{color=glassColor;}
  }
  // Physical shell, with view-dependent transparent reflection/refraction.
- if(mode!=2 && mode!=3){
+ if(mode==0 || mode==1){
   let bend=normalize(refract(viewDir,outerNormal,1./1.46)+vec3<f32>(.000001));
   let reflected=environment(reflect(viewDir,outerNormal));
   let shellAlpha=clamp(cfg.haze.z*(outerFresnel*.72+.055),0.,.85);
