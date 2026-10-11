@@ -80,7 +80,7 @@ export async function createRenderer(canvas, ci=false) {
         alpha:{srcFactor:'one',dstFactor:'one',operation:'add'}
       }}:{})}]},
     primitive:{topology:'triangle-list',cullMode:'none'},
-    ...(depth?{depthStencil:{format:'depth24plus',depthWriteEnabled:!additive,depthCompare:'less'}}:{})
+    depthStencil:{format:'depth24plus',depthWriteEnabled:depth&&!additive,depthCompare:depth?'less':'always'}
   });
   const skyPipe=createPipeline('starfield','skyVertex','skyFragment',false);
   const surfacePipe=createPipeline('analytic PDE surface','surfaceVertex','surfaceFragment',true);
