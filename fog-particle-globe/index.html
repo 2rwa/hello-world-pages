@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#050b16">
+<title>FOG PARTICLE / GLOBE</title><link rel="stylesheet" href="./style.css"></head><body>
+<canvas id="view" aria-label="球の中で霧粒子が漂う3D WebGPUシミュレーション"></canvas>
+<div class="brand"><span>WEBGPU / GAUSSIAN PARTICLE LAB</span><h1>FOG<br><em>PARTICLE.</em></h1><p>霧は小さな粒子の集まり。<br>揺らぎ、渦を巻き、溶け合う。</p></div>
+<div class="readout" id="readout">INITIALIZING WEBGPU</div>
+<button id="openPanel" class="open-panel" aria-controls="panel" aria-expanded="true">☰ <span>CONTROLS</span></button>
+<aside id="panel" aria-label="霧のパラメータ">
+ <div class="head"><div><strong>ATMOSPHERE LAB</strong><small id="qualityLabel">LIVE · AUTO</small></div><button id="closePanel" aria-label="メニューを最小化">✕</button></div>
+ <div id="controls" class="scroll"></div>
+ <div class="actions">
+  <button id="pause">Ⅱ PAUSE</button><button id="burst">✺ STIR</button><button id="reset">↻ RESET</button><button id="viewReset">◎ VIEW</button>
+ </div>
+</aside>
+<div id="error" role="alert" hidden></div>
+<script type="module" src="./main.js"></script></body></html>

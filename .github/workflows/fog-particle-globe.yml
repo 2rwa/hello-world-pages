@@ -1,0 +1,57 @@
+name: Fog Particle Globe WebGPU Regression
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'fog-particle-globe/**'
+      - '.github/workflows/fog-particle-globe.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  webgpu:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Syntax and physics regression
+        run: |
+          set -euo pipefail
+          for f in fog-particle-globe/*.js fog-particle-globe/*.mjs fog-particle-globe/tests/*.cjs; do node --check "$f"; done
+          node --test fog-particle-globe/tests/physics.test.mjs
+      - name: Start HTTP server and SwiftShader WebGPU Chrome
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m http.server 8772 --bind 127.0.0.1 >/tmp/fog-particle-server.log 2>&1 &
+          for i in {1..40}; do curl -fsS 'http://127.0.0.1:8772/fog-particle-globe/?ci=1' >/dev/null && break || sleep .25; done
+          google-chrome --version
+          google-chrome --headless=new --no-sandbox --disable-dev-shm-usage \
+            --remote-debugging-address=127.0.0.1 --remote-debugging-port=9222 \
+            --remote-allow-origins='*' --user-data-dir=/tmp/fog-particle-chrome \
+            --enable-unsafe-webgpu --enable-features=Vulkan \
+            --use-vulkan=swiftshader --disable-vulkan-fallback-to-gl-for-testing \
+            --use-webgpu-adapter=swiftshader --enable-webgpu-developer-features \
+            --enable-dawn-features=allow_unsafe_apis --disable-dawn-features=use_dxc \
+            --use-gpu-in-tests --enable-unsafe-swiftshader \
+            'http://127.0.0.1:8772/fog-particle-globe/?ci=1' >/tmp/fog-particle-chrome.log 2>&1 &
+          for i in {1..120}; do curl -fsS http://127.0.0.1:9222/json/version >/dev/null && exit 0 || sleep .25; done
+          tail -100 /tmp/fog-particle-chrome.log; exit 1
+      - name: Verify actual GPU pixels and mobile controls
+        run: |
+          npm install --no-save --no-package-lock puppeteer-core@24
+          node fog-particle-globe/tests/browser.cjs
+      - name: Preserve GPU captures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fog-particle-globe-gpu-captures
+          path: /tmp/fog-particle-*.png
+          if-no-files-found: ignore
+      - name: Browser logs
+        if: always()
+        run: |
+          echo '--- Chrome ---'
+          tail -90 /tmp/fog-particle-chrome.log 2>/dev/null || true
+          echo '--- HTTP ---'
+          tail -30 /tmp/fog-particle-server.log 2>/dev/null || true
