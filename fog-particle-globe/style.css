@@ -61,3 +61,31 @@ select{display:block;width:100%;margin-top:8px;padding:7px 10px;border-radius:7p
  .config-actions{padding:8px 10px 4px}
  .scroll{padding:4px 12px 8px}
 }
+
+/* Always-available configuration dock: desktop must never strand settings. */
+#openPanel.open-panel,#openPanel.open-panel.visible{
+  display:flex!important;flex-direction:column;align-items:center;justify-content:center;
+  position:fixed;top:auto;right:clamp(14px,2vw,30px);
+  bottom:max(15px,env(safe-area-inset-bottom));z-index:40;
+  min-width:146px;min-height:52px;padding:8px 18px;
+  border:2px solid #a3fff1e0;border-radius:13px;
+  background:#063c49f2;color:#e8ffff;
+  box-shadow:0 8px 28px #000b,0 0 0 2px #78dfcf20;
+  opacity:1;visibility:visible;pointer-events:auto;
+  font-weight:750;font-size:14px;
+}
+#openPanel[aria-expanded="true"]{background:#173440f2;border-color:#6dbdadab}
+#openPanel:focus-visible{outline:3px solid #f8fbff;outline-offset:3px}
+#openPanel .compact-meta{display:block;color:#b5dfdc;font-size:10px;font-weight:500}
+#panel.panel{
+  position:fixed;top:max(13px,env(safe-area-inset-top));bottom:max(82px,env(safe-area-inset-bottom));
+  right:clamp(14px,2vw,30px);width:min(402px,calc(100vw - 28px));
+  max-height:calc(100dvh - 110px);z-index:30;
+  display:flex;flex-direction:column;visibility:visible;opacity:1;
+  border:1px solid #8bd9d76e;background:#0a1b2cf2;
+}
+#panel.panel.collapsed{display:none!important}
+@media(max-width:700px){
+ #openPanel.open-panel,#openPanel.open-panel.visible{right:10px;bottom:max(10px,env(safe-area-inset-bottom));min-width:127px;min-height:46px;padding:5px 11px;font-size:13px}
+ #panel.panel{right:8px;top:max(8px,env(safe-area-inset-top));bottom:max(68px,env(safe-area-inset-bottom));width:min(350px,calc(100vw - 16px));max-height:calc(100dvh - 82px)}
+}

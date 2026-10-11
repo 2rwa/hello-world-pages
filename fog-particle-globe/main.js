@@ -26,12 +26,18 @@ function cameraVectors(){
 function setExpanded(expanded){
  panel.classList.toggle('collapsed',!expanded);
  panel.setAttribute('aria-hidden',String(!expanded));
- openPanel.classList.toggle('visible',!expanded);
  openPanel.setAttribute('aria-expanded',String(expanded));
+ openPanel.setAttribute('aria-label',expanded?'詳細設定を閉じる':'詳細設定を開く');
+ // The bottom-right settings button is ALWAYS visible, even on desktop.
+ // Preserve the number-of-controls span while changing the button label.
+ if(openPanel.firstChild?.nodeType===Node.TEXT_NODE)
+  openPanel.firstChild.textContent=expanded?'⚙ 設定を閉じる ':'⚙ 詳細設定 ';
+ openPanel.classList.add('visible');
+ document.documentElement.dataset.settingsPanel=expanded?'open':'closed';
 }
-openPanel.addEventListener('click',()=>setExpanded(true));
+openPanel.addEventListener('click',()=>setExpanded(panel.classList.contains('collapsed')));
 document.getElementById('closePanel').addEventListener('click',()=>setExpanded(false));
-if(matchMedia('(max-width:700px)').matches)setExpanded(false);
+setExpanded(!matchMedia('(max-width:700px)').matches);
 const settingsMessage=document.getElementById('settingsMessage');
 let saveTimer=0;
 function setMessage(message){settingsMessage.textContent=message;}

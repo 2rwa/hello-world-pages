@@ -13,6 +13,50 @@ const puppeteer=require('puppeteer-core');
  console.log('WEBGPU-BOOT',boot);
  assert.equal(boot.status,'ok',boot.error);assert.equal(boot.stage,'done');
  assert.ok(JSON.parse(boot.pixels).brightness>1000);
+ // Regression: the actual desktop viewport must display a reachable panel.
+ // Previously, when the panel was missing, its only open button was also hidden.
+ await page.setViewport({width:1280,height:800,isMobile:false,hasTouch:false});
+ await page.reload({waitUntil:'load'});
+ await page.waitForFunction(()=>['ok','error'].includes(document.documentElement.dataset.webgpuStatus),{timeout:90000});
+ const desktop=await page.evaluate(()=>{
+  const p=document.getElementById('panel');
+  const b=document.getElementById('openPanel');
+  const pr=p.getBoundingClientRect(),br=b.getBoundingClientRect();
+  const hitP=document.elementFromPoint(pr.left+pr.width/2,pr.top+30);
+  const hitB=document.elementFromPoint(br.left+br.width/2,br.top+br.height/2);
+  return {
+   status:document.documentElement.dataset.webgpuStatus,
+   panelClass:p.className,panelDisplay:getComputedStyle(p).display,
+   panelPosition:getComputedStyle(p).position,
+   panelRect:{x:pr.x,y:pr.y,width:pr.width,height:pr.height},
+   panelClickable:hitP===p||p.contains(hitP),
+   controls:p.querySelectorAll('.control').length,
+   toggleDisplay:getComputedStyle(b).display,
+   toggleText:b.textContent,
+   toggleRect:{x:br.x,y:br.y,width:br.width,height:br.height},
+   toggleClickable:hitB?.closest('button')===b,
+   expanded:b.getAttribute('aria-expanded'),
+   viewport:[innerWidth,innerHeight]
+  };
+ });
+ console.log('DESKTOP-PANEL',desktop);
+ assert.equal(desktop.status,'ok');
+ assert.equal(desktop.panelDisplay,'flex');
+ assert.equal(desktop.panelPosition,'fixed');
+ assert.ok(desktop.panelRect.width>=320&&desktop.panelRect.height>250);
+ assert.ok(desktop.panelRect.x>=0&&desktop.panelRect.x+desktop.panelRect.width<=1280);
+ assert.ok(desktop.panelClickable,'Panel is hidden behind another element');
+ assert.ok(desktop.controls>=35,'Detailed control fields missing');
+ assert.notEqual(desktop.toggleDisplay,'none');
+ assert.ok(desktop.toggleRect.width>90&&desktop.toggleRect.height>36);
+ assert.ok(desktop.toggleClickable,'Always-visible settings button not reachable');
+ assert.equal(desktop.expanded,'true');
+ await page.screenshot({path:'/tmp/fog-particle-desktop-controls.png'});
+ await page.click('#openPanel');
+ assert.equal(await page.evaluate(()=>document.getElementById('panel').classList.contains('collapsed')),true);
+ assert.equal(await page.evaluate(()=>getComputedStyle(document.getElementById('openPanel')).display),'flex');
+ await page.click('#openPanel');
+ assert.equal(await page.evaluate(()=>document.getElementById('panel').classList.contains('collapsed')),false);
  const cases=[
   {name:'maximum 2400 particles',count:2400,density:1.3,opacity:.62,shape:'cloud'},
   {name:'thin atmospheric fog',count:1100,density:.28,opacity:.20,shape:'uniform'},
@@ -141,6 +185,6 @@ const puppeteer=require('puppeteer-core');
  assert.notEqual(mobile.toggle,'none');assert.equal(mobile.canvasWidth,390);assert.match(mobile.label,/詳細設定/);
  await page.click('#openPanel');assert.equal(await page.evaluate(()=>document.getElementById('panel').classList.contains('collapsed')),false);
  assert.deepEqual(browserErrors,[]);
- console.log('PASS: WebGPU shader, 2400 sorted Gaussian particles, actual pixel change, presets, numeric controls, search, JSON import/export, defaults, mobile menu');
+ console.log('PASS: WebGPU shader, 2400 sorted Gaussian particles, actual pixel change, desktop panel accessibility, persistent toggle, presets, numeric controls, search, JSON import/export, defaults, mobile menu');
  await browser.disconnect();
 })().catch(e=>{console.error(e.stack||e);process.exit(1);});
