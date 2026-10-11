@@ -1,0 +1,56 @@
+name: Smoke Marble Globe WebGPU Regression
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'smoke-marble-globe/**'
+      - '.github/workflows/smoke-marble-globe.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  smoke-marble:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Static syntax and two-phase physics regression
+        run: |
+          set -euo pipefail
+          for f in smoke-marble-globe/*.js smoke-marble-globe/*.mjs smoke-marble-globe/tests/*.cjs; do node --check "$f"; done
+          node --test smoke-marble-globe/tests/physics.test.mjs
+      - name: Start HTTP and SwiftShader WebGPU Chromium
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m http.server 8776 --bind 127.0.0.1 >/tmp/smoke-marble-http.log 2>&1 &
+          for i in {1..40}; do curl -fsS 'http://127.0.0.1:8776/smoke-marble-globe/?ci=1' >/dev/null && break || sleep .25; done
+          google-chrome --version
+          google-chrome --headless=new --no-sandbox --disable-dev-shm-usage \
+            --remote-debugging-address=127.0.0.1 --remote-debugging-port=9222 \
+            --remote-allow-origins='*' --user-data-dir=/tmp/smoke-marble-chrome \
+            --enable-unsafe-webgpu --enable-features=Vulkan \
+            --use-vulkan=swiftshader --disable-vulkan-fallback-to-gl-for-testing \
+            --use-webgpu-adapter=swiftshader --enable-webgpu-developer-features \
+            --enable-dawn-features=allow_unsafe_apis --disable-dawn-features=use_dxc \
+            --use-gpu-in-tests --enable-unsafe-swiftshader \
+            'http://127.0.0.1:8776/smoke-marble-globe/?ci=1' \
+            >/tmp/smoke-marble-chrome.log 2>&1 &
+          for i in {1..120}; do curl -fsS http://127.0.0.1:9222/json/version >/dev/null && exit 0 || sleep .25; done
+          cat /tmp/smoke-marble-chrome.log; exit 1
+      - name: Check actual GPU rendering and desktop mobile controls
+        run: |
+          npm install --no-save --no-package-lock puppeteer-core@24
+          node smoke-marble-globe/tests/browser.cjs
+      - name: Capture visual evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-marble-gpu-and-ui
+          path: /tmp/smoke-marble-*.png
+          if-no-files-found: ignore
+      - name: Diagnostic logs
+        if: always()
+        run: |
+          tail -80 /tmp/smoke-marble-chrome.log 2>/dev/null || true
+          tail -30 /tmp/smoke-marble-http.log 2>/dev/null || true
