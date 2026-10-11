@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0b111b"><title>WebGPU CRT Video Lab</title>
+<style>
+:root{font-family:system-ui,-apple-system,"Helvetica Neue",sans-serif;color:#dce8f7;background:#080c14;color-scheme:dark}*{box-sizing:border-box}
+body{margin:0}header{display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid #263247;background:#101828}header h1{font-size:19px;margin:0}header small{color:#8fa7c8}
+main{display:grid;grid-template-columns:minmax(300px,1fr) 320px;gap:14px;max-width:1650px;margin:auto;padding:14px}.viewer,.controls{border:1px solid #293953;border-radius:12px;background:#0d1421;overflow:hidden}.viewer{min-width:0;display:flex;flex-direction:column}
+.stage{position:relative;background:#020306;min-height:300px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+canvas#screen{width:100%;max-height:76vh;aspect-ratio:16/9;object-fit:contain;display:block}.drop-hint{position:absolute;inset:20px;border:2px dashed #607caa;border-radius:10px;display:none;place-items:center;background:#0d1832cf;pointer-events:none;font-size:22px}.dropping .drop-hint{display:grid}
+.status{position:absolute;top:10px;left:10px;border-radius:6px;padding:5px 9px;font:12px monospace;color:#b7cfef;background:#06101bc9;max-width:85%}
+.transport{padding:12px;display:grid;gap:10px}button,select,.file-label{border-radius:8px;background:#253754;color:#edf4fc;border:1px solid #435675;padding:8px 10px;font:inherit;cursor:pointer}
+button:hover,.file-label:hover{background:#345078}button:disabled{opacity:.4;cursor:not-allowed}button.accent,.file-label.accent{background:#156a94;border-color:#2792c2}
+.toolbar{display:flex;flex-wrap:wrap;gap:7px;align-items:center}.file-label input{display:none}.time-row{display:flex;gap:10px;align-items:center}.time-row input{flex:1;min-width:40px}
+input[type=range]{accent-color:#58bada;cursor:pointer;min-width:0}#timeLabel{font:12px ui-monospace,monospace;white-space:nowrap;color:#a9b9d3}
+.controls{padding:12px;overflow:auto;max-height:calc(100vh - 96px)}.controls h2{font-size:16px;margin:0 0 10px}
+.presets{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px}.presets button{font-size:12px;padding:7px}
+details{border-top:1px solid #2a3d57;padding:9px 2px}summary{font-size:13px;font-weight:700;cursor:pointer;color:#9dd8ea;padding:3px}
+.control-row{display:grid;grid-template-columns:1fr 100px 47px;align-items:center;gap:7px;padding:6px 0;font-size:12px}.control-row output{font:11px ui-monospace,monospace;text-align:right;color:#9bb4ce}
+.control-row select{width:145px;grid-column:2/4;padding:4px;font-size:12px}.foot{font-size:11px;line-height:1.55;color:#9bb0ca}
+#message{color:#ffd18d;font-size:12px;white-space:pre-wrap}#record.active{background:#923c47}
+footer{padding:12px 20px;font-size:12px;color:#8198b2;border-top:1px solid #263247}
+@media(max-width:900px){main{display:flex;flex-direction:column}.controls{max-height:none}.stage{min-height:160px}header{flex-wrap:wrap}.control-row{grid-template-columns:1fr minmax(105px,1fr) 50px}}
+</style></head><body>
+<header><h1>📺 WebGPU CRT Video Lab</h1><small>Electron beam · Phosphor · Analog signal · Temporal persistence</small></header>
+<main><section class="viewer"><div class="stage" id="stage"><canvas id="screen" width="640" height="360" aria-label="CRT映像"></canvas><div class="drop-hint">ここへ動画をドロップ</div><div class="status" id="status">起動中…</div></div>
+<div class="transport"><div class="toolbar">
+<label class="file-label accent">動画を開く<input type="file" id="videoFile" accept="video/*"></label>
+<button id="demo">テストパターン</button><button id="play">▶ 再生</button><button id="restart">↺ 先頭</button>
+<button id="record">● 録画</button><button id="snapshot">静止画保存</button>
+</div><div class="time-row"><span id="timeLabel">00:00 / 00:00</span><input id="seek" type="range" min="0" max="1000" value="0" step="1" aria-label="再生位置"></div>
+<div class="toolbar"><label>描画品質 <select id="quality"><option value=".5">50%</option><option value="1" selected>100%</option><option value="1.5">150%</option><option value="2">200%</option></select></label>
+<label>比較 <select id="compareMode"><option value="0">CRTのみ</option><option value=".5">左半分：原画</option><option value="1">原画のみ</option></select></label>
+<label>音量 <input type="range" min="0" max="1" value=".7" step=".05" id="volume" style="width:78px"></label></div>
+<div id="message" role="alert"></div></div></section>
+<aside class="controls"><h2>CRTパラメータ</h2><div class="presets" id="presets"></div><div id="sliders"></div>
+<p class="foot">入力動画はアップロードされずブラウザ内で処理します。録画形式と音声の保存可否はブラウザ依存です。</p></aside></main>
+<footer>Phase 1–4 · WebGPU + WGSL · 端末内処理 · <a href="https://github.com/2rwa/hello-world-pages/tree/main/crt-video-lab" style="color:#8ed5e9">GitHub</a></footer>
+<video id="sourceVideo" playsinline preload="auto" style="display:none"></video><script type="module" src="./app.js"></script>
+</body></html>

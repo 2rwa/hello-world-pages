@@ -1,0 +1,42 @@
+name: CRT Video Lab WebGPU CI
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'crt-video-lab/**'
+      - '.github/workflows/crt-video-lab-ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  webgpu:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v6
+      - name: Runtime versions
+        run: |
+          node --version
+          google-chrome --version
+      - name: Install browser driver
+        run: npm install --no-save --no-package-lock puppeteer-core@24
+      - name: Start local HTTP server
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/crt-video-http.log 2>&1 &
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:8765/crt-video-lab/ -o /dev/null; then exit 0; fi
+            sleep 0.3
+          done
+          exit 1
+      - name: WGSL compile + real GPU render and pixel readback
+        run: node crt-video-lab/tests/ci.cjs
+      - name: Upload screenshots and measurements
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: crt-video-webgpu-test
+          path: crt-video-lab/test-artifacts/
+          if-no-files-found: ignore
+      - name: Diagnostics
+        if: failure()
+        run: cat /tmp/crt-video-http.log || true
