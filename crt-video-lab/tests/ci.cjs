@@ -40,7 +40,7 @@ const fs=require('node:fs');
     const noise=await page.evaluate(()=>window.__crtProbe());
     if(Math.abs(noise.config.noise-.9)>.0001)throw new Error('Slider state did not update');
     if(noise.frameCount<=after.frameCount)throw new Error('Slider did not trigger GPU rerender');
-    await page.select('#compareMode','0.5');
+    await page.select('#compareMode','.5');
     const split=await page.evaluate(()=>window.__crtProbe());
     if(split.config.compare!==0.5)throw new Error('Comparison split not applied');
     fs.mkdirSync('crt-video-lab/test-artifacts',{recursive:true});
