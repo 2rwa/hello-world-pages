@@ -1,7 +1,7 @@
 export const groups=[
  ['Particles',[
   ['count','粒子数',650,25,2400,25],['size','Gaussian半径',.145,.025,.4,.005],['sizeVariance','粒径のばらつき',.58,0,1,.02],
-  ['density','霧の濃度',.55,.01,2,.025],['opacity','粒子の透明度',.28,.02,1,.02],['spread','雲の広がり',.92,.2,1,.02],
+  ['density','霧の濃度',.55,.025,2,.025],['opacity','粒子の透明度',.28,.02,1,.02],['spread','雲の広がり',.92,.2,1,.02],
   ['shape','分布','cloud',['cloud','shell','band','uniform']],['seed','ランダムSeed',7,1,999,1]
  ]],
  ['Dynamics',[
