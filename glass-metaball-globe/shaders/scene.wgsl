@@ -151,7 +151,7 @@ fn shadeGlass(hit:vec3<f32>,incident:vec3<f32>,maxTravel:f32)->vec3<f32>{
  let lightDir=normalize(vec3<f32>(cos(cfg.lighting.y)*.80,.69,sin(cfg.lighting.y)*.8));
  let specular=pow(max(0.0,dot(reflect(-lightDir,normal),-incident)),mix(120.0,19.0,cfg.optics.w));
  let rim=pow(1.0-ndv,2.4);
- let body= mix(transmitted,incoming,fresnel)+vec3<f32>(1.0,.97,.90)*specular*.7*cfg.lighting.x;
+ var body= mix(transmitted,incoming,fresnel)+vec3<f32>(1.0,.97,.90)*specular*.7*cfg.lighting.x;
  body+=mix(vec3<f32>(.10,.43,.61),tint,.4)*rim*.34*cfg.lighting.x;
  return body;
 }
