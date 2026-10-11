@@ -82,7 +82,7 @@ fn colorPhase(value:f32)->vec3<f32>{
  if(dot(input.world,input.world)>1.005*1.005){discard;}
  let r2=dot(input.uv,input.uv);
  if(r2>1.94){discard;}
- let time=cfg.dims.z,phase=input.seed;
+ let time=cfg.dims.z;let phase=input.seed;
  let turbulence=sin(input.uv.x*7.9+phase+time*.51)*sin(input.uv.y*6.1-phase+time*.37);
  let fine=sin(input.uv.x*17.8+input.uv.y*11.2+phase*1.4-time*.42);
  let wisp=sin(input.uv.x*10.2-input.uv.y*4.1+phase+time*.24);
@@ -104,7 +104,7 @@ fn colorPhase(value:f32)->vec3<f32>{
  return vec4<f32>(max(rgb,vec3<f32>(0.0))*alpha,alpha);
 }
 @fragment fn glassFront(input:ScreenOut)->@location(0) vec4<f32>{
- let ray=directionFromUv(input.uv),crossing=hitGlobe(cfg.cameraPos.xyz,ray);
+ let ray=directionFromUv(input.uv);let crossing=hitGlobe(cfg.cameraPos.xyz,ray);
  if(crossing.y<=crossing.x){return vec4<f32>(0.0);}
  let pt=cfg.cameraPos.xyz+ray*crossing.x;
  let normal=normalize(pt);
