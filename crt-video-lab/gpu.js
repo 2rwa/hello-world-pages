@@ -168,7 +168,7 @@ const sampleAt=(horizontal,vertical)=>{
   const index=py*rowBytes+px*4;
   return [bytes[index],bytes[index+1],bytes[index+2],bytes[index+3]];
 };
-const checkpoints={left:sampleAt(.25,.5),center:sampleAt(.5,.5),right:sampleAt(.75,.5)};
+const checkpoints={left:sampleAt(.25,.5),center:sampleAt(.5,.5),right:sampleAt(.75,.5),top:sampleAt(.5,.25),bottom:sampleAt(.5,.75)};
 buffer.unmap();buffer.destroy();
 return {width,height,frameCount,bright,sum,min,max,samples,checkpoints,lastFault,offline};
 }

@@ -1,6 +1,7 @@
 struct Params {
   dimensions: vec4f, optics: vec4f, analog: vec4f, signal: vec4f,
-  grading: vec4f, geometry: vec4f, extras: vec4f, misc: vec4f
+  grading: vec4f, geometry: vec4f, extras: vec4f, misc: vec4f,
+  orientation: vec4f
 };
 @group(0) @binding(0) var<uniform> params: Params;
 @group(0) @binding(1) var videoSampler: sampler;
@@ -18,8 +19,17 @@ fn hashNoise(point: vec2f) -> f32 {
   return fract(sin(dot(point,vec2f(127.1,311.7)))*43758.5453);
 }
 fn sampleVideo(sampleUv: vec2f) -> vec3f {
-  let videoUv = vec2f(select(sampleUv.x,1.0-sampleUv.x,params.misc.y>0.5),sampleUv.y);
-  return textureSampleBaseClampToEdge(videoTex,videoSampler,clamp(videoUv,vec2f(0.001),vec2f(0.999))).rgb;
+  let mirroredUv = vec2f(select(sampleUv.x,1.0-sampleUv.x,params.misc.y>0.5),sampleUv.y);
+  var sourceUv = mirroredUv;
+  let quarterTurns = i32(params.orientation.x+0.5);
+  if (quarterTurns == 1) {
+    sourceUv = vec2f(mirroredUv.y,1.0-mirroredUv.x);
+  } else if (quarterTurns == 2) {
+    sourceUv = vec2f(1.0-mirroredUv.x,1.0-mirroredUv.y);
+  } else if (quarterTurns == 3) {
+    sourceUv = vec2f(1.0-mirroredUv.y,mirroredUv.x);
+  }
+  return textureSampleBaseClampToEdge(videoTex,videoSampler,clamp(sourceUv,vec2f(0.001),vec2f(0.999))).rgb;
 }
 struct FragmentResult { @location(0) affected: vec4f, @location(1) clean: vec4f };
 @fragment fn fsMain(@location(0) uv: vec2f) -> FragmentResult {
@@ -32,7 +42,7 @@ struct FragmentResult { @location(0) affected: vec4f, @location(1) clean: vec4f 
   var warpedUv = offsetXY * (1.0 + bendAmount * dot(offsetXY,offsetXY) * 1.55);
   warpedUv = warpedUv * (1.0 - params.geometry.w * 0.13) + vec2f(0.5);
   let pictureTime = params.signal.w;
-  let sourceLine = floor(warpedUv.y * params.dimensions.w);
+  let sourceLine = floor(warpedUv.y * params.dimensions.y);
   let lineNoise = hashNoise(vec2f(sourceLine * 0.17,floor(pictureTime * 23.0)));
   let lineWobble = sin(sourceLine * 0.058 + pictureTime * 14.3) * 0.55 + (lineNoise - 0.5);
   warpedUv.x += params.analog.z * lineWobble * 0.014;

@@ -79,6 +79,42 @@ const fs=require('node:fs');
     await page.waitForFunction(()=>window.__crtLab.cameraActive,{timeout:30000});
     const resolutionAfter=await page.evaluate(()=>window.__crtTest.video.videoWidth);
     if(resolutionAfter<1)throw new Error('Camera did not restart at a requested resolution');
+    // Emulate mobile viewport orientation while the live camera is active.
+    await page.setViewport({width:390,height:844,deviceScaleFactor:1});
+    await page.select('#videoRotation','auto');
+    await page.waitForFunction(()=>window.__crtLab.layout?.viewport[0]===390&&window.__crtLab.layout?.output[1]>window.__crtLab.layout?.output[0],{timeout:20000});
+    const portrait=await page.evaluate(()=>{
+      const info=window.__crtLab.layout,box=document.getElementById('screen').getBoundingClientRect();
+      return {info,css:[box.width,box.height],stageWidth:document.getElementById('stage').clientWidth};
+    });
+    if(portrait.css[0]>portrait.stageWidth+1||
+       Math.abs(portrait.css[0]/portrait.css[1]-portrait.info.output[0]/portrait.info.output[1])>0.012)
+      throw new Error('Portrait canvas is stretched/cropped: '+JSON.stringify(portrait));
+    console.log('mobile portrait layout:',JSON.stringify(portrait));
+    await page.select('#videoRotation','1');
+    await page.waitForFunction(()=>window.__crtLab.layout?.rotation===1,{timeout:15000});
+    const manual=await page.evaluate(()=>window.__crtProbe());
+    const nativeHeight=await page.evaluate(()=>window.__crtTest.video.videoHeight);
+    if(manual.width!==nativeHeight){
+      throw new Error('Manual 90-degree GPU output width does not match input height: '+manual.width);
+    }
+    if(manual.checkpoints.left[0]===manual.checkpoints.right[0]){
+      console.log('Rotated image is vertically organized (expected)');
+    }
+    fs.mkdirSync('crt-video-lab/test-artifacts',{recursive:true});
+    await page.screenshot({path:'crt-video-lab/test-artifacts/crt-mobile-portrait.png',fullPage:true});
+    await page.setViewport({width:844,height:390,deviceScaleFactor:1});
+    await page.select('#videoRotation','auto');
+    await page.waitForFunction(()=>window.__crtLab.layout?.viewport[0]===844&&window.__crtLab.layout?.output[0]>window.__crtLab.layout?.output[1],{timeout:15000});
+    const landscape=await page.evaluate(()=>{
+      const info=window.__crtLab.layout,box=document.getElementById('screen').getBoundingClientRect();
+      return {info,css:[box.width,box.height],stageWidth:document.getElementById('stage').clientWidth};
+    });
+    if(landscape.css[0]>landscape.stageWidth+1||
+       Math.abs(landscape.css[0]/landscape.css[1]-landscape.info.output[0]/landscape.info.output[1])>0.012)
+      throw new Error('Landscape canvas is stretched/cropped: '+JSON.stringify(landscape));
+    console.log('mobile landscape layout:',JSON.stringify(landscape));
+    await page.setViewport({width:1380,height:960,deviceScaleFactor:1});
     await page.evaluate(()=>{window.__crtTest.previousCameraTrack=window.__crtTest.stream.getVideoTracks()[0];});
     await page.click('#cameraOff');
     await page.waitForFunction(()=>window.__crtLab.input==='demo'&&!window.__crtLab.cameraActive,{timeout:20000});

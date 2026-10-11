@@ -1,6 +1,7 @@
 struct Params {
   dimensions: vec4f, optics: vec4f, analog: vec4f, signal: vec4f,
-  grading: vec4f, geometry: vec4f, extras: vec4f, misc: vec4f
+  grading: vec4f, geometry: vec4f, extras: vec4f, misc: vec4f,
+  orientation: vec4f
 };
 @group(0) @binding(0) var<uniform> params: Params;
 @group(0) @binding(1) var affectedTex: texture_2d<f32>;

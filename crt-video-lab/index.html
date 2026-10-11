@@ -5,7 +5,7 @@
 body{margin:0}header{display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid #263247;background:#101828}header h1{font-size:19px;margin:0}header small{color:#8fa7c8}
 main{display:grid;grid-template-columns:minmax(300px,1fr) 320px;gap:14px;max-width:1650px;margin:auto;padding:14px}.viewer,.controls{border:1px solid #293953;border-radius:12px;background:#0d1421;overflow:hidden}.viewer{min-width:0;display:flex;flex-direction:column}
 .stage{position:relative;background:#020306;min-height:300px;display:flex;align-items:center;justify-content:center;overflow:hidden}
-canvas#screen{width:100%;max-height:76vh;aspect-ratio:16/9;object-fit:contain;display:block}.drop-hint{position:absolute;inset:20px;border:2px dashed #607caa;border-radius:10px;display:none;place-items:center;background:#0d1832cf;pointer-events:none;font-size:22px}.dropping .drop-hint{display:grid}
+canvas#screen{display:block;width:auto;height:auto;max-width:100%;max-height:none;aspect-ratio:auto}.drop-hint{position:absolute;inset:20px;border:2px dashed #607caa;border-radius:10px;display:none;place-items:center;background:#0d1832cf;pointer-events:none;font-size:22px}.dropping .drop-hint{display:grid}
 .status{position:absolute;top:10px;left:10px;border-radius:6px;padding:5px 9px;font:12px monospace;color:#b7cfef;background:#06101bc9;max-width:85%}
 .transport{padding:12px;display:grid;gap:10px}button,select,.file-label{border-radius:8px;background:#253754;color:#edf4fc;border:1px solid #435675;padding:8px 10px;font:inherit;cursor:pointer}
 button:hover,.file-label:hover{background:#345078}button:disabled{opacity:.4;cursor:not-allowed}button.accent,.file-label.accent{background:#156a94;border-color:#2792c2}
@@ -31,7 +31,7 @@ footer{padding:12px 20px;font-size:12px;color:#8198b2;border-top:1px solid #2632
 <label>入力解像度 <select id="cameraResolution"><option value="320x240">320×240</option><option value="640x480">640×480</option><option value="1280x720" selected>1280×720</option><option value="1920x1080">1920×1080</option></select></label>
 <label><input id="cameraMic" type="checkbox"> マイク取得</label>
 </div>
-<div class="toolbar"><span id="sourceName" class="source-name">入力なし</span><span id="performance" class="source-name">-- FPS</span></div>
+<div class="toolbar"><span id="sourceName" class="source-name">入力なし</span><span id="performance" class="source-name">-- FPS</span><span id="orientationInfo" class="source-name" aria-live="polite"></span></div>
 <div class="toolbar">
 <label class="file-label accent">動画を開く<input type="file" id="videoFile" accept="video/*"></label>
 <button id="demo">テストパターン</button><button id="play">▶ 再生</button><button id="restart">↺ 先頭</button>
@@ -40,12 +40,13 @@ footer{padding:12px 20px;font-size:12px;color:#8198b2;border-top:1px solid #2632
 <div class="toolbar"><label>描画品質 <select id="quality"><option value=".5">50%</option><option value="1" selected>100%</option><option value="1.5">150%</option><option value="2">200%</option></select></label>
 <label>比較 <select id="compareMode"><option value="0">CRTのみ</option><option value=".5">左半分：原画</option><option value="1">原画のみ</option></select></label>
 <label><input id="mirror" type="checkbox"> 左右反転</label>
+<label>映像回転 <select id="videoRotation"><option value="auto" selected>自動</option><option value="0">0°</option><option value="1">右90°</option><option value="2">180°</option><option value="3">左90°</option></select></label>
 <label>処理FPS <select id="fpsLimit"><option value="15">15</option><option value="24">24</option><option value="30" selected>30</option><option value="60">60</option></select></label>
 <label><input type="checkbox" id="recordAudio" checked> 録画に音声を含む</label>
 <label>音量 <input type="range" min="0" max="1" value=".7" step=".05" id="volume" style="width:78px"></label></div>
 <div id="message" role="alert"></div></div></section>
 <aside class="controls"><h2>CRTパラメータ</h2><div class="presets" id="presets"></div><div id="sliders"></div>
-<p class="foot">動画とカメラ映像は端末内で処理され、送信されません。カメラはHTTPSと利用許可が必要です。マイク取得は明示的なONのみ。録画・音声の形式はブラウザに依存します。</p></aside></main>
+<p class="foot">縦長・横長映像の表示比率は自動調整します。カメラの向きがおかしい時は「映像回転」で補正できます。動画とカメラ映像は端末内で処理され、送信されません。カメラはHTTPSと利用許可が必要です。マイク取得は明示的なONのみ。録画・音声の形式はブラウザに依存します。</p></aside></main>
 <footer>Phase 1–5 · Live camera + WebGPU + WGSL · 端末内処理 · <a href="https://github.com/2rwa/hello-world-pages/tree/main/crt-video-lab" style="color:#8ed5e9">GitHub</a></footer>
 <video id="sourceVideo" playsinline preload="auto" style="display:none"></video><script type="module" src="./app.js"></script>
 </body></html>

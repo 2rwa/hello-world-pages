@@ -36,8 +36,42 @@ function updateTime(){
     $('seek').value=String(Math.round(video.currentTime/duration*1000));
   }
 }
+
+let lastLayoutKey='';
+function rotationTurns(){
+  const selected=$('videoRotation').value;
+  if(selected!=='auto')return Number(selected);
+  if(source?.kind!=='camera')return 0;
+  const portrait=window.matchMedia?.('(orientation: portrait)').matches??window.innerHeight>window.innerWidth;
+  const sourceWidth=video.videoWidth,sourceHeight=video.videoHeight;
+  if(portrait&&sourceWidth>sourceHeight*1.12)return 1;
+  if(!portrait&&sourceHeight>sourceWidth*1.12)return 3;
+  return 0;
+}
+function updatePreviewLayout(){
+  const inputWidth=video.videoWidth||640,inputHeight=video.videoHeight||360;
+  const rotation=rotationTurns();
+  const swap=rotation%2===1;
+  const outputWidth=swap?inputHeight:inputWidth;
+  const outputHeight=swap?inputWidth:inputHeight;
+  const stage=$('stage');
+  const availableWidth=Math.max(1,stage.clientWidth);
+  const viewHeight=window.visualViewport?.height||window.innerHeight;
+  const heightLimit=Math.max(160,Math.floor(viewHeight*.72));
+  const key=[inputWidth,inputHeight,rotation,availableWidth,heightLimit].join(':');
+  if(key===lastLayoutKey)return;
+  lastLayoutKey=key;
+  const cssWidth=Math.max(1,Math.min(availableWidth,heightLimit*outputWidth/outputHeight));
+  const cssHeight=cssWidth*outputHeight/outputWidth;
+  canvas.style.width=cssWidth.toFixed(2)+'px';
+  canvas.style.height=cssHeight.toFixed(2)+'px';
+  $('orientationInfo').textContent=inputWidth+'×'+inputHeight+' → '+outputWidth+'×'+outputHeight+
+    ' / '+rotation*90+'°';
+  diagnostic.layout={input:[inputWidth,inputHeight],output:[outputWidth,outputHeight],
+    css:[cssWidth,cssHeight],rotation,viewport:[window.innerWidth,window.innerHeight]};
+}
 function settings(){
-  return {...ui.config,mirror:$('mirror').checked?1:0};
+  return {...ui.config,mirror:$('mirror').checked?1:0,rotation:rotationTurns()};
 }
 function drawFrame(force=false){
   if(!renderer||!ui||busy||video.readyState<2||!video.videoWidth)return;
@@ -46,6 +80,7 @@ function drawFrame(force=false){
   if(!force&&stamp-lastTime<1000/maxFps-2)return;
   try{
     busy=true;lastTime=stamp;
+    updatePreviewLayout();
     if(renderer.render(settings())){
       diagnostic.frames=renderer.frames;diagnostic.ok=!renderer.fault;
       diagnostic.input=source?.kind||'none';
@@ -89,6 +124,7 @@ function setSourceState(detail){
   $('play').textContent='⏸ 一時停止';
   video.muted=detail.type!=='file';
   renderer?.resetHistory();
+  lastLayoutKey='';updatePreviewLayout();
   framesInWindow=0;lastFpsUpdate=performance.now();lastTime=0;
   scheduleFrames();drawFrame(true);
   updateTime();
@@ -100,7 +136,7 @@ function onSourceStop(){
   stopScheduling();capture?.stop();
   diagnostic.cameraActive=false;diagnostic.input='none';
   $('cameraOff').disabled=true;$('sourceName').textContent='停止中';
-  $('play').textContent='▶ 再生';updateTime();
+  $('play').textContent='▶ 再生';lastLayoutKey='';updatePreviewLayout();updateTime();
 }
 async function refreshCameras(){
   if(!source)return;
@@ -168,6 +204,17 @@ function connectControls(){
       video.currentTime=video.duration*Number(event.target.value)/1000;
   });
   $('mirror').addEventListener('change',()=>drawFrame(true));
+  $('videoRotation').addEventListener('change',()=>{
+    lastLayoutKey='';updatePreviewLayout();renderer?.resetHistory();drawFrame(true);
+  });
+  const updateForRotation=()=>{
+    lastLayoutKey='';updatePreviewLayout();
+    renderer?.resetHistory();drawFrame(true);
+  };
+  window.addEventListener('resize',updateForRotation);
+  window.addEventListener('orientationchange',updateForRotation);
+  video.addEventListener('resize',updateForRotation);
+  window.visualViewport?.addEventListener('resize',updateForRotation);
   $('volume').addEventListener('input',event=>{video.volume=Number(event.target.value);});
   $('fpsLimit').addEventListener('change',()=>drawFrame(true));
   $('snapshot').addEventListener('click',async()=>{
@@ -204,7 +251,7 @@ async function main(){
   source=createSources(video,{onReady:setSourceState,onStop:onSourceStop,onNotice:notify});
   capture=createCapture({canvas,video,getSource:()=>source,onNotice:notify,onError:fatal});
   video.volume=Number($('volume').value);
-  connectControls();updateTime();
+  connectControls();updateTime();updatePreviewLayout();
   renderer=await createRenderer(canvas,video,status);
   window.__crtProbe=async()=>({...await renderer.probe(),
     state:{...diagnostic},config:settings(),cameraTracks:source.stream?.getTracks()

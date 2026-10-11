@@ -76,8 +76,14 @@ export function createSources(video,{onReady=()=>{},onStop=()=>{},onNotice=()=>{
     // Camera switching on mobile requires releasing the previous hardware track.
     if(current==='camera')clear();
     const token=++generation;
+    // Prefer a portrait capture size while held vertically; these are ideals,
+    // so the browser may still select a landscape sensor mode.
+    const portrait=window.matchMedia?.('(orientation: portrait)').matches??window.innerHeight>window.innerWidth;
+    const idealWidth=portrait?Math.min(width,height):Math.max(width,height);
+    const idealHeight=portrait?Math.max(width,height):Math.min(width,height);
     const videoConstraints={
-      width:{ideal:width},height:{ideal:height},frameRate:{ideal:30,max:30}
+      width:{ideal:idealWidth},height:{ideal:idealHeight},
+      aspectRatio:{ideal:idealWidth/idealHeight},frameRate:{ideal:30,max:30}
     };
     if(deviceId)videoConstraints.deviceId={exact:deviceId};
     else videoConstraints.facingMode={ideal:facingMode};
