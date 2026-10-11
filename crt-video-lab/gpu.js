@@ -172,6 +172,11 @@ const checkpoints={left:sampleAt(.25,.5),center:sampleAt(.5,.5),right:sampleAt(.
 buffer.unmap();buffer.destroy();
 return {width,height,frameCount,bright,sum,min,max,samples,checkpoints,lastFault,offline};
 }
+function resetHistory(){
+  for(const texture of surfaces)texture.destroy();
+  surfaces=[];width=0;height=0;historyIndex=0;
+  if(presentTexture){presentTexture.destroy();presentTexture=null;}
+}
 function dispose(){
 disposed=true;for(const texture of surfaces) texture.destroy();
 if(presentTexture)presentTexture.destroy();
