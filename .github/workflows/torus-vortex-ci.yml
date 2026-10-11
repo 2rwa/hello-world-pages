@@ -1,0 +1,35 @@
+name: Torus Vortex WebGPU smoke test
+on:
+  push:
+    paths:
+      - 'torus-vortex-lab/**'
+      - '.github/workflows/torus-vortex-ci.yml'
+  workflow_dispatch:
+jobs:
+  gpu-web-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Browser and tool versions
+        run: |
+          (google-chrome --version || chromium --version)
+          node --version
+      - name: Install Playwright browser controller
+        run: npm install --no-save --no-package-lock playwright-core
+      - name: Serve app
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/torus-http.log 2>&1 &
+          sleep 2
+          curl -f http://127.0.0.1:8765/torus-vortex-lab/shader.wgsl >/dev/null
+      - name: Test actual shader with SwiftShader GPU and readback
+        run: |
+          CHROME_BIN="$(command -v google-chrome || command -v chromium)" \
+          node torus-vortex-lab/tests/torus-ci.cjs
+      - name: Upload GPU screenshot and diagnostic output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: torus-vortex-gpu-probe
+          path: test-artifacts/
+          if-no-files-found: ignore
