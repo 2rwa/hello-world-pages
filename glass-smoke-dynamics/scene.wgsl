@@ -136,7 +136,7 @@ fn lightSpec(normal:vec3<f32>,viewDir:vec3<f32>)->vec3<f32>{
   let pathLength=length(exitPoint-entryPoint);
   transmitted*=exp(-pathLength*vec3<f32>(.10,.037,.024));
   let spec=lightSpec(normal,viewDir)+lightSpec(exitNormal,refracted)*.13;
-  let glassColor=mix(transmitted*tint,reflectColor,clamp(fresnel*cfg.optics.z+.025,0.,.95))+spec;
+  var glassColor=mix(transmitted*tint,reflectColor,clamp(fresnel*cfg.optics.z+.025,0.,.95))+spec;
   let edge=pow(1.-max(0.,-dot(viewDir,normal)),2.);
   glassColor+=vec3<f32>(.08,.25,.35)*edge*.6*cfg.optics.z;
   // The smoke in front of the marble remains in front of the refracted surface.
