@@ -55,3 +55,8 @@ test('input sanitization handles unsafe and invalid values',()=>{
  const v=normalized({count:5000,phaseRatio:-1,wallGap:'0.18',windY:'garbage',quality:'crazy',opacity:Infinity});
  assert.deepEqual(v,{count:192,phaseRatio:0,wallGap:.18});
 });
+test('reset positions respect glass clearance at every allowed radius',()=>{
+ const w=new SmokeWorld({...initial,count:192,wallGap:.32,radius:.24,radiusVariance:.9});
+ w.validate();
+ w.s.wallGap=.35;w.keepInBounds();w.validate();
+});

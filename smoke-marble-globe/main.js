@@ -25,6 +25,7 @@ function scheduleSave(){if(ci)return;clearTimeout(saveTimer);saveTimer=setTimeou
 function settingsChanged(id,changed=[]){
  const keys=id==='batch'?changed:[id];
  if(keys.some(k=>['seed','count','radius','radiusVariance','phaseRatio','initialSpread'].includes(k)))world.reset();
+ else if(keys.includes('wallGap'))world.keepInBounds();
  if(keys.includes('cameraDistance'))camera.distance=settings.cameraDistance;
  if(keys.some(k=>['resolution','quality'].includes(k)))gpu.qualityScale=settings.resolution;
  scheduleSave();

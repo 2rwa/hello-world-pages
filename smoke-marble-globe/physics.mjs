@@ -23,7 +23,7 @@ export class SmokeWorld{
  keepInBounds(){
   const s=this.s;
   for(const p of this.bodies){
-   const limit=Math.max(.25,1-s.wallGap-p.r*.62);
+   const limit=Math.max(.24,1-s.wallGap-p.r*.7);
    const n=Math.hypot(p.x,p.y,p.z);
    if(n>limit){const f=limit/n;p.x*=f;p.y*=f;p.z*=f;}
   }
