@@ -8,6 +8,7 @@ console.log('PHYSICS UNIT TEST',result);
 assert.ok(result.passed,'3D gravity, shell containment and smoke exclusion physics');
 const pairCfg={...defaults,ballCount:2,smokeCount:0,gravity:0,restitution:.9};
 const pair=createWorld(pairCfg,82);
+for(const ball of pair.balls){ball.r=.2;ball.mass=.008;}
 pair.balls[0].p=[-.12,0,0];pair.balls[1].p=[.12,0,0];pair.balls[0].v=[1,0,0];pair.balls[1].v=[-1,0,0];
 stepWorld(pair,pairCfg,1/60);
 assert.ok(Math.hypot(...pair.balls[0].p.map((v,i)=>v-pair.balls[1].p[i]))>=pair.balls[0].r+pair.balls[1].r-.002,'sphere-sphere depenetration');
@@ -32,10 +33,10 @@ try{
  let phase=await page.evaluate(()=>({phase:window.__gpuPhase,error:window.__gpuError||'',log:window.__app?.renderer.log,warnings:window.__app?.renderer.shaderWarnings}));
  console.log('WEBGPU PIPELINE',phase);
  assert.equal(phase.error,'','Shader/device should initialize on SwiftShader');
- assert.equal(phase.phase,'ready');
+ assert.equal(phase.phase,'pipeline-ready');
  const makeSnapshot=async(mode)=>page.evaluate(async m=>window.__app.snapshot(m),mode);
  await page.evaluate(()=>{window.__app.setControl('quality','low');window.__app.setControl('smokeCount',220);});
- const full=await makeSnapshot(0),shell=await makeSnapshot(1),smoke=await makeSnapshot(2),glass=await makeSnapshot(3);
+ const full=await makeSnapshot(0),shell=await makeSnapshot(1),smoke=await makeSnapshot(2),glass=await makeSnapshot(3),bare=await makeSnapshot(4);
  const dist=(a,b)=>{
   let error=0,changed=0;
   for(let i=0;i<a.pixels.length;i+=4){
@@ -45,13 +46,14 @@ try{
   return {meanChannelDifference:error/(a.pixels.length*.75),changedFraction:changed/(a.pixels.length/4)};
  };
  const signals={full:{mean:full.mean,variance:full.variance},shell:{mean:shell.mean,variance:shell.variance},smoke:{mean:smoke.mean,variance:smoke.variance},glass:{mean:glass.mean,variance:glass.variance},
-  fullToShell:dist(full,shell),fullToSmoke:dist(full,smoke),fullToGlass:dist(full,glass),smokeToShell:dist(smoke,shell),glassToShell:dist(glass,shell)};
+  fullToShell:dist(full,shell),fullToSmoke:dist(full,smoke),fullToGlass:dist(full,glass),smokeToShell:dist(smoke,shell),glassToShell:dist(glass,shell),smokeToBare:dist(smoke,bare),glassToBare:dist(glass,bare),shellToBare:dist(shell,bare)};
  console.log('OFFSCREEN GPU READBACK',JSON.stringify(signals));
  assert.ok(full.gpuComplete&&shell.gpuComplete&&smoke.gpuComplete&&glass.gpuComplete,'queue.onSubmittedWorkDone must complete');
  assert.ok(full.variance>8,'Scene must contain visible rendered structure, not a blank clear');
- assert.ok(signals.smokeToShell.meanChannelDifference>.12,'Smoke must contribute visible pixels');
- assert.ok(signals.glassToShell.meanChannelDifference>.12,'Refractive marbles must contribute visible pixels');
+ assert.ok(signals.smokeToBare.meanChannelDifference>.12,'Smoke must contribute visible pixels');
+ assert.ok(signals.glassToBare.meanChannelDifference>.12,'Refractive marbles must contribute visible pixels');
  assert.ok(signals.fullToShell.meanChannelDifference>.14,'Combined scene must differ from empty shell');
+ assert.ok(signals.shellToBare.meanChannelDifference>.05,'Glass shell must change pixels');
  const png=new PNG({width:full.width,height:full.height});
  png.data=Buffer.from(full.pixels);fs.writeFileSync('glass-smoke-gpu-readback.png',PNG.sync.write(png));
  // UI: direct input + range slider linkage; controls must reach the physics simulation.
