@@ -4,7 +4,7 @@ export const defaults = Object.freeze({
   chroma:.38,interference:.1,persistence:.45,
   brightness:.02,contrast:1.13,saturation:1.13,gamma:1.04,
   maskSize:3,maskType:1,scanCount:360,overscan:.08,
-  bloomRadius:1.6,vignette:.42,beamWidth:1.35,flicker:.3
+  bloomRadius:1.6,vignette:.42,beamWidth:1.35,flicker:.3,tracking:.12,interlace:0
 });
 const groups=[
  ['電子ビーム・蛍光体',[
@@ -31,6 +31,8 @@ const groups=[
   ['jitter','水平同期ジッター',0,1,.01],
   ['noise','ランダムノイズ',0,1,.01],
   ['interference','走査干渉',0,1,.01],
+  ['tracking','VHSヘッド切替ノイズ',0,1,.01],
+  ['interlace','インターレース風の輝度',0,1,.01],
  ]],
  ['色調・ガンマ',[
   ['brightness','明るさ',-.5,.5,.01],
@@ -43,8 +45,8 @@ const presets=[
  ['PVM',{}],
  ['家庭用TV',{scanline:.88,scanCount:280,mask:.82,maskSize:4,curve:.35,bloom:1.05,bloomRadius:2.3,persistence:.55,noise:.14,chroma:.57,vignette:.6}],
  ['アーケード',{scanline:.7,scanCount:240,mask:.95,maskSize:5,maskType:2,curve:.42,bloom:1.35,contrast:1.3,saturation:1.25}],
- ['VHS劣化',{scanline:.35,mask:.3,noise:.55,jitter:.68,chroma:.88,ghost:.8,interference:.7,aberration:.8,persistence:.3}],
- ['素の映像',{scanline:0,mask:0,curve:0,bloom:0,aberration:0,noise:0,jitter:0,ghost:0,chroma:0,interference:0,persistence:0,vignette:0,flicker:0,overscan:0,contrast:1,saturation:1,brightness:0,gamma:1}]
+ ['VHS劣化',{scanline:.35,mask:.3,noise:.55,jitter:.68,chroma:.88,ghost:.8,interference:.7,tracking:.85,interlace:.65,aberration:.8,persistence:.3}],
+ ['素の映像',{scanline:0,mask:0,curve:0,bloom:0,aberration:0,noise:0,jitter:0,ghost:0,chroma:0,interference:0,persistence:0,vignette:0,flicker:0,overscan:0,tracking:0,interlace:0,contrast:1,saturation:1,brightness:0,gamma:1}]
 ];
 export function buildUi(onUpdate) {
   let stored={};

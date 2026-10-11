@@ -28,6 +28,9 @@ struct FragmentResult { @location(0) visible: vec4f, @location(1) memory: vec4f 
   let beamPower = pow(max(0.0,1.0-beamDistance),max(0.3,params.extras.z));
   let scanning = mix(1.0,0.34+0.66*beamPower,params.optics.x);
   filteredRgb *= scanning;
+  let fieldLine = floor(uv.y*params.dimensions.y) + floor(params.signal.w*60.0);
+  let fieldBrightness = select(0.79,1.0,fract(fieldLine*0.5)<0.5);
+  filteredRgb *= mix(1.0,fieldBrightness,params.misc.w);
   let cellSize = max(1.0,params.geometry.x);
   let fractionalCell = fract((uv.x*params.dimensions.x)/cellSize);
   let rgbCell = i32(floor(fractionalCell*3.0));

@@ -9,7 +9,7 @@ canvas#screen{width:100%;max-height:76vh;aspect-ratio:16/9;object-fit:contain;di
 .status{position:absolute;top:10px;left:10px;border-radius:6px;padding:5px 9px;font:12px monospace;color:#b7cfef;background:#06101bc9;max-width:85%}
 .transport{padding:12px;display:grid;gap:10px}button,select,.file-label{border-radius:8px;background:#253754;color:#edf4fc;border:1px solid #435675;padding:8px 10px;font:inherit;cursor:pointer}
 button:hover,.file-label:hover{background:#345078}button:disabled{opacity:.4;cursor:not-allowed}button.accent,.file-label.accent{background:#156a94;border-color:#2792c2}
-.toolbar{display:flex;flex-wrap:wrap;gap:7px;align-items:center}.file-label input{display:none}.time-row{display:flex;gap:10px;align-items:center}.time-row input{flex:1;min-width:40px}
+.toolbar{display:flex;flex-wrap:wrap;gap:7px;align-items:center}.camera-tools{background:#101f2d;padding:10px;border:1px solid #284158;border-radius:8px}.camera-tools label,.toolbar label{font-size:12px}.camera-tools select{max-width:180px}.source-name{font-size:12px;color:#9bd5df}.toolbar input[type=checkbox]{accent-color:#49baca}.file-label input{display:none}.time-row{display:flex;gap:10px;align-items:center}.time-row input{flex:1;min-width:40px}
 input[type=range]{accent-color:#58bada;cursor:pointer;min-width:0}#timeLabel{font:12px ui-monospace,monospace;white-space:nowrap;color:#a9b9d3}
 .controls{padding:12px;overflow:auto;max-height:calc(100vh - 96px)}.controls h2{font-size:16px;margin:0 0 10px}
 .presets{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px}.presets button{font-size:12px;padding:7px}
@@ -22,17 +22,30 @@ footer{padding:12px 20px;font-size:12px;color:#8198b2;border-top:1px solid #2632
 </style></head><body>
 <header><h1>📺 WebGPU CRT Video Lab</h1><small>Electron beam · Phosphor · Analog signal · Temporal persistence</small></header>
 <main><section class="viewer"><div class="stage" id="stage"><canvas id="screen" width="640" height="360" aria-label="CRT映像"></canvas><div class="drop-hint">ここへ動画をドロップ</div><div class="status" id="status">起動中…</div></div>
-<div class="transport"><div class="toolbar">
+<div class="transport">
+<div class="toolbar camera-tools">
+<button id="cameraStart" class="accent">📷 カメラを開始 / 切替</button>
+<button id="cameraOff" disabled>■ カメラ停止</button>
+<label>向き <select id="cameraFacing" aria-label="前後カメラ"><option value="user">前面</option><option value="environment">背面</option></select></label>
+<label>デバイス <select id="cameraDevice" aria-label="カメラデバイス"><option value="">自動 (前面/背面)</option></select></label>
+<label>入力解像度 <select id="cameraResolution"><option value="320x240">320×240</option><option value="640x480">640×480</option><option value="1280x720" selected>1280×720</option><option value="1920x1080">1920×1080</option></select></label>
+<label><input id="cameraMic" type="checkbox"> マイク取得</label>
+</div>
+<div class="toolbar"><span id="sourceName" class="source-name">入力なし</span><span id="performance" class="source-name">-- FPS</span></div>
+<div class="toolbar">
 <label class="file-label accent">動画を開く<input type="file" id="videoFile" accept="video/*"></label>
 <button id="demo">テストパターン</button><button id="play">▶ 再生</button><button id="restart">↺ 先頭</button>
 <button id="record">● 録画</button><button id="snapshot">静止画保存</button>
 </div><div class="time-row"><span id="timeLabel">00:00 / 00:00</span><input id="seek" type="range" min="0" max="1000" value="0" step="1" aria-label="再生位置"></div>
 <div class="toolbar"><label>描画品質 <select id="quality"><option value=".5">50%</option><option value="1" selected>100%</option><option value="1.5">150%</option><option value="2">200%</option></select></label>
 <label>比較 <select id="compareMode"><option value="0">CRTのみ</option><option value=".5">左半分：原画</option><option value="1">原画のみ</option></select></label>
+<label><input id="mirror" type="checkbox"> 左右反転</label>
+<label>処理FPS <select id="fpsLimit"><option value="15">15</option><option value="24">24</option><option value="30" selected>30</option><option value="60">60</option></select></label>
+<label><input type="checkbox" id="recordAudio" checked> 録画に音声を含む</label>
 <label>音量 <input type="range" min="0" max="1" value=".7" step=".05" id="volume" style="width:78px"></label></div>
 <div id="message" role="alert"></div></div></section>
 <aside class="controls"><h2>CRTパラメータ</h2><div class="presets" id="presets"></div><div id="sliders"></div>
-<p class="foot">入力動画はアップロードされずブラウザ内で処理します。録画形式と音声の保存可否はブラウザ依存です。</p></aside></main>
-<footer>Phase 1–4 · WebGPU + WGSL · 端末内処理 · <a href="https://github.com/2rwa/hello-world-pages/tree/main/crt-video-lab" style="color:#8ed5e9">GitHub</a></footer>
+<p class="foot">動画とカメラ映像は端末内で処理され、送信されません。カメラはHTTPSと利用許可が必要です。マイク取得は明示的なONのみ。録画・音声の形式はブラウザに依存します。</p></aside></main>
+<footer>Phase 1–5 · Live camera + WebGPU + WGSL · 端末内処理 · <a href="https://github.com/2rwa/hello-world-pages/tree/main/crt-video-lab" style="color:#8ed5e9">GitHub</a></footer>
 <video id="sourceVideo" playsinline preload="auto" style="display:none"></video><script type="module" src="./app.js"></script>
 </body></html>

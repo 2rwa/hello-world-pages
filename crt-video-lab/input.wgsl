@@ -18,7 +18,8 @@ fn hashNoise(point: vec2f) -> f32 {
   return fract(sin(dot(point,vec2f(127.1,311.7)))*43758.5453);
 }
 fn sampleVideo(sampleUv: vec2f) -> vec3f {
-  return textureSampleBaseClampToEdge(videoTex,videoSampler,clamp(sampleUv,vec2f(0.001),vec2f(0.999))).rgb;
+  let videoUv = vec2f(select(sampleUv.x,1.0-sampleUv.x,params.misc.y>0.5),sampleUv.y);
+  return textureSampleBaseClampToEdge(videoTex,videoSampler,clamp(videoUv,vec2f(0.001),vec2f(0.999))).rgb;
 }
 struct FragmentResult { @location(0) affected: vec4f, @location(1) clean: vec4f };
 @fragment fn fsMain(@location(0) uv: vec2f) -> FragmentResult {
@@ -35,6 +36,9 @@ struct FragmentResult { @location(0) affected: vec4f, @location(1) clean: vec4f 
   let lineNoise = hashNoise(vec2f(sourceLine * 0.17,floor(pictureTime * 23.0)));
   let lineWobble = sin(sourceLine * 0.058 + pictureTime * 14.3) * 0.55 + (lineNoise - 0.5);
   warpedUv.x += params.analog.z * lineWobble * 0.014;
+  let tapeHeadSwitch = smoothstep(0.87,1.0,uv.y)*params.misc.z;
+  warpedUv.x += tapeHeadSwitch*(0.025*sin(uv.y*330.0+pictureTime*12.0)+0.014);
+  warpedUv.y += tapeHeadSwitch*0.018*sin(pictureTime*6.0);
   let syncBurst = step(0.992,hashNoise(vec2f(floor(pictureTime*3.0),floor(sourceLine*0.06))));
   warpedUv.x += syncBurst * params.analog.z * 0.018;
 
@@ -60,6 +64,7 @@ struct FragmentResult { @location(0) affected: vec4f, @location(1) clean: vec4f 
   let staticNoise = hashNoise(floor(uv * params.dimensions.xy)+vec2f(floor(pictureTime*83.0),0.0))-0.5;
   let horizontalBand = sin(uv.y*params.dimensions.y*0.21+pictureTime*61.0);
   affectedColor += vec3f(staticNoise*params.analog.y*0.33+horizontalBand*params.signal.y*0.055);
+  affectedColor *= 1.0-tapeHeadSwitch*0.26;
   let chromaLuma = dot(affectedColor,vec3f(0.2126,0.7152,0.0722));
   affectedColor = mix(vec3f(chromaLuma),affectedColor,params.grading.z);
   affectedColor = (affectedColor - vec3f(0.5))*params.grading.y+vec3f(0.5+params.grading.x);

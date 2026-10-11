@@ -18,6 +18,12 @@ jobs:
         run: |
           node --version
           google-chrome --version
+      - name: Static syntax checks
+        run: |
+          for f in crt-video-lab/app.js crt-video-lab/gpu.js crt-video-lab/sources.js crt-video-lab/capture.js crt-video-lab/ui.js crt-video-lab/video-fallback.js; do
+            node --check "$f"
+          done
+          node --check crt-video-lab/tests/ci.cjs
       - name: Install browser driver
         run: npm install --no-save --no-package-lock puppeteer-core@24
       - name: Start local HTTP server

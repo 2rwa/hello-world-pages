@@ -79,7 +79,7 @@ config.chroma,config.interference,config.persistence,video.currentTime,
 config.brightness,config.contrast,config.saturation,config.gamma,
 config.maskSize,config.maskType,config.scanCount,config.overscan,
 config.bloomRadius,config.vignette,config.beamWidth,config.flicker,
-config.compare,frameCount,0,0
+config.compare,config.mirror||0,config.tracking||0,config.interlace||0
 ]);
 device.queue.writeBuffer(paramsBuffer,0,p);
 device.queue.writeBuffer(xBlurBuffer,0,new Float32Array([1/width,0,config.bloomRadius,0]));
@@ -162,8 +162,15 @@ pixels.set(bytes.subarray(row*rowBytes,row*rowBytes+width*4),row*width*4);
 const twoD=canvas.getContext('2d');
 if(twoD)twoD.putImageData(new ImageData(pixels,width,height),0,0);
 }
+const sampleAt=(horizontal,vertical)=>{
+  const px=Math.max(0,Math.min(width-1,Math.floor(horizontal*width)));
+  const py=Math.max(0,Math.min(height-1,Math.floor(vertical*height)));
+  const index=py*rowBytes+px*4;
+  return [bytes[index],bytes[index+1],bytes[index+2],bytes[index+3]];
+};
+const checkpoints={left:sampleAt(.25,.5),center:sampleAt(.5,.5),right:sampleAt(.75,.5)};
 buffer.unmap();buffer.destroy();
-return {width,height,frameCount,bright,sum,min,max,samples,lastFault,offline};
+return {width,height,frameCount,bright,sum,min,max,samples,checkpoints,lastFault,offline};
 }
 function dispose(){
 disposed=true;for(const texture of surfaces) texture.destroy();
@@ -171,5 +178,5 @@ if(presentTexture)presentTexture.destroy();
 fallback.dispose();paramsBuffer.destroy();xBlurBuffer.destroy();yBlurBuffer.destroy();
 }
 onStatus('ready');
-return {render,probe,resize,dispose,get frames(){return frameCount},get fault(){return lastFault},get offline(){return offline}};
+return {render,probe,resize,resetHistory,dispose,get frames(){return frameCount},get fault(){return lastFault},get offline(){return offline}};
 }
