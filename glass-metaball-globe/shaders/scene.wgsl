@@ -152,7 +152,12 @@ fn shadeGlass(hit:vec3<f32>,incident:vec3<f32>,maxTravel:f32)->vec3<f32>{
  let specular=pow(max(0.0,dot(reflect(-lightDir,normal),-incident)),mix(120.0,19.0,cfg.optics.w));
  let rim=pow(1.0-ndv,2.4);
  var body= mix(transmitted,incoming,fresnel)+vec3<f32>(1.0,.97,.90)*specular*.7*cfg.lighting.x;
- body+=mix(vec3<f32>(.10,.43,.61),tint,.4)*rim*.34*cfg.lighting.x;
+ body+=mix(vec3<f32>(.10,.43,.61),tint,.4)*rim*.47*cfg.lighting.x;
+ // Fresnel edge tint is deliberately brighter than neutral transmission:
+ // it lets overlapping transparent lobes remain recognizable.
+ body+=mix(vec3<f32>(.12,.27,.32),tint,.76)*(.033+.21*rim)*cfg.material.w;
+ let broadGlint=pow(max(0.0,dot(reflect(-lightDir,normal),-incident)),33.0);
+ body+=vec3<f32>(.74,.94,1.05)*broadGlint*.48*cfg.lighting.x;
  return body;
 }
 fn outerShell(viewDir:vec3<f32>,entry:vec3<f32>,under:vec3<f32>)->vec3<f32>{
@@ -179,7 +184,7 @@ fn outerShell(viewDir:vec3<f32>,entry:vec3<f32>,under:vec3<f32>)->vec3<f32>{
  if(crossing.y>0.0){
   let surface=traceBlob(innerStart,ray,max(0.0,crossing.y-.02));
   // Inner globe interior is dark enough to reveal transparent refraction.
-  color=mix(color,environment(normalize(ray+normalize(front)*.10))*.74,.43);
+  color=mix(color,environment(normalize(ray+normalize(front)*.10))*.86+vec3<f32>(.009,.022,.030),.43);
   if(surface.y>.5){
    let pos=innerStart+ray*surface.x;
    if(cfg.options.w>.5&&cfg.options.w<1.5){

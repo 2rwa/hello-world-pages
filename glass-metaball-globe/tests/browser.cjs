@@ -52,6 +52,19 @@ const assert=require('node:assert/strict');
   assert.equal(data.error,'');
   if(i===0||i===2)await (await page.$('#captureCanvas')).screenshot({path:'/tmp/glass-metaball-case-'+i+'.png'});
  }
+ const surface=await page.evaluate(async()=>{
+  const app=window.__glass;
+  app.ui.setAll({quality:'high',count:14,blend:.33,viewMode:'glass',trail:0,bloom:.65,refraction:1.25});
+  const glass=await app.draw(true);
+  app.ui.set('viewMode','normals');
+  const normals=await app.draw(true);
+  return {glass:glass.centerEnergy,normals:normals.centerEnergy,width:normals.width,height:normals.height};
+ });
+ console.log('GEOMETRY PIXELS',surface);
+ assert.ok(Math.abs(surface.normals-surface.glass)>5000,'Raymarch surface diagnostic must differ visibly from optical render');
+ await page.evaluate(async()=>{const g=window.__glass;g.ui.set('viewMode','glass');await g.draw(true);});
+ await (await page.$('#captureCanvas')).screenshot({path:'/tmp/glass-metaball-higher-resolution.png'});
+ await page.evaluate(()=>window.__glass.ui.set('quality','low'));
  const difference=await page.evaluate(async()=>{
   const g=window.__glass;
   g.ui.setAll({viewMode:'glass',trail:0,bloom:0,blend:0,dispersion:0,ior:1,refraction:0});
