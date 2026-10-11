@@ -70,7 +70,10 @@ return true;
 }
 function render(config) {
 if (disposed || video.readyState < 2 || video.videoWidth < 1) return false;
-resize(video.videoWidth*config.quality,video.videoHeight*config.quality);
+const isQuarterTurn=config.rotation===1||config.rotation===3;
+const renderWidth=isQuarterTurn?video.videoHeight:video.videoWidth;
+const renderHeight=isQuarterTurn?video.videoWidth:video.videoHeight;
+resize(renderWidth*config.quality,renderHeight*config.quality);
 const p=new Float32Array([
 width,height,video.videoWidth,video.videoHeight,
 config.scanline,config.mask,config.curve,config.bloom,
@@ -79,7 +82,8 @@ config.chroma,config.interference,config.persistence,video.currentTime,
 config.brightness,config.contrast,config.saturation,config.gamma,
 config.maskSize,config.maskType,config.scanCount,config.overscan,
 config.bloomRadius,config.vignette,config.beamWidth,config.flicker,
-config.compare,config.mirror||0,config.tracking||0,config.interlace||0
+config.compare,config.mirror||0,config.tracking||0,config.interlace||0,
+config.rotation||0,0,0,0
 ]);
 device.queue.writeBuffer(paramsBuffer,0,p);
 device.queue.writeBuffer(xBlurBuffer,0,new Float32Array([1/width,0,config.bloomRadius,0]));
