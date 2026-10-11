@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>Torus Vortex Lab — Smoke × Water</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <main id="stage">
+    <canvas id="scene" aria-label="WebGPU smoke and water torus simulation"></canvas>
+    <canvas id="probe" hidden></canvas>
+    <div class="title"><span class="mark">◉</span> TORUS VORTEX <span class="light">/ SMOKE × WATER</span></div>
+    <div class="hint">DRAG · 回転　 /　 WHEEL · ズーム</div>
+    <div id="status" role="status">WebGPU を初期化しています…</div>
+  </main>
+  <details id="panel" open>
+    <summary>FLOW CONTROLS <span class="summary-tip">開閉</span></summary>
+    <div class="pane">
+      <div class="section">CIRCULATION <span>周回・ねじれ</span></div>
+      <label>水の流速 <output for="waterSpeed" id="v-waterSpeed"></output><input id="waterSpeed" type="range" min="-2.5" max="2.5" step="0.05" value="1.05"></label>
+      <label>煙の流速 <output for="smokeSpeed" id="v-smokeSpeed"></output><input id="smokeSpeed" type="range" min="-2.5" max="2.5" step="0.05" value="-0.72"></label>
+      <label>断面の螺旋 <output for="twist" id="v-twist"></output><input id="twist" type="range" min="0" max="7" step="0.1" value="3.2"></label>
+      <label>乱流・揺らぎ <output for="turbulence" id="v-turbulence"></output><input id="turbulence" type="range" min="0" max="3" step="0.05" value="1.15"></label>
+      <div class="section">MATERIAL <span>媒質</span></div>
+      <label>水位 <output for="waterLevel" id="v-waterLevel"></output><input id="waterLevel" type="range" min="-0.35" max="0.35" step="0.01" value="-0.04"></label>
+      <label>煙の濃さ <output for="smokeDensity" id="v-smokeDensity"></output><input id="smokeDensity" type="range" min="0" max="3" step="0.05" value="1.35"></label>
+      <label>ガラスの輝度 <output for="glass" id="v-glass"></output><input id="glass" type="range" min="0" max="2" step="0.05" value="1.05"></label>
+      <label>発光・反射 <output for="glow" id="v-glow"></output><input id="glow" type="range" min="0" max="2" step="0.05" value="1.00"></label>
+      <div class="section">RENDER <span>描画</span></div>
+      <label>内部解像度 <output for="resolution" id="v-resolution"></output><input id="resolution" type="range" min="0.4" max="1" step="0.1" value="0.7"></label>
+      <label>体積サンプル数 <output for="quality" id="v-quality"></output><input id="quality" type="range" min="24" max="104" step="8" value="56"></label>
+      <div class="buttons"><button id="pause">一時停止</button><button id="auto">自動回転 ON</button><button id="reset">初期値</button></div>
+      <div class="note">水は青緑、煙は紫白。正負の速度で逆流も可能。設定パネルは折り畳めます。</div>
+    </div>
+  </details>
+  <script type="module" src="./main.js"></script>
+</body>
+</html>
