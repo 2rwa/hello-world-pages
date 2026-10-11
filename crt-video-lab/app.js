@@ -24,7 +24,8 @@ if(Number.isFinite(duration)&&duration>0&&!$('seek').matches(':active')){
 $('seek').value=String(Math.round(video.currentTime/duration*1000));
 }
 }
-function drawFrame(){
+function drawFrame(force=false){
+if(renderer?.offline&&renderer.frames>=3&&!force)return;
 if(!renderer||busy||video.readyState<2)return;
 try{
 busy=true;
@@ -163,7 +164,7 @@ recorder.start(1000);$('record').classList.add('active');$('record').textContent
 notify('録画中: '+(recorder.mimeType||'自動選択'));
 }
 async function main(){
-currentUi=buildUi(()=>drawFrame());
+currentUi=buildUi(()=>drawFrame(true));
 video.volume=Number($('volume').value);
 $('volume').addEventListener('input',e=>{video.volume=Number(e.target.value);});
 $('videoFile').addEventListener('change',e=>{loadFile(e.target.files?.[0]).catch(showError);});
