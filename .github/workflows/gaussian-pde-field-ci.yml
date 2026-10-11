@@ -1,0 +1,38 @@
+name: Gaussian PDE Field WebGPU CI
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'gaussian-pde-field/**'
+      - '.github/workflows/gaussian-pde-field-ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  webgpu:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - name: Syntax and versions
+        run: |
+          node --check gaussian-pde-field/app.js
+          node --check gaussian-pde-field/renderer.js
+          node --check gaussian-pde-field/shader.js
+          node --check gaussian-pde-field/test.cjs
+          google-chrome --version
+      - name: Install browser driver
+        run: npm install --no-save --no-package-lock puppeteer-core@24
+      - name: Start static server
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/gaussian-pde-http.log 2>&1 &
+          for i in {1..40}; do
+            if curl -fsS http://127.0.0.1:8765/gaussian-pde-field/ >/dev/null; then exit 0; fi
+            sleep 0.25
+          done
+          exit 1
+      - name: Real WGSL compilation, pipelines, draw and pixel readback
+        run: node gaussian-pde-field/test.cjs
+      - name: HTTP diagnostics
+        if: failure()
+        run: cat /tmp/gaussian-pde-http.log || true

@@ -1,0 +1,28 @@
+:root{color-scheme:dark;--ink:#def5ff;--muted:#8dabc6;--border:rgba(100,218,249,.25);--cyan:#58e9ff;--bg:#050915;font-family:ui-sans-serif,system-ui,"Noto Sans JP",sans-serif}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--ink)}button,select,input{font:inherit}
+#viewport{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab}#viewport:active{cursor:grabbing}
+.grain{pointer-events:none;position:fixed;inset:0;background-image:linear-gradient(rgba(90,180,255,.018) 1px,transparent 1px);background-size:100% 4px;mix-blend-mode:screen;opacity:.5}
+.hud{position:fixed;top:clamp(18px,3.2vw,47px);left:clamp(18px,3.7vw,64px);pointer-events:none;width:min(40vw,430px)}
+.eyebrow,.subtitle,.section-label,.panel-toggle,.footer,.formula-title{letter-spacing:.18em;font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
+.eyebrow{font-size:10px;color:#89ddf8;margin-bottom:14px}.hud h1{font-family:Impact,"Arial Narrow",sans-serif;letter-spacing:.095em;font-weight:900;font-size:clamp(29px,4vw,61px);line-height:1;margin:0;text-shadow:0 0 36px rgba(0,185,255,.28)}
+.hud h1 span{color:#50daef}.subtitle{font-size:11px;color:#b2d0e7;margin:11px 0 27px}
+.formula-panel{padding:16px 18px;border-left:2px solid #47c9e9;background:linear-gradient(90deg,rgba(12,35,64,.7),transparent)}
+.formula-title{font-size:10px;color:#5fe9f9}.equation{font-family:Georgia,serif;font-size:clamp(20px,2.15vw,29px);font-style:italic;letter-spacing:.03em;color:#d8fcff;margin:9px 0}.formula-description{font-size:11px;line-height:1.6;color:#a5c3d8}
+.panel{position:fixed;z-index:5;top:clamp(12px,2.6vw,36px);right:clamp(12px,2.7vw,47px);width:min(342px,calc(100vw - 24px));border:1px solid var(--border);background:rgba(5,13,29,.88);box-shadow:0 18px 60px rgba(0,0,0,.55),inset 0 0 40px rgba(13,49,80,.22);backdrop-filter:blur(19px);-webkit-backdrop-filter:blur(19px)}
+.panel-toggle{display:block;width:100%;text-align:left;border:0;border-bottom:1px solid var(--border);background:linear-gradient(90deg,rgba(48,148,183,.24),transparent);padding:15px 20px;color:#99f2ff;font-size:11px;font-weight:700;cursor:pointer}
+.panel-body{max-height:calc(100dvh - 140px);overflow:auto;overscroll-behavior:contain;padding:5px 20px 23px;scrollbar-width:thin;scrollbar-color:#367c98 transparent}
+.panel.collapsed .panel-body{display:none}.panel.collapsed .panel-toggle{border-bottom:0}
+.section-label{font-size:10px;color:#6fc1d2;margin:20px 0 13px}
+.field{display:flex;flex-direction:column;gap:6px;margin:0 0 13px;color:#d4eaf9;font-size:12px}
+.field>span:first-child{display:flex;align-items:center;justify-content:space-between}.field output{font-family:ui-monospace,monospace;color:#68e3fb;font-size:11px}
+.field select{width:100%;background:#101e32;color:#e3f5ff;border:1px solid #355a70;border-radius:4px;padding:8px}
+.field input[type=range]{width:100%;height:15px;accent-color:#54e4f8;cursor:pointer}
+.checkbox-line{display:flex;flex-direction:row;align-items:center;gap:8px;margin:16px 0}.checkbox-line input{accent-color:#43d9f4}
+.actions{display:flex;gap:9px}.actions button{flex:1;background:#132c43;border:1px solid #2b6d86;border-radius:5px;color:#d7faff;padding:10px 7px;cursor:pointer}.actions button:hover{background:#19415a}
+.explain{font-size:11px;color:var(--muted);line-height:1.65;margin:16px 0 0}
+.footer{position:fixed;left:clamp(18px,3.7vw,64px);right:clamp(18px,3.7vw,64px);bottom:max(18px,env(safe-area-inset-bottom));display:flex;align-items:center;gap:24px;font-size:10px;color:#92bed5;pointer-events:none}
+.footer>div:first-child{display:flex;align-items:center;gap:9px}.pulse{width:7px;height:7px;border-radius:50%;background:#5df2bf;box-shadow:0 0 13px #5df2bf;animation:pulse 2s infinite}
+@keyframes pulse{50%{opacity:.35}}.stats{color:#baf5ff;font-variant-numeric:tabular-nums}.instruction{margin-left:auto;color:#719db0}
+.error{position:fixed;z-index:20;left:50%;top:50%;transform:translate(-50%,-50%);background:#2d091a;border:1px solid #f77;padding:25px;max-width:85vw;white-space:pre-wrap;font:12px/1.5 monospace}
+@media(max-width:750px){.hud{top:18px;left:18px;width:min(60vw,350px)}.eyebrow{font-size:8px;margin-bottom:9px}.hud h1{font-size:clamp(24px,6vw,38px)}.subtitle{font-size:8px;margin:7px 0 12px}.formula-panel{padding:8px 10px}.formula-title{font-size:8px}.equation{font-size:18px;margin:5px 0}.formula-description{font-size:9px}.panel{top:12px;right:12px;width:min(300px,46vw)}.panel:not(.collapsed){width:min(340px,calc(100vw - 24px))}.panel-toggle{padding:12px 13px;font-size:9px}.panel-body{max-height:calc(100dvh - 116px)}.footer{left:16px;right:16px;bottom:max(14px,env(safe-area-inset-bottom));gap:11px;font-size:9px;flex-wrap:wrap}.instruction{display:none}}
+@media(max-width:440px){.hud{width:57vw}.hud h1{font-size:25px}.formula-description{display:none}.panel{width:128px}.panel:not(.collapsed){width:calc(100vw - 24px)}.footer{max-width:85vw}}

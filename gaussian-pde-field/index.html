@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#050915">
+<title>Gaussian PDE // WebGPU Field Laboratory</title>
+<link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<canvas id="viewport" aria-label="WebGPUによる偏微分方程式の3D可視化"></canvas>
+<div class="grain" aria-hidden="true"></div>
+<header class="hud">
+  <div class="eyebrow">FIELD LABORATORY / EXPERIMENT 001</div>
+  <h1>GAUSSIAN<span>//</span>PDE</h1>
+  <p class="subtitle">EQUATIONS MADE VISIBLE</p>
+  <div class="formula-panel">
+    <div class="formula-title" id="formulaName">HEAT EQUATION</div>
+    <div class="equation" id="formula">∂ₜu = D∇²u</div>
+    <div class="formula-description" id="formulaDescription"></div>
+  </div>
+</header>
+<section id="controlPanel" class="panel" aria-label="描画コントロール">
+  <button id="panelToggle" class="panel-toggle" type="button" aria-expanded="true">CONTROLS −</button>
+  <div class="panel-body">
+    <div class="section-label">SIMULATION / MODEL</div>
+    <label class="field"><span>方程式</span><select data-param="mode">
+      <option value="0">01 / 熱拡散 · HEAT</option>
+      <option value="1">02 / 回転移流 · VORTEX</option>
+      <option value="2">03 / 波動 · WAVE</option>
+    </select></label>
+    <label class="field"><span>Gaussianの数 <output data-val="count"></output></span><input type="range" data-param="count" min="1" max="100" step="1"></label>
+    <label class="field"><span>初期幅 σ <output data-val="width"></output></span><input type="range" data-param="width" min=".18" max="1.7" step=".02"></label>
+    <label class="field"><span>拡散係数 D <output data-val="diffusion"></output></span><input type="range" data-param="diffusion" min="0" max=".4" step=".005"></label>
+    <label class="field"><span>時間速度 <output data-val="speed"></output></span><input type="range" data-param="speed" min="0" max="3" step=".05"></label>
+    <label class="field"><span>波速 c <output data-val="waveSpeed"></output></span><input type="range" data-param="waveSpeed" min=".1" max="2" step=".02"></label>
+    <label class="field"><span>角速度 ω <output data-val="rotation"></output></span><input type="range" data-param="rotation" min="0" max="1.8" step=".02"></label>
+    <div class="section-label">RENDER / OPTICS</div>
+    <label class="field"><span>高さの倍率 <output data-val="height"></output></span><input type="range" data-param="height" min=".2" max="4.5" step=".05"></label>
+    <label class="field"><span>等高線 <output data-val="contours"></output></span><input type="range" data-param="contours" min="0" max="1.5" step=".05"></label>
+    <label class="field"><span>発光強度 <output data-val="glow"></output></span><input type="range" data-param="glow" min="0" max="3" step=".05"></label>
+    <label class="field"><span>グリッド <output data-val="grid"></output></span><input type="range" data-param="grid" min="0" max="1" step=".02"></label>
+    <label class="field"><span>カラー</span><select data-param="palette">
+      <option value="0">CYAN / 深海の青</option><option value="1">MAGENTA / 電離プラズマ</option><option value="2">LIME / 蛍光体</option>
+    </select></label>
+    <label class="field"><span>光の粒子 <output data-val="particles"></output></span><input type="range" data-param="particles" min="0" max="400" step="10"></label>
+    <label class="field"><span>粒子サイズ <output data-val="particleSize"></output></span><input type="range" data-param="particleSize" min=".01" max=".1" step=".005"></label>
+    <label class="field"><span>粒子の浮遊幅 <output data-val="particleLift"></output></span><input type="range" data-param="particleLift" min=".05" max="2.5" step=".05"></label>
+    <label class="field"><span>描画解像度 <output data-val="resolution"></output></span><input type="range" data-param="resolution" min=".35" max="1.5" step=".05"></label>
+    <label class="field checkbox-line"><input id="autoOrbit" type="checkbox" checked><span>カメラの自動回転</span></label>
+    <div class="actions"><button type="button" id="pauseButton">Ⅱ Pause</button><button type="button" id="resetButton">↻ Reset</button></div>
+    <p class="explain">ドラッグで回転 / ホイール・ピンチで拡大。14秒ごとに初期条件を再設定します。拡散・渦はGaussian厳密解、波はGaussian包絡の1次元平面波解です。</p>
+  </div>
+</section>
+<footer class="footer">
+  <div><i class="pulse"></i><span id="status">PREPARING GPU</span></div>
+  <div id="stats" class="stats">— FPS · — × —</div>
+  <div class="instruction">DRAG TO ORBIT · SCROLL TO ZOOM</div>
+</footer>
+<div id="errorText" class="error" hidden></div>
+<script type="module" src="./app.js"></script>
+</body>
+</html>
