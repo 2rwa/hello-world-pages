@@ -4,12 +4,20 @@
 <canvas id="view" aria-label="球の中で霧粒子が漂う3D WebGPUシミュレーション"></canvas>
 <div class="brand"><span>WEBGPU / GAUSSIAN PARTICLE LAB</span><h1>FOG<br><em>PARTICLE.</em></h1><p>霧は小さな粒子の集まり。<br>揺らぎ、渦を巻き、溶け合う。</p></div>
 <div class="readout" id="readout">INITIALIZING WEBGPU</div>
-<button id="openPanel" class="open-panel" aria-controls="panel" aria-expanded="true">☰ <span>CONTROLS</span></button>
-<aside id="panel" aria-label="霧のパラメータ">
- <div class="head"><div><strong>ATMOSPHERE LAB</strong><small id="qualityLabel">LIVE · AUTO</small></div><button id="closePanel" aria-label="メニューを最小化">✕</button></div>
+<button id="openPanel" class="open-panel" aria-controls="panel" aria-expanded="true" aria-label="詳細設定を開く">⚙ 詳細設定 <span id="compactCount">パラメータ</span></button>
+<aside id="panel" aria-label="霧の詳細設定">
+ <div class="head"><div><strong>⚙ 霧の詳細設定</strong><small id="qualityLabel">LIVE · AUTO</small></div><button id="closePanel" aria-label="設定パネルを最小化" title="メニューを閉じる">✕</button></div>
+ <div class="panel-toolbar"><label for="controlSearch">パラメータ検索</label><div class="search-box"><input id="controlSearch" type="search" placeholder="粒子数、風、色、Bloom…" autocomplete="off"><button id="clearSearch" title="検索をクリア" aria-label="検索をクリア">×</button></div><small id="resultCount" aria-live="polite"></small></div>
  <div id="controls" class="scroll"></div>
+ <div class="config-actions">
+  <button id="restoreDefaults" title="設定値のみ初期化">初期値に戻す</button>
+  <button id="downloadConfig" title="現在の全パラメータをJSON保存">JSON保存</button>
+  <button id="uploadConfigButton" title="JSONから設定を復元">JSON読込</button>
+  <input id="uploadConfig" type="file" accept=".json,application/json" hidden>
+ </div>
+ <div id="settingsMessage" class="settings-message" role="status" aria-live="polite">設定はブラウザに自動保存されます</div>
  <div class="actions">
-  <button id="pause">Ⅱ PAUSE</button><button id="burst">✺ STIR</button><button id="reset">↻ RESET</button><button id="viewReset">◎ VIEW</button>
+  <button id="pause">Ⅱ PAUSE</button><button id="burst">✺ STIR</button><button id="reset" title="粒子の配置だけ再生成">↻ 配置</button><button id="viewReset">◎ 視点</button>
  </div>
 </aside>
 <div id="error" role="alert" hidden></div>

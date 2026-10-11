@@ -1,6 +1,6 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import {FogSimulation,MAX_PARTICLES,rngFromSeed} from '../physics.mjs';
-const settings={count:2400,size:.14,spread:.93,shape:'cloud',seed:7,speed:1,flow:.5,windX:.04,windY:0,windZ:0,swirl:1.5,turbulence:1.1,buoyancy:.07,damping:.3,bounce:.5};
+const settings={count:2400,size:.14,sizeVariance:.58,spread:.93,shape:'cloud',seed:7,speed:1,flow:.5,windX:.04,windY:0,windZ:0,swirl:1.5,turbulence:1.1,buoyancy:.07,damping:.3,bounce:.5};
 test('seeded initial positions are repeatable',()=>{
  const a=new FogSimulation(settings),b=new FogSimulation(settings);
  assert.deepEqual(a.particles.slice(0,15),b.particles.slice(0,15));assert.equal(a.particles.length,MAX_PARTICLES);
@@ -28,4 +28,12 @@ test('velocity is finite when simulation speed is zero',()=>{
  const sim=new FogSimulation({...settings,count:600,speed:0});
  for(let i=0;i<120;i++)sim.step(1/120);
  sim.validate();
+});
+
+test('particle size variance slider controls particle radii',()=>{
+ const uniform=new FogSimulation({...settings,sizeVariance:0});
+ const varied=new FogSimulation({...settings,sizeVariance:1});
+ assert.ok(uniform.particles.every(p=>p.radius===1));
+ assert.ok(varied.particles.some(p=>Math.abs(p.radius-1)>.25));
+ varied.validate();
 });

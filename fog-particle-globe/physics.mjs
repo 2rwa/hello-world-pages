@@ -17,7 +17,7 @@ export class FogSimulation{
   let length=Math.hypot(x,y,z)||1;
   const particle={x:x/length*factor,y:y/length*factor,z:z/length*factor,
    vx:(rand()-.5)*.09,vy:(rand()-.5)*.09,vz:(rand()-.5)*.09,
-   radius:.65+.9*rand(),alpha:.55+.8*rand(),hue:rand(),phase:rand()*2*PI};
+   radius:1+(rand()-.5)*1.8*(s.sizeVariance??.58),alpha:.55+.8*rand(),hue:rand(),phase:rand()*2*PI};
   this.particles.push(particle);
  }}
  stir(){const rand=rngFromSeed(((this.clock*1000)|0)+this.s.seed+734);
@@ -43,7 +43,7 @@ export class FogSimulation{
    if(outward>0){p.vx-=(1+s.bounce)*outward*nx;p.vy-=(1+s.bounce)*outward*ny;p.vz-=(1+s.bounce)*outward*nz;}
   }
  }}
- validate(){for(let i=0;i<this.s.count;i++){const p=this.particles[i];if(!Number.isFinite(p.x+p.y+p.z+p.vx+p.vy+p.vz)||Math.hypot(p.x,p.y,p.z)>1.00001)throw Error('Unbounded particle '+i);}}
+ validate(){for(let i=0;i<this.s.count;i++){const p=this.particles[i];if(!Number.isFinite(p.x+p.y+p.z+p.vx+p.vy+p.vz+p.radius+p.alpha+p.hue+p.phase)||Math.hypot(p.x,p.y,p.z)>1.00001)throw Error('Unbounded particle '+i);}}
  sorted(camera){const front=camera.forward,origin=camera.position;
  const ordered=this.particles.slice(0,this.s.count).sort((a,b)=>{
   const da=(a.x-origin[0])*front[0]+(a.y-origin[1])*front[1]+(a.z-origin[2])*front[2];

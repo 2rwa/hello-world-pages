@@ -1,8 +1,17 @@
-import {stateDefault,buildControls} from './settings.js';
+import {stateDefault,buildControls,normalizeSettings} from './settings.js';
 import {FogSimulation,clamp} from './physics.mjs';
 import {FogGPU} from './render.mjs';
 const canvas=document.getElementById('view'),root=document.documentElement;
-const state={...stateDefault};const ci=new URLSearchParams(location.search).has('ci');
+const ci=new URLSearchParams(location.search).has('ci');
+const STORAGE_KEY='fog-particle-globe-controls-v2';
+function readSettings(){
+ if(ci)return {};
+ try{
+  const saved=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null');
+  return normalizeSettings(saved?.settings||saved);
+ }catch(e){console.warn('Saved settings unavailable',e);return {};}
+}
+const state={...stateDefault,...readSettings()};
 const sim=new FogSimulation(state),view=new FogGPU(canvas,state,ci);
 const panel=document.getElementById('panel'),openPanel=document.getElementById('openPanel');
 const readout=document.getElementById('readout'),errorEl=document.getElementById('error');
@@ -23,10 +32,70 @@ function setExpanded(expanded){
 openPanel.addEventListener('click',()=>setExpanded(true));
 document.getElementById('closePanel').addEventListener('click',()=>setExpanded(false));
 if(matchMedia('(max-width:700px)').matches)setExpanded(false);
+const settingsMessage=document.getElementById('settingsMessage');
+let saveTimer=0;
+function setMessage(message){settingsMessage.textContent=message;}
+function exportObject(){return {format:'Fog Particle Globe',version:2,settings:normalizeSettings(state)};}
+function persistNow(){
+ try{localStorage.setItem(STORAGE_KEY,JSON.stringify(exportObject()));return true;}
+ catch(e){console.warn('Settings could not be saved',e);setMessage('このブラウザでは自動保存できません');return false;}
+}
+function scheduleSave(){
+ if(ci)return;
+ clearTimeout(saveTimer);saveTimer=setTimeout(()=>{
+  if(persistNow())setMessage('設定をこのブラウザに保存しました');
+ },260);
+}
 const setValue=buildControls(document.getElementById('controls'),state,id=>{
- if(['seed','shape','spread'].includes(id))sim.reset();
- if(id==='resolution'||id==='quality')view.qualityScale=state.resolution;
+ if(['seed','shape','spread','sizeVariance','batch'].includes(id))sim.reset();
+ if(id==='resolution'||id==='quality'||id==='batch')view.qualityScale=state.resolution;
+ if(id!=='preset')scheduleSave();
 });
+function applyImport(data){
+ if(!data||typeof data!=='object'||Array.isArray(data))throw Error('設定JSONの形式が正しくありません');
+ const input=data.settings&&typeof data.settings==='object'?data.settings:data;
+ const normalized=normalizeSettings(input);
+ const count=setValue.setAll(normalized);
+ if(count===0)throw Error('有効なパラメータがありません');
+ if(!ci)persistNow();
+ setMessage(count+'項目の設定を読み込みました');
+ return count;
+}
+const searchInput=document.getElementById('controlSearch');
+const resultCount=document.getElementById('resultCount');
+function filterSettings(){
+ const matches=setValue.filter(searchInput.value);
+ resultCount.textContent=matches+' / '+setValue.count+' 項目';
+ return matches;
+}
+searchInput.addEventListener('input',filterSettings);
+document.getElementById('clearSearch').addEventListener('click',()=>{
+ searchInput.value='';filterSettings();searchInput.focus();
+});
+filterSettings();
+document.getElementById('compactCount').textContent=setValue.count+'項目';
+document.getElementById('restoreDefaults').addEventListener('click',()=>{
+ setValue.setAll(stateDefault);sim.reset();camera={yaw:.5,pitch:.15,distance:3.4};
+ if(!ci)persistNow();setMessage('初期設定に戻しました');
+});
+document.getElementById('downloadConfig').addEventListener('click',()=>{
+ const raw=JSON.stringify(exportObject(),null,2);
+ const url=URL.createObjectURL(new Blob([raw],{type:'application/json'}));
+ const link=document.createElement('a');link.href=url;link.download='fog-particle-settings.json';
+ document.body.append(link);link.click();link.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),1000);
+ setMessage('設定JSONをダウンロードしました');
+});
+const uploadInput=document.getElementById('uploadConfig');
+document.getElementById('uploadConfigButton').addEventListener('click',()=>uploadInput.click());
+uploadInput.addEventListener('change',async()=>{
+ const file=uploadInput.files?.[0];if(!file)return;
+ try{const data=JSON.parse(await file.text());applyImport(data);}
+ catch(e){setMessage('読み込み失敗: '+e.message);console.error(e);}
+ finally{uploadInput.value='';}
+});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!panel.classList.contains('collapsed'))setExpanded(false);});
+window.__fogSettings={exportObject,importObject:applyImport,persistNow,filterSettings,resetDefaults:()=>document.getElementById('restoreDefaults').click()};
 document.getElementById('pause').addEventListener('click',()=>{paused=!paused;document.getElementById('pause').textContent=paused?'▶ RESUME':'Ⅱ PAUSE';});
 document.getElementById('reset').addEventListener('click',()=>sim.reset());
 document.getElementById('burst').addEventListener('click',()=>sim.stir());
@@ -72,7 +141,7 @@ async function frame(now){
 async function initialize(){
  root.dataset.webgpuStatus='initializing';root.dataset.webgpuStage='script-start';
  try{
-  if(ci){state.count=140;state.quality='low';state.resolution=.55;state.trail=0;view.qualityScale=.55;}
+  if(ci){setValue.setAll({count:150,quality:'low',resolution:.55,trail:0});view.qualityScale=.55;}
   await view.initialize();started=true;
   window.__fog={state,sim,view,camera,setValue,setExpanded,advance,draw,cameraVectors,get paused(){return paused;}};
   if(ci){
