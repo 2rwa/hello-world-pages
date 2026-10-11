@@ -1,0 +1,56 @@
+name: Glass Metaball Globe WebGPU Regression
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'glass-metaball-globe/**'
+      - '.github/workflows/glass-metaball-globe.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  glass-metaball:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Syntax and deterministic physics regression
+        run: |
+          set -euo pipefail
+          for f in glass-metaball-globe/*.js glass-metaball-globe/*.mjs glass-metaball-globe/tests/*.cjs; do node --check "$f"; done
+          node --test glass-metaball-globe/tests/physics.test.mjs
+      - name: Start server and WebGPU SwiftShader Chrome
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m http.server 8782 --bind 127.0.0.1 >/tmp/glass-metaball-http.log 2>&1 &
+          for i in {1..40}; do curl -fsS 'http://127.0.0.1:8782/glass-metaball-globe/?ci=1' >/dev/null && break || sleep .25; done
+          google-chrome --version
+          google-chrome --headless=new --no-sandbox --disable-dev-shm-usage \
+            --remote-debugging-address=127.0.0.1 --remote-debugging-port=9222 \
+            --remote-allow-origins='*' --user-data-dir=/tmp/glass-metaball-chrome \
+            --enable-unsafe-webgpu --enable-features=Vulkan \
+            --use-vulkan=swiftshader --disable-vulkan-fallback-to-gl-for-testing \
+            --use-webgpu-adapter=swiftshader --enable-webgpu-developer-features \
+            --enable-dawn-features=allow_unsafe_apis --disable-dawn-features=use_dxc \
+            --use-gpu-in-tests --enable-unsafe-swiftshader \
+            'http://127.0.0.1:8782/glass-metaball-globe/?ci=1' \
+            >/tmp/glass-metaball-chrome.log 2>&1 &
+          for i in {1..120}; do curl -fsS http://127.0.0.1:9222/json/version >/dev/null && exit 0 || sleep .25; done
+          tail -100 /tmp/glass-metaball-chrome.log; exit 1
+      - name: Test actual WebGPU pixels and PC mobile controls
+        run: |
+          npm install --no-save --no-package-lock puppeteer-core@24
+          node glass-metaball-globe/tests/browser.cjs
+      - name: Preserve GPU screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: glass-metaball-gpu-and-controls
+          path: /tmp/glass-metaball-*.png
+          if-no-files-found: ignore
+      - name: Diagnostics
+        if: always()
+        run: |
+          tail -110 /tmp/glass-metaball-chrome.log 2>/dev/null || true
+          tail -25 /tmp/glass-metaball-http.log 2>/dev/null || true
