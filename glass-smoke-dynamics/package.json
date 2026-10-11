@@ -1,0 +1,13 @@
+{
+  "name": "glass-smoke-dynamics",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node tests/browser-test.mjs"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.56.1",
+    "pngjs": "^7.0.0"
+  }
+}

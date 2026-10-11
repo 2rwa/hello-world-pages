@@ -1,0 +1,42 @@
+name: Glass Smoke Dynamics WebGPU regression
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'glass-smoke-dynamics/**'
+      - '.github/workflows/glass-smoke-dynamics.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  webgpu-swiftshader:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check syntax and install test dependencies
+        run: |
+          node --check glass-smoke-dynamics/main.js
+          node --check glass-smoke-dynamics/renderer.js
+          node --check glass-smoke-dynamics/physics.js
+          cd glass-smoke-dynamics && npm install --no-audit --no-fund
+      - name: Start HTTP and run real SwiftShader WebGPU browser tests
+        run: |
+          command -v google-chrome || command -v chromium
+          google-chrome --version || chromium --version
+          python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/glass-smoke-http.log 2>&1 &
+          sleep 2
+          cd glass-smoke-dynamics
+          CHROME_BIN="$(command -v google-chrome || command -v chromium)" node tests/browser-test.mjs
+      - name: Upload actual GPU image readback
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: glass-smoke-gpu-readback
+          path: glass-smoke-dynamics/glass-smoke-gpu-readback.png
+          if-no-files-found: ignore
