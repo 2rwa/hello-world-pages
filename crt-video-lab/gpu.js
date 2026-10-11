@@ -25,7 +25,7 @@ const info = await shaderModules[i].getCompilationInfo();
 const errors = info.messages.filter(message => message.type === 'error');
 if (errors.length) throw new Error(shaderPaths[i] + ' : ' + errors.map(e=>e.lineNum+':'+e.message).join('\n'));
 }
-const paramsBuffer = device.createBuffer({size:128,usage:GPUBufferUsage.UNIFORM|GPUBufferUsage.COPY_DST});
+const paramsBuffer = device.createBuffer({size:144,usage:GPUBufferUsage.UNIFORM|GPUBufferUsage.COPY_DST});
 const xBlurBuffer = device.createBuffer({size:16,usage:GPUBufferUsage.UNIFORM|GPUBufferUsage.COPY_DST});
 const yBlurBuffer = device.createBuffer({size:16,usage:GPUBufferUsage.UNIFORM|GPUBufferUsage.COPY_DST});
 const fallback=makeVideoFallback(device,offline);
