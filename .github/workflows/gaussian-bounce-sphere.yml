@@ -1,0 +1,55 @@
+name: Gaussian Bounce Sphere WebGPU Regression
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'gaussian-bounce-sphere/**'
+      - '.github/workflows/gaussian-bounce-sphere.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  physics-and-gpu:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Syntax and deterministic physics regression
+        run: |
+          for f in gaussian-bounce-sphere/*.js gaussian-bounce-sphere/*.mjs gaussian-bounce-sphere/tests/*.cjs; do node --check "$f"; done
+          node --test gaussian-bounce-sphere/tests/physics.test.mjs
+      - name: Start HTTP and WebGPU SwiftShader Chromium
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m http.server 8767 --bind 127.0.0.1 >/tmp/gaussian-http.log 2>&1 &
+          for i in {1..40}; do curl -fsS http://127.0.0.1:8767/gaussian-bounce-sphere/?ci=1 >/dev/null && break || sleep .25; done
+          google-chrome --version
+          google-chrome --headless=new --no-sandbox --disable-dev-shm-usage \
+            --remote-debugging-address=127.0.0.1 --remote-debugging-port=9222 \
+            --remote-allow-origins='*' --user-data-dir=/tmp/gaussian-bounce-chrome \
+            --enable-unsafe-webgpu --enable-features=Vulkan \
+            --use-vulkan=swiftshader --disable-vulkan-fallback-to-gl-for-testing \
+            --use-webgpu-adapter=swiftshader --enable-webgpu-developer-features \
+            --enable-dawn-features=allow_unsafe_apis --disable-dawn-features=use_dxc \
+            --use-gpu-in-tests --enable-unsafe-swiftshader \
+            'http://127.0.0.1:8767/gaussian-bounce-sphere/?ci=1' \
+            >/tmp/gaussian-chrome.log 2>&1 &
+          for i in {1..120}; do curl -fsS http://127.0.0.1:9222/json/version >/dev/null && exit 0 || sleep .25; done
+          cat /tmp/gaussian-chrome.log; exit 1
+      - name: Test WebGPU pixels, 100 particle modes, controls and mobile menu
+        run: |
+          npm install --no-save --no-package-lock puppeteer-core@24
+          node gaussian-bounce-sphere/tests/webgpu-ci.cjs
+      - name: Store real GPU screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gaussian-bounce-sphere-captures
+          path: /tmp/gaussian-bounce-*.png
+          if-no-files-found: ignore
+      - name: Diagnostics
+        if: always()
+        run: |
+          tail -120 /tmp/gaussian-chrome.log 2>/dev/null || true
+          tail -40 /tmp/gaussian-http.log 2>/dev/null || true
