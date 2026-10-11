@@ -28,14 +28,25 @@
  var listing:array<u32,100>;
  let total=buildCandidates(rayStart,traceDir,&listing);
  let mode=u32(cfg.u7.x);let steps=u32(cfg.u9.z);let travel=max(.001,exit-enter);
+ let orbitAngle=cfg.u9.x*cfg.u9.y;
+ let lightDir=normalize(vec3<f32>(-.48+cos(orbitAngle)*.55,.7,sin(orbitAngle)*.6+.32));
  let delta=travel/max(1.0,f32(steps));
  var previous=0.0;var firstHit=false;var hitPoint=vec3<f32>(0.0);
  var cloud=vec3<f32>(0.0);var accumulated=0.0;
+ var fogLightSum=vec3<f32>(0.0);
+ var fogTransmittance=1.0;
  for(var stepIdx:u32=0u;stepIdx<160u;stepIdx++){
   if(stepIdx>=steps){break;}
   let t=enter+delta*f32(stepIdx);
   let point=rayStart+traceDir*t;
   let density=densityField(point,&listing,total);
+  if(cfg.u10.x>.5){
+   let concentration=fogAmountAt(point,density);
+   let stepAlpha=1.0-exp(-concentration*cfg.u11.z*delta);
+   let scatteredColor=fogTintColor()*fogScatterTerm(lightDir,traceDir);
+   fogLightSum+=fogTransmittance*stepAlpha*scatteredColor;
+   fogTransmittance*=1.0-stepAlpha;
+  }
   if(mode==1u || mode==2u){
    let alpha=(1.0-exp(-density*cfg.u5.y*delta*3.8))*(1.0-accumulated);
    if(alpha>.002){let tone=fieldColor(point,&listing,total);cloud+=tone.rgb*alpha*(.35+cfg.u5.x*.8);}
@@ -50,13 +61,11 @@
    hitPoint=rayStart+traceDir*upper;firstHit=true;break;
   }
   previous=density;
-  if(accumulated>.98){break;}
+  if(accumulated>.98 && (cfg.u10.x<.5 || fogTransmittance<.02)){break;}
  }
  if(firstHit){
   let grad=fieldGradient(hitPoint,&listing,total);
   let outward=normalize(-grad+vec3<f32>(.00001,0.0,0.0));
-  let angle=cfg.u9.x*cfg.u9.y;
-  let lightDir=normalize(vec3<f32>(-.48+cos(angle)*.55,.7,sin(angle)*.6+.32));
   let diffusion=max(0.0,dot(outward,lightDir));
   let halfDir=normalize(lightDir-traceDir);let sharp=8.0+120.0*(1.0-cfg.u6.y)*(1.0-cfg.u6.y);
   let highlight=pow(max(0.0,dot(halfDir,outward)),sharp)*cfg.u6.z;
@@ -81,6 +90,8 @@
     if(proj>0.0){let radius=.014;let intensity=1.0-smoothstep(radius,radius+.012,distance);color=mix(color,vec3<f32>(1.5,.9,.3),intensity);}
    }
  }
+ // Fog attenuates objects behind the integrated ray and adds in-scattered light.
+ if(cfg.u10.x>.5){color=color*fogTransmittance+fogLightSum;}
  let ripple=rippleLight(outerNormal);
  let shellColor=mix(vec3<f32>(.18,.52,.7),vec3<f32>(.45,.72,1.0),cfg.u7.w);
  color+=shellColor*(shellFresnel*.95+(.035+max(0.0,ripple)*.6)*cfg.u5.z);

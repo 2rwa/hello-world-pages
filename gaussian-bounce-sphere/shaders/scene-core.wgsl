@@ -9,6 +9,9 @@ struct Params {
   u7: vec4<f32>, // mode ior refraction shellTint
   u8: vec4<f32>, // ripple strength frequency speed collisionGlow
   u9: vec4<f32>, // orbit clock marchSteps rayCull
+  u10:vec4<f32>, // fog style, density, particle contribution, noise scale
+  u11:vec4<f32>, // fog flow, noise strength, extinction, anisotropy
+  u12:vec4<f32>, // fog hue, scattering, center height, height falloff
 };
 struct Particle { center: vec3<f32>, sigma:f32, velocity:vec3<f32>, energy:f32, };
 struct Ripple { normalAge:vec4<f32>, intensity:vec4<f32>, };
@@ -33,7 +36,7 @@ fn buildCandidates(origin:vec3<f32>,direction:vec3<f32>,listing:ptr<function,arr
  for(var k:u32=0u;k<100u;k++){if(k>=n){break;}
   let p=bodies[k];let delta=p.center-origin;let projected=dot(delta,direction);
   let radial=dot(delta,delta)-projected*projected;
-  let support=3.5*p.sigma;
+  let support=select(3.5,4.6,cfg.u10.x>=2.0)*p.sigma;
   if(cfg.u9.w<.5 || (projected>0.0 && radial<support*support)) {(*listing)[total]=k;total++;}
  }
  return total;

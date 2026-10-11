@@ -11,13 +11,13 @@ export class GPUView {
   device.addEventListener('uncapturederror',ev=>{document.documentElement.dataset.webgpuError=ev.error.message;document.documentElement.dataset.webgpuStatus='error';});
   this.format=navigator.gpu.getPreferredCanvasFormat();
   if(!this.ci){this.context=this.canvas.getContext('webgpu');if(!this.context)throw Error('Canvas WebGPU context unavailable');}
-  this.uniform=device.createBuffer({size:160,usage:GPUBufferUsage.UNIFORM|GPUBufferUsage.COPY_DST});
+  this.uniform=device.createBuffer({size:208,usage:GPUBufferUsage.UNIFORM|GPUBufferUsage.COPY_DST});
   this.postUniform=device.createBuffer({size:48,usage:GPUBufferUsage.UNIFORM|GPUBufferUsage.COPY_DST});
   this.particles=device.createBuffer({size:MAX_PARTICLES*8*4,usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST});
   this.ripples=device.createBuffer({size:8*8*4,usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST});
   stage('shader-compilation-info');
-  const dir='./shaders/';const [core,scene,post,present]=await Promise.all(['scene-core.wgsl','scene-main.wgsl','post.wgsl','present.wgsl'].map(async f=>{const res=await fetch(dir+f);if(!res.ok)throw Error(`Shader ${f}: ${res.status}`);return res.text();}));
-  const shaders=[core+'\n'+scene,post,present].map(code=>device.createShaderModule({code}));
+  const dir='./shaders/';const [core,fog,scene,post,present]=await Promise.all(['scene-core.wgsl','scene-fog.wgsl','scene-main.wgsl','post.wgsl','present.wgsl'].map(async f=>{const res=await fetch(dir+f);if(!res.ok)throw Error(`Shader ${f}: ${res.status}`);return res.text();}));
+  const shaders=[core+'\n'+fog+'\n'+scene,post,present].map(code=>device.createShaderModule({code}));
   for(let k=0;k<shaders.length;k++){throwIfErrors(await shaders[k].getCompilationInfo(),['scene','post','present'][k]);}
   stage('create-pipeline');
   this.scenePipeline=await device.createRenderPipelineAsync({layout:'auto',vertex:{module:shaders[0],entryPoint:'vertexMain'},fragment:{module:shaders[0],entryPoint:'fragmentMain',targets:[{format:'rgba16float'}]},primitive:{topology:'triangle-list'}});
@@ -49,7 +49,7 @@ export class GPUView {
  upload(sim,camera,clock){
   const s=this.s;this.device.queue.writeBuffer(this.particles,0,sim.data);
   this.device.queue.writeBuffer(this.ripples,0,sim.gpuRipples());
-  const param=new Float32Array(40);
+  const param=new Float32Array(52);
   let i=0;const put=(...vals)=>{param.set(vals,i);i+=4;};
   put(this.width,this.height,clock,s.count);
   put(...camera.position,s.threshold);
@@ -61,6 +61,9 @@ export class GPUView {
   put({solid:0,cloud:1,hybrid:2,debug:3}[s.mode],s.ior,s.refraction,s.shellTint);
   put(s.ripple,s.rippleFrequency,s.rippleSpeed,s.collisionGlow);
   put(s.lightOrbit,clock,s.marchSteps,s.rayCull==='on'?1:0);
+  put({off:0,ambient:1,particles:2,mixed:3}[s.fogMode],s.fogDensity,s.fogParticle,s.fogScale);
+  put(s.fogFlow,s.fogNoise,s.fogAbsorb,s.fogAnisotropy);
+  put(s.fogHue,s.fogScatter,s.fogHeight,s.fogFalloff);
   this.device.queue.writeBuffer(this.uniform,0,param);
   const post=new Float32Array([this.width,this.height,s.bloom,0,s.bloomRadius,s.bloomThreshold,s.exposure,this.hasHistory?s.trail:0,s.vignette,0,0,0]);
   this.device.queue.writeBuffer(this.postUniform,0,post);

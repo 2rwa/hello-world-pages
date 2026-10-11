@@ -8,6 +8,20 @@ export const definitions = [
   ['Surface / Volume',[
     ['mode','表示モード','hybrid',['solid','cloud','hybrid','debug']],['material','質感','gel',['gel','glass','plasma']],['opacity','表面不透明度',.92,.1,1,.02],['cloudDensity','Cloud密度',.9,.05,3,.05],['glow','発光',1.1,0,4,.05],['roughness','表面粗さ',.22,.02,.95,.01],['specular','反射光沢',1.1,0,3,.05],['lightOrbit','照明回転',.2,0,3,.05],['marchSteps','描画ステップ',72,24,160,4]
   ]],
+  ['Fog / Atmosphere',[
+    ['fogMode','霧の種類','off',['off','ambient','particles','mixed']],
+    ['fogDensity','霧の濃度',.7,0,4,.05],
+    ['fogParticle','粒子周辺の霧',1.2,0,4,.1],
+    ['fogScale','霧の模様スケール',7,1,24,.5],
+    ['fogFlow','霧の流速',.35,0,3,.05],
+    ['fogNoise','霧の揺らぎ',.65,0,1,.05],
+    ['fogAbsorb','光の減衰',1.1,.1,4,.05],
+    ['fogAnisotropy','前方散乱',.35,0,.85,.05],
+    ['fogHue','霧の色相',.56,0,1,.01],
+    ['fogScatter','散乱光の強さ',1.1,.1,3,.05],
+    ['fogHeight','霧の中心高度',0,-1,1,.05],
+    ['fogFalloff','高さ方向の減衰',.5,0,5,.1]
+  ]],
   ['Glass / Ripple',[
     ['shellOpacity','球殻透明度',.65,0,1,.025],['ior','ガラス屈折率',1.45,1,2.0,.025],['refraction','屈折の強度',.75,0,1,.05],['shellTint','球殻色',.55,0,1,.05],['ripple','衝突波紋',.9,0,2,.05],['rippleFrequency','波紋の細かさ',24,6,60,1],['rippleSpeed','波紋伝播速度',2,.5,5,.1]
   ]],
