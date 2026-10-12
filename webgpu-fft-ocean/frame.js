@@ -54,7 +54,7 @@ export function makeFrame(s) {
     clip.meters,clip.center[0],clip.center[1],delta
    ]));
    compute(encoder,s.foamPipe,foamGroup(c),s.fv/8,s.fv/8);
-   clip.center=[params[20],params[21]];
+   clip.center=[params[20],params[22]];
    clip.index=1-clip.index;
   }
   const readNow=s.frame++%12===0&&!s.pending;

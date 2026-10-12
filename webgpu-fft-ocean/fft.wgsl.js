@@ -91,7 +91,7 @@ fn storeFreq(layer:u32,along:u32,across:u32,val:Sample,column:bool){
  let idx=layer*N*N+across*N+along;
  if(column){
   let worldIndex=vec2u(across,along);
-  let scale=cfg.sim.y/(f32(N)*f32(N));
+  let scale=cfg.sim.y;
   textureStore(displacementOut,worldIndex,i32(layer),vec4f(
    val.h.x*scale,val.dx.x*scale,val.dz.x*scale,1.0));
  }else{rowData[idx]=val;}

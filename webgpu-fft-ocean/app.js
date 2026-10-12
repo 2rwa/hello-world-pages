@@ -47,7 +47,7 @@ function uniforms(speed){
  const result=new Float32Array(36);
  result.set(viewProjection(eye,looking,aspect),0);
  result.set([elapsed,Number($('amp').value),Number($('wind').value),angle],16);
- result.set([boatX,boatZ,boatY,3.7],20);
+ result.set([boatX,boatY,boatZ,3.7],20);
  result.set([boatX,boatZ,0,speed],24);
  result.set([Number($('foam').value),0,0,0],28);
  result.set([...eye,resolution],32);

@@ -1,0 +1,35 @@
+name: FFT Ocean WebGPU CI
+on:
+  push:
+    paths:
+      - "webgpu-fft-ocean/**"
+      - ".github/workflows/fft-ocean-ci.yml"
+  workflow_dispatch:
+jobs:
+  swiftshader:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: browser-actions/setup-chrome@v2
+        id: chrome
+        with:
+          chrome-version: stable
+      - name: Browser automation
+        run: npm install --no-save puppeteer-core@24
+      - name: Static server
+        run: |
+          python3 -m http.server 8000 &
+          sleep 2
+      - name: Verify GPU FFT, shaders and offscreen render
+        env:
+          CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
+          WEBGPU_FLAGS: "--enable-unsafe-webgpu --enable-features=Vulkan --use-vulkan=swiftshader --disable-vulkan-fallback-to-gl-for-testing --use-webgpu-adapter=swiftshader --enable-webgpu-developer-features --enable-dawn-features=allow_unsafe_apis --disable-dawn-features=use_dxc --use-gpu-in-tests --enable-unsafe-swiftshader --no-sandbox"
+        run: node webgpu-fft-ocean/ci-test.mjs
+      - name: Screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fft-ocean-swiftshader
+          path: fft-ocean-ci.png
+          if-no-files-found: ignore
