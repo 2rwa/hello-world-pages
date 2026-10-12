@@ -12,7 +12,7 @@ struct Params {viewProj:mat4x4f,sim:vec4f,boat:vec4f,prior:vec4f,extra:vec4f,eye
 struct OceanVary { @builtin(position) pos:vec4f,@location(0) world:vec3f,@location(1) distance:f32 };
 fn oceanDisp(worldXZ:vec2f)->vec3f{
  var total=vec3f(0.0);
- for(var layer:i32=0;layer<5;layer++){
+ for(var layer:i32=0;layer<3;layer++){
   let displacement=textureSampleLevel(dispTex,linearSampler,fract(worldXZ/tiles[layer]),layer,0.0).xyz;
   total+=displacement;
  }
@@ -56,7 +56,7 @@ fn skyColor(direction:vec3f)->vec3f{
  var jac=1.0;
  for(var layer:i32=0;layer<5;layer++){
   let texelMeters=tiles[layer]/cfg.eye.w;
-  let lod=clamp(log2(max(1.0,input.distance*0.0015/max(0.001,texelMeters))),0.0,log2(cfg.eye.w));
+  let lod=clamp(log2(max(1.0,input.distance*0.0035/max(0.001,texelMeters))),0.0,log2(cfg.eye.w));
   let normalPack=textureSampleLevel(normalTex,linearSampler,fract(worldXZ/tiles[layer]),layer,lod);
   slopes+=normalPack.xy;
   meanSq+=normalPack.z;
@@ -93,7 +93,7 @@ fn skyColor(direction:vec3f)->vec3f{
  }
  let nearBlend=1.0-smoothstep(145.0,210.0,input.distance);
  let foamState=mix(f,n,nearBlend);
- let whitecaps=(1.0-smoothstep(0.55,0.92,jac))*0.22*cfg.extra.x;
+ let whitecaps=(1.0-smoothstep(0.26,0.63,jac))*0.16*cfg.extra.x;
  let foamCoverage=clamp(foamState.x+foamState.z*0.35+whitecaps,0.0,0.95);
  color=mix(color,vec3f(0.80,0.90,0.94),foamCoverage);
  color*=1.0-foamState.w*0.16;

@@ -36,7 +36,7 @@ fn advance(@builtin(global_invocation_id) id:vec3u){
  let n0=textureSampleLevel(normals,texSampler,fract(worldPos/2003.0),0,0.0);
  let n1=textureSampleLevel(normals,texSampler,fract(worldPos/433.0),1,0.0);
  let fold=min(n0.w,n1.w);
- let breaking=(1.0-smoothstep(0.55,0.88,fold))*cfg.extra.x*dt*0.25;
+ let breaking=(1.0-smoothstep(0.25,0.63,fold))*cfg.extra.x*dt*0.25;
  prev.x=clamp(prev.x+white+breaking,0.0,1.5);
  prev.y=clamp(prev.y+(white+breaking)*1.4,0.0,1.5);
  prev.z=clamp(prev.z+middle*dt*velocityFactor*0.3,0.0,1.5);

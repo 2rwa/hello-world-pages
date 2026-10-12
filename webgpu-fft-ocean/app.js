@@ -77,7 +77,17 @@ async function start(){
   report('script-start');
   engine=await createOcean(canvas,resolution,ci,report);
   if(ci){
-   const result=await engine.step(uniforms(Number($('speed').value)),0.02);
+   document.querySelector('.panel').style.display='none';
+   let result;
+   elapsed=14.0;
+   for(let testFrame=0;testFrame<6;testFrame++){
+    const speed=Number($('speed').value);
+    boatX+=Math.cos(angle)*speed*0.10;
+    boatZ+=Math.sin(angle)*speed*0.10;
+    elapsed+=0.10;
+    boatY+=(engine.height+1.7-boatY)*0.12;
+    result=await engine.step(uniforms(speed),0.08);
+   }
    document.documentElement.dataset.test='ok';
    window.__oceanState={phase:'ok',resolution,cascades:5,result};
    status.textContent='ok / 5 FFT cascades / GPU submit + offscreen readback '+JSON.stringify(result);
