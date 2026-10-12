@@ -115,8 +115,8 @@ fn hg(c:f32,g:f32)->f32{
  let radiusSq=dot(input.uv,input.uv);
  let disk=1.0-smoothstep(0.12,1.0,radiusSq);
  let scatter=hg(input.forwardLight,0.52)*0.55+hg(input.forwardLight,-0.26)*0.45;
- let lighting=clamp(0.32+scatter*0.37,0.35,2.1);
+ let lighting=clamp(0.82+scatter*0.25,0.82,1.6);
  let alpha=clamp(input.opacity*disk,0.0,0.55);
- return vec4f(vec3f(0.64,0.80,0.87)*lighting,alpha);
+ return vec4f(vec3f(0.91,0.96,1.0)*lighting,alpha);
 }
 `;

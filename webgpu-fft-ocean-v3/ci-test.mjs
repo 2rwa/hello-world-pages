@@ -44,15 +44,19 @@ try{
  const pixels=await capture(spray,'');
  if(compare){
   const without=await capture(0,'-control');
-  let different=0,sum=0;
+  let different=0,sum=0,brightened=0,darkened=0;
   for(let k=0;k<pixels.length;k+=4){
    const d=Math.abs(pixels[k]-without[k])+Math.abs(pixels[k+1]-without[k+1])
      +Math.abs(pixels[k+2]-without[k+2]);
+   const signed=pixels[k]+pixels[k+1]+pixels[k+2]-without[k]-without[k+1]-without[k+2];
    if(d>4)different++;
+   if(signed>15)brightened++;
+   if(signed < -15)darkened++;
    sum+=d;
   }
-  console.log('SPRAY PIXEL DIFFERENCE',JSON.stringify({different,sum}));
-  if(different<8)throw Error('GPU sprite render produced no significant spray image change');
+  console.log('SPRAY PIXEL DIFFERENCE',JSON.stringify({different,sum,brightened,darkened}));
+  if(different<150)throw Error('GPU sprite render is not visually significant');
+  if(brightened<=darkened)throw Error('Droplets darken the scene instead of appearing as bright water spray');
  }
  console.log('PASS FFT, foam, spray compute, particle readback and render');
 }catch(e){failed=true;console.error('FAIL',e);}
