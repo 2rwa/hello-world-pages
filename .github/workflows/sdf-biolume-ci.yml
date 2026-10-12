@@ -39,7 +39,7 @@ jobs:
         with:
           name: biolume-canvas-test
           path: |
-            sdf-biolume/canvas-smoke.png
+            sdf-biolume/canvas-*.png
             /tmp/biolume-http.log
           if-no-files-found: ignore
           retention-days: 7

@@ -1,4 +1,5 @@
 import puppeteer from 'puppeteer-core';
+import {stat} from 'node:fs/promises';
 const headed=process.env.BIO_HEADLESS==='0';
 const flags='--enable-unsafe-webgpu --enable-features=Vulkan --use-vulkan=swiftshader --disable-vulkan-fallback-to-gl-for-testing --use-webgpu-adapter=swiftshader --enable-webgpu-developer-features --enable-dawn-features=allow_unsafe_apis --disable-dawn-features=use_dxc --use-gpu-in-tests --enable-unsafe-swiftshader --no-sandbox --disable-dev-shm-usage'.split(' ');
 const browser=await puppeteer.launch({executablePath:process.env.CHROME_PATH||'/usr/bin/google-chrome',headless:!headed,args:flags});
@@ -58,5 +59,10 @@ try{
   await view.$eval('#organic',e=>{e.value='1';e.dispatchEvent(new Event('input',{bubbles:true}));});
   await view.evaluate(()=>window.__bioDraw());
   await view.screenshot({path:'sdf-biolume/canvas-amoeba-comparison.png'});
+  for (const f of ['canvas-smoke.png','canvas-star-comparison.png','canvas-amoeba-comparison.png']) {
+    const entry=await stat('sdf-biolume/'+f);
+    if(entry.size<3000)throw Error('Canvas screenshot unexpectedly small: '+f+' '+entry.size);
+    console.log('Screenshot:',f,entry.size);
+  }
  }
 }finally{await browser.close();}

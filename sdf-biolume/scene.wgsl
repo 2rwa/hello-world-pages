@@ -58,9 +58,10 @@ fn bodyDistance(p:vec3<f32>)->f32{
  d=smoothUnion(d,sdSphere(p-vec3<f32>(.31,-.13,-.19),.43),k);
  d=smoothUnion(d,sdSphere(p-vec3<f32>(0.,.07,.31),.39),k);
  // Unequal internal vacuoles make a continuous, asymmetrical flowing membrane.
- d=smoothUnion(d,sdSphere(p-vec3<f32>(-.48,.33+.045*breathe,-.17),.33)*1.,k*.92+organic*.11);
- d=smoothUnion(d,sdSphere(p-vec3<f32>(.40,.43-.05*breathe,.06),.25+organic*.07),k*.62);
- d=smoothUnion(d,sdSphere(p-vec3<f32>(-.18,-.52,.03),.24+organic*.09),k*.6);
+ // Suppress the new vacuoles completely at morph=0, retaining the old SDF shape.
+ d=smoothUnion(d,sdSphere(p-vec3<f32>(-.48,.33+.045*breathe,-.17),.33)+.75*(1.-organic),k*.92+organic*.11);
+ d=smoothUnion(d,sdSphere(p-vec3<f32>(.40,.43-.05*breathe,.06),.25+organic*.07)+.75*(1.-organic),k*.62);
+ d=smoothUnion(d,sdSphere(p-vec3<f32>(-.18,-.52,.03),.24+organic*.09)+.75*(1.-organic),k*.6);
  let count=i32(clamp(round(ctrl.c.x),3.,7.));
  for(var i:i32=0;i<7;i++){
   if(i>=count){break;}
