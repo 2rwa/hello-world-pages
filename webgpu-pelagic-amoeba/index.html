@@ -1,0 +1,37 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Pelagic Amoeba · WebGPU</title><style>
+:root{color-scheme:dark}*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#06111e;color:#e6f2ff;font-family:system-ui,sans-serif}
+canvas{position:fixed;inset:0;width:100%;height:100%;touch-action:none}
+.panel{position:fixed;top:12px;left:12px;width:min(372px,calc(100vw - 24px));padding:14px;max-height:calc(100vh - 24px);overflow-y:auto;border:1px solid #a8d8ff40;border-radius:16px;background:#061523db;backdrop-filter:blur(15px);box-shadow:0 10px 40px #0006}
+h1{font-size:17px;margin:0 0 5px}.muted{font-size:11px;opacity:.72;line-height:1.45}.row{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:9px 0;font-size:12px}
+input[type=range]{width:140px;accent-color:#73c9ff}select,button{background:#193349;color:#fff;border:1px solid #7094ac66;border-radius:7px;padding:6px}button{cursor:pointer}
+#status{font-size:12px;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere}
+#toggle{float:right}#controls.hide{display:none}.footer{margin-top:8px;font-size:11px;opacity:.7}
+@media(max-width:640px){.panel{top:6px;left:6px;padding:9px;width:min(300px,calc(100vw - 12px))}h1{font-size:14px}}
+</style></head><body><canvas id="view"></canvas><section class="panel"><button id="toggle">UI ▾</button><h1>Pelagic Amoeba · WebGPU</h1>
+<div id="status">起動しています…</div><div id="controls">
+<div class="row"><label for="quality">FFT 解像度 × 5</label><select id="quality"><option value="128">128² / 軽量</option><option value="256">256² / 標準</option><option value="512">512² / 高画質</option></select></div>
+<div class="row"><label for="wind">風速</label><input id="wind" type="range" min="4" max="25" value="13" step="1"><output id="windOut"></output></div>
+<div class="row"><label for="amp">波の倍率</label><input id="amp" type="range" min=".4" max="3.5" step=".1" value="2.8"><output id="ampOut"></output></div>
+<div class="row"><label for="foam">白波・航跡</label><input id="foam" type="range" min="0" max="3" step=".1" value="1.2"><output id="foamOut"></output></div>
+<div class="row"><label for="spray">しぶきの量</label><input id="spray" type="range" min="0" max="3" value="1.8" step=".1"><output id="sprayOut"></output></div>
+<div class="row"><label for="lace">航跡の泡レース</label><input id="lace" type="range" min="0" max="3" value="1.8" step=".1"><output id="laceOut"></output></div>
+<div class="row"><label for="sun">太陽高度</label><input id="sun" type="range" min="7" max="74" value="31" step="1"><output id="sunOut"></output></div>
+<div class="row"><label for="turbidity">水の濁り</label><input id="turbidity" type="range" min=".2" max="3" value="1" step=".1"><output id="turbidityOut"></output></div>
+<div class="row"><label for="mode">デバッグ表示</label><select id="mode"><option value="0">完成イメージ</option><option value="1">法線</option><option value="2">泡 / 鮮度</option><option value="3">粗さ / 白波</option></select></div>
+<div class="row"><label for="viewpoint">カメラ</label><select id="viewpoint"><option value="chase">追従</option><option value="deck">海面付近</option><option value="aerial">俯瞰</option></select></div>
+<div class="row"><label for="speed">疾走速度</label><input id="speed" type="range" min="0" max="23" step=".5" value="9"><output id="speedOut"></output></div>
+<div class="muted" style="margin-top:10px;border-top:1px solid #7ab1cb66;padding-top:10px">SDF · GLASS AMOEBA / 光学系</div>
+<div class="row"><label for="spheres">SDF球の数</label><input id="spheres" type="range" min="3" max="100" step="1" value="3"><output id="spheresOut"></output></div>
+<div class="row"><label for="bounces">内部反射バウンス</label><input id="bounces" type="range" min="0" max="3" step="1" value="1"><output id="bouncesOut"></output></div>
+<div class="row"><label for="steps">追跡ステップ上限</label><input id="steps" type="range" min="24" max="96" step="8" value="64"><output id="stepsOut"></output></div>
+<div class="row"><label for="ior">ガラス屈折率 (IOR)</label><input id="ior" type="range" min="1.01" max="2.4" step=".01" value="1.48"><output id="iorOut"></output></div>
+<div class="row"><label for="absorption">内部光吸収</label><input id="absorption" type="range" min="0" max="3" step=".05" value=".8"><output id="absorptionOut"></output></div>
+<div class="row"><label for="opacity">ガラス合成の強さ</label><input id="opacity" type="range" min="0" max="1" step=".05" value=".95"><output id="opacityOut"></output></div>
+<div class="row"><label for="blend">メタボール融合幅</label><input id="blend" type="range" min=".1" max="5" step=".1" value="2"><output id="blendOut"></output></div>
+<div class="row"><label for="wobble">脈動・うねり</label><input id="wobble" type="range" min="0" max="2" step=".05" value=".65"><output id="wobbleOut"></output></div>
+<div class="row"><label for="stretch">走行時の伸長</label><input id="stretch" type="range" min="0" max="2" step=".1" value="1"><output id="stretchOut"></output></div>
+<div class="row"><label for="emission">内部発光</label><input id="emission" type="range" min="0" max="2" step=".05" value=".25"><output id="emissionOut"></output></div>
+<div class="row"><button id="pause">一時停止</button><button id="reset">航跡を消去</button></div>
+<div class="muted">ドラッグで視点回転 / ホイールでズーム。WASD / 矢印で進行方向。アメーバはGPU波高27点の近似浮力で疾走。屈折は画面空間近似、海面下は海の深度で隠します。球数と内部バウンスを増やすほどGPU負荷が上がります。</div>
+<div class="footer">Pelagic Amoeba: FFT Ocean V3由来の5帯域FFT海面 + GPUしぶき + 3〜100球のSDF透明ガラス体。<a href="../webgpu-fft-ocean-v2/" style="color:#7dd6ff">V2</a> / <a href="../webgpu-fft-ocean/" style="color:#7dd6ff">V1</a></div></div></section>
+<script type="module" src="./app.js"></script></body></html>

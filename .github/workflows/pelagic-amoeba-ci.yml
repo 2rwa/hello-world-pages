@@ -1,0 +1,42 @@
+name: Pelagic Amoeba WebGPU CI
+on:
+  push:
+    paths:
+      - "webgpu-pelagic-amoeba/**"
+      - ".github/workflows/pelagic-amoeba-ci.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  swiftshader:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: browser-actions/setup-chrome@v2
+        id: chrome
+        with:
+          chrome-version: stable
+      - name: Install Puppeteer Core
+        run: npm install --no-save puppeteer-core@24
+      - name: Start local server
+        run: |
+          python3 -m http.server 8000 > /tmp/pelagic-http.log 2>&1 &
+          sleep 2
+      - name: Test real WebGPU FFT and raymarched glass
+        env:
+          CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
+          WEBGPU_FLAGS: "--enable-unsafe-webgpu --enable-features=Vulkan --use-vulkan=swiftshader --disable-vulkan-fallback-to-gl-for-testing --use-webgpu-adapter=swiftshader --enable-webgpu-developer-features --enable-dawn-features=allow_unsafe_apis --disable-dawn-features=use_dxc --use-gpu-in-tests --enable-unsafe-swiftshader --no-sandbox"
+        run: |
+          set -o pipefail
+          node webgpu-pelagic-amoeba/ci-test.mjs 2>&1 | tee /tmp/pelagic-ci.log
+      - name: Upload GPU readback screenshots and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pelagic-amoeba-swiftshader
+          path: |
+            pelagic-amoeba-*.png
+            /tmp/pelagic-ci.log
+            /tmp/pelagic-http.log
+          if-no-files-found: ignore
