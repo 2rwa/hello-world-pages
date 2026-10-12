@@ -10,7 +10,7 @@ export function makeFrame(s) {
   s.dim={w,h};
   s.depth?.destroy();s.scene?.destroy();s.offscreen?.destroy();s.offscreenRead?.destroy();
   s.scene=device.createTexture({size:[w,h],format,usage:T.RENDER_ATTACHMENT|T.TEXTURE_BINDING});
-  s.depth=device.createTexture({size:[w,h],format:'depth24plus',usage:T.RENDER_ATTACHMENT});
+  s.depth=device.createTexture({size:[w,h],format:'depth24plus',usage:T.RENDER_ATTACHMENT|T.TEXTURE_BINDING});
   if(ci){
    s.offscreen=device.createTexture({size:[w,h],format,usage:T.RENDER_ATTACHMENT|T.COPY_SRC});
    const pitch=Math.ceil(w*4/256)*256;
