@@ -1,7 +1,7 @@
 struct Ctrl { a:vec4<f32>, b:vec4<f32>, c:vec4<f32>, d:vec4<f32> };
 @group(0) @binding(0) var<uniform> ctrl:Ctrl;
 // a=time, width, height, camera distance; b=yaw, pitch, blend, motion
-// c=arm count, glow, march steps, material mode
+// c=arm count, glow, march steps, material mode; d.x=organic morph
 fn sdSphere(p:vec3<f32>,r:f32)->f32{return length(p)-r;}
 fn sdCapsule(p:vec3<f32>,a:vec3<f32>,b:vec3<f32>,r:f32)->f32{
  let segment=b-a;
@@ -31,50 +31,80 @@ fn localPosition(worldPos:vec3<f32>)->vec3<f32>{
  p.xz=rotate2(p.xz,.08*sin(ctrl.a.x*.61)*ctrl.b.w);
  return p;
 }
+// The lobe layout is irregular only when d.x > 0; d.x == 0 retains the star-shaped model.
+fn lobeAngle(i:i32,n:i32)->f32{
+ let original=6.2831853*f32(i)/f32(n)+.18;
+ let asymmetry=.39*sin(f32(i)*2.31+.7)+.11*cos(f32(i)*4.27);
+ return original+ctrl.d.x*asymmetry;
+}
 fn tipPosition(i:i32,n:i32)->vec3<f32>{
- let angle=6.2831853*f32(i)/f32(n)+.18;
- let w=ctrl.b.w*sin(ctrl.a.x*1.47+f32(i)*1.83);
- return vec3<f32>(1.66*cos(angle+.17*w),1.66*sin(angle+.17*w),.07+.24*sin(ctrl.a.x*1.1+f32(i))*ctrl.b.w);
+ let organic=ctrl.d.x;
+ let angle=lobeAngle(i,n);
+ let wave=ctrl.b.w*sin(ctrl.a.x*1.47+f32(i)*1.83);
+ let slowWave=ctrl.b.w*sin(ctrl.a.x*.83+f32(i)*2.17);
+ let irregularLength=1.12+.54*(.5+.5*sin(f32(i)*3.41+.4))+.13*slowWave;
+ let lengthTip=mix(1.66,irregularLength,organic);
+ let tipAngle=angle+.17*wave+organic*(.19*sin(f32(i)*1.77)+.13*slowWave);
+ let depth=.07+.24*sin(ctrl.a.x*1.1+f32(i))*ctrl.b.w
+    +organic*(.16*sin(f32(i)*2.3)+.11*slowWave);
+ return vec3<f32>(lengthTip*cos(tipAngle),lengthTip*sin(tipAngle),depth);
 }
 fn bodyDistance(p:vec3<f32>)->f32{
+ let organic=ctrl.d.x;
  let k=ctrl.b.z;
- var d=sdSphere(p,.64);
+ let breathe=sin(ctrl.a.x*1.45)*ctrl.b.w;
+ var d=sdSphere(p,.64+organic*.08*breathe);
  d=smoothUnion(d,sdSphere(p-vec3<f32>(-.27,.18,-.12),.46),k);
  d=smoothUnion(d,sdSphere(p-vec3<f32>(.31,-.13,-.19),.43),k);
  d=smoothUnion(d,sdSphere(p-vec3<f32>(0.,.07,.31),.39),k);
+ // Unequal internal vacuoles make a continuous, asymmetrical flowing membrane.
+ d=smoothUnion(d,sdSphere(p-vec3<f32>(-.48,.33+.045*breathe,-.17),.33)*1.,k*.92+organic*.11);
+ d=smoothUnion(d,sdSphere(p-vec3<f32>(.40,.43-.05*breathe,.06),.25+organic*.07),k*.62);
+ d=smoothUnion(d,sdSphere(p-vec3<f32>(-.18,-.52,.03),.24+organic*.09),k*.6);
  let count=i32(clamp(round(ctrl.c.x),3.,7.));
  for(var i:i32=0;i<7;i++){
   if(i>=count){break;}
-  let angle=6.2831853*f32(i)/f32(count)+.18;
+  let angle=lobeAngle(i,count);
   let wave=ctrl.b.w*sin(ctrl.a.x*1.47+f32(i)*1.83);
-  let rootPos=vec3<f32>(.43*cos(angle),.43*sin(angle),-.07);
-  let midPos=vec3<f32>(1.02*cos(angle+.1*wave),1.02*sin(angle+.1*wave),.05+.18*wave);
+  let slow=ctrl.b.w*sin(ctrl.a.x*.83+f32(i)*2.17);
+  let rootAngle=angle-organic*.12*sin(f32(i)*2.48);
+  let rootPos=vec3<f32>(.43*cos(rootAngle),.43*sin(rootAngle),-.07);
+  let midRadius=mix(1.02,.80+.16*sin(f32(i)*2.37+.8)+.055*slow,organic);
+  let middleAngle=angle+.10*wave+organic*(.27*sin(f32(i)*1.89)+.19*slow);
+  let midPos=vec3<f32>(midRadius*cos(middleAngle),midRadius*sin(middleAngle),.05+.18*wave+organic*.13*sin(f32(i)*2.3));
   let tipPos=tipPosition(i,count);
-  d=smoothUnion(d,sdCapsule(p,rootPos,midPos,.205),k*.78);
-  d=smoothUnion(d,sdCapsule(p,midPos,tipPos,.138),k*.68);
-  d=smoothUnion(d,sdSphere(p-tipPos,.247),k*.6);
+  let innerRadius=mix(.205,.28+.085*(.5+.5*sin(f32(i)*2.9)),organic);
+  let outerRadius=mix(.138,.19+.065*(.5+.5*cos(f32(i)*3.8)),organic);
+  let tipRadius=mix(.247,.24+.11*(.5+.5*sin(f32(i)*1.6+.6)),organic);
+  d=smoothUnion(d,sdCapsule(p,rootPos,midPos,innerRadius),k*.78+organic*.10);
+  d=smoothUnion(d,sdCapsule(p,midPos,tipPos,outerRadius),k*.68+organic*.08);
+  d=smoothUnion(d,sdSphere(p-tipPos,tipRadius),k*.60+organic*.10);
  }
+ // Small membrane undulations: a bounded distance perturbation, NOT an exact SDF.
+ // The ray-march uses a conservative 0.49 step factor for this displacement.
+ let skinWave=sin(3.1*p.x+ctrl.a.x*1.1)*sin(2.7*p.y-ctrl.a.x*.85)*sin(2.9*p.z+.7);
+ d-=organic*.046*ctrl.b.w*skinWave;
  return d;
 }
 fn modelMap(worldPos:vec3<f32>)->vec2<f32>{
  let p=localPosition(worldPos);
- if(length(p)>2.75){return vec2<f32>(length(p)-2.60,1.);}
+ if(length(p)>2.85){return vec2<f32>(length(p)-2.70,1.);}
  var hit=vec2<f32>(bodyDistance(p),1.);
  let front=p-vec3<f32>(0.,0.,.69);
- hit=nearest(hit,sdTorus(vec3<f32>(front.x,front.z,front.y),vec2<f32>(.41,.055)),2.);
+ hit=nearest(hit,sdTorus(vec3<f32>(front.x,front.z,front.y),vec2<f32>(.41,.055))+ctrl.d.x*.45,2.);
  hit=nearest(hit,sdSphere(p-vec3<f32>(0.,0.,.79),.115),3.);
  for(var j:i32=0;j<3;j++){
   let angle=6.2831853*f32(j)/3.+.45;
   let pos=vec3<f32>(.45*cos(angle),.45*sin(angle),.52);
-  hit=nearest(hit,sdRoundBox(p-pos,vec3<f32>(.17,.075,.055),.043),4.);
+  hit=nearest(hit,sdRoundBox(p-pos,vec3<f32>(.17,.075,.055),.043)+ctrl.d.x*.5,4.);
  }
  let count=i32(clamp(round(ctrl.c.x),3.,7.));
  for(var i:i32=0;i<7;i++){
   if(i>=count){break;}
   let tip=tipPosition(i,count);
   let q=p-tip-vec3<f32>(0.,0.,.25);
-  hit=nearest(hit,sdTorus(vec3<f32>(q.x,q.z,q.y),vec2<f32>(.185,.044)),2.);
-  hit=nearest(hit,sdSphere(p-tip-vec3<f32>(0.,0.,.26),.096),3.);
+  hit=nearest(hit,sdTorus(vec3<f32>(q.x,q.z,q.y),vec2<f32>(.185,.044))+ctrl.d.x*.32,2.);
+  hit=nearest(hit,sdSphere(p-tip-vec3<f32>(0.,0.,.26),.096)+ctrl.d.x*.16,3.);
  }
  return hit;
 }
@@ -155,7 +185,7 @@ fn shade(pos:vec3<f32>,rd:vec3<f32>,material:f32,travel:f32)->vec3<f32>{
   if(i>=i32(ctrl.c.z)){break;}
   let nearest=modelMap(camera+rd*distanceAlong);
   if(nearest.x<.0018){found=true;material=nearest.y;break;}
-  distanceAlong+=max(.0035,nearest.x*.73);
+  distanceAlong+=max(.0027,nearest.x*.49);
   if(distanceAlong>16.){break;}
  }
  var color=backdrop(rd);

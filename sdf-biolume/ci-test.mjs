@@ -13,6 +13,15 @@ try{
  console.log('Initial GPU:',JSON.stringify(state));
  if(!state.ok||state.pixels.bright<50)throw Error('GPU render missing or blank');
  const first=state.pixels.signature;
+ // Pause animation before comparing exact GPU images, so time cannot produce false positives.
+ await page.click('#pause');
+ await page.$eval('#organic',e=>{e.value='0';e.dispatchEvent(new Event('input',{bubbles:true}));});
+ const star=await page.evaluate(()=>window.__bioDraw());
+ await page.$eval('#organic',e=>{e.value='1';e.dispatchEvent(new Event('input',{bubbles:true}));});
+ const amoeba=await page.evaluate(()=>window.__bioDraw());
+ console.log('Organic morph:',JSON.stringify({star,amoeba}));
+ if(star.signature===amoeba.signature)throw Error('Organic morph control did not change GPU result');
+ if(Math.abs(star.nonDark-amoeba.nonDark)<12)throw Error('Organic silhouette difference too small: '+JSON.stringify({star,amoeba}));
  await page.$eval('#fusion',e=>{e.value='.62';e.dispatchEvent(new Event('input',{bubbles:true}));});
  const merged=await page.evaluate(()=>window.__bioDraw());
  console.log('Fusion change:',JSON.stringify(merged));
@@ -27,10 +36,10 @@ try{
  await page.click('#reset');
  const reset=await page.$eval('#arms',e=>+e.value);
  if(reset!==5)throw Error('Reset failed');
- await page.click('#pause');
  if(await page.$eval('#pause',e=>e.textContent)!=='再開')throw Error('Pause failed');
  await page.click('#pause');
  if(await page.$eval('#pause',e=>e.textContent)!=='停止')throw Error('Resume failed');
+ if(await page.$eval('#organic',e=>+e.value)!==1)throw Error('Organic reset failed');
  const view=await browser.newPage();
  view.on('pageerror',e=>console.log('CANVAS ERROR:',e.message));
  await view.setViewport({width:900,height:650,deviceScaleFactor:1});
@@ -41,5 +50,13 @@ try{
  if(!canvasState.ok){
   if(headed)throw Error('Headed canvas failed: '+JSON.stringify(canvasState));
   console.log('Headless canvas unavailable; authoritative GPU offscreen readback passed');
- }else{await view.screenshot({path:'sdf-biolume/canvas-smoke.png'});}
+ }else{
+  await view.screenshot({path:'sdf-biolume/canvas-smoke.png'});
+  await view.$eval('#organic',e=>{e.value='0';e.dispatchEvent(new Event('input',{bubbles:true}));});
+  await view.evaluate(()=>window.__bioDraw());
+  await view.screenshot({path:'sdf-biolume/canvas-star-comparison.png'});
+  await view.$eval('#organic',e=>{e.value='1';e.dispatchEvent(new Event('input',{bubbles:true}));});
+  await view.evaluate(()=>window.__bioDraw());
+  await view.screenshot({path:'sdf-biolume/canvas-amoeba-comparison.png'});
+ }
 }finally{await browser.close();}

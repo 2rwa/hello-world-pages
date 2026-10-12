@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#071422">
-<title>BIOLUME | WebGPU SDF Lifeform</title>
+<title>BIOLUME Organic | WebGPU SDF Lifeform</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='25' fill='%23093f52' stroke='%2367f5fa' stroke-width='5'/%3E%3Ccircle cx='32' cy='32' r='10' fill='%239bffff'/%3E%3C/svg%3E">
 <style>
 :root{font-family:system-ui,-apple-system,"Noto Sans JP",sans-serif;color-scheme:dark}*{box-sizing:border-box}
@@ -22,13 +22,14 @@ button{cursor:pointer}.buttons{display:grid;grid-template-columns:1fr 1fr;gap:8p
 @media(max-width:720px){main{display:flex;flex-direction:column}#viewport{flex:1 1 55%;min-height:48%}aside{flex:0 0 auto;max-height:43%;border-left:0;border-top:1px solid #294454;padding:12px 16px}.brand{top:12px;left:16px}.brand h1{font-size:22px}.hint{left:16px;bottom:9px;font-size:11px}section{padding:9px 0 0}}
 </style></head><body><main>
 <div id="viewport"><canvas id="surface" aria-label="WebGPU SDF metaball glass alien"></canvas>
-<div class="brand"><small>PROCEDURAL / SDF RAYMARCH</small><h1>BIOLUME</h1><p>メタボール生命体 / Shooter Character C</p></div>
+<div class="brand"><small>PROCEDURAL / SDF RAYMARCH</small><h1>BIOLUME</h1><p>有機的アメーバ変形 / Shooter Character C</p></div>
 <div class="hint">スワイプで回転 ・ ホイール / ピンチでズーム</div></div>
-<aside><h2>SPECIMEN CONTROL</h2><p>球体と触手をSmooth Unionで合成。近似屈折で内部発光コアを表示するWebGPU試作です。</p>
+<aside><h2>ORGANIC MORPH CONTROL</h2><p>旧ヒトデ形状から、太さ・曲率・長さが不規則な仮足を伸ばすアメーバへ連続変形します。</p>
 <section>
 <label for="arms">触手の本数 <output id="arms-value"></output></label><input id="arms" type="range" min="3" max="7" step="1" value="5">
-<label for="fusion">融合の強さ <output id="fusion-value"></output></label><input id="fusion" type="range" min=".04" max=".62" step=".02" value=".32">
-<label for="motion">揺らぎ <output id="motion-value"></output></label><input id="motion" type="range" min="0" max="2" step=".1" value="1">
+<label for="fusion">融合の強さ <output id="fusion-value"></output></label><input id="fusion" type="range" min=".04" max=".62" step=".02" value=".46">
+<label for="organic">有機変形（0=従来 / 1=アメーバ） <output id="organic-value"></output></label><input id="organic" type="range" min="0" max="1" step=".05" value="1">
+<label for="motion">拍動・流動 <output id="motion-value"></output></label><input id="motion" type="range" min="0" max="2" step=".1" value="1">
 <label for="glow">発光 <output id="glow-value"></output></label><input id="glow" type="range" min="0" max="3" step=".1" value="1.5"></section>
 <section>
 <label for="yaw">左右回転 <output id="yaw-value"></output></label><input id="yaw" type="range" min="-180" max="180" step="1" value="18">
@@ -40,5 +41,5 @@ button{cursor:pointer}.buttons{display:grid;grid-template-columns:1fr 1fr;gap:8p
 <label for="steps">レイマーチ回数 <output id="steps-value"></output></label><input id="steps" type="range" min="48" max="112" step="8" value="80">
 <div class="buttons"><button id="pause" type="button">停止</button><button id="reset" type="button">リセット</button></div>
 <div class="state">状態: <span id="status">起動中</span><div id="error"></div></div></section>
-<p>ポリゴン・外部モデルなし。疑似透明表現は単回屈折と内部球交差であり、完全な多重屈折ではありません。</p>
+<p>ポリゴン・外部モデルなし。時間変化するカプセルと球を合成し、表面に小さな波を加えています。変位付き場は厳密SDFではないため、マーチ距離を控えめにしています。</p>
 </aside></main><script type="module" src="./app.js"></script></body></html>

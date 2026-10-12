@@ -1,8 +1,9 @@
 const byId=id=>document.getElementById(id);
 const canvas=byId('surface'),viewport=byId('viewport');
 const onTouch=matchMedia('(pointer:coarse)').matches;
-const initial={arms:5,fusion:.32,motion:1,glow:1.5,yaw:18,pitch:10,zoom:5.8,style:0,quality:onTouch?.5:.65,steps:onTouch?64:80};
+const initial={arms:5,fusion:.46,organic:1,motion:1,glow:1.5,yaw:18,pitch:10,zoom:5.8,style:0,quality:onTouch?.5:.65,steps:onTouch?64:80};
 const params={...initial},query=new URLSearchParams(location.search);
+if(query.has('organic'))params.organic=initial.organic=Math.max(0,Math.min(1,Number(query.get('organic'))||0));
 const isOffscreen=query.get('ci')==='offscreen',isCanvasTest=query.get('ci')==='canvas';
 let device,context,pipeline,uniformBuffer,bindGroup,offscreenTexture,format,viewportWidth=0,viewportHeight=0;
 let stopped=false,startAt=performance.now(),frozenTime=0,needsPaint=true,deviceLost=false,lastFrame=-1e9;
@@ -47,7 +48,7 @@ function resize(){
 function timeValue(){return stopped?frozenTime:(performance.now()-startAt)/1000;}
 function render(){
  resize();
- const uniforms=new Float32Array([timeValue(),viewportWidth,viewportHeight,params.zoom,params.yaw*Math.PI/180,params.pitch*Math.PI/180,params.fusion,params.motion,params.arms,params.glow,params.steps,params.style,0,0,0,0]);
+ const uniforms=new Float32Array([timeValue(),viewportWidth,viewportHeight,params.zoom,params.yaw*Math.PI/180,params.pitch*Math.PI/180,params.fusion,params.motion,params.arms,params.glow,params.steps,params.style,params.organic,0,0,0]);
  device.queue.writeBuffer(uniformBuffer,0,uniforms);
  const target=isOffscreen?offscreenTexture:context.getCurrentTexture();
  const encoder=device.createCommandEncoder();
