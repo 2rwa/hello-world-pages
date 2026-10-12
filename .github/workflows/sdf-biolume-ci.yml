@@ -1,0 +1,45 @@
+name: BIOLUME SDF WebGPU CI
+on:
+  push:
+    paths:
+      - 'sdf-biolume/**'
+      - '.github/workflows/sdf-biolume-ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  webgpu:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: browser-actions/setup-chrome@v2
+        id: chrome
+        with:
+          chrome-version: stable
+      - name: JavaScript syntax
+        run: node --check sdf-biolume/app.js && node --check sdf-biolume/ci-test.mjs
+      - name: Install puppeteer
+        run: npm install --no-save puppeteer-core@24
+      - name: Local static server
+        run: |
+          python3 -m http.server 8000 >/tmp/biolume-http.log 2>&1 &
+          sleep 2
+      - name: WebGPU compilation, readback, SDF controls
+        env:
+          CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
+        run: node sdf-biolume/ci-test.mjs
+      - name: Real canvas render under Xvfb
+        env:
+          CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
+        run: xvfb-run -a -s '-screen 0 1280x800x24' env BIO_HEADLESS=0 node sdf-biolume/ci-test.mjs
+      - name: Capture screenshot and server logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: biolume-canvas-test
+          path: |
+            sdf-biolume/canvas-smoke.png
+            /tmp/biolume-http.log
+          if-no-files-found: ignore
+          retention-days: 7

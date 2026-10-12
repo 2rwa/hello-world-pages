@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#071422">
+<title>BIOLUME | WebGPU SDF Lifeform</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='25' fill='%23093f52' stroke='%2367f5fa' stroke-width='5'/%3E%3Ccircle cx='32' cy='32' r='10' fill='%239bffff'/%3E%3C/svg%3E">
+<style>
+:root{font-family:system-ui,-apple-system,"Noto Sans JP",sans-serif;color-scheme:dark}*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;background:#06101a;color:#e8f7ff}
+main{height:100dvh;display:grid;grid-template-columns:minmax(0,1fr) 310px}
+#viewport{position:relative;overflow:hidden;touch-action:none;background:radial-gradient(ellipse at center,#10283e,#020710)}
+canvas{display:block;width:100%;height:100%}
+.brand{pointer-events:none;position:absolute;top:22px;left:24px}.brand small{color:#8bf6f1;font-size:10px;letter-spacing:.25em}.brand h1{font-size:28px;letter-spacing:.14em;margin:4px 0}.brand p{font-size:12px;color:#a9c9d9}
+.hint{position:absolute;bottom:15px;left:24px;color:#94bccc;font-size:12px;pointer-events:none}
+aside{padding:18px;background:linear-gradient(160deg,#12283d,#081320);border-left:1px solid #294454;overflow:auto}
+h2{font-size:16px;letter-spacing:.12em;margin:0 0 12px}p{font-size:12px;color:#a9c4cd;line-height:1.7}
+section{border-top:1px solid #284050;padding:13px 0 4px}
+label{font-size:12px;display:flex;justify-content:space-between;margin-bottom:4px}output{color:#7bf9f0;font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;accent-color:#54d9e8;margin:0 0 12px}
+button,select{font:inherit;background:#19364b;border:1px solid #3d687a;border-radius:8px;color:#e8fbff;padding:9px 10px}
+button{cursor:pointer}.buttons{display:grid;grid-template-columns:1fr 1fr;gap:8px}select{width:100%;margin-bottom:12px}
+.state{margin-top:12px;padding:10px;border:1px solid #386d77;border-radius:7px;font-size:12px;color:#83f7e7}
+#error{color:#ffa8a8;white-space:pre-wrap;font-size:11px;overflow-wrap:anywhere}
+@media(max-width:720px){main{display:flex;flex-direction:column}#viewport{flex:1 1 55%;min-height:48%}aside{flex:0 0 auto;max-height:43%;border-left:0;border-top:1px solid #294454;padding:12px 16px}.brand{top:12px;left:16px}.brand h1{font-size:22px}.hint{left:16px;bottom:9px;font-size:11px}section{padding:9px 0 0}}
+</style></head><body><main>
+<div id="viewport"><canvas id="surface" aria-label="WebGPU SDF metaball glass alien"></canvas>
+<div class="brand"><small>PROCEDURAL / SDF RAYMARCH</small><h1>BIOLUME</h1><p>メタボール生命体 / Shooter Character C</p></div>
+<div class="hint">スワイプで回転 ・ ホイール / ピンチでズーム</div></div>
+<aside><h2>SPECIMEN CONTROL</h2><p>球体と触手をSmooth Unionで合成。近似屈折で内部発光コアを表示するWebGPU試作です。</p>
+<section>
+<label for="arms">触手の本数 <output id="arms-value"></output></label><input id="arms" type="range" min="3" max="7" step="1" value="5">
+<label for="fusion">融合の強さ <output id="fusion-value"></output></label><input id="fusion" type="range" min=".04" max=".62" step=".02" value=".32">
+<label for="motion">揺らぎ <output id="motion-value"></output></label><input id="motion" type="range" min="0" max="2" step=".1" value="1">
+<label for="glow">発光 <output id="glow-value"></output></label><input id="glow" type="range" min="0" max="3" step=".1" value="1.5"></section>
+<section>
+<label for="yaw">左右回転 <output id="yaw-value"></output></label><input id="yaw" type="range" min="-180" max="180" step="1" value="18">
+<label for="pitch">上下回転 <output id="pitch-value"></output></label><input id="pitch" type="range" min="-65" max="65" step="1" value="10">
+<label for="zoom">距離 <output id="zoom-value"></output></label><input id="zoom" type="range" min="4" max="10" step=".1" value="5.8">
+<label for="style">描画モード</label><select id="style"><option value="0">透明ジェル・内部コア</option><option value="1">不透明メタボール</option><option value="2">SDF法線</option></select></section>
+<section>
+<label for="quality">解像度 <output id="quality-value"></output></label><input id="quality" type="range" min=".35" max="1" step=".05" value=".65">
+<label for="steps">レイマーチ回数 <output id="steps-value"></output></label><input id="steps" type="range" min="48" max="112" step="8" value="80">
+<div class="buttons"><button id="pause" type="button">停止</button><button id="reset" type="button">リセット</button></div>
+<div class="state">状態: <span id="status">起動中</span><div id="error"></div></div></section>
+<p>ポリゴン・外部モデルなし。疑似透明表現は単回屈折と内部球交差であり、完全な多重屈折ではありません。</p>
+</aside></main><script type="module" src="./app.js"></script></body></html>
