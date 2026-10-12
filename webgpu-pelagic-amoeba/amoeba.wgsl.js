@@ -42,9 +42,11 @@ fn bodyDistance(worldPos:vec3f)->f32 {
     0.38*sin(time*2.1+phase*1.3),
     0.34*cos(time*1.4+phase*1.7)
   )*sway;
-  let position=particle.centerRadius.xyz+drift;
-  position.x*=1.0+running*cfgAmoeba.trace.y*0.40;
-  position.z*=1.0-0.12*running;
+  let basePosition=particle.centerRadius.xyz+drift;
+  let position=vec3f(
+    basePosition.x*(1.0+running*cfgAmoeba.trace.y*0.40),
+    basePosition.y,basePosition.z*(1.0-0.12*running)
+  );
   let radius=particle.centerRadius.w*(1.0+0.07*sway*sin(time*2.3+phase*2.2));
   let ballDistance=length(pos-position)-radius;
   if(idx==0u){totalDist=ballDistance;}
