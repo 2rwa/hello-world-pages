@@ -29,11 +29,16 @@ fn integrate(@builtin(global_invocation_id) id:vec3u){
  let lifetime=0.6+particleHash(index,98u)*1.65;
  let dt=clamp(opts.x,0.0,0.08);
  if(p.velocityLife.w<0.0001){
-  p.positionAge=vec4f(cfg.boat.xyz,-particleHash(index,91u)*lifetime);
-  p.velocityLife=vec4f(0.0,0.0,0.0,lifetime);
+  p.positionAge=vec4f(cfg.boat.x+heading.x*cfg.boat.w*0.85+lateral.x*side*cfg.boat.w*0.65,
+   cfg.boat.y-cfg.boat.w*0.25,
+   cfg.boat.z+heading.y*cfg.boat.w*0.85+lateral.y*side*cfg.boat.w*0.65,
+   -particleHash(index,91u)*lifetime);
+  p.velocityLife=vec4f(heading.x*2.8+lateral.x*side*3.2,
+   3.2+particleHash(index,28u)*5.4,
+   heading.y*2.8+lateral.y*side*3.2,lifetime);
   p.sizeSeed=vec4f(0.045+pow(particleHash(index,122u),2.0)*0.28,rng,0.0,0.0);
  }
- let newAge=p.positionAge.w+dt;
+ var newAge=p.positionAge.w+dt;
  if(newAge>=p.velocityLife.w){
   let spawnX=cfg.boat.x+heading.x*cfg.boat.w*0.85+lateral.x*side*cfg.boat.w*0.65;
   let spawnZ=cfg.boat.z+heading.y*cfg.boat.w*0.85+lateral.y*side*cfg.boat.w*0.65;
@@ -46,16 +51,16 @@ fn integrate(@builtin(global_invocation_id) id:vec3u){
    heading.y*thrust+lateral.y*spread,lifetime);
   newAge=0.0;
  }
- p.positionAge.w=newAge;
+ p.positionAge=vec4f(p.positionAge.xyz,newAge);
  if(newAge>=0.0){
   let wind=vec3f(0.55,0.0,0.24)*cfg.sim.z;
   let radius=p.sizeSeed.x;
   let drag=clamp((0.24+0.13/max(radius,0.035))*dt,0.0,0.88);
-  let velocity=mix(p.velocityLife.xyz,wind,drag);
+  var velocity=mix(p.velocityLife.xyz,wind,drag);
   velocity.y-=9.81*dt;
   p.velocityLife=vec4f(velocity,p.velocityLife.w);
   p.positionAge=vec4f(p.positionAge.xyz+velocity*dt,p.positionAge.w);
-  if(p.positionAge.y<-2.0){p.positionAge.w=p.velocityLife.w+0.1;}
+  if(p.positionAge.y<-2.0){p.positionAge=vec4f(p.positionAge.xyz,p.velocityLife.w+0.1);}
  }
  particles[index]=p;
 }
@@ -74,7 +79,7 @@ struct SprayOut {
  let v=array<vec2f,6>(vec2f(-1,-1),vec2f(1,-1),vec2f(-1,1),
                         vec2f(-1,1),vec2f(1,-1),vec2f(1,1))[corner];
  let p=particles[index];
- var out:SprayOut;
+ var vertexResult:SprayOut;
  let projected=cfg.viewProj*vec4f(p.positionAge.xyz,1.0);
  let dist=max(0.1,length(cfg.eye.xyz-p.positionAge.xyz));
  let sourcePixels=2.0*p.sizeSeed.x/dist*opts.w;
@@ -82,15 +87,15 @@ struct SprayOut {
  let coverage=min(1.0,pow(sourcePixels/max(1.5,actualPixels),2.0));
  let age=p.positionAge.w/max(0.1,p.velocityLife.w);
  let fade=clamp(age*7.0,0.0,1.0)*clamp((1.0-age)*3.0,0.0,1.0);
- let active=select(1.0,0.0,p.positionAge.w<0.0||opts.y<0.01||projected.w<=0.0);
- let multiplier=opts.y*0.26*coverage*fade*active;
- out.clip=projected;
- out.clip.xy+=v*actualPixels*projected.w/max(1.0,opts.w);
- out.uv=v;
- out.opacity=multiplier;
+ let visibleFlag=select(1.0,0.0,p.positionAge.w<0.0||opts.y<0.01||projected.w<=0.0);
+ let multiplier=opts.y*0.26*coverage*fade*visibleFlag;
+ vertexResult.clip=projected;
+ vertexResult.clip.xy+=v*actualPixels*projected.w/max(1.0,opts.w);
+ vertexResult.uv=v;
+ vertexResult.opacity=multiplier;
  let lightDot=dot(normalize(cfg.eye.xyz-p.positionAge.xyz),sunUnit());
- out.forwardLight=lightDot;
- return out;
+ vertexResult.forwardLight=lightDot;
+ return vertexResult;
 }
 fn hg(c:f32,g:f32)->f32{
  return (1.0-g*g)/max(0.001,pow(1.0+g*g-2.0*g*c,1.5));
