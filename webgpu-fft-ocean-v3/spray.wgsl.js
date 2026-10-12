@@ -89,8 +89,7 @@ struct SprayOut {
  let fade=clamp(age*7.0,0.0,1.0)*clamp((1.0-age)*3.0,0.0,1.0);
  let visibleFlag=select(1.0,0.0,p.positionAge.w<0.0||opts.y<0.01||projected.w<=0.0);
  let multiplier=opts.y*0.26*coverage*fade*visibleFlag;
- vertexResult.clip=projected;
- vertexResult.clip.xy+=v*actualPixels*projected.w/max(1.0,opts.w);
+ vertexResult.clip=vec4f(projected.xy+v*actualPixels*projected.w/max(1.0,opts.w),projected.zw);
  vertexResult.uv=v;
  vertexResult.opacity=multiplier;
  let lightDot=dot(normalize(cfg.eye.xyz-p.positionAge.xyz),sunUnit());
