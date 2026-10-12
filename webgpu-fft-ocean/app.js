@@ -4,7 +4,7 @@ const canvas=$('view'),status=$('status');
 const params=new URLSearchParams(location.search);
 const ci=params.has('ci');
 const mobile=/Android|iPhone|iPad/i.test(navigator.userAgent);
-const resolution=ci?128:Number(params.get('quality')|| (mobile?128:512));
+const resolution=Number(params.get('quality')||(ci?128:(mobile?128:512)));
 $('quality').value=String(resolution);
 let paused=false,angle=0.3,boatX=0,boatZ=0,boatY=2,turn=0,orbitYaw=0.45,orbitPitch=0.33,orbitDist=95;
 let lastClock=0,elapsed=0,frameCount=0,dragging=false,pointerX=0,pointerY=0,engine=null,busy=false;

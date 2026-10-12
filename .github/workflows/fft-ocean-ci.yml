@@ -32,7 +32,10 @@ jobs:
           WEBGPU_FLAGS: "--enable-unsafe-webgpu --enable-features=Vulkan --use-vulkan=swiftshader --disable-vulkan-fallback-to-gl-for-testing --use-webgpu-adapter=swiftshader --enable-webgpu-developer-features --enable-dawn-features=allow_unsafe_apis --disable-dawn-features=use_dxc --use-gpu-in-tests --enable-unsafe-swiftshader --no-sandbox"
         run: |
           set -o pipefail
-          node webgpu-fft-ocean/ci-test.mjs 2>&1 | tee /tmp/ocean-ci.log
+          {
+            WEBGPU_QUALITY=128 node webgpu-fft-ocean/ci-test.mjs
+            WEBGPU_QUALITY=512 node webgpu-fft-ocean/ci-test.mjs
+          } 2>&1 | tee /tmp/ocean-ci.log
       - name: Publish GPU regression status
         if: always()
         env:
@@ -61,7 +64,7 @@ jobs:
         with:
           name: fft-ocean-swiftshader
           path: |
-            fft-ocean-ci.png
+            fft-ocean-ci-*.png
             /tmp/ocean-ci.log
             /tmp/ocean-http.log
           if-no-files-found: ignore
