@@ -104,10 +104,22 @@ export function makeFrame(s) {
    const err=await device.popErrorScope();if(err)throw Error('WebGPU validation: '+err.message);
    await s.sprayRead.mapAsync(GPUMapMode.READ);
    const packedParticles=new Float32Array(s.sprayRead.getMappedRange());
-   let particlesAlive=0;
+   let particlesAlive=0, visibleParticles=0, aboveWater=0;
+   let maxParticleHeight=-1e9,minParticleHeight=1e9;
    for(let i=0;i<s.particleCount;i++){
-    const age=packedParticles[i*12+3],life=packedParticles[i*12+7];
-    if(age>=0&&age<life&&life>0)particlesAlive++;
+    const stride=i*12,age=packedParticles[stride+3],life=packedParticles[stride+7];
+    if(age>=0&&age<life&&life>0){
+     particlesAlive++;
+     const x=packedParticles[stride],y=packedParticles[stride+1],z=packedParticles[stride+2];
+     maxParticleHeight=Math.max(maxParticleHeight,y);
+     minParticleHeight=Math.min(minParticleHeight,y);
+     if(y>s.boatHeight)aboveWater++;
+     const cx=params[0]*x+params[4]*y+params[8]*z+params[12];
+     const cy=params[1]*x+params[5]*y+params[9]*z+params[13];
+     const cz=params[2]*x+params[6]*y+params[10]*z+params[14];
+     const cw=params[3]*x+params[7]*y+params[11]*z+params[15];
+     if(cw>0&&Math.abs(cx)<cw&&Math.abs(cy)<cw&&cz>=0&&cz<cw) visibleParticles++;
+    }
    }
    s.sprayRead.unmap();
    await s.offscreenRead.mapAsync(GPUMapMode.READ);
@@ -126,7 +138,7 @@ export function makeFrame(s) {
    canvas.getContext('2d').putImageData(new ImageData(rgbaPixels,w,h),0,0);
    if(rgba[3]!==255)throw Error('Offscreen readback alpha invalid: '+rgba);
    if(sky.join(',')===water.join(','))throw Error('Offscreen image lacks sky/water separation');
-   return {rgba,sky,water,particlesAlive,particleCount:s.particleCount,boatHeight:s.boatHeight,roll:s.roll||0,pitch:s.pitch||0,probes:s.probes};
+   return {rgba,sky,water,particlesAlive,visibleParticles,aboveWater,maxParticleHeight,minParticleHeight,particleCount:s.particleCount,boatHeight:s.boatHeight,roll:s.roll||0,pitch:s.pitch||0,probes:s.probes};
   }
   const err=await device.popErrorScope();if(err)throw Error('WebGPU validation: '+err.message);
   return {boatHeight:s.boatHeight,particleCount:s.particleCount,roll:s.roll||0,pitch:s.pitch||0,probes:s.probes};

@@ -25,30 +25,32 @@ fn integrate(@builtin(global_invocation_id) id:vec3u){
  let heading=vec2f(cos(cfg.sim.w),sin(cfg.sim.w));
  let lateral=vec2f(-heading.y,heading.x);
  let rng=particleHash(index,37u);
- let side=rng*2.0-1.0;
+ let side=select(-1.0,1.0,index%2u==0u);
+ let jetAlong=select(-0.92,0.75,index%5u==0u);
+ let jetSpread=side*(0.9+0.55*rng);
  let lifetime=0.6+particleHash(index,98u)*1.65;
  let dt=clamp(opts.x,0.0,0.08);
  if(p.velocityLife.w<0.0001){
-  p.positionAge=vec4f(cfg.boat.x+heading.x*cfg.boat.w*0.85+lateral.x*side*cfg.boat.w*0.65,
-   cfg.boat.y-cfg.boat.w*0.25,
-   cfg.boat.z+heading.y*cfg.boat.w*0.85+lateral.y*side*cfg.boat.w*0.65,
+  p.positionAge=vec4f(cfg.boat.x+heading.x*cfg.boat.w*jetAlong+lateral.x*jetSpread*cfg.boat.w,
+   cfg.boat.y-cfg.boat.w*0.18,
+   cfg.boat.z+heading.y*cfg.boat.w*jetAlong+lateral.y*jetSpread*cfg.boat.w,
    -particleHash(index,91u)*lifetime);
-  p.velocityLife=vec4f(heading.x*2.8+lateral.x*side*3.2,
-   3.2+particleHash(index,28u)*5.4,
-   heading.y*2.8+lateral.y*side*3.2,lifetime);
+  p.velocityLife=vec4f(heading.x*jetAlong*2.4+lateral.x*side*5.8,
+   6.0+particleHash(index,28u)*8.0,
+   heading.y*jetAlong*2.4+lateral.y*side*5.8,lifetime);
   p.sizeSeed=vec4f(0.045+pow(particleHash(index,122u),2.0)*0.28,rng,0.0,0.0);
  }
  var newAge=p.positionAge.w+dt;
  if(newAge>=p.velocityLife.w){
-  let spawnX=cfg.boat.x+heading.x*cfg.boat.w*0.85+lateral.x*side*cfg.boat.w*0.65;
-  let spawnZ=cfg.boat.z+heading.y*cfg.boat.w*0.85+lateral.y*side*cfg.boat.w*0.65;
-  p.positionAge=vec4f(spawnX,cfg.boat.y-cfg.boat.w*0.45,spawnZ,0.0);
+  let spawnX=cfg.boat.x+heading.x*cfg.boat.w*jetAlong+lateral.x*jetSpread*cfg.boat.w;
+  let spawnZ=cfg.boat.z+heading.y*cfg.boat.w*jetAlong+lateral.y*jetSpread*cfg.boat.w;
+  p.positionAge=vec4f(spawnX,cfg.boat.y-cfg.boat.w*0.18,spawnZ,0.0);
   let launch=0.4+opts.z*0.65;
-  let thrust=(1.7+rng*4.7)*launch;
-  let spread=side*(2.0+5.0*particleHash(index,123u))*launch;
-  p.velocityLife=vec4f(heading.x*thrust+lateral.x*spread,
-   (1.4+particleHash(index,28u)*7.0)*launch,
-   heading.y*thrust+lateral.y*spread,lifetime);
+  let thrust=(3.1+rng*5.8)*launch;
+  let spread=side*(3.5+6.0*particleHash(index,123u))*launch;
+  p.velocityLife=vec4f(heading.x*jetAlong*thrust+lateral.x*spread,
+   (6.0+particleHash(index,28u)*8.0)*launch,
+   heading.y*jetAlong*thrust+lateral.y*spread,lifetime);
   newAge=0.0;
  }
  p.positionAge=vec4f(p.positionAge.xyz,newAge);
