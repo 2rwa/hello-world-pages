@@ -92,9 +92,19 @@ export function makeFrame(s) {
    const bytes=new Uint8Array(s.offscreenRead.getMappedRange());
    const center=(Math.floor(h/2)*pitch+Math.floor(w/2)*4);
    const rgba=Array.from(bytes.slice(center,center+4));
+   // CI-only presentation of the exact GPU offscreen image for visual regression.
+   const rgbaPixels=new Uint8ClampedArray(w*h*4);
+   for(let row=0;row<h;row++){
+    rgbaPixels.set(bytes.subarray(row*pitch,row*pitch+w*4),row*w*4);
+   }
+   const sky=Array.from(rgbaPixels.slice((w*10+Math.floor(w/2))*4,(w*10+Math.floor(w/2))*4+4));
+   const water=Array.from(rgbaPixels.slice((w*(h-30)+Math.floor(w/2))*4,(w*(h-30)+Math.floor(w/2))*4+4));
    s.offscreenRead.unmap();
+   canvas.width=w;canvas.height=h;
+   canvas.getContext('2d').putImageData(new ImageData(rgbaPixels,w,h),0,0);
    if(rgba[3]!==255)throw Error('Offscreen readback alpha invalid: '+rgba);
-   return {rgba,boatHeight:s.boatHeight,probes:s.probes};
+   if(sky.join(',')===water.join(','))throw Error('Offscreen image lacks sky/water separation');
+   return {rgba,sky,water,boatHeight:s.boatHeight,probes:s.probes};
   }
   const err=await device.popErrorScope();if(err)throw Error('WebGPU validation: '+err.message);
   return {boatHeight:s.boatHeight,probes:s.probes};
