@@ -1,0 +1,20 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>FFT Ocean · WebGPU</title><style>
+:root{color-scheme:dark}*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#06111e;color:#e6f2ff;font-family:system-ui,sans-serif}
+canvas{position:fixed;inset:0;width:100%;height:100%;touch-action:none}
+.panel{position:fixed;top:12px;left:12px;width:min(350px,calc(100vw - 24px));padding:14px;border:1px solid #a8d8ff40;border-radius:16px;background:#061523db;backdrop-filter:blur(15px);box-shadow:0 10px 40px #0006}
+h1{font-size:17px;margin:0 0 5px}.muted{font-size:11px;opacity:.72;line-height:1.45}.row{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:9px 0;font-size:12px}
+input[type=range]{width:140px;accent-color:#73c9ff}select,button{background:#193349;color:#fff;border:1px solid #7094ac66;border-radius:7px;padding:6px}button{cursor:pointer}
+#status{font-size:12px;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere}
+#toggle{float:right}#controls.hide{display:none}.footer{margin-top:8px;font-size:11px;opacity:.7}
+@media(max-width:640px){.panel{top:6px;left:6px;padding:9px;width:min(300px,calc(100vw - 12px))}h1{font-size:14px}}
+</style></head><body><canvas id="view"></canvas><section class="panel"><button id="toggle">UI ▾</button><h1>FFT Ocean · WebGPU</h1>
+<div id="status">起動しています…</div><div id="controls">
+<div class="row"><label for="quality">FFT 解像度 × 5</label><select id="quality"><option value="128">128² / 軽量</option><option value="256">256² / 標準</option><option value="512">512² / 高画質</option></select></div>
+<div class="row"><label for="wind">風速</label><input id="wind" type="range" min="4" max="25" value="13" step="1"><output id="windOut"></output></div>
+<div class="row"><label for="amp">波の倍率</label><input id="amp" type="range" min=".4" max="3.5" step=".1" value="2.8"><output id="ampOut"></output></div>
+<div class="row"><label for="foam">白波・航跡</label><input id="foam" type="range" min="0" max="3" step=".1" value="1.2"><output id="foamOut"></output></div>
+<div class="row"><label for="speed">球体の速度</label><input id="speed" type="range" min="0" max="23" step=".5" value="9"><output id="speedOut"></output></div>
+<div class="row"><button id="pause">一時停止</button><button id="reset">航跡を消去</button></div>
+<div class="muted">ドラッグで視点回転 / ホイールでズーム。WASD / 矢印で進行方向。球体はGPU波高を27点で取得します。</div>
+<div class="footer">5帯域: 2003 / 433 / 97 / 23.3 / 5.3m。FFT → 波面 → 泡の順にGPU計算。</div></div></section>
+<script type="module" src="./app.js"></script></body></html>
