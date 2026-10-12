@@ -5,6 +5,9 @@ on:
       - "webgpu-fft-ocean/**"
       - ".github/workflows/fft-ocean-ci.yml"
   workflow_dispatch:
+permissions:
+  contents: read
+  statuses: write
 jobs:
   swiftshader:
     runs-on: ubuntu-latest
@@ -19,17 +22,49 @@ jobs:
         run: npm install --no-save puppeteer-core@24
       - name: Static server
         run: |
-          python3 -m http.server 8000 &
+          python3 -m http.server 8000 > /tmp/ocean-http.log 2>&1 &
           sleep 2
-      - name: Verify GPU FFT, shaders and offscreen render
+      - name: Verify GPU FFT shaders render and readback
+        id: test
+        continue-on-error: true
         env:
           CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
           WEBGPU_FLAGS: "--enable-unsafe-webgpu --enable-features=Vulkan --use-vulkan=swiftshader --disable-vulkan-fallback-to-gl-for-testing --use-webgpu-adapter=swiftshader --enable-webgpu-developer-features --enable-dawn-features=allow_unsafe_apis --disable-dawn-features=use_dxc --use-gpu-in-tests --enable-unsafe-swiftshader --no-sandbox"
-        run: node webgpu-fft-ocean/ci-test.mjs
-      - name: Screenshot
+        run: |
+          set -o pipefail
+          node webgpu-fft-ocean/ci-test.mjs 2>&1 | tee /tmp/ocean-ci.log
+      - name: Publish GPU regression status
+        if: always()
+        env:
+          TEST_OUTCOME: ${{ steps.test.outcome }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          node - <<'NODE'
+          const fs=require('fs');
+          const lines=fs.existsSync('/tmp/ocean-ci.log')?
+            fs.readFileSync('/tmp/ocean-ci.log','utf8').split('\n').filter(Boolean):[];
+          const detail=lines.slice(-15).reverse().find(s=>/error|wgsl|failure|invalid/i.test(s))||lines.at(-1)||'Browser test did not run';
+          const state=process.env.TEST_OUTCOME==='success'?'success':'failure';
+          const payload={state,description:(state==='success'?'GPU FFT + readback passed':detail).slice(0,130),
+            context:'webgpu/fft-ocean-swiftshader',
+            target_url:'https://github.com/'+process.env.GITHUB_REPOSITORY+'/actions/runs/'+process.env.GITHUB_RUN_ID};
+          fetch('https://api.github.com/repos/'+process.env.GITHUB_REPOSITORY+'/statuses/'+process.env.GITHUB_SHA,{
+            method:'POST',headers:{Authorization:'Bearer '+process.env.GITHUB_TOKEN,
+              'Content-Type':'application/json','Accept':'application/vnd.github+json'},
+            body:JSON.stringify(payload)
+          }).then(async response=>{if(!response.ok)throw Error(await response.text());console.log('status:',state,payload.description);})
+            .catch(error=>{console.error(error);process.exitCode=1;});
+          NODE
+      - name: Upload screenshot and logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: fft-ocean-swiftshader
-          path: fft-ocean-ci.png
+          path: |
+            fft-ocean-ci.png
+            /tmp/ocean-ci.log
+            /tmp/ocean-http.log
           if-no-files-found: ignore
+      - name: Fail if GPU regression failed
+        if: steps.test.outcome != 'success'
+        run: exit 1
