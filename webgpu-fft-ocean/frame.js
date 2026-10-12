@@ -79,15 +79,14 @@ export function makeFrame(s) {
     {buffer:s.offscreenRead,bytesPerRow:pitch},{width:w,height:h});
   device.pushErrorScope('validation');
   device.queue.submit([encoder.finish()]);
-  if(readNow){
-   s.buoyRead.mapAsync(GPUMapMode.READ).then(()=>{
+  const probeReadback=readNow?s.buoyRead.mapAsync(GPUMapMode.READ).then(()=>{
     const floats=new Float32Array(s.buoyRead.getMappedRange().slice(0,108));
     s.boatHeight=floats.reduce((a,b)=>a+b,0)/floats.length;
     s.probes=floats.length;s.buoyRead.unmap();s.pending=false;
-   }).catch(e=>{s.pending=false;report('readback: '+e.message)});
-  }
+   }).catch(e=>{s.pending=false;report('readback: '+e.message)}):null;
   if(ci){
    report('submitted-work-wait');await device.queue.onSubmittedWorkDone();
+   if(probeReadback)await probeReadback;
    const err=await device.popErrorScope();if(err)throw Error('WebGPU validation: '+err.message);
    await s.offscreenRead.mapAsync(GPUMapMode.READ);
    const bytes=new Uint8Array(s.offscreenRead.getMappedRange());

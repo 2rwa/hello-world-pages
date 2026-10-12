@@ -144,10 +144,10 @@ fn makeNormal(@builtin(global_invocation_id) id:vec3u){
  let xy=vec2i(id.xy);
  let lay=i32(id.z);
  let sx=tiles[id.z]/f32(N);
- let hR=textureLoad(displacementIn,(xy+vec2i(1,0)+i32(N))%i32(N),lay,0).xyz;
- let hL=textureLoad(displacementIn,(xy+vec2i(-1,0)+i32(N))%i32(N),lay,0).xyz;
- let hU=textureLoad(displacementIn,(xy+vec2i(0,1)+i32(N))%i32(N),lay,0).xyz;
- let hD=textureLoad(displacementIn,(xy+vec2i(0,-1)+i32(N))%i32(N),lay,0).xyz;
+ let hR=textureLoad(displacementIn,(xy+vec2i(1,0)+i32(N))%vec2i(i32(N)),lay,0).xyz;
+ let hL=textureLoad(displacementIn,(xy+vec2i(-1,0)+i32(N))%vec2i(i32(N)),lay,0).xyz;
+ let hU=textureLoad(displacementIn,(xy+vec2i(0,1)+i32(N))%vec2i(i32(N)),lay,0).xyz;
+ let hD=textureLoad(displacementIn,(xy+vec2i(0,-1)+i32(N))%vec2i(i32(N)),lay,0).xyz;
  let dh=vec2f(hR.x-hL.x,hU.x-hD.x)/(2.0*sx);
  let xx=(hR.y-hL.y)/(2.0*sx);
  let zz=(hU.z-hD.z)/(2.0*sx);

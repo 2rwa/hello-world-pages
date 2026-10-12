@@ -112,8 +112,8 @@ struct SkyVary {@builtin(position) pos:vec4f,@location(0) uv:vec2f};
 @fragment fn fragmentSky(input:SkyVary)->@location(0) vec4f{
  let vv=normalize(vec3f(input.uv.x*0.9,input.uv.y*0.66+0.15,1.0));
  let sky=skyColor(vv);
- let out=sky/(1.0+sky);
- return vec4f(pow(out,vec3f(1.0/2.2)),1.0);
+ let skyMapped=sky/(1.0+sky);
+ return vec4f(pow(skyMapped,vec3f(1.0/2.2)),1.0);
 }
 struct BallVary {@builtin(position) pos:vec4f,@location(0) normal:vec3f,@location(1) world:vec3f};
 @vertex fn vertexBall(@builtin(vertex_index) vid:u32)->BallVary{
