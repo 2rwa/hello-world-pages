@@ -1,0 +1,37 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>CYAN HALO | SDF Combat Unit</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,-apple-system,sans-serif;background:#040b13;color:#e5f8ff}
+*{box-sizing:border-box}html,body{margin:0;height:100%;overflow:hidden}
+canvas{display:block;width:100vw;height:100vh;touch-action:none}
+.panel{position:fixed;top:14px;left:14px;width:min(345px,calc(100vw - 28px));max-height:calc(100dvh - 28px);overflow:auto;border:1px solid #75c6e754;border-radius:15px;background:#081521e8;backdrop-filter:blur(14px);padding:14px;box-shadow:0 15px 60px #000a}
+h1{font-size:19px;letter-spacing:.11em;margin:0 0 5px}h2{font-size:12px;letter-spacing:.2em;color:#8fd8ec;margin:14px 0 8px}
+.subtitle{font-size:11px;color:#96aec0;line-height:1.6;margin:0 0 11px}
+.row{display:grid;grid-template-columns:106px 1fr 36px;align-items:center;gap:6px;font-size:12px;margin:11px 0}
+input[type=range]{width:100%;accent-color:#4bdce6}output{font-size:11px;font-variant-numeric:tabular-nums;text-align:right}
+select,button{background:#173247;color:#e8f9ff;border:1px solid #7dc7e85f;border-radius:8px;padding:9px;font:inherit;cursor:pointer}
+button:hover{background:#25506b}.actions{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:10px 0}
+button.primary{border-color:#48d1e3;color:#84faff}
+#status{font-size:11px;line-height:1.55;color:#aacddb;overflow-wrap:anywhere}
+.footer{font-size:10px;color:#859db0;line-height:1.65;margin-top:10px}
+#toggle{position:fixed;right:15px;top:15px;border-radius:25px;background:#0d2331d9;z-index:2}
+.panel.hidden{display:none}
+@media(max-width:700px){.panel{top:8px;left:8px;width:min(290px,calc(100vw - 16px));padding:10px}h1{font-size:16px}.row{grid-template-columns:87px 1fr 31px;margin:8px 0}}
+</style></head><body>
+<canvas id="view" aria-label="WebGPU 3D metallic SDF character"></canvas>
+<button id="toggle" aria-label="パネル切替">設定を隠す</button>
+<section class="panel" id="panel">
+<h1>CYAN HALO</h1><p class="subtitle">SDF METALLIC UNIT · WebGPU RAYMARCH<br>ドラッグで3D回転 / ホイール・ピンチでズーム</p>
+<div class="row"><label for="pose">戦闘ポーズ</label><input id="pose" type="range" min="0" max="1" step=".01" value=".28"><output id="poseOut"></output></div>
+<div class="row"><label for="halo">頭部リング</label><input id="halo" type="range" min=".65" max="1.35" step=".01" value="1"><output id="haloOut"></output></div>
+<div class="row"><label for="armor">装甲厚み</label><input id="armor" type="range" min=".65" max="1.4" step=".01" value="1"><output id="armorOut"></output></div>
+<div class="row"><label for="cannon">腕部エミッタ</label><input id="cannon" type="range" min=".65" max="1.5" step=".01" value="1"><output id="cannonOut"></output></div>
+<h2>RENDER CONTROL</h2>
+<div class="row"><label for="quality">解像度</label><input id="quality" type="range" min=".4" max="1" step=".05" value=".8"><output id="qualityOut"></output></div>
+<div class="row"><label for="metal">金属粗さ</label><input id="metal" type="range" min=".08" max=".9" step=".02" value=".23"><output id="metalOut"></output></div>
+<div class="row"><label for="exposure">露出</label><input id="exposure" type="range" min=".6" max="2.5" step=".05" value="1.35"><output id="exposureOut"></output></div>
+<div class="row"><label for="mode">表示</label><select id="mode" style="grid-column:span 2"><option value="0">メタル完成表示</option><option value="1">SDF法線</option><option value="2">マテリアルID</option></select></div>
+<div class="actions"><button id="front">正面ビュー</button><button id="side">側面ビュー</button><button id="reset">初期化</button><button id="export" class="primary">3D OBJを書き出す</button></div>
+<div id="status" role="status">WebGPUを初期化しています…</div>
+<div class="footer">本モデルは球・カプセル・トーラス・角丸ボックスの集合SDFです。OBJはそのゼロ等値面をメッシュ化して保存します。画像の完全な自動復元ではなく、コンセプト画を元にしたプロシージャル3D再設計です。</div>
+</section>
+<script type="module" src="./app.js"></script></body></html>

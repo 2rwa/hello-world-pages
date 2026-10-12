@@ -1,0 +1,47 @@
+name: CYAN HALO SDF WebGPU CI
+on:
+  push:
+    paths:
+      - 'sdf-cyan-halo/**'
+      - '.github/workflows/sdf-cyan-halo-ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  raymarch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: browser-actions/setup-chrome@v2
+        id: chrome
+        with:
+          chrome-version: stable
+      - name: JavaScript preflight
+        run: |
+          for f in sdf-cyan-halo/{app,model,torso,limbs,sdf-cpu,export}.js sdf-cyan-halo/ci-test.mjs; do node --check "$f"; done
+      - name: Install browser test dependency
+        run: npm install --no-save puppeteer-core@24
+      - name: Serve static Pages tree
+        run: |
+          python3 -m http.server 8000 >/tmp/cyan-halo-http.log 2>&1 &
+          sleep 2
+      - name: GPU offscreen readback and SDF interaction
+        env:
+          CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
+        run: node sdf-cyan-halo/ci-test.mjs
+      - name: Real canvas test under Xvfb
+        env:
+          CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
+          HALO_HEADED: '1'
+        run: xvfb-run -a -s '-screen 0 1280x800x24' node sdf-cyan-halo/ci-test.mjs
+      - name: Upload screenshots and diagnostics
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cyan-halo-webgpu-screenshots
+          path: |
+            sdf-cyan-halo/canvas-*.png
+            /tmp/cyan-halo-http.log
+          if-no-files-found: ignore
+          retention-days: 7
