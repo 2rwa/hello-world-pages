@@ -1,0 +1,26 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>FFT Ocean V3 · WebGPU</title><style>
+:root{color-scheme:dark}*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#06111e;color:#e6f2ff;font-family:system-ui,sans-serif}
+canvas{position:fixed;inset:0;width:100%;height:100%;touch-action:none}
+.panel{position:fixed;top:12px;left:12px;width:min(372px,calc(100vw - 24px));padding:14px;max-height:calc(100vh - 24px);overflow-y:auto;border:1px solid #a8d8ff40;border-radius:16px;background:#061523db;backdrop-filter:blur(15px);box-shadow:0 10px 40px #0006}
+h1{font-size:17px;margin:0 0 5px}.muted{font-size:11px;opacity:.72;line-height:1.45}.row{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:9px 0;font-size:12px}
+input[type=range]{width:140px;accent-color:#73c9ff}select,button{background:#193349;color:#fff;border:1px solid #7094ac66;border-radius:7px;padding:6px}button{cursor:pointer}
+#status{font-size:12px;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere}
+#toggle{float:right}#controls.hide{display:none}.footer{margin-top:8px;font-size:11px;opacity:.7}
+@media(max-width:640px){.panel{top:6px;left:6px;padding:9px;width:min(300px,calc(100vw - 12px))}h1{font-size:14px}}
+</style></head><body><canvas id="view"></canvas><section class="panel"><button id="toggle">UI ▾</button><h1>FFT Ocean V3 · WebGPU</h1>
+<div id="status">起動しています…</div><div id="controls">
+<div class="row"><label for="quality">FFT 解像度 × 5</label><select id="quality"><option value="128">128² / 軽量</option><option value="256">256² / 標準</option><option value="512">512² / 高画質</option></select></div>
+<div class="row"><label for="wind">風速</label><input id="wind" type="range" min="4" max="25" value="13" step="1"><output id="windOut"></output></div>
+<div class="row"><label for="amp">波の倍率</label><input id="amp" type="range" min=".4" max="3.5" step=".1" value="2.8"><output id="ampOut"></output></div>
+<div class="row"><label for="foam">白波・航跡</label><input id="foam" type="range" min="0" max="3" step=".1" value="1.2"><output id="foamOut"></output></div>
+<div class="row"><label for="spray">しぶきの量</label><input id="spray" type="range" min="0" max="3" value="1.8" step=".1"><output id="sprayOut"></output></div>
+<div class="row"><label for="lace">航跡の泡レース</label><input id="lace" type="range" min="0" max="3" value="1.8" step=".1"><output id="laceOut"></output></div>
+<div class="row"><label for="sun">太陽高度</label><input id="sun" type="range" min="7" max="74" value="31" step="1"><output id="sunOut"></output></div>
+<div class="row"><label for="turbidity">水の濁り</label><input id="turbidity" type="range" min=".2" max="3" value="1" step=".1"><output id="turbidityOut"></output></div>
+<div class="row"><label for="mode">デバッグ表示</label><select id="mode"><option value="0">完成イメージ</option><option value="1">法線</option><option value="2">泡 / 鮮度</option><option value="3">粗さ / 白波</option></select></div>
+<div class="row"><label for="viewpoint">カメラ</label><select id="viewpoint"><option value="chase">追従</option><option value="deck">海面付近</option><option value="aerial">俯瞰</option></select></div>
+<div class="row"><label for="speed">球体の速度</label><input id="speed" type="range" min="0" max="23" step=".5" value="9"><output id="speedOut"></output></div>
+<div class="row"><button id="pause">一時停止</button><button id="reset">航跡を消去</button></div>
+<div class="muted">ドラッグで視点回転 / ホイールでズーム。WASD / 矢印で進行方向。球体はGPU波高を27点で取得し、上下移動と傾きに反映します。</div>
+<div class="footer">V3: GPUしぶき 1,024〜3,072粒子・粒径別抗力・泡レース。<a href="../webgpu-fft-ocean-v2/" style="color:#7dd6ff">V2</a> / <a href="../webgpu-fft-ocean/" style="color:#7dd6ff">V1</a></div></div></section>
+<script type="module" src="./app.js"></script></body></html>
