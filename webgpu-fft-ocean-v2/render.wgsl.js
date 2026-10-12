@@ -78,7 +78,8 @@ fn skyColor(direction:vec3f)->vec3f{
  let litCloud=vec3f(0.72,0.75,0.76)*(0.28+0.72*solarAltitude);
  radiance=mix(radiance,litCloud,cloudDensity*0.66);
  radiance+=vec3f(1.0,0.82,0.53)*pow(sunProximity,5000.0)*12.0*sunIlluminance();
- return max(radiance,vec3f(0.0));
+ let belowHorizon=1.0-smoothstep(-0.15,0.03,skyDir.y);
+ return max(mix(radiance,vec3f(0.018,0.053,0.079),belowHorizon),vec3f(0.0));
 }
 fn toneMap(linear:vec3f)->vec3f{
  let safeColor=max(linear,vec3f(0.0));
@@ -106,7 +107,7 @@ fn toneMap(linear:vec3f)->vec3f{
  let rippleX=0.022*sin(xz.x*2.4+xz.y*0.8+cfg.sim.x*2.8);
  let rippleZ=0.021*cos(xz.y*2.1-xz.x*0.6+cfg.sim.x*2.5);
  gradient+=vec2f(rippleX,rippleZ)*smallScaleFade;
- let oceanNormal=normalize(vec3f(-gradient.x,1.0,-gradient.y));
+ let oceanNormal=normalize(vec3f(-gradient.x*0.62,1.0,-gradient.y*0.62));
  let nDotV=clamp(dot(oceanNormal,toEye),0.0,1.0);
  let reflected=reflect(-toEye,oceanNormal);
  let roughness=clamp(0.045+sqrt(max(0.0,meanSquare))*0.17+cameraDist*0.000014,0.055,0.55);
@@ -116,14 +117,14 @@ fn toneMap(linear:vec3f)->vec3f{
  let turbidity=clamp(cfg.extra.z,0.1,3.0);
  let absorption=vec3f(0.42,0.095,0.038)+vec3f(0.025,0.018,0.012)*turbidity;
  let backscatter=vec3f(0.004,0.019,0.040)*turbidity;
- let subsurface=backscatter/(absorption+backscatter)*vec3f(1.4,1.4,1.65);
+ let subsurface=backscatter/(absorption+backscatter)*vec3f(0.88,0.80,0.64);
  let diffuseLight=0.30+0.7*sunIlluminance();
  var radiance=mix(subsurface*diffuseLight,waterReflection,clamp(fresnel+0.065,0.0,1.0));
  let sunDir=sunDirection();
  let halfDirection=normalize(toEye+sunDir);
  let nDotH=max(0.0,dot(oceanNormal,halfDirection));
- let sunGlitter=pow(nDotH,max(12.0,1.7/(roughness*roughness)))* (0.3+roughness*0.5);
- radiance+=vec3f(1.0,0.87,0.69)*sunGlitter*4.8*sunIlluminance();
+ let sunGlitter=pow(nDotH,max(42.0,3.0/(roughness*roughness)))*(0.06+roughness*0.17);
+ radiance+=vec3f(1.0,0.87,0.69)*sunGlitter*2.0*sunIlluminance();
  // Large cloud-shadow field is anchored to the world, moving with the wind.
  let shadowCloud=cloudNoise(xz*0.0011+vec2f(cfg.sim.x*0.003,0.0));
  radiance*=1.0-0.21*smoothstep(0.52,0.7,shadowCloud);
