@@ -53,8 +53,8 @@ fn integrate(@builtin(global_invocation_id) id:vec3u){
   let drag=clamp((0.24+0.13/max(radius,0.035))*dt,0.0,0.88);
   let velocity=mix(p.velocityLife.xyz,wind,drag);
   velocity.y-=9.81*dt;
-  p.velocityLife.xyz=velocity;
-  p.positionAge.xyz+=velocity*dt;
+  p.velocityLife=vec4f(velocity,p.velocityLife.w);
+  p.positionAge=vec4f(p.positionAge.xyz+velocity*dt,p.positionAge.w);
   if(p.positionAge.y<-2.0){p.positionAge.w=p.velocityLife.w+0.1;}
  }
  particles[index]=p;

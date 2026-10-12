@@ -31,7 +31,8 @@ export async function createOcean(canvas,resolution,ci,report) {
  const mipBGL=bgLayout([[5,S.COMPUTE,{storageTexture:storageArr}],[6,S.COMPUTE,{texture:sampledArr}]]);
  const foamBGL=bgLayout([[0,S.COMPUTE,{buffer:cb}],[1,S.COMPUTE,{texture:sampled2}],
  [2,S.COMPUTE,{storageTexture:storage2}],[3,S.COMPUTE,{buffer:cb}],
- [4,S.COMPUTE,{texture:sampledArr}],[5,S.COMPUTE,{sampler:{type:'filtering'}}]]);
+ [4,S.COMPUTE,{texture:sampledArr}],[5,S.COMPUTE,{sampler:{type:'filtering'}}],
+ [6,S.COMPUTE,{buffer:cb}]]);
  const renderBGL=bgLayout([[0,S.VERTEX|S.FRAGMENT,{buffer:cb}],
  [1,S.VERTEX|S.FRAGMENT,{texture:sampledArr}],[2,S.FRAGMENT,{texture:sampledArr}],
  [3,S.FRAGMENT,{texture:sampled2}],[4,S.FRAGMENT,{texture:sampled2}],
@@ -49,6 +50,7 @@ export async function createOcean(canvas,resolution,ci,report) {
  const rowData=device.createBuffer({size:storageSize,usage:U.STORAGE});
  const uniform=device.createBuffer({size:144,usage:U.UNIFORM|U.COPY_DST});
  const clipBuffers=[0,1].map(()=>device.createBuffer({size:16,usage:U.UNIFORM|U.COPY_DST}));
+ const wakeSettings=device.createBuffer({size:16,usage:U.UNIFORM|U.COPY_DST});
  const dispTex=device.createTexture({size:[resolution,resolution,5],format:'rgba16float',usage:T.STORAGE_BINDING|T.TEXTURE_BINDING});
  const numMips=Math.log2(resolution)+1;
  const normTex=device.createTexture({size:[resolution,resolution,5],format:'rgba16float',mipLevelCount:numMips,usage:T.STORAGE_BINDING|T.TEXTURE_BINDING});
@@ -116,7 +118,7 @@ export async function createOcean(canvas,resolution,ci,report) {
  const sprayRead=ci?device.createBuffer({size:particleCount*48,usage:U.MAP_READ|U.COPY_DST}):null;
  const state={device,canvas,context,format,resolution,ci,report,dim:{w:0,h:0},
  particleCount,particleBuffer,sprayOptions,sprayComputePipe,sprayRenderPipe,sprayComputeGroup,sprayRenderGroup,sprayRead,
- uniform,clipBuffers,dispView,normalView,sampler,clips,fv,grid,numMips,
+ uniform,clipBuffers,wakeSettings,dispView,normalView,sampler,clips,fv,grid,numMips,
  entry,buffer,foamBGL,renderBGL,baseGroup,normalGroup,mipGroups,buoyGroup,
  evolve,rows,columns,normals,mip,foamPipe,buoyPipe,skyPipe,oceanPipe,ballPipe,buoyRead,buoyBuffer,
  depth:null,offscreen:null,offscreenRead:null,boatHeight:0,probes:0,pending:false,frame:0};

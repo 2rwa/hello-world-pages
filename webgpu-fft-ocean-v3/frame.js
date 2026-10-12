@@ -21,7 +21,8 @@ export function makeFrame(s) {
   return device.createBindGroup({layout:s.foamBGL,entries:[
    s.entry(0,s.buffer(uniform)),s.entry(1,clip.views[clip.index].createView()),
    s.entry(2,clip.views[1-clip.index].createView()),
-   s.entry(3,s.buffer(s.clipBuffers[level])),s.entry(4,s.normalView),s.entry(5,s.sampler)
+   s.entry(3,s.buffer(s.clipBuffers[level])),s.entry(4,s.normalView),s.entry(5,s.sampler),
+   s.entry(6,s.buffer(s.wakeSettings))
   ]});
  }
  function drawGroup(){
@@ -38,6 +39,7 @@ export function makeFrame(s) {
   resize(w,h);
   device.queue.writeBuffer(uniform,0,params);
   device.queue.writeBuffer(s.sprayOptions,0,new Float32Array([delta,controls.spray??1.0,controls.slam??0.2,h]));
+  device.queue.writeBuffer(s.wakeSettings,0,new Float32Array([controls.lace??1.0,0,0,0]));
   const encoder=device.createCommandEncoder();
   report('FFT-dispatch');
   compute(encoder,s.evolve,s.baseGroup,resolution/8,resolution/8,5);
