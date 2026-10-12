@@ -41,7 +41,8 @@ export async function createOcean(canvas,resolution,ci,report) {
  const particleCount=ci?1024:(resolution===128?1536:3072);
  const particleBuffer=device.createBuffer({size:particleCount*48,usage:U.STORAGE|U.COPY_SRC});
  const sprayOptions=device.createBuffer({size:16,usage:U.UNIFORM|U.COPY_DST});
- const sprayComputeBGL=bgLayout([[0,S.COMPUTE,{buffer:cb}],[1,S.COMPUTE,{buffer:cb}],[2,S.COMPUTE,{buffer:rw}]]);
+ const sprayComputeBGL=bgLayout([[0,S.COMPUTE,{buffer:cb}],[1,S.COMPUTE,{buffer:cb}],[2,S.COMPUTE,{buffer:rw}],
+ [3,S.COMPUTE,{texture:sampledArr}]]);
  const sprayRenderBGL=bgLayout([[0,S.VERTEX,{buffer:cb}],[1,S.VERTEX,{buffer:cb}],
  [2,S.VERTEX,{buffer:{type:'read-only-storage'}}]]);
  const layoutOf=bgl=>device.createPipelineLayout({bindGroupLayouts:[bgl]});
@@ -111,7 +112,7 @@ export async function createOcean(canvas,resolution,ci,report) {
  entry(0,buffer(uniform)),entry(1,dispView),entry(2,buffer(buoyBuffer))]});
  const sprayComputeGroup=device.createBindGroup({layout:sprayComputeBGL,entries:[
  {binding:0,resource:{buffer:uniform}},{binding:1,resource:{buffer:sprayOptions}},
- {binding:2,resource:{buffer:particleBuffer}}]});
+ {binding:2,resource:{buffer:particleBuffer}},{binding:3,resource:dispView}]});
  const sprayRenderGroup=device.createBindGroup({layout:sprayRenderBGL,entries:[
  {binding:0,resource:{buffer:uniform}},{binding:1,resource:{buffer:sprayOptions}},
  {binding:2,resource:{buffer:particleBuffer}}]});

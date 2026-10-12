@@ -17,6 +17,17 @@ fn sunUnit()->vec3f{
 `;
 export const sprayComputeWGSL=P+`
 @group(0) @binding(2) var<storage,read_write> particles:array<Particle>;
+@group(0) @binding(3) var oceanHeightTex:texture_2d_array<f32>;
+const waveTiles=array<f32,5>(2003.0,433.0,97.0,23.3,5.3);
+fn sampledSeaHeight(worldXZ:vec2f)->f32 {
+ var height=0.0;
+ let texelDims=vec2f(textureDimensions(oceanHeightTex));
+ for(var cascade:i32=0;cascade<5;cascade++){
+  let pixel=vec2i(fract(worldXZ/waveTiles[cascade])*texelDims);
+  height+=textureLoad(oceanHeightTex,pixel,cascade,0).x;
+ }
+ return height;
+}
 @compute @workgroup_size(64)
 fn integrate(@builtin(global_invocation_id) id:vec3u){
  if(id.x>=arrayLength(&particles)){return;}
@@ -31,9 +42,8 @@ fn integrate(@builtin(global_invocation_id) id:vec3u){
  let lifetime=0.6+particleHash(index,98u)*1.65;
  let dt=clamp(opts.x,0.0,0.08);
  if(p.velocityLife.w<0.0001){
-  p.positionAge=vec4f(cfg.boat.x+heading.x*cfg.boat.w*jetAlong+lateral.x*jetSpread*cfg.boat.w,
-   cfg.boat.y-cfg.boat.w*0.18,
-   cfg.boat.z+heading.y*cfg.boat.w*jetAlong+lateral.y*jetSpread*cfg.boat.w,
+  let startXZ=cfg.boat.xz+heading*cfg.boat.w*jetAlong+lateral*jetSpread*cfg.boat.w;
+  p.positionAge=vec4f(startXZ.x,sampledSeaHeight(startXZ)+0.45,startXZ.y,
    -particleHash(index,91u)*lifetime);
   p.velocityLife=vec4f(heading.x*jetAlong*2.4+lateral.x*side*5.8,
    6.0+particleHash(index,28u)*8.0,
@@ -44,7 +54,7 @@ fn integrate(@builtin(global_invocation_id) id:vec3u){
  if(newAge>=p.velocityLife.w){
   let spawnX=cfg.boat.x+heading.x*cfg.boat.w*jetAlong+lateral.x*jetSpread*cfg.boat.w;
   let spawnZ=cfg.boat.z+heading.y*cfg.boat.w*jetAlong+lateral.y*jetSpread*cfg.boat.w;
-  p.positionAge=vec4f(spawnX,cfg.boat.y-cfg.boat.w*0.18,spawnZ,0.0);
+  p.positionAge=vec4f(spawnX,sampledSeaHeight(vec2f(spawnX,spawnZ))+0.45,spawnZ,0.0);
   let launch=0.4+opts.z*0.65;
   let thrust=(3.1+rng*5.8)*launch;
   let spread=side*(3.5+6.0*particleHash(index,123u))*launch;

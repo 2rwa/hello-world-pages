@@ -9,7 +9,7 @@ $('quality').value=String(resolution);
 for(const name of ['sun','turbidity','wind','foam','amp','speed','mode','spray','lace']){
  if(params.has(name)) $(name).value=params.get(name);
 }
-let paused=false,angle=0.3,boatX=0,boatZ=0,boatY=2,boatRoll=0,boatPitch=0,orbitYaw=0.55,orbitPitch=0.24,orbitDist=65;
+let paused=false,angle=0.3,boatX=0,boatZ=0,boatY=2,boatRoll=0,boatPitch=0,orbitYaw=0.62,orbitPitch=0.21,orbitDist=39;
 let lastClock=0,elapsed=0,frameCount=0,dragging=false,pointerX=0,pointerY=0,engine=null,busy=false,previousWater=0,previousBallY=2;
 const pressed=new Set();
 window.__oceanState={phase:'script-start'};
@@ -69,7 +69,7 @@ function installUI(){
   const selected=$('viewpoint').value;
   if(selected==='deck'){orbitDist=25;orbitPitch=0.065;orbitYaw=0.70;}
   else if(selected==='aerial'){orbitDist=150;orbitPitch=1.05;orbitYaw=0.38;}
-  else{orbitDist=65;orbitPitch=0.24;orbitYaw=0.55;}
+  else{orbitDist=39;orbitPitch=0.21;orbitYaw=0.62;}
  };
  $('reset').onclick=()=>engine?.resetWake();
  window.addEventListener('keydown',e=>{if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown',' '].includes(e.key))e.preventDefault();pressed.add(e.key.toLowerCase());});
