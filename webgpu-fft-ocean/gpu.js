@@ -25,8 +25,9 @@ export async function createOcean(canvas,resolution,ci,report) {
  const storage2={access:'write-only',format:'rgba16float',viewDimension:'2d'};
  const bgLayout=items=>device.createBindGroupLayout({entries:items.map(([binding,visibility,resource])=>({binding,visibility,...resource}))});
  const fftBGL=bgLayout([[0,S.COMPUTE,{buffer:cb}],[1,S.COMPUTE,{buffer:rw}],[2,S.COMPUTE,{buffer:rw}],
- [3,S.COMPUTE,{storageTexture:storageArr}],[4,S.COMPUTE,{texture:sampledArr}],
- [5,S.COMPUTE,{storageTexture:storageArr}],[6,S.COMPUTE,{texture:sampledArr}]]);
+ [3,S.COMPUTE,{storageTexture:storageArr}]]);
+ const normalBGL=bgLayout([[4,S.COMPUTE,{texture:sampledArr}],[5,S.COMPUTE,{storageTexture:storageArr}]]);
+ const mipBGL=bgLayout([[5,S.COMPUTE,{storageTexture:storageArr}],[6,S.COMPUTE,{texture:sampledArr}]]);
  const foamBGL=bgLayout([[0,S.COMPUTE,{buffer:cb}],[1,S.COMPUTE,{texture:sampled2}],
  [2,S.COMPUTE,{storageTexture:storage2}],[3,S.COMPUTE,{buffer:cb}],
  [4,S.COMPUTE,{texture:sampledArr}],[5,S.COMPUTE,{sampler:{type:'filtering'}}]]);
@@ -65,10 +66,11 @@ export async function createOcean(canvas,resolution,ci,report) {
  shaderModule(renderWGSL(grid),'Render'),shaderModule(buoyWGSL,'Buoyancy')]);
  report('create-pipeline');
  async function cp(mod,layout,entryPoint){return device.createComputePipelineAsync({layout,compute:{module:mod,entryPoint}});}
- const fftLayout=layoutOf(fftBGL),foamLayout=layoutOf(foamBGL),renderLayout=layoutOf(renderBGL),buoyLayout=layoutOf(buoyBGL);
+ const fftLayout=layoutOf(fftBGL),normalLayout=layoutOf(normalBGL),mipLayout=layoutOf(mipBGL);
+ const foamLayout=layoutOf(foamBGL),renderLayout=layoutOf(renderBGL),buoyLayout=layoutOf(buoyBGL);
  const [evolve,rows,columns,normals,mip,foamPipe,buoyPipe]=await Promise.all([
  cp(fftMod,fftLayout,'evolve'),cp(fftMod,fftLayout,'fftRows'),cp(fftMod,fftLayout,'fftColumns'),
- cp(fftMod,fftLayout,'makeNormal'),cp(fftMod,fftLayout,'reduceMips'),
+ cp(fftMod,normalLayout,'makeNormal'),cp(fftMod,mipLayout,'reduceMips'),
  cp(foamMod,foamLayout,'advance'),cp(buoyMod,buoyLayout,'probe')]);
  const rp=(vert,frag,depthWrite)=>device.createRenderPipelineAsync({layout:renderLayout,
  vertex:{module:renderMod,entryPoint:vert},fragment:{module:renderMod,entryPoint:frag,targets:[{format}]},
@@ -79,20 +81,18 @@ export async function createOcean(canvas,resolution,ci,report) {
  const buoyRead=device.createBuffer({size:128,usage:U.MAP_READ|U.COPY_DST});
  const entry=(binding,resource)=>({binding,resource});
  const buffer=b=>({buffer:b});
- function fftGroup(readMip=0,writeMip=0) {
- return device.createBindGroup({layout:fftBGL,entries:[
- entry(0,buffer(uniform)),entry(1,buffer(frequency)),entry(2,buffer(rowData)),
- entry(3,dispView),entry(4,dispView),
- entry(5,normTex.createView({dimension:'2d-array',baseMipLevel:writeMip,mipLevelCount:1})),
- entry(6,normTex.createView({dimension:'2d-array',baseMipLevel:readMip,mipLevelCount:1}))
- ]});}
- const baseGroup=fftGroup();
- const mipGroups=Array.from({length:numMips-1},(_,l)=>fftGroup(l,l+1));
+ const baseGroup=device.createBindGroup({layout:fftBGL,entries:[
+ entry(0,buffer(uniform)),entry(1,buffer(frequency)),entry(2,buffer(rowData)),entry(3,dispView)]});
+ const mipView=l=>normTex.createView({dimension:'2d-array',baseMipLevel:l,mipLevelCount:1});
+ const normalGroup=device.createBindGroup({layout:normalBGL,entries:[
+ entry(4,dispView),entry(5,mipView(0))]});
+ const mipGroups=Array.from({length:numMips-1},(_,l)=>device.createBindGroup({layout:mipBGL,
+ entries:[entry(5,mipView(l+1)),entry(6,mipView(l))]}));
  const buoyGroup=device.createBindGroup({layout:buoyBGL,entries:[
  entry(0,buffer(uniform)),entry(1,dispView),entry(2,buffer(buoyBuffer))]});
  const state={device,canvas,context,format,resolution,ci,report,dim:{w:0,h:0},
  uniform,clipBuffers,dispView,normalView,sampler,clips,fv,grid,numMips,
- entry,buffer,foamBGL,renderBGL,baseGroup,mipGroups,buoyGroup,
+ entry,buffer,foamBGL,renderBGL,baseGroup,normalGroup,mipGroups,buoyGroup,
  evolve,rows,columns,normals,mip,foamPipe,buoyPipe,skyPipe,oceanPipe,ballPipe,buoyRead,buoyBuffer,
  depth:null,offscreen:null,offscreenRead:null,boatHeight:0,probes:0,pending:false,frame:0};
  return makeFrame(state);

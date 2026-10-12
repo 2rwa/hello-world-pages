@@ -42,7 +42,7 @@ export function makeFrame(s) {
   compute(encoder,s.evolve,s.baseGroup,resolution/8,resolution/8,5);
   compute(encoder,s.rows,s.baseGroup,1,resolution,5);
   compute(encoder,s.columns,s.baseGroup,1,resolution,5);
-  compute(encoder,s.normals,s.baseGroup,resolution/8,resolution/8,5);
+  compute(encoder,s.normals,s.normalGroup,resolution/8,resolution/8,5);
   for(let l=0;l<s.numMips-1;l++){
    compute(encoder,s.mip,s.mipGroups[l],Math.max(1,Math.ceil((resolution/2**(l+1))/8)),
    Math.max(1,Math.ceil((resolution/2**(l+1))/8)),5);
