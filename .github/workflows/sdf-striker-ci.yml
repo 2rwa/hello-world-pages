@@ -29,11 +29,19 @@ jobs:
         env:
           CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
         run: node sdf-striker/ci-test.mjs
+      - name: Headed Chrome canvas diagnostic (Xvfb)
+        continue-on-error: true
+        env:
+          CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
+        run: |
+          xvfb-run -a -s '-screen 0 1280x800x24' env SDF_HEADLESS=0 node sdf-striker/ci-test.mjs 2>&1 | tee /tmp/sdf-headed.log
       - name: Upload canvas screenshot if available
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: sdf-striker-canvas-diagnostic
-          path: sdf-striker/canvas-smoke.png
+          path: |
+            sdf-striker/canvas-smoke.png
+            /tmp/sdf-headed.log
           if-no-files-found: ignore
           retention-days: 7

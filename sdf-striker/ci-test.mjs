@@ -1,7 +1,7 @@
 import puppeteer from 'puppeteer-core';
 const chromePath=process.env.CHROME_PATH||'/usr/bin/google-chrome';
 const flags=(process.env.WEBGPU_FLAGS||'--enable-unsafe-webgpu --enable-features=Vulkan --use-vulkan=swiftshader --disable-vulkan-fallback-to-gl-for-testing --use-webgpu-adapter=swiftshader --enable-webgpu-developer-features --enable-dawn-features=allow_unsafe_apis --disable-dawn-features=use_dxc --use-gpu-in-tests --enable-unsafe-swiftshader --no-sandbox').split(/\s+/);
-const browser=await puppeteer.launch({executablePath:chromePath,headless:true,args:[...flags,'--disable-dev-shm-usage']});
+const browser=await puppeteer.launch({executablePath:chromePath,headless:process.env.SDF_HEADLESS!=='0',args:[...flags,'--disable-dev-shm-usage']});
 try {
   console.log('browser',await browser.version());
   const page=await browser.newPage();
@@ -40,7 +40,8 @@ try {
   } else {
     const messages=(canvasStatus?.errors||[]).join('\\n');
     if(/SharedImage|WebgpuSwapChain|swapchain|shared image|context configure|GPU device lost/i.test(messages))
-      console.warn('Canvas unavailable in this headless GPU environment; offscreen shader/readback regression remains authoritative.');
+      {if(process.env.SDF_HEADLESS==='0')throw new Error('Headed canvas failed: '+messages);
+      console.warn('Canvas unavailable in this headless GPU environment; offscreen shader/readback regression remains authoritative.');}
     else throw new Error('Actual canvas render path failed: '+JSON.stringify(canvasStatus));
   }
 } finally {await browser.close();}
