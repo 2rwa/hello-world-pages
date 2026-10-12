@@ -16,7 +16,7 @@ function shapeUpdate(){
  dirty=true;
 }
 function layout(){
- if(offscreen){canvas.width=192;canvas.height=192;return;}
+ if(offscreen){canvas.width=144;canvas.height=144;return;}
  const pixel=window.devicePixelRatio||1;
  const upper=window.innerWidth<720?490:850;
  const factor=Math.min(1,upper*opts.quality/(window.innerHeight*pixel),1150*opts.quality/(window.innerWidth*pixel));

@@ -1,7 +1,7 @@
 import {sceneDistance} from './sdf-cpu.js';
 // Marching tetrahedra creates a genuine OBJ triangle surface from SDF=0.
 const tetrahedra=[[0,5,1,6],[0,1,2,6],[0,2,3,6],[0,3,7,6],[0,7,4,6],[0,4,5,6]];
-const corners=[[0,0,0],[1,0,0],[1,1,0],[0,1,0],[0,0,1],[1,0,1],[1,1,1]];
+const corners=[[0,0,0],[1,0,0],[1,1,0],[0,1,0],[0,0,1],[1,0,1],[1,1,1],[0,1,1]];
 const palette=[[.77,.83,.84],[.18,.24,.29],[.02,.9,1],[.045,.071,.088],[.44,.54,.57]];
 const difference=(a,b)=>a.map((v,i)=>v-b[i]);
 const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];

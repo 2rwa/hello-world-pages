@@ -21,7 +21,8 @@ struct VertexOut { @builtin(position) position: vec4f, };
  return out;
 }
 fn boxLocal(point:vec3f,quat:vec4f)->vec3f {
- let v=-quat.xyz,twice=2.*cross(v,point);
+ let v=-quat.xyz;
+ let twice=2.*cross(v,point);
  return point+quat.w*twice+cross(v,twice);
 }
 fn shapeDistance(position:vec3f,s:Shape)->f32 {

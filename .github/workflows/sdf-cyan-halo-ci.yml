@@ -19,7 +19,8 @@ jobs:
           chrome-version: stable
       - name: JavaScript preflight
         run: |
-          for f in sdf-cyan-halo/{app,model,torso,limbs,sdf-cpu,export}.js sdf-cyan-halo/ci-test.mjs; do node --check "$f"; done
+          for f in sdf-cyan-halo/{app,model,torso,limbs,sdf-cpu,export}.js sdf-cyan-halo/{ci-test,wgsl-sanity}.mjs; do node --check "$f"; done
+          node sdf-cyan-halo/wgsl-sanity.mjs
       - name: Install browser test dependency
         run: npm install --no-save puppeteer-core@24
       - name: Serve static Pages tree

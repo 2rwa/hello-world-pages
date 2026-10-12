@@ -36,9 +36,18 @@ try{
  });
  console.log('SDF CPU:',JSON.stringify(sdf));
  if(sdf.count<60||sdf.packed!==2048||sdf.helmet>=0||sdf.empty<1||sdf.far<1)throw Error('Invalid SDF geometry: '+JSON.stringify(sdf));
+ const obj=await page.evaluate(async()=>{
+  const {buildScene}=await import('./model.js');
+  const {exportOBJ}=await import('./export.js');
+  const originalClick=HTMLAnchorElement.prototype.click;
+  HTMLAnchorElement.prototype.click=function(){};
+  try{return await exportOBJ(buildScene(),20);}finally{HTMLAnchorElement.prototype.click=originalClick;}
+ });
+ console.log('OBJ smoke:',JSON.stringify(obj));
+ if(obj.triangles<100||obj.bytes<3000)throw Error('OBJ export incomplete: '+JSON.stringify(obj));
  const view=await browser.newPage();
  view.on('pageerror',e=>console.log('CanvasPageError:',e.message));
- await view.setViewport({width:900,height:660,deviceScaleFactor:1});
+ await view.setViewport({width:480,height:390,deviceScaleFactor:1});
  await view.goto('http://127.0.0.1:8000/sdf-cyan-halo/?ci=canvas',{waitUntil:'domcontentloaded'});
  await view.waitForFunction(()=>['ok','error'].includes(window.__haloState?.phase),{timeout:90000});
  const canvasState=await view.evaluate(()=>window.__haloState);
