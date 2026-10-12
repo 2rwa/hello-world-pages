@@ -90,19 +90,19 @@ fn toneMap(linear:vec3f)->vec3f{
  let xz=input.world.xz;
  let toEye=normalize(cfg.eye.xyz-input.world);
  let cameraDist=max(0.01,input.distance);
+ let pixelFootprint=clamp(max(length(dpdx(xz)),length(dpdy(xz)))*0.9,0.10,1100.0);
  var gradient=vec2f(0.0);
  var meanSquare=0.0;
  var jacobian=1.0;
  for(var band:i32=0;band<5;band++){
   let metersPerSample=tiles[band]/cfg.eye.w;
-  let footprint=max(0.10,cameraDist*0.0016);
+  let footprint=pixelFootprint;
   let mipLevel=clamp(log2(max(1.0,footprint/metersPerSample)),0.0,log2(cfg.eye.w));
   let waveStats=textureSampleLevel(normalTex,linearSampler,fract(xz/tiles[band]),band,mipLevel);
   gradient+=waveStats.xy;
   meanSquare+=waveStats.z;
   jacobian=min(jacobian,waveStats.w);
  }
- // Fade subpixel ripples before they alias into harsh specular glitter.
  let smallScaleFade=1.0-smoothstep(55.0,720.0,cameraDist);
  let rippleX=0.022*sin(xz.x*2.4+xz.y*0.8+cfg.sim.x*2.8);
  let rippleZ=0.021*cos(xz.y*2.1-xz.x*0.6+cfg.sim.x*2.5);
@@ -113,7 +113,6 @@ fn toneMap(linear:vec3f)->vec3f{
  let roughness=clamp(0.045+sqrt(max(0.0,meanSquare))*0.17+cameraDist*0.000014,0.055,0.55);
  let waterReflection=mix(skyColor(reflected),skyColor(reflect(-toEye,vec3f(0.0,1.0,0.0))),roughness*0.52);
  let fresnel=0.02+(1.0-0.02)*pow(1.0-nDotV,5.0);
- // A simplified IOP model. Absorption a and backscatter b_b determine body color.
  let turbidity=clamp(cfg.extra.z,0.1,3.0);
  let absorption=vec3f(0.42,0.095,0.038)+vec3f(0.025,0.018,0.012)*turbidity;
  let backscatter=vec3f(0.004,0.019,0.040)*turbidity;
