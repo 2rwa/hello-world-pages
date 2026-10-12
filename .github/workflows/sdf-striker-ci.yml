@@ -1,0 +1,31 @@
+name: SDF Striker WebGPU CI
+on:
+  push:
+    paths:
+      - 'sdf-striker/**'
+      - '.github/workflows/sdf-striker-ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  swiftshader:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: browser-actions/setup-chrome@v2
+        id: chrome
+        with:
+          chrome-version: stable
+      - name: JS syntax
+        run: node --check sdf-striker/app.js && node --check sdf-striker/ci-test.mjs
+      - name: Puppeteer
+        run: npm install --no-save puppeteer-core@24
+      - name: Serve HTML
+        run: |
+          python3 -m http.server 8000 > /tmp/sdf-http.log 2>&1 &
+          sleep 2
+      - name: Raymarch shader / offscreen GPU pixel readback
+        env:
+          CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
+        run: node sdf-striker/ci-test.mjs
