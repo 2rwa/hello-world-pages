@@ -1,13 +1,17 @@
 const element = id => document.getElementById(id);
 const canvas = element('gpu-canvas');
 const viewport = element('viewport');
-const params = {turn:24,pitch:13,zoom:5.4,animate:1,quality:.7,steps:80,glow:1.4};
+const isTouchDevice = window.matchMedia('(pointer: coarse)').matches;
+const defaults = {turn:24,pitch:13,zoom:5.4,animate:1,quality:isTouchDevice?.55:.7,steps:isTouchDevice?64:80,glow:1.4};
+const params = {...defaults};
 const query = new URLSearchParams(location.search);
-const inCI = query.has('ci');
+const ciMode = query.get('ci');
+const inCI = ciMode !== null && ciMode !== 'canvas';
+const canvasDiagnostic = ciMode === 'canvas';
 let playing = true, turnOffset = 0, startTime = performance.now(), frozenTime = 0;
 let device, context, shaderModule, pipeline, paramBuffer, bindGroup, frameTarget, drawing = false;
 let sceneWidth = 0, sceneHeight = 0, lostDevice = false;
-window.__sdfState = {phase:'script-start', ok:false, errors:[], pixels:null};
+window.__sdfState = {phase:'script-start', ok:false, mode:inCI?'offscreen':'canvas', errors:[], pixels:null};
 function setStage(phase, description = '') {
   window.__sdfState.phase = phase;
   element('status').textContent = description || phase;
@@ -16,6 +20,8 @@ function setStage(phase, description = '') {
 function fail(error) {
   const message = error?.stack || error?.message || String(error);
   window.__sdfState.errors.push(message);
+  window.__sdfState.ok = false;
+  lostDevice = true;
   window.__sdfState.phase = 'error';
   document.body.dataset.gpuStage = 'error';
   element('status').textContent = 'WebGPU エラー';
@@ -42,7 +48,7 @@ element('pause').addEventListener('click',()=>{
   element('pause').textContent=playing?'停止':'再開';
 });
 element('reset').addEventListener('click',()=>{
-  Object.assign(params,{turn:24,pitch:13,zoom:5.4,animate:1,quality:.7,steps:80,glow:1.4});
+  Object.assign(params,defaults);
   turnOffset=0;refreshLabels();
 });
 let pointerStart=null;
@@ -61,10 +67,11 @@ viewport.addEventListener('wheel',event=>{
   params.zoom=Math.round(params.zoom*10)/10;refreshLabels();
 },{passive:false});
 function resize() {
-  const factor=inCI?1:Math.min(window.devicePixelRatio||1,1.6)*params.quality;
+  const factor=(inCI||canvasDiagnostic)?1:Math.min(window.devicePixelRatio||1,isTouchDevice?1.2:1.6)*params.quality;
   const rect=viewport.getBoundingClientRect();
-  const width=inCI?320:Math.max(2,Math.round(rect.width*factor));
-  const height=inCI?240:Math.max(2,Math.round(rect.height*factor));
+  const maxDimension=device?.limits?.maxTextureDimension2D??8192;
+  const width=(inCI||canvasDiagnostic)?320:Math.min(maxDimension,Math.max(2,Math.round(rect.width*factor)));
+  const height=(inCI||canvasDiagnostic)?240:Math.min(maxDimension,Math.max(2,Math.round(rect.height*factor)));
   if(width===sceneWidth&&height===sceneHeight)return;
   sceneWidth=width;sceneHeight=height;
   canvas.width=width;canvas.height=height;
@@ -100,7 +107,8 @@ async function readback() {
   function pixel(x,y){return Array.from(pixels.slice(y*byteRow+x*4,y*byteRow+x*4+4));}
   const corners=[pixel(2,2),pixel(sceneWidth-3,sceneHeight-3)];
   const center=pixel(Math.floor(sceneWidth/2),Math.floor(sceneHeight/2));
-  const sample={center,corners,nonBlack:center.some(v=>v>8),different:corners.some(v=>v.some((channel,index)=>Math.abs(channel-center[index])>12))};
+  const sidePixels=[pixel(Math.floor(sceneWidth*.26),Math.floor(sceneHeight*.5)),pixel(Math.floor(sceneWidth*.74),Math.floor(sceneHeight*.5))];
+  const sample={center,corners,sidePixels,nonBlack:center.some(v=>v>8),different:corners.some(v=>v.some((channel,index)=>Math.abs(channel-center[index])>12))};
   output.unmap();output.destroy();
   window.__sdfState.pixels=sample;
   if(!sample.nonBlack||!sample.different)throw new Error('GPU readback is blank or model/background are indistinguishable: '+JSON.stringify(sample));
@@ -150,20 +158,32 @@ async function start() {
     setStage('readback');
     await readback();
     window.__sdfState.ok=true;
+    window.__sdfTestDraw = async () => {
+      const nextEncoder=device.createCommandEncoder();
+      encodeFrame(nextEncoder);
+      device.queue.submit([nextEncoder.finish()]);
+      await device.queue.onSubmittedWorkDone();
+      await readback();
+      return window.__sdfState.pixels;
+    };
     setStage('ok','GPU 描画・readback OK');
     return;
   }
   window.__sdfState.ok=true;
-  setStage('ok','WebGPU 描画中');
-  function animateFrame(){
+  setStage('ok',canvasDiagnostic?'Canvas初期描画 OK':'WebGPU 描画中');
+  if(canvasDiagnostic)return;
+  let lastPaintTime=-Infinity;
+  const minimumFrameMs=1000/(isTouchDevice?24:40);
+  function animateFrame(frameTime){
     if(lostDevice)return;
-    if(!drawing){
+    if(frameTime-lastPaintTime>=minimumFrameMs&&!drawing){
+      lastPaintTime=frameTime;
       drawing=true;
       try { resize();const nextEncoder=device.createCommandEncoder();encodeFrame(nextEncoder);device.queue.submit([nextEncoder.finish()]); }
       catch(error){fail(error);return;}
       finally{drawing=false;}
     }
-    requestAnimationFrame(animateFrame);
+    if(!lostDevice)requestAnimationFrame(animateFrame);
   }
   requestAnimationFrame(animateFrame);
 }

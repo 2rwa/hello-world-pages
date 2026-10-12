@@ -12,4 +12,35 @@ try {
   const outcome=await page.evaluate(()=>window.__sdfState);
   console.log('GPU test:',JSON.stringify(outcome));
   if(!outcome.ok||!outcome.pixels?.nonBlack||!outcome.pixels?.different)throw new Error('WebGPU SDF render/readback failed');
+  const baseline=outcome.pixels;
+  await page.$eval('#turn', slider => {slider.value='-160';slider.dispatchEvent(new Event('input',{bubbles:true}));});
+  const rotated=await page.evaluate(()=>window.__sdfTestDraw());
+  console.log('GPU rotated camera:',JSON.stringify(rotated));
+  if(JSON.stringify(rotated.center)===JSON.stringify(baseline.center)&&JSON.stringify(rotated.sidePixels)===JSON.stringify(baseline.sidePixels))
+    throw new Error('Camera slider had no effect on GPU output');
+  await page.click('#reset');
+  const turnValue=await page.$eval('#turn',slider=>Number(slider.value));
+  if(turnValue!==24)throw new Error('Reset failed: turn='+turnValue);
+  await page.click('#pause');
+  if(await page.$eval('#pause',button=>button.textContent.trim())!=='再開')throw new Error('Pause UI failed');
+  await page.click('#pause');
+  if(await page.$eval('#pause',button=>button.textContent.trim())!=='停止')throw new Error('Resume UI failed');
+  const canvasPage=await browser.newPage();
+  canvasPage.on('pageerror',error=>console.error('CANVAS PAGE ERROR:',error));
+  canvasPage.on('console',message=>console.log('CANVAS:',message.type(),message.text()));
+  await canvasPage.setViewport({width:800,height:600,deviceScaleFactor:1});
+  await canvasPage.goto('http://127.0.0.1:8000/sdf-striker/?ci=canvas',{waitUntil:'domcontentloaded'});
+  try {
+    await canvasPage.waitForFunction(()=>['ok','error'].includes(window.__sdfState?.phase),{timeout:45000});
+  }catch(error){console.warn('Canvas path timed out:',error.message);}
+  const canvasStatus=await canvasPage.evaluate(()=>window.__sdfState);
+  console.log('Canvas diagnostic:',JSON.stringify(canvasStatus));
+  if(canvasStatus?.ok){
+    await canvasPage.screenshot({path:'sdf-striker/canvas-smoke.png'});
+  } else {
+    const messages=(canvasStatus?.errors||[]).join('\\n');
+    if(/SharedImage|WebgpuSwapChain|swapchain|shared image|context configure|GPU device lost/i.test(messages))
+      console.warn('Canvas unavailable in this headless GPU environment; offscreen shader/readback regression remains authoritative.');
+    else throw new Error('Actual canvas render path failed: '+JSON.stringify(canvasStatus));
+  }
 } finally {await browser.close();}

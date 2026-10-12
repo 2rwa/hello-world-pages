@@ -25,7 +25,15 @@ jobs:
         run: |
           python3 -m http.server 8000 > /tmp/sdf-http.log 2>&1 &
           sleep 2
-      - name: Raymarch shader / offscreen GPU pixel readback
+      - name: Raymarch shader, interactive controls, offscreen GPU readback and canvas diagnostic
         env:
           CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
         run: node sdf-striker/ci-test.mjs
+      - name: Upload canvas screenshot if available
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sdf-striker-canvas-diagnostic
+          path: sdf-striker/canvas-smoke.png
+          if-no-files-found: ignore
+          retention-days: 7
