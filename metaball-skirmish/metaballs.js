@@ -8,7 +8,7 @@ void main(){
 const FRAG = `#version 300 es
 precision highp float;
 in vec2 v_uv;out vec4 frag;
-uniform vec4 u_blobs[72];uniform int u_count;uniform float u_time;
+uniform vec4 u_blobs[48];uniform int u_count;uniform float u_time;
 vec3 palette(float t){
  if(t<0.5)return vec3(.09,.94,.87);
  if(t<1.5)return vec3(.64,.37,1.0);
@@ -19,7 +19,7 @@ void main(){
  vec2 p=vec2(v_uv.x*960.0,(1.0-v_uv.y)*600.0);
  float field=0.0;vec3 weighted=vec3(0.0);float weight=0.0;
  float highlight=0.0;
- for(int i=0;i<72;i++){
+ for(int i=0;i<48;i++){
   if(i>=u_count)break;
   vec4 b=u_blobs[i];
   vec2 d=(p-b.xy)/b.z;
@@ -39,7 +39,7 @@ void main(){
  float volume=smoothstep(.32,1.4,field);
  vec3 body=base*(.55+.38*volume+.13*ripple);
  body+=base*.28*(1.0-smoothstep(.28,.62,field));
- body+=vec3(.72,.94,1.0)*min(1.0,highlight/max(weight,.01))*.22;
+ body+=vec3(.48,.94,1.0)*min(1.0,highlight/max(weight,.01))*.22;
  float rim=(1.0-smoothstep(.3,.5,field))*.42;
  body+=vec3(.8,.98,1.)*rim;
  frag=vec4(mix(base*.7,body,edge),max(edge,halo));
@@ -54,13 +54,13 @@ export class Metaballs{
   if(!gl.getProgramParameter(prog,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(prog));
   gl.useProgram(prog);this.prog=prog;this.count=gl.getUniformLocation(prog,'u_count');this.blobs=gl.getUniformLocation(prog,'u_blobs[0]');this.time=gl.getUniformLocation(prog,'u_time');
   this.vao=gl.createVertexArray();gl.bindVertexArray(this.vao);gl.disable(gl.DEPTH_TEST);gl.disable(gl.BLEND);
-  this.data=new Float32Array(72*4);this.available=true;this.lastCount=0;
+  this.data=new Float32Array(48*4);this.available=true;this.lastCount=0;
  }
  draw(game){
   if(!this.available)return;
   const gl=this.gl;let count=0;
   for(const e of game.enemies){
-   for(let i=0;i<e.lobes&&count<72;i++){
+   for(let i=0;i<e.lobes&&count<48;i++){
     const phase=e.age*(1.6+i*.19)+e.seed+i*2.39996;
     const d=i===0?0:e.rad*(e.type===3?.65:.53);
     const x=e.x+Math.cos(phase)*d;

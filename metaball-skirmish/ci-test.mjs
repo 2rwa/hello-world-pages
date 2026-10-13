@@ -25,6 +25,7 @@ try{
  assert(state.gl,'WebGL2 metaball shader did not compile/initialize: '+JSON.stringify(state));
  assert(state.blobCount>0,'no metaball geometry rendered: '+JSON.stringify(state));
  assert(state.shots>0,'no automatic shooting: '+JSON.stringify(state));
+ await page.screenshot({path:'metaball-skirmish-smoke.png',fullPage:true});
  const before=state.playerX;
  await page.keyboard.down('ArrowRight');await new Promise(r=>setTimeout(r,500));await page.keyboard.up('ArrowRight');
  const after=await page.evaluate(()=>window.__liquidStrike.debug.playerX);

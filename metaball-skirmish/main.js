@@ -49,8 +49,8 @@ window.addEventListener('keyup',e=>game.keys.delete(e.code));
 window.addEventListener('blur',()=>game.keys.clear());
 let last=performance.now(),toastTime=0,finished=false;
 function frame(now){
- const dt=Math.min(.05,(now-last)/1000||0);last=now;
- game.update(dt);
+ const dt=Math.min(.15,(now-last)/1000||0);last=now;
+ for(let remaining=dt;remaining>.00001;){const step=Math.min(.025,remaining);game.update(step);remaining-=step;}
  ground(bg,game);
  try{metaballs?.draw(game)}catch(e){glError=String(e);console.error('WebGL metaball render error',e);metaballs=null}
  actors(fg,game,metaballs?.available?null:drawFallback);
