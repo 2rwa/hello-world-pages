@@ -17,8 +17,8 @@ function showOverlay(title='LIQUID STRIKE',message='流体生命体、接近。'
 }
 function begin(){game.start();ui.overlay.classList.add('hidden');game.pointer=null}
 ui.start.addEventListener('click',()=>{if(game.status==='paused')togglePause();else begin()});
-ui.bomb.addEventListener('click',e=>{e.stopPropagation();game.useBomb()});
-ui.pause.addEventListener('click',e=>{e.stopPropagation();togglePause()});
+ui.bomb.addEventListener('click',e=>{e.stopPropagation();game.pointer=null;game.useBomb()});
+ui.pause.addEventListener('click',e=>{e.stopPropagation();game.pointer=null;togglePause()});
 function togglePause(){
  if(game.status==='running'){game.pause();showOverlay('PAUSED','P または下のボタンで再開','▶ RESUME')}
  else if(game.status==='paused'){game.pause();ui.overlay.classList.add('hidden')}
@@ -30,7 +30,7 @@ viewport.addEventListener('pointerdown',e=>{
  game.pointer=point(e);viewport.setPointerCapture?.(e.pointerId);e.preventDefault();
 });
 viewport.addEventListener('pointermove',e=>{
- if(game.status!=='running')return;
+ if(game.status!=='running'||e.target!==viewport)return;
  if(e.pointerType==='mouse'||e.buttons||e.pressure>0)game.pointer=point(e);
 });
 viewport.addEventListener('pointerup',e=>{if(e.pointerType!=='mouse')game.pointer=null});

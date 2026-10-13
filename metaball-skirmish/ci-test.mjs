@@ -40,7 +40,7 @@ try{
  const bombs=await page.evaluate(()=>window.__liquidStrike.debug.bombs);
  await page.click('#bomb');
  assert((await page.evaluate(()=>window.__liquidStrike.debug.bombs))===bombs-1,'bomb decrement failed');
- const preScore=await page.evaluate(()=>{const g=window.__liquidStrike.game;g.enemy(g.player.x,g.player.y-220,0);return g.score});
+ const preScore=await page.evaluate(()=>{const g=window.__liquidStrike.game;g.pointer=null;const e=g.enemy(g.player.x,g.player.y-170,0);e.vx=0;e.vy=0;e.hp=1;return g.score});
  await page.waitForFunction(score=>window.__liquidStrike.game.score>score,{timeout:6500},preScore);
  assert(errors.length===0,'Browser errors: '+errors.join('; '));
  await page.screenshot({path:'metaball-skirmish-smoke.png',fullPage:true});
