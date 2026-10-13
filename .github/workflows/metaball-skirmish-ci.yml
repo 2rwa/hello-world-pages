@@ -1,0 +1,37 @@
+name: Metaball Skirmish Browser Test
+on:
+  push:
+    paths:
+      - 'metaball-skirmish/**'
+      - '.github/workflows/metaball-skirmish-ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: browser-actions/setup-chrome@v2
+        id: chrome
+        with:
+          chrome-version: stable
+      - name: Install browser driver
+        run: npm install --no-save puppeteer-core@24
+      - name: Start static server
+        run: |
+          python3 -m http.server 8000 > /tmp/metaball-http.log 2>&1 &
+          sleep 2
+      - name: Gameplay and GPU smoke test
+        env:
+          CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
+        run: node metaball-skirmish/ci-test.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: metaball-skirmish-browser
+          path: |
+            metaball-skirmish-smoke.png
+            /tmp/metaball-http.log
+          if-no-files-found: ignore
