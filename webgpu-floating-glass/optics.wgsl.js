@@ -79,7 +79,7 @@ fn renderGlassSphere(rayOrigin:vec3f,rayDirection:vec3f,sphereEntry:f32,
    let exitNormal=normalize(exitPos-sphereCenter);
    let cosExit=clamp(dot(interiorDir,exitNormal),0.0,1.0);
    let exitDirection=refract(interiorDir,-exitNormal,indexOfRefraction);
-   let internalReflection=baseReflectance+(1.0-baseReflectance)*pow(1.0-cosExit,5.0);
+   var internalReflection=baseReflectance+(1.0-baseReflectance)*pow(1.0-cosExit,5.0);
    if(dot(exitDirection,exitDirection)<0.00001){internalReflection=1.0;}
    let escaped=remainingEnergy*(1.0-internalReflection);
    if(escaped>0.005 && dot(exitDirection,exitDirection)>0.00001){
