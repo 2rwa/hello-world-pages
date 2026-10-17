@@ -19,6 +19,38 @@ async function frame(tag){
  await page.screenshot({path:'floating-glass-'+tag+'.png'});
  return output.pixels;
 }
+
+function checkNoOuterHalo(onPixels,offPixels,orbCenter,orbRadius){
+ // Pixel rays match the fragment shader's perspective camera. Changes beyond
+ // 1.35x the glass silhouette indicate a leaked enlarged-bound/marching halo.
+ const eye=[Math.sin(.07)*20,7,-Math.cos(.07)*20];
+ const target=[0,2.5,0];
+ const sub=(a,b)=>a.map((v,i)=>v-b[i]);
+ const dot=(a,b)=>a.reduce((sum,v,i)=>sum+v*b[i],0);
+ const norm=v=>{const length=Math.sqrt(dot(v,v));return v.map(x=>x/length);};
+ const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
+ const fwd=norm(sub(target,eye));
+ const side=norm(cross([0,1,0],fwd)),up=cross(fwd,side);
+ const eyeToOrb=sub(eye,orbCenter);
+ let outsideChanges=0,insideChanges=0;
+ for(let py=0;py<300;py++){
+  for(let px=0;px<480;px++){
+   const ndcX=((px+.5)/480*2-1)*(480/300)*Math.tan(.44);
+   const ndcY=(1-(py+.5)/300*2)*Math.tan(.44);
+   const ray=norm(fwd.map((v,i)=>v+side[i]*ndcX+up[i]*ndcY));
+   const halfB=dot(eyeToOrb,ray);
+   const discriminant=halfB*halfB-dot(eyeToOrb,eyeToOrb)+(orbRadius*1.35)**2;
+   const insideProjection=discriminant>=0&&-halfB+Math.sqrt(Math.max(0,discriminant))>0;
+   const p=(py*480+px)*4;
+   const d=Math.abs(onPixels[p]-offPixels[p])+
+     Math.abs(onPixels[p+1]-offPixels[p+1])+
+     Math.abs(onPixels[p+2]-offPixels[p+2]);
+   if(d>3){if(insideProjection)insideChanges++;else outsideChanges++;}
+  }
+ }
+ return {insideChanges,outsideChanges};
+}
+
 async function adjust(id,value){
  return page.evaluate(async(args)=>{
   const el=document.getElementById(args.id);
@@ -138,6 +170,11 @@ try{
  const contactDifference=countDifference(withMeniscus,noMeniscus,3);
  console.log('MENISCUS ON VS OFF',JSON.stringify(contactDifference));
  if(contactDifference.changed<40)throw Error('Meniscus switch does not visibly change FFT water geometry');
+ const orbState=await page.evaluate(()=>window.__glassDemo.result.positions.slice(0,4));
+ const halo=checkNoOuterHalo(withMeniscus,noMeniscus,orbState.slice(0,3),orbState[3]);
+ console.log('MENISCUS PROJECTED HALO CHECK',JSON.stringify(halo));
+ if(halo.outsideChanges>50)throw Error('Meniscus affects pixels well outside sphere contact: '+JSON.stringify(halo));
+ if(halo.insideChanges<20)throw Error('Meniscus contact geometry is not visibly represented');
  await adjust('meniscus','1');
  const deeper=await adjust('float','-.5');
  if(deeper.state.float!==-.5)throw Error('Submerged float position is not selectable');

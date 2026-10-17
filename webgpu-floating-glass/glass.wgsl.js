@@ -9,19 +9,22 @@ const meniscusWGSL = /* wgsl */ `
 fn meniscusHeight(xz:vec2f,orb:vec4f)->f32{
  if(meniscusOptions.x<0.5||orb.w<=0.0){return 0.0;}
  let ballRadius=orb.w;
- let centerXZ=orb.xz;
- let curvatureRadius=cfg.boat.w;
- let curvedSurfaceY=sqrt(max(1.0,curvatureRadius*curvatureRadius-dot(centerXZ,centerXZ)))-curvatureRadius;
- let localBaseSeaY=curvedSurfaceY+waveHeight(centerXZ);
- let centerOffset=orb.y-localBaseSeaY;
- if(abs(centerOffset)>=ballRadius*0.98){return 0.0;}
- let contactRadius=sqrt(max(0.0,ballRadius*ballRadius-centerOffset*centerOffset));
- let signedRingDist=length(xz-centerXZ)-contactRadius;
- let transitionWidth=max(0.20,ballRadius*0.30);
- let rise=ballRadius*0.24*sqrt(max(0.0,1.0-centerOffset*centerOffset/(ballRadius*ballRadius)));
- let innerBlend=smoothstep(-transitionWidth*0.42,-transitionWidth*0.08,signedRingDist);
- let outerFalloff=exp(-max(0.0,signedRingDist)/transitionWidth);
- return rise*innerBlend*outerFalloff;
+ let earthRadius=cfg.boat.w;
+ let orbXZ=orb.xz;
+ // Meniscus only exists while the orb touches the locally sampled FFT sea.
+ let orbBaseY=sqrt(max(1.0,earthRadius*earthRadius-dot(orbXZ,orbXZ)))-earthRadius+waveHeight(orbXZ);
+ if(abs(orb.y-orbBaseY)>=ballRadius*0.995){return 0.0;}
+ // Local FFT surface at the actual point, rather than a constant-height ring.
+ let baseSeaY=sqrt(max(1.0,earthRadius*earthRadius-dot(xz,xz)))-earthRadius+waveHeight(xz);
+ let seaPoint=vec3f(xz.x,baseSeaY,xz.y);
+ let contactDistance=length(seaPoint-orb.xyz)-ballRadius;
+ // Compact support, no exponential tail extending around an enlarged sphere.
+ // Real macroscopic glass has only a tiny capillary rise: at most 35 mm here.
+ let capillaryWidth=clamp(ballRadius*0.10,0.12,0.55);
+ let capillaryRise=min(0.035,ballRadius*0.012);
+ let innerRamp=smoothstep(-capillaryWidth*0.45,0.0,contactDistance);
+ let outerRamp=1.0-smoothstep(0.0,capillaryWidth,contactDistance);
+ return capillaryRise*innerRamp*outerRamp;
 }
 fn meniscusSurfaceHeight(xz:vec2f,orb:vec4f)->f32{
  return waveHeight(xz)+meniscusHeight(xz,orb);
@@ -30,17 +33,16 @@ fn meniscusImplicitValue(p:vec3f,earthCenter:vec3f,earthRadius:f32,orb:vec4f)->f
  return length(p-earthCenter)-earthRadius-meniscusSurfaceHeight(p.xz,orb);
 }
 fn meniscusWaterNormal(p:vec3f,earthCenter:vec3f,orb:vec4f)->vec3f{
- // Preserve *exactly* the original FFT water normal outside the actual meniscus.
- // Otherwise changing sampling spacing all over the ocean causes a fake halo.
- if(meniscusOptions.x<0.5||orb.w<=0.0||meniscusHeight(p.xz,orb)<0.005){
-  return waterNormal(p,earthCenter);
- }
- let spacing=clamp(orb.w*0.085,0.08,0.35);
- let dx=(meniscusSurfaceHeight(p.xz+vec2f(spacing,0.0),orb)
-        -meniscusSurfaceHeight(p.xz-vec2f(spacing,0.0),orb))/(2.0*spacing);
- let dz=(meniscusSurfaceHeight(p.xz+vec2f(0.0,spacing),orb)
-        -meniscusSurfaceHeight(p.xz-vec2f(0.0,spacing),orb))/(2.0*spacing);
- return normalize(normalize(p-earthCenter)-vec3f(dx,0.0,dz));
+ let originalNormal=waterNormal(p,earthCenter);
+ if(meniscusOptions.x<0.5||orb.w<=0.0){return originalNormal;}
+ // Retain the original FFT finite difference exactly; add ONLY the local
+ // capillary gradient. This does not alter normal sampling over an outer shell.
+ let spacing=clamp(orb.w*0.024,0.045,0.12);
+ let dx=(meniscusHeight(p.xz+vec2f(spacing,0.0),orb)
+        -meniscusHeight(p.xz-vec2f(spacing,0.0),orb))/(2.0*spacing);
+ let dz=(meniscusHeight(p.xz+vec2f(0.0,spacing),orb)
+        -meniscusHeight(p.xz-vec2f(0.0,spacing),orb))/(2.0*spacing);
+ return normalize(originalNormal-vec3f(dx,0.0,dz));
 }
 `;
 
