@@ -30,6 +30,11 @@ fn meniscusImplicitValue(p:vec3f,earthCenter:vec3f,earthRadius:f32,orb:vec4f)->f
  return length(p-earthCenter)-earthRadius-meniscusSurfaceHeight(p.xz,orb);
 }
 fn meniscusWaterNormal(p:vec3f,earthCenter:vec3f,orb:vec4f)->vec3f{
+ // Preserve *exactly* the original FFT water normal outside the actual meniscus.
+ // Otherwise changing sampling spacing all over the ocean causes a fake halo.
+ if(meniscusOptions.x<0.5||orb.w<=0.0||meniscusHeight(p.xz,orb)<0.005){
+  return waterNormal(p,earthCenter);
+ }
  let spacing=clamp(orb.w*0.085,0.08,0.35);
  let dx=(meniscusSurfaceHeight(p.xz+vec2f(spacing,0.0),orb)
         -meniscusSurfaceHeight(p.xz-vec2f(spacing,0.0),orb))/(2.0*spacing);
