@@ -63,12 +63,15 @@ const prepass = /* wgsl */ `
     nearestGlassDistance=glassBounds.x;
     nearestGlassIndex=i32(sphereIndex);
    }
-   // Keep the refined marching footprint identical in ON and OFF modes.
-   // Only the actual water-surface displacement changes with the toggle.
-   let enlargedBounds=sphereIntersection(eye,ray,candidate.xyz,candidate.w*1.82);
-   if(enlargedBounds.y>0.0&&enlargedBounds.x<nearestContactDistance){
-    nearestContactDistance=enlargedBounds.x;
-    contactOrb=candidate;
+   // This bounds test only chooses a meniscus source, never a march rate.
+   // Use the actual maximum capillary width, not a ~2R artificial sphere.
+   if(meniscusOptions.x>0.5){
+    let capillaryWidth=clamp(candidate.w*0.10,0.12,0.55);
+    let contactBounds=sphereIntersection(eye,ray,candidate.xyz,candidate.w+capillaryWidth);
+    if(contactBounds.y>0.0&&contactBounds.x<nearestContactDistance){
+     nearestContactDistance=contactBounds.x;
+     contactOrb=candidate;
+    }
    }
   }
  }
@@ -109,8 +112,11 @@ const withMeniscus=fragment
              'meniscusImplicitValue(eye+ray*nextT,sphereCenter,radius,contactOrb)')
  .replaceAll('implicitValue(eye+ray*middle,sphereCenter,radius)',
              'meniscusImplicitValue(eye+ray*middle,sphereCenter,radius,contactOrb)')
+ // An implicit FFT surface is not a signed distance field. Avoid any
+ // raymarch step-size branch keyed to sphere bounds: it produces a fake ring.
+ // The whole ocean, with or without glass/meniscus, uses one safe schedule.
  .replace('let stride=clamp(abs(oldValue)*0.72,0.65,92.0);',
-          'let stride=select(clamp(abs(oldValue)*0.72,0.65,92.0),clamp(abs(oldValue)*0.55,0.15,8.0),contactOrb.w>0.0);')
+          'let stride=clamp(abs(oldValue)*0.72,0.12,92.0);')
  .replace('let normal=waterNormal(p,sphereCenter);',
           'let normal=meniscusWaterNormal(p,sphereCenter,contactOrb);')
  .replace(marker,' let background=skyColor(ray);\n'+glassOverlay+'\n if(!hit)');

@@ -171,6 +171,17 @@ try{
  console.log('MENISCUS ON VS OFF',JSON.stringify(contactDifference));
  if(contactDifference.changed<40)throw Error('Meniscus switch does not visibly change FFT water geometry');
  const orbState=await page.evaluate(()=>window.__glassDemo.result.positions.slice(0,4));
+ // Regression for the actual 2R halo: with meniscus DISABLED the ocean
+ // must be pixel-identical outside the projected, physically-sized glass sphere.
+ await adjust('mode','4');
+ const oceanWithoutGlass=await frame('meniscus-off-ocean-only');
+ const leakedMarchBoundary=checkNoOuterHalo(noMeniscus,oceanWithoutGlass,orbState.slice(0,3),orbState[3]);
+ console.log('GLASS OFF MENISCUS OFF BACKGROUND HALO',JSON.stringify(leakedMarchBoundary));
+ if(leakedMarchBoundary.outsideChanges!==0)
+  throw Error('Glass still changes ocean beyond sphere silhouette with meniscus OFF: '+JSON.stringify(leakedMarchBoundary));
+ if(leakedMarchBoundary.insideChanges<100)
+  throw Error('Glass sphere disappeared in comparison');
+ await adjust('mode','0');
  const halo=checkNoOuterHalo(withMeniscus,noMeniscus,orbState.slice(0,3),orbState[3]);
  console.log('MENISCUS PROJECTED HALO CHECK',JSON.stringify(halo));
  if(halo.outsideChanges>50)throw Error('Meniscus affects pixels well outside sphere contact: '+JSON.stringify(halo));
