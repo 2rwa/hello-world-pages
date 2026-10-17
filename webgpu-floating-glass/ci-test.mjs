@@ -71,6 +71,53 @@ try{
  const floatDiff=countDifference(filled,floating,20);
  console.log('FLOAT IMMERSION DIFFERENCE',JSON.stringify(floatDiff));
  if(floatDiff.changed<160)throw Error('Floating height not visually updated');
- console.log('PASS FFT×5 + refractive sphere + GPU readback + UI redraw');
+ // Validate the real 100-sphere GPU position computation and fragment loop.
+ await adjust('ballSize','3.6');
+ await adjust('ior','1.48');
+ await adjust('float','.65');
+ await adjust('ballCount','100');
+ await adjust('spread','65');
+ await adjust('distance','155');
+ await adjust('altitude','47');
+ const many=await frame('100-glass-balls');
+ const manyState=await page.evaluate(()=>window.__glassDemo);
+ if(manyState.count!==100 || manyState.result.count!==100 ||
+    manyState.result.positions.length!==400)throw Error('100 position GPU buffer not present');
+ const uniquePos=new Set();
+ const waveHeights=[];
+ for(let n=0;n<100;n++){
+  const p=manyState.result.positions.slice(n*4,n*4+4);
+  if(!p.every(Number.isFinite))throw Error('Invalid GPU position '+n);
+  uniquePos.add([Math.round(p[0]*10),Math.round(p[2]*10)].join(','));
+  waveHeights.push(p[1]);
+ }
+ if(uniquePos.size<95)throw Error('Sphere centers overlap or do not vary');
+ if(Math.max(...waveHeights)-Math.min(...waveHeights)<0.03)throw Error('Spheres do not sample varying FFT heights');
+ console.log('100 SPHERES',JSON.stringify({count:manyState.count,uniquePositions:uniquePos.size,heightRange:Math.max(...waveHeights)-Math.min(...waveHeights)}));
+ await adjust('ballCount','1');
+ const one=await frame('one-glass-ball');
+ const manyDiff=countDifference(many,one,14);
+ console.log('100 VS 1',JSON.stringify(manyDiff));
+ if(manyDiff.changed<250)throw Error('100 sphere count does not affect image');
+ await adjust('ballCount','3');
+ await adjust('spread','32');
+ await adjust('distance','35');
+ await adjust('altitude','10');
+ await adjust('ior','1.76');
+ await adjust('bounces','1');
+ const singleBounce=await frame('one-bounce');
+ const oneBounceState=await page.evaluate(()=>window.__glassDemo);
+ if(oneBounceState.result.bounces!==1)throw Error('Bounce 1 not sent to GPU');
+ await adjust('bounces','8');
+ const eightBounce=await frame('eight-bounces');
+ const eightBounceState=await page.evaluate(()=>window.__glassDemo);
+ if(eightBounceState.result.bounces!==8)throw Error('Bounce 8 not sent to GPU');
+ const bounceDiff=countDifference(singleBounce,eightBounce,0);
+ console.log('BOUNCE 1 VS 8',JSON.stringify(bounceDiff));
+ if(bounceDiff.changed<8)throw Error('Bounce slider has no visible effect');
+ const display=await page.$eval('#perf',x=>x.textContent);
+ if(!display.includes('3 balls')||!display.includes('8 bounces'))
+  throw Error('Performance and bounce display not updated '+display);
+ console.log('PASS FFT×5 + 100 spheres + 1..8 glass bounces + GPU readback + UI redraw');
 }catch(error){console.error('FAIL:',error);process.exitCode=1;}
 finally{await page.close();await browser.close();}

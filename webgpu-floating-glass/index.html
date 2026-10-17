@@ -18,18 +18,23 @@ input[type=range]{display:block;width:100%;accent-color:#65cfef;cursor:pointer}
 select{width:100%;padding:7px;background:#133147;color:#effaff;border:1px solid #7396a9;border-radius:8px}
 .row{display:flex;gap:8px;margin-top:16px}.row button{flex:1;cursor:pointer;border:1px solid #6c9bad;border-radius:10px;
 background:#194054;color:#f5feff;padding:9px 4px;font-size:12px}
+#perf{position:absolute;left:22px;top:82px;background:#092132aa;padding:5px 9px;border-radius:7px;color:#b4f1d9;font:12px ui-monospace,monospace}
 #status{position:absolute;left:18px;bottom:16px;background:#091927c8;color:#d8edf8;font:12px/1.6 ui-monospace,monospace;border-radius:11px;padding:9px 12px;white-space:pre-line;max-width:70vw}
 details{margin-top:12px;color:#aed4e7;font-size:12px}summary{cursor:pointer}details p{color:#a5c5d6;line-height:1.65;font-size:11px}
 #showPanel{position:absolute;right:14px;top:14px;border:1px solid #81cce4;background:#0f3248;color:#e8faff;border-radius:11px;padding:10px;display:none;cursor:pointer}
 body.folded #panel{display:none}body.folded #showPanel{display:block}
-@media(max-width:720px){header{left:11px;top:10px}header small{font-size:10px}#panel{right:8px;bottom:8px;top:auto;width:min(317px,calc(100vw - 16px));max-height:59dvh;padding:12px 15px}
+@media(max-width:720px){#perf{left:11px;top:66px;font-size:10px}header{left:11px;top:10px}header small{font-size:10px}#panel{right:8px;bottom:8px;top:auto;width:min(317px,calc(100vw - 16px));max-height:59dvh;padding:12px 15px}
 #status{left:8px;bottom:8px;max-width:calc(100vw - 335px);font-size:10px}body.folded #status{max-width:94vw}}
 </style></head><body>
 <canvas id="view" aria-label="湾曲FFT海面に浮かぶ屈折するガラス玉"></canvas>
 <header><h1>GLASS DRIFT</h1><small>WebGPU · 5-band FFT ocean · refractive floating glass</small></header>
+<div id="perf" aria-live="off">FPS -- · 3 balls · 3 bounces</div>
 <button id="showPanel">設定を開く</button>
 <aside id="panel">
 <h2>ガラス玉</h2>
+<label>個数 <span id="ballCountOut"></span></label><input type="range" id="ballCount" min="1" max="100" step="1" value="3">
+<label>球内の反射・屈折バウンス上限 <span id="bouncesOut"></span></label><input type="range" id="bounces" min="1" max="8" step="1" value="3">
+<label>散らばり半径 <span id="spreadOut"></span></label><input type="range" id="spread" min="5" max="120" step="1" value="32">
 <label>半径 <span id="ballSizeOut"></span></label><input type="range" id="ballSize" min="1.5" max="6.5" step=".1" value="3.6">
 <label>屈折率 IOR <span id="iorOut"></span></label><input type="range" id="ior" min="1.0" max="1.8" step=".01" value="1.48">
 <label>浮き具合 <span id="floatOut"></span></label><input type="range" id="float" min=".1" max="1.25" step=".05" value=".65">
@@ -40,7 +45,8 @@ body.folded #panel{display:none}body.folded #showPanel{display:block}
 <label>風速 <span id="windOut"></span></label><input type="range" id="wind" min="4" max="24" step=".5" value="12">
 <label>白波 <span id="foamOut"></span></label><input type="range" id="foam" min="0" max="2" step=".1" value=".9">
 <label>太陽高度 <span id="sunOut"></span></label><input type="range" id="sun" min="5" max="80" step="1" value="31">
-<label>カメラ高さ <span id="altitudeOut"></span></label><input type="range" id="altitude" min="4" max="35" step=".5" value="10">
+<label>カメラ高さ <span id="altitudeOut"></span></label><input type="range" id="altitude" min="4" max="110" step="1" value="10">
+<label>カメラ距離 <span id="distanceOut"></span></label><input type="range" id="distance" min="20" max="240" step="2" value="35">
 <label>表示モード</label><select id="mode">
 <option value="0">ガラス＋海面</option><option value="1">法線を可視化</option>
 <option value="2">ガラス屈折方向</option><option value="3">曲率グリッド</option>
@@ -49,7 +55,7 @@ body.folded #panel{display:none}body.folded #showPanel{display:block}
 <option value="128">128² × 5 （軽量）</option><option value="256">256² × 5</option>
 <option value="512">512² × 5 （高負荷）</option></select>
 <div class="row"><button id="pause">一時停止</button><button id="reset">視点を戻す</button><button id="hidePanel">設定を閉じる</button></div>
-<details><summary>計算方法 / 操作</summary><p>ガラス玉の水平位置はゆっくり漂い、中心の高さは5帯域FFTの波高に連動。球面との交差を求めてから、Snellの法則で入射・出射屈折、Beer–Lambert吸収、Fresnel反射を近似します。内部を通過した光線はFFT海面にも再交差します。ドラッグで周囲を見回せます。</p>
+<details><summary>計算方法 / 操作</summary><p>ガラス玉の水平位置はゆっくり漂い、中心の高さは5帯域FFTの波高に連動。球面との交差を求めてから、Snellの法則で入射・出射屈折、Beer–Lambert吸収、Fresnel反射を近似します。バウンス回数は各球の内部境界での最大反射・屈折評価回数で、球から球への再帰追跡は行いません。内部を通過した光線はFFT海面にも再交差します。ドラッグで周囲を見回せます。</p>
 <p>浮力の値は浸水率を直接計算したものではなく、海面に対するガラス中心位置の調整値です。波への追従に慣性・流体力学は導入していません。</p></details>
 </aside>
 <div id="status">WebGPU 初期化中…</div>

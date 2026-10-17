@@ -18,3 +18,12 @@ The ball follows the instantaneous local FFT wave height without velocity/inerti
 
 ## Regression checks
 Actions / headless Chrome SwiftShader validates actual FFT compute, WGSL compilation, GPU render, offscreen pixel readback, glass on/off image differences, radius, refractive index, immersion slider state and redraw.
+
+## 100-ball / multi-bounce update
+- Adjustable ball count 1–100, internal interface bounce budget 1–8, spatial spread and camera distance.
+- GPU compute dispatch after the fifth inverse FFT creates a 100-slot storage buffer of centers and radii using the same five FFT textures as the ocean.
+- The fragment shader analytically intersects up to 100 spheres and renders the nearest visible one; wave occlusion uses the original curved raymarch.
+- Within a sphere each internal reflection can spawn a refracted exit sample with Beer-Lambert absorption, Fresnel weighting and FFT ocean intersection. The bounce slider limits these per-sphere optical boundary events. Cross-sphere secondary ray recursion is not currently traced.
+- FPS is a rolling measurement of completed frames, not a claimed device benchmark.
+- To view all 100 spheres, increase spread and camera distance.
+- Regression checks: actual 100 sphere positions and varying wave heights, 100-vs-1 and 1-vs-8 visual differences, controls and FPS label.
