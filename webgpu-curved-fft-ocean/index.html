@@ -1,0 +1,30 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Curved FFT Ocean</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,sans-serif}*{box-sizing:border-box}body{margin:0;background:#030d1d;color:#e2f1ff;overflow:hidden}
+canvas{display:block;width:100vw;height:100dvh;touch-action:none}header{position:absolute;top:18px;left:20px;pointer-events:none;text-shadow:0 2px 12px #001}h1{font-size:clamp(19px,2.5vw,29px);margin:0}small{color:#b8d7e9}
+#status{position:absolute;bottom:15px;left:15px;max-width:64vw;background:#09182acb;padding:9px 12px;border-radius:10px;color:#d9f1f3;font:12px/1.6 ui-monospace,monospace;white-space:pre-line}
+#panel{position:absolute;right:17px;top:15px;width:min(314px,calc(100vw - 25px));max-height:calc(100dvh - 30px);overflow:auto;background:#08192be5;backdrop-filter:blur(14px);border:1px solid #8cadba5a;border-radius:17px;padding:15px 17px;box-shadow:0 12px 40px #0008}
+h2{font-size:15px;margin:0 0 10px}label{display:block;margin:10px 0 2px;font-size:12px;color:#cee1ee}label span{float:right;color:#fff}
+input[type=range],select{width:100%;accent-color:#5bddd4}select{background:#142940;color:#fff;padding:7px;border:1px solid #50758a;border-radius:7px}
+.row{display:flex;gap:6px;margin-top:14px}.row button{flex:1;padding:8px 2px;border:1px solid #6a95a4;border-radius:7px;background:#19394e;color:#fff;cursor:pointer;font-size:12px}
+details{margin-top:13px}summary{font-size:12px;color:#bed9e9;cursor:pointer}.help{font-size:11px;line-height:1.7;color:#a7c5d5}
+#open{display:none;position:absolute;top:12px;right:12px;background:#132d40;color:white;border:1px solid #8cc7d2;border-radius:11px;padding:9px}
+body.folded #panel{display:none}body.folded #open{display:block}
+@media(max-width:680px){#panel{top:auto;right:8px;bottom:9px;width:min(312px,calc(100vw - 16px));max-height:58dvh;padding:12px}header{left:10px;top:9px}#status{left:8px;bottom:8px;max-width:calc(100vw - 325px);font-size:10px}body.folded #status{max-width:94vw}}
+</style></head><body>
+<canvas id="view" aria-label="FFT波高を持つ球面のWebGPUレイマーチ"></canvas>
+<header><h1>CURVED FFT OCEAN</h1><small>5-band GPU FFT · spherical sea · raymarch</small></header>
+<button id="open">設定を開く</button>
+<aside id="panel"><h2>球面 × FFT 海面</h2>
+<label>曲率半径 <span id="radiusOut"></span></label><input id="radius" type="range" min="2.8" max="5" step=".02" value="3.84">
+<label>波高倍率 <span id="ampOut"></span></label><input id="amp" type="range" min=".2" max="3.5" step=".1" value="1.5">
+<label>風速 <span id="windOut"></span></label><input id="wind" type="range" min="5" max="24" step=".5" value="12">
+<label>太陽高度 <span id="sunOut"></span></label><input id="sun" type="range" min="4" max="80" step="1" value="24">
+<label>カメラ高度 <span id="altitudeOut"></span></label><input id="altitude" type="range" min="3" max="130" step="1" value="26">
+<label>視線の俯角 <span id="pitchOut"></span></label><input id="pitch" type="range" min="-2" max="17" step=".5" value="3">
+<label>白波 <span id="foamOut"></span></label><input id="foam" type="range" min="0" max="2.5" step=".1" value="1">
+<label>表示方法</label><select id="mode"><option value="0">水面・反射</option><option value="1">法線</option><option value="2">FFT波高</option><option value="3">曲率確認グリッド</option></select>
+<label>FFT解像度</label><select id="quality"><option value="128">128² × 5（軽量）</option><option value="256">256² × 5</option><option value="512">512² × 5（高負荷）</option></select>
+<div class="row"><button id="pause">一時停止</button><button id="reset">視点リセット</button><button id="close">設定を閉じる</button></div>
+<details><summary>仕組みと操作</summary><p class="help">JONSWAP系5帯域の逆FFTで波高を作り、球面と波高の差をレイマーチ・二分探索で解きます。ドラッグで視線を回転、ホイールで高度を変更。曲率半径は約630m〜100kmの実験用スケールです。</p></details>
+</aside><div id="status">WebGPU 初期化中…</div><script type="module" src="./main.js"></script></body></html>

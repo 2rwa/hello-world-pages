@@ -1,0 +1,37 @@
+name: Curved FFT Ocean WebGPU
+on:
+  push:
+    paths:
+      - "webgpu-curved-fft-ocean/**"
+      - ".github/workflows/curved-fft-ocean-ci.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  swiftshader:
+    runs-on: ubuntu-latest
+    timeout-minutes: 70
+    steps:
+      - uses: actions/checkout@v4
+      - uses: browser-actions/setup-chrome@v2
+        id: chrome
+        with:
+          chrome-version: stable
+      - run: npm install --no-save puppeteer-core@24
+      - name: Serve Pages content
+        run: |
+          python3 -m http.server 8000 >/tmp/curved-ocean-http.log 2>&1 &
+          sleep 2
+      - name: FFT / raymarch / curvature / readback
+        env:
+          CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
+          WEBGPU_FLAGS: "--enable-unsafe-webgpu --enable-features=Vulkan --use-vulkan=swiftshader --disable-vulkan-fallback-to-gl-for-testing --use-webgpu-adapter=swiftshader --enable-webgpu-developer-features --enable-dawn-features=allow_unsafe_apis --disable-dawn-features=use_dxc --use-gpu-in-tests --enable-unsafe-swiftshader --no-sandbox"
+        run: node webgpu-curved-fft-ocean/ci-test.mjs
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: curved-fft-ocean-captures
+          path: |
+            curved-fft-radius-*.png
+            /tmp/curved-ocean-http.log
+          if-no-files-found: ignore
