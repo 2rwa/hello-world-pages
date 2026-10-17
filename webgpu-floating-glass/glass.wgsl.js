@@ -61,12 +61,12 @@ const prepass = /* wgsl */ `
     nearestGlassDistance=glassBounds.x;
     nearestGlassIndex=i32(sphereIndex);
    }
-   if(meniscusOptions.x>0.5){
-    let enlargedBounds=sphereIntersection(eye,ray,candidate.xyz,candidate.w*1.82);
-    if(enlargedBounds.y>0.0&&enlargedBounds.x<nearestContactDistance){
-     nearestContactDistance=enlargedBounds.x;
-     contactOrb=candidate;
-    }
+   // Keep the refined marching footprint identical in ON and OFF modes.
+   // Only the actual water-surface displacement changes with the toggle.
+   let enlargedBounds=sphereIntersection(eye,ray,candidate.xyz,candidate.w*1.82);
+   if(enlargedBounds.y>0.0&&enlargedBounds.x<nearestContactDistance){
+    nearestContactDistance=enlargedBounds.x;
+    contactOrb=candidate;
    }
   }
  }
