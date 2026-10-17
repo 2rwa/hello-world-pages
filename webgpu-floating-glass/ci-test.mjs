@@ -64,6 +64,7 @@ try{
  const iorDiff=countDifference(filled,lowIOR,5);
  console.log('IOR PIXEL DIFFERENCE',JSON.stringify(iorDiff));
  if(iorDiff.changed<100)throw Error('Refraction strength has no visible effect');
+ await adjust('ior','1.48');
  const changedFloat=await adjust('float','.25');
  if(changedFloat.state.float!==.25)throw Error('Float control state not updated');
  const floating=await frame('lower-float');

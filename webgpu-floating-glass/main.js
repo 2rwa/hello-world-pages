@@ -39,7 +39,7 @@ canvas.addEventListener('wheel',e=>{
 updateLabels();
 function uniforms(w,h){
  const eye=[Math.sin(yaw)*35,Number($('altitude').value),-Math.cos(yaw)*35];
- const look=[0,Number($('ballSize').value)*0.75,3.4];
+ const look=[0,2.5,3.4];
  const values=new Float32Array(36);
  // Exact struct layout shared with the 5-cascade FFT implementation.
  values.set([elapsed,Number($('amp').value),Number($('wind').value),0.45],16);
