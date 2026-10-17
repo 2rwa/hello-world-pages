@@ -163,5 +163,5 @@ export async function createEngine(canvas,resolution,ci,report){
   canvas.getContext('2d').putImageData(new ImageData(pixels,w,h),0,0);
   return {sky,water,visible,resolution,cascades:5,count,bounces,meniscus:settings.meniscus!==false,positions:spherePos};
  }
- return {render};
+ return {render,maxTextureDimension2D:device.limits.maxTextureDimension2D};
 }

@@ -4,9 +4,10 @@ const query=new URLSearchParams(location.search);
 const ci=query.has('ci'),mobile=/Android|iPhone|iPad/i.test(navigator.userAgent);
 const canvas=$('view'),status=$('status'),performanceText=$('perf');
 const sliders=['ballCount','bounces','spread','distance','ballSize','ior','float','tint','radius','amp','wind','foam','sun','altitude'];
-const options=['mode','quality','meniscus'];
+const options=['mode','quality','meniscus','renderScale'];
 for(const id of [...sliders,...options])if(query.has(id))$(id).value=query.get(id);
 if(!query.has('quality'))$('quality').value=ci||mobile?'128':'256';
+if(!query.has('renderScale'))$('renderScale').value=mobile&&!ci?'0.75':'1';
 const resolution=Number($('quality').value);
 let yaw=0.07,elapsed=0,prevTime=0,paused=false,busy=false,frames=0,engine;
 let fpsWindowStart=0,fpsFrames=0,fps=0;
@@ -14,11 +15,13 @@ window.__glassDemo={phase:'script-start'};
 function report(phase){window.__glassDemo.phase=phase;if(ci)status.textContent='CI: '+phase;}
 function oceanRadius(){return Math.pow(10,Number($('radius').value));}
 function updateLabels(){
+ $('renderScaleOut').textContent=$('renderScale').value+'×';
  const unit={ballCount:' 個',bounces:' 回',spread:' m',distance:' m',ballSize:' m',ior:'',float:' × R',tint:'×',amp:'×',wind:' m/s',foam:'×',sun:'°',altitude:' m'};
  $('radiusOut').textContent=Math.round(oceanRadius()).toLocaleString()+' m';
  for(const id of sliders.filter(x=>x!=='radius'))$(id+'Out').textContent=$(id).value+unit[id];
 }
 sliders.forEach(id=>$(id).addEventListener('input',updateLabels));
+$('renderScale').addEventListener('change',updateLabels);
 $('quality').addEventListener('change',()=>{
  const q=new URLSearchParams(location.search);
  q.set('quality',$('quality').value);q.delete('ci');
@@ -39,6 +42,20 @@ canvas.addEventListener('wheel',e=>{
  updateLabels();
 },{passive:false});
 updateLabels();
+// A render-scale of 2 means 2 physical render pixels per CSS pixel on either axis.
+// Unlike FFT quality, it can change without rebuilding compute pipelines.
+function renderDimensions(cssWidth,cssHeight){
+ const requestedScale=Number($('renderScale').value)||1;
+ const maxSize=engine?.maxTextureDimension2D||8192;
+ const desiredPixels=cssWidth*cssHeight*requestedScale*requestedScale;
+ const pixelBudget=12000000;
+ const sizeLimit=maxSize/(Math.max(cssWidth,cssHeight)*requestedScale);
+ const pixelLimit=Math.sqrt(pixelBudget/Math.max(1,desiredPixels));
+ const scale=requestedScale*Math.min(1,sizeLimit,pixelLimit);
+ const width=Math.max(1,Math.floor(cssWidth*scale));
+ const height=Math.max(1,Math.floor(cssHeight*scale));
+ return {width,height,scale,requestedScale};
+}
 function uniforms(w,h){
  const distance=Number($('distance').value);
  const eye=[Math.sin(yaw)*distance,Number($('altitude').value),-Math.cos(yaw)*distance];
@@ -64,12 +81,13 @@ async function start(){
   if(ci){
    document.body.classList.add('folded');
    elapsed=18.5;
-   const w=480,h=300;
    async function renderOnce(){
+    const {width:w,height:h,scale,requestedScale}=renderDimensions(480,300);
     document.documentElement.dataset.test='pending';
     const result=await engine.render(uniforms(w,h),w,h,glassOptions());
     window.__glassDemo={
      phase:'ok',resolution,result,mode:Number($('mode').value),
+     renderWidth:w,renderHeight:h,renderScale:requestedScale,actualRenderScale:scale,
      ballSize:Number($('ballSize').value),ior:Number($('ior').value),
      float:Number($('float').value),tint:Number($('tint').value),
      radius:oceanRadius(),elapsed,count:Number($('ballCount').value),
@@ -90,10 +108,7 @@ async function start(){
    const dt=Math.min(.05,Math.max(0,(now-prevTime||16)/1000));
    prevTime=now;
    if(!paused)elapsed+=dt;
-   const dpr=Math.min(devicePixelRatio||1,1.3);
-   const budget=Math.min(dpr,Math.sqrt(600000/Math.max(1,canvas.clientWidth*canvas.clientHeight)));
-   const w=Math.max(1,Math.round(canvas.clientWidth*budget));
-   const h=Math.max(1,Math.round(canvas.clientHeight*budget));
+   const {width:w,height:h,scale,requestedScale}=renderDimensions(canvas.clientWidth,canvas.clientHeight);
    engine.render(uniforms(w,h),w,h,glassOptions()).then(()=>{
     busy=false;frames++;fpsFrames++;
     const frameEnd=performance.now();
@@ -101,12 +116,12 @@ async function start(){
     if(frameEnd-fpsWindowStart>=600){
      fps=1000*fpsFrames/(frameEnd-fpsWindowStart);
      fpsFrames=0;fpsWindowStart=frameEnd;
-     performanceText.textContent='FPS '+fps.toFixed(1)+' · '+$('ballCount').value+' balls · '+$('bounces').value+' bounces';
+     performanceText.textContent='FPS '+fps.toFixed(1)+' · '+$('ballCount').value+' balls · '+$('bounces').value+' bounces · '+w+'×'+h;
      window.__glassDemo={phase:'rendering',frames,fps,count:Number($('ballCount').value),bounces:Number($('bounces').value)};
     }
     if(frames%30===0){
      status.textContent='GPU FFT: 5 × '+resolution+'² · raymarch + glass refraction\n'+
-      '球 '+$('ballCount').value+' 個 · メニスカス '+($('meniscus').value==='1'?'ON':'OFF')+' · 最大バウンス '+$('bounces').value+' / IOR '+$('ior').value+' · '+w+'×'+h;
+      '球 '+$('ballCount').value+' 個 · メニスカス '+($('meniscus').value==='1'?'ON':'OFF')+' · IOR '+$('ior').value+' · '+w+'×'+h+'（描画'+scale.toFixed(2)+'× / 指定'+requestedScale+'×）';
      window.__glassDemo={phase:'rendering',frames,fps,resolution,count:Number($('ballCount').value),bounces:Number($('bounces').value)};
     }
     requestAnimationFrame(frame);

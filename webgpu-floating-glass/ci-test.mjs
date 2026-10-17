@@ -194,6 +194,47 @@ try{
  console.log('FLOAT 0 VS -0.5',JSON.stringify(immersionDifference));
  if(immersionDifference.changed<150)throw Error('Changing immersion did not redraw the sphere');
  console.log('PASS MENISCUS ON/OFF + IN-WATER FLOAT RANGE');
+ // Render resolution is independent of FFT texture quality and CSS display size.
+ // Verify an actual large offscreen WebGPU render, readback and UI behavior.
+ const defaultScale=await page.evaluate(()=>document.getElementById('renderScale').value);
+ if(defaultScale!=='1')throw Error('Unexpected baseline render scale: '+defaultScale);
+ const highResolution=await page.evaluate(async()=>{
+  const ctl=document.getElementById('renderScale');
+  ctl.value='2';ctl.dispatchEvent(new Event('change',{bubbles:true}));
+  const state=await window.__renderOnce();
+  const c=document.getElementById('view');
+  const cssW=c.clientWidth,cssH=c.clientHeight;
+  const pixels=c.getContext('2d').getImageData(0,0,c.width,c.height).data;
+  let nonFlat=0;
+  for(let p=0;p<pixels.length;p+=64)if(pixels[p]>5&&pixels[p+1]>5&&pixels[p]!==pixels[p+1])nonFlat++;
+  return {width:c.width,height:c.height,cssW,cssH,
+    fftResolution:state.resolution,selected:state.renderScale,
+    actual:state.actualRenderScale,pixelVisible:state.result.visible,
+    label:document.getElementById('renderScaleOut').textContent,nonFlat};
+ });
+ console.log('RENDER SCALE 2X GPU READBACK',JSON.stringify(highResolution));
+ if(highResolution.width!==960||highResolution.height!==600||
+    highResolution.cssW!==480||highResolution.cssH!==300||
+    highResolution.fftResolution!==128||highResolution.selected!==2||
+    highResolution.pixelVisible<500000||highResolution.nonFlat<1000||
+    !highResolution.label.includes('2'))
+  throw Error('Render scale 2x did not actually draw at 960x600: '+JSON.stringify(highResolution));
+ await page.screenshot({path:'floating-glass-render-scale-2x.png'});
+ const lowResolution=await page.evaluate(async()=>{
+  const ctl=document.getElementById('renderScale');
+  ctl.value='0.75';ctl.dispatchEvent(new Event('change',{bubbles:true}));
+  const state=await window.__renderOnce();
+  const c=document.getElementById('view');
+  return {width:c.width,height:c.height,cssW:c.clientWidth,cssH:c.clientHeight,
+   selected:state.renderScale,fftResolution:state.resolution,visible:state.result.visible};
+ });
+ console.log('RENDER SCALE 0.75X GPU READBACK',JSON.stringify(lowResolution));
+ if(lowResolution.width!==360||lowResolution.height!==225||
+    lowResolution.cssW!==480||lowResolution.cssH!==300||
+    lowResolution.selected!==0.75||lowResolution.fftResolution!==128||
+    lowResolution.visible<75000)
+  throw Error('Render scale 0.75x not applied: '+JSON.stringify(lowResolution));
+ console.log('PASS SEPARATE RENDER RESOLUTION CONTROL 0.75x and 2x WITH REAL GPU PIXELS');
  console.log('PASS FFT×5 + 100 spheres + 1..8 glass bounces + GPU readback + UI redraw');
 }catch(error){console.error('FAIL:',error);process.exitCode=1;}
 finally{await page.close();await browser.close();}

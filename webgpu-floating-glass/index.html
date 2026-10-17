@@ -52,7 +52,17 @@ body.folded #panel{display:none}body.folded #showPanel{display:block}
 <option value="0">ガラス＋海面</option><option value="1">法線を可視化</option>
 <option value="2">ガラス屈折方向</option><option value="3">曲率グリッド</option>
 <option value="4">ガラスなし（比較）</option></select>
-<label>GPU FFT 解像度</label><select id="quality">
+<label>描画解像度（球の輪郭・ガラス屈折） <span id="renderScaleOut"></span></label>
+<select id="renderScale">
+<option value="0.5">0.5× — 低負荷</option>
+<option value="0.75">0.75× — 軽量</option>
+<option value="1" selected>1× — CSS表示サイズ</option>
+<option value="1.5">1.5× — 高精細</option>
+<option value="2">2× — 超高精細</option>
+<option value="3">3× — 高負荷</option>
+<option value="4">4× — 非常に高負荷</option>
+</select>
+<label>GPU FFT 解像度（波形の細かさ）</label><select id="quality">
 <option value="128">128² × 5 （軽量）</option><option value="256">256² × 5</option>
 <option value="512">512² × 5 （高負荷）</option></select>
 <div class="row"><button id="pause">一時停止</button><button id="reset">視点を戻す</button><button id="hidePanel">設定を閉じる</button></div>

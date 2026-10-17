@@ -40,3 +40,11 @@ Actions / headless Chrome SwiftShader validates actual FFT compute, WGSL compila
 
 ## 2R halo regression
 When meniscus is OFF, render identical frames with the sphere visible and hidden. Their pixel values outside the projected real sphere (with 1.35R guard margin) must be **identical**; this detects an erroneous marching footprint regardless of which meniscus toggle is selected. The ON/OFF contact-only geometry regression is retained.
+
+## Render resolution control (independent from FFT)
+
+- New Render resolution dropdown: **0.5×, 0.75×, 1×, 1.5×, 2×, 3×, 4×**. The multiplier applies to CSS canvas dimensions in both axes, so pixel work scales approximately as the square of this value; for example a 480 × 300 canvas at 2× renders actual GPU pixels 960 × 600 and is then displayed at 480 × 300.
+- Defaults: 1× on desktop and 0.75× on mobile. Unlike FFT resolution, the dropdown does **not** reload the page or rebuild FFT pipelines.
+- Removes the previous 600,000-pixel render limit that reduced the observed sphere-edge quality. Protects GPU memory and texture limits by clamping to 12 million rendered pixels and the device's maxTextureDimension2D; the effective multiplier is displayed in the status text.
+- Does not introduce antialiasing beyond downsampling or change physical water model; check whether the perceived edge aliasing improves at 1.5× or 2×. FFT grid resolution is still an entirely separate setting.
+- GitHub Actions SwiftShader test verifies actual 960 × 600 and 360 × 225 GPU-rendered image readback, static 480 × 300 CSS display size, unchanged 128² FFT size, and UI selection.
