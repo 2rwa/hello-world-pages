@@ -1,0 +1,39 @@
+name: Floating Glass on Curved FFT Ocean
+on:
+  push:
+    paths:
+      - "webgpu-floating-glass/**"
+      - ".github/workflows/floating-glass-ci.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  gpu:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: browser-actions/setup-chrome@v2
+        id: chrome
+        with:
+          chrome-version: stable
+      - name: Install headless controller
+        run: npm install --no-save puppeteer-core@24
+      - name: Start static server
+        run: |
+          python3 -m http.server 8000 >/tmp/floating-glass-server.log 2>&1 &
+          sleep 2
+      - name: FFT and floating glass GPU regression
+        env:
+          CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
+          WEBGPU_FLAGS: "--enable-unsafe-webgpu --enable-features=Vulkan --use-vulkan=swiftshader --disable-vulkan-fallback-to-gl-for-testing --use-webgpu-adapter=swiftshader --enable-webgpu-developer-features --enable-dawn-features=allow_unsafe_apis --disable-dawn-features=use_dxc --use-gpu-in-tests --enable-unsafe-swiftshader --no-sandbox"
+        run: node webgpu-floating-glass/ci-test.mjs
+      - name: Save actual GPU screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: floating-glass-gpu-images
+          path: |
+            floating-glass-*.png
+            /tmp/floating-glass-server.log
+          if-no-files-found: ignore

@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Glass Drift — Curved FFT Ocean</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,-apple-system,"Hiragino Kaku Gothic ProN",sans-serif}
+*{box-sizing:border-box}body{margin:0;overflow:hidden;color:#e5f7ff;background:#040d18}
+canvas{width:100vw;height:100dvh;display:block;touch-action:none}
+header{position:absolute;left:22px;top:19px;pointer-events:none;text-shadow:0 2px 15px #001d34}
+h1{font-size:clamp(20px,2.4vw,30px);font-weight:640;letter-spacing:.10em;margin:0 0 5px}
+header small{color:#c2e0f5;font-size:12px;letter-spacing:.03em}
+#panel{position:absolute;right:18px;top:17px;width:min(330px,calc(100vw - 24px));max-height:calc(100dvh - 32px);
+overflow:auto;background:#071928e9;backdrop-filter:blur(17px);border:1px solid #8ad2e755;
+box-shadow:0 14px 48px #0009;border-radius:18px;padding:17px 19px}
+#panel h2{font-size:14px;margin:0 0 12px;letter-spacing:.06em;color:#cceafa}
+label{display:block;color:#c5d9e8;font-size:12px;margin:11px 0 3px}
+label span{float:right;color:#fafcff;font-variant-numeric:tabular-nums}
+input[type=range]{display:block;width:100%;accent-color:#65cfef;cursor:pointer}
+select{width:100%;padding:7px;background:#133147;color:#effaff;border:1px solid #7396a9;border-radius:8px}
+.row{display:flex;gap:8px;margin-top:16px}.row button{flex:1;cursor:pointer;border:1px solid #6c9bad;border-radius:10px;
+background:#194054;color:#f5feff;padding:9px 4px;font-size:12px}
+#status{position:absolute;left:18px;bottom:16px;background:#091927c8;color:#d8edf8;font:12px/1.6 ui-monospace,monospace;border-radius:11px;padding:9px 12px;white-space:pre-line;max-width:70vw}
+details{margin-top:12px;color:#aed4e7;font-size:12px}summary{cursor:pointer}details p{color:#a5c5d6;line-height:1.65;font-size:11px}
+#showPanel{position:absolute;right:14px;top:14px;border:1px solid #81cce4;background:#0f3248;color:#e8faff;border-radius:11px;padding:10px;display:none;cursor:pointer}
+body.folded #panel{display:none}body.folded #showPanel{display:block}
+@media(max-width:720px){header{left:11px;top:10px}header small{font-size:10px}#panel{right:8px;bottom:8px;top:auto;width:min(317px,calc(100vw - 16px));max-height:59dvh;padding:12px 15px}
+#status{left:8px;bottom:8px;max-width:calc(100vw - 335px);font-size:10px}body.folded #status{max-width:94vw}}
+</style></head><body>
+<canvas id="view" aria-label="湾曲FFT海面に浮かぶ屈折するガラス玉"></canvas>
+<header><h1>GLASS DRIFT</h1><small>WebGPU · 5-band FFT ocean · refractive floating glass</small></header>
+<button id="showPanel">設定を開く</button>
+<aside id="panel">
+<h2>ガラス玉</h2>
+<label>半径 <span id="ballSizeOut"></span></label><input type="range" id="ballSize" min="1.5" max="6.5" step=".1" value="3.6">
+<label>屈折率 IOR <span id="iorOut"></span></label><input type="range" id="ior" min="1.0" max="1.8" step=".01" value="1.48">
+<label>浮き具合 <span id="floatOut"></span></label><input type="range" id="float" min=".1" max="1.25" step=".05" value=".65">
+<label>ガラス色・吸収 <span id="tintOut"></span></label><input type="range" id="tint" min="0" max="6" step=".1" value="1.8">
+<h2 style="margin-top:17px">海面・カメラ</h2>
+<label>海面の曲率半径 <span id="radiusOut"></span></label><input type="range" id="radius" min="3.0" max="5" step=".02" value="3.84">
+<label>FFT波高倍率 <span id="ampOut"></span></label><input type="range" id="amp" min=".3" max="3" step=".1" value="1.25">
+<label>風速 <span id="windOut"></span></label><input type="range" id="wind" min="4" max="24" step=".5" value="12">
+<label>白波 <span id="foamOut"></span></label><input type="range" id="foam" min="0" max="2" step=".1" value=".9">
+<label>太陽高度 <span id="sunOut"></span></label><input type="range" id="sun" min="5" max="80" step="1" value="31">
+<label>カメラ高さ <span id="altitudeOut"></span></label><input type="range" id="altitude" min="4" max="35" step=".5" value="10">
+<label>表示モード</label><select id="mode">
+<option value="0">ガラス＋海面</option><option value="1">法線を可視化</option>
+<option value="2">ガラス屈折方向</option><option value="3">曲率グリッド</option>
+<option value="4">ガラスなし（比較）</option></select>
+<label>GPU FFT 解像度</label><select id="quality">
+<option value="128">128² × 5 （軽量）</option><option value="256">256² × 5</option>
+<option value="512">512² × 5 （高負荷）</option></select>
+<div class="row"><button id="pause">一時停止</button><button id="reset">視点を戻す</button><button id="hidePanel">設定を閉じる</button></div>
+<details><summary>計算方法 / 操作</summary><p>ガラス玉の水平位置はゆっくり漂い、中心の高さは5帯域FFTの波高に連動。球面との交差を求めてから、Snellの法則で入射・出射屈折、Beer–Lambert吸収、Fresnel反射を近似します。内部を通過した光線はFFT海面にも再交差します。ドラッグで周囲を見回せます。</p>
+<p>浮力の値は浸水率を直接計算したものではなく、海面に対するガラス中心位置の調整値です。波への追従に慣性・流体力学は導入していません。</p></details>
+</aside>
+<div id="status">WebGPU 初期化中…</div>
+<script type="module" src="./main.js"></script></body></html>
