@@ -20,7 +20,7 @@ const glassOverlay = /* wgsl */ `
     let surfaceNormal=normalize((eye+ray*nearestDistance)-orb.xyz);
     return vec4f(surfaceNormal*0.5+0.5,1.0);
    }
-   let glassColor=renderGlassSphere(eye,ray,nearestDistance,orb.xyz,orb.w,sphereCenter,radius);
+   var glassColor=renderGlassSphere(eye,ray,nearestDistance,orb.xyz,orb.w,sphereCenter,radius);
    if(appearanceMode==2){
     let entryNormal=normalize((eye+ray*nearestDistance)-orb.xyz);
     let refracted=refract(ray,entryNormal,1.0/max(1.001,cfg.boat.y));
