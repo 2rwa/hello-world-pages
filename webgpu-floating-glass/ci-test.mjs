@@ -118,6 +118,34 @@ try{
  const display=await page.$eval('#perf',x=>x.textContent);
  if(!display.includes('3 balls')||!display.includes('8 bounces'))
   throw Error('Performance and bounce display not updated '+display);
+ // Verify explicit meniscus ON/OFF changes the actual GPU-rendered water geometry.
+ // Make the contact circle large enough that the result is visible at 480x300.
+ await adjust('ballCount','1');
+ await adjust('ballSize','6.5');
+ await adjust('float','0');
+ await adjust('distance','20');
+ await adjust('altitude','7');
+ await adjust('ior','1.48');
+ await adjust('bounces','2');
+ const onSetting=await adjust('meniscus','1');
+ if(onSetting.state.meniscus!==true||onSetting.state.result.meniscus!==true)
+  throw Error('Meniscus ON did not reach renderer');
+ const withMeniscus=await frame('meniscus-on');
+ const offSetting=await adjust('meniscus','0');
+ if(offSetting.state.meniscus!==false||offSetting.state.result.meniscus!==false)
+  throw Error('Meniscus OFF did not reach renderer');
+ const noMeniscus=await frame('meniscus-off');
+ const contactDifference=countDifference(withMeniscus,noMeniscus,3);
+ console.log('MENISCUS ON VS OFF',JSON.stringify(contactDifference));
+ if(contactDifference.changed<40)throw Error('Meniscus switch does not visibly change FFT water geometry');
+ await adjust('meniscus','1');
+ const deeper=await adjust('float','-.5');
+ if(deeper.state.float!==-.5)throw Error('Submerged float position is not selectable');
+ const partlySubmerged=await frame('float-minus-0.5');
+ const immersionDifference=countDifference(withMeniscus,partlySubmerged,10);
+ console.log('FLOAT 0 VS -0.5',JSON.stringify(immersionDifference));
+ if(immersionDifference.changed<150)throw Error('Changing immersion did not redraw the sphere');
+ console.log('PASS MENISCUS ON/OFF + IN-WATER FLOAT RANGE');
  console.log('PASS FFT×5 + 100 spheres + 1..8 glass bounces + GPU readback + UI redraw');
 }catch(error){console.error('FAIL:',error);process.exitCode=1;}
 finally{await page.close();await browser.close();}

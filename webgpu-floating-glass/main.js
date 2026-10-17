@@ -4,7 +4,7 @@ const query=new URLSearchParams(location.search);
 const ci=query.has('ci'),mobile=/Android|iPhone|iPad/i.test(navigator.userAgent);
 const canvas=$('view'),status=$('status'),performanceText=$('perf');
 const sliders=['ballCount','bounces','spread','distance','ballSize','ior','float','tint','radius','amp','wind','foam','sun','altitude'];
-const options=['mode','quality'];
+const options=['mode','quality','meniscus'];
 for(const id of [...sliders,...options])if(query.has(id))$(id).value=query.get(id);
 if(!query.has('quality'))$('quality').value=ci||mobile?'128':'256';
 const resolution=Number($('quality').value);
@@ -29,7 +29,7 @@ $('reset').onclick=()=>{yaw=0.07;$('altitude').value=10;$('distance').value=35;u
 $('hidePanel').onclick=()=>document.body.classList.add('folded');
 $('showPanel').onclick=()=>document.body.classList.remove('folded');
 let dragging=false,lastX=0;
-function glassOptions(){return {count:Number($('ballCount').value),bounces:Number($('bounces').value),spread:Number($('spread').value),drift:1};}
+function glassOptions(){return {count:Number($('ballCount').value),bounces:Number($('bounces').value),spread:Number($('spread').value),drift:1,meniscus:$('meniscus').value==='1'};}
 canvas.addEventListener('pointerdown',e=>{dragging=true;lastX=e.clientX;canvas.setPointerCapture(e.pointerId);});
 canvas.addEventListener('pointermove',e=>{if(!dragging)return;yaw+=(e.clientX-lastX)*0.006;lastX=e.clientX;});
 canvas.addEventListener('pointerup',()=>dragging=false);
@@ -73,7 +73,7 @@ async function start(){
      ballSize:Number($('ballSize').value),ior:Number($('ior').value),
      float:Number($('float').value),tint:Number($('tint').value),
      radius:oceanRadius(),elapsed,count:Number($('ballCount').value),
-     bounces:Number($('bounces').value),spread:Number($('spread').value)
+     bounces:Number($('bounces').value),spread:Number($('spread').value),meniscus:$('meniscus').value==='1'
     };
     document.documentElement.dataset.test='ok';
     performanceText.textContent='GPU render verified · '+$('ballCount').value+' balls · '+$('bounces').value+' bounces';
@@ -106,7 +106,7 @@ async function start(){
     }
     if(frames%30===0){
      status.textContent='GPU FFT: 5 × '+resolution+'² · raymarch + glass refraction\n'+
-      '球 '+$('ballCount').value+' 個 · 最大バウンス '+$('bounces').value+' / IOR '+$('ior').value+' · '+w+'×'+h;
+      '球 '+$('ballCount').value+' 個 · メニスカス '+($('meniscus').value==='1'?'ON':'OFF')+' · 最大バウンス '+$('bounces').value+' / IOR '+$('ior').value+' · '+w+'×'+h;
      window.__glassDemo={phase:'rendering',frames,fps,resolution,count:Number($('ballCount').value),bounces:Number($('bounces').value)};
     }
     requestAnimationFrame(frame);

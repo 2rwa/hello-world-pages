@@ -27,3 +27,13 @@ Actions / headless Chrome SwiftShader validates actual FFT compute, WGSL compila
 - FPS is a rolling measurement of completed frames, not a claimed device benchmark.
 - To view all 100 spheres, increase spread and camera distance.
 - Regression checks: actual 100 sphere positions and varying wave heights, 100-vs-1 and 1-vs-8 visual differences, controls and FPS label.
+
+## Glass edge / meniscus controls
+
+- Floating height slider is the sphere center offset from the local FFT surface, divided by glass radius. Values -1..+1.25 allow completely submerged, semi-submerged, and fully emerged states; the default is +0.15 instead of +0.65.
+- Artificially added blue Fresnel-outline glow and the hand-painted glass waterline highlight were removed. Reflection now comes from Fresnel interfaces and directional sun specular lighting.
+- **Meniscus ON/OFF**: adds local contact-circle uplift to the *curved FFT surface's implicit function* and calculates the altered geometric normal. It changes ray intersections, silhouettes and reflection, not only the final water color. The local contact ring geometry uses sphere center, radius, local FFT sea level and approximate sphere-plane contact radius.
+- Meniscus uses an exponentially decaying ring envelope around the estimated contact circle, with an enlarged capillary scale to remain visible for meter-scale glass spheres. This is **not physically accurate capillary length**, wetting angle, or a coupled fluid simulation. When the sphere is fully above or under water, there is no contact ring.
+- A ray tests an enlarged sphere analytically *once per pixel* to choose the nearest local meniscus candidate. The raymarch does not loop over all 100 spheres per step, keeping the 100-ball scene tractable. This approximation cannot reproduce overlapping menisci from multiple adjacent spheres or secondary transmitted-ray meniscus deformation.
+- The no-glass comparison mode hides meniscus together with the spheres.
+- CI compares actual GPU pixel output with meniscus ON vs OFF, and submerged float vs waterline float. It also checks the UI settings reach the GPU path.

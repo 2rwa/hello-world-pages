@@ -97,14 +97,9 @@ fn renderGlassSphere(rayOrigin:vec3f,rayDirection:vec3f,sphereEntry:f32,
  let glint=normalize(toEye+sunDirection());
  let sunlight=pow(max(dot(entryNormal,glint),0.0),180.0);
  let sheen=pow(max(dot(entryNormal,glint),0.0),44.0);
- let edge=pow(1.0-entryCosine,2.1);
+ // Optical highlights come from sun reflection and Fresnel interfaces only.
+ // Deliberately no extra outline glow or painted-on waterline.
  radiance+=vec3f(1.0,0.93,0.77)*(sunlight*2.6+sheen*0.12);
- radiance+=vec3f(0.024,0.065,0.092)*edge*cfg.extra.z;
- let waveLevel=waveHeight(sphereCenter.xz);
- let seaRadial=sqrt(max(1.0,earthRadius*earthRadius-dot(sphereCenter.xz,sphereCenter.xz)))-earthRadius;
- let submergence=entryPos.y-seaRadial-waveLevel;
- let waterline=exp(-pow(submergence/max(0.1,sphereRadius)*18.0,2.0));
- radiance+=vec3f(0.045,0.13,0.2)*waterline*0.3;
  return radiance;
 }
 `;

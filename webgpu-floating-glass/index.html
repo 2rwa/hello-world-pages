@@ -37,7 +37,8 @@ body.folded #panel{display:none}body.folded #showPanel{display:block}
 <label>散らばり半径 <span id="spreadOut"></span></label><input type="range" id="spread" min="5" max="120" step="1" value="32">
 <label>半径 <span id="ballSizeOut"></span></label><input type="range" id="ballSize" min="1.5" max="6.5" step=".1" value="3.6">
 <label>屈折率 IOR <span id="iorOut"></span></label><input type="range" id="ior" min="1.0" max="1.8" step=".01" value="1.48">
-<label>浮き具合 <span id="floatOut"></span></label><input type="range" id="float" min=".1" max="1.25" step=".05" value=".65">
+<label>浮き具合（球中心の水面からの高さ） <span id="floatOut"></span></label><input type="range" id="float" min="-1" max="1.25" step=".05" value=".15">
+<label>メニスカス（水面の盛り上がり）</label><select id="meniscus"><option value="1">ON — 接触部分の水面を変形</option><option value="0">OFF — FFT波面のみ</option></select>
 <label>ガラス色・吸収 <span id="tintOut"></span></label><input type="range" id="tint" min="0" max="6" step=".1" value="1.8">
 <h2 style="margin-top:17px">海面・カメラ</h2>
 <label>海面の曲率半径 <span id="radiusOut"></span></label><input type="range" id="radius" min="3.0" max="5" step=".02" value="3.84">
@@ -56,7 +57,7 @@ body.folded #panel{display:none}body.folded #showPanel{display:block}
 <option value="512">512² × 5 （高負荷）</option></select>
 <div class="row"><button id="pause">一時停止</button><button id="reset">視点を戻す</button><button id="hidePanel">設定を閉じる</button></div>
 <details><summary>計算方法 / 操作</summary><p>ガラス玉の水平位置はゆっくり漂い、中心の高さは5帯域FFTの波高に連動。球面との交差を求めてから、Snellの法則で入射・出射屈折、Beer–Lambert吸収、Fresnel反射を近似します。バウンス回数は各球の内部境界での最大反射・屈折評価回数で、球から球への再帰追跡は行いません。内部を通過した光線はFFT海面にも再交差します。ドラッグで周囲を見回せます。</p>
-<p>浮力の値は浸水率を直接計算したものではなく、海面に対するガラス中心位置の調整値です。波への追従に慣性・流体力学は導入していません。</p></details>
+<p>浮き具合は球半径R単位での中心の高さ（0は水面に中心、負値は水中、+1は水面に接する位置）。メニスカスONは接触円の近傍で波面形状と法線を変形します。見えやすさのため毛細管現象を実寸より大きく強調した近似です。人工的なガラス輪郭の発光やペイントした水際ラインは使っていません。球の浮遊に慣性・流体力学は導入していません。</p></details>
 </aside>
 <div id="status">WebGPU 初期化中…</div>
 <script type="module" src="./main.js"></script></body></html>

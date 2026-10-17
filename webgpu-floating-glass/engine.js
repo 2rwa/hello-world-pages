@@ -18,6 +18,7 @@ export async function createEngine(canvas,resolution,ci,report){
  if(context)context.configure({device,format,alphaMode:'opaque'});
  const uniform=device.createBuffer({size:144,usage:BU.UNIFORM|BU.COPY_DST});
  const ballOptions=device.createBuffer({size:16,usage:BU.UNIFORM|BU.COPY_DST});
+ const meniscusOptions=device.createBuffer({size:16,usage:BU.UNIFORM|BU.COPY_DST});
  const balls=device.createBuffer({size:1600,usage:BU.STORAGE|BU.COPY_SRC});
  const ballRead=ci?device.createBuffer({size:1600,usage:BU.COPY_DST|BU.MAP_READ}):null;
  const storageSize=resolution*resolution*5*24;
@@ -37,7 +38,8 @@ export async function createEngine(canvas,resolution,ci,report){
   {binding:1,visibility:ST.FRAGMENT,texture:{viewDimension:'2d-array'}},
   {binding:2,visibility:ST.FRAGMENT,sampler:{type:'filtering'}},
   {binding:3,visibility:ST.FRAGMENT,buffer:{type:'read-only-storage'}},
-  {binding:4,visibility:ST.FRAGMENT,buffer:{type:'uniform'}}
+  {binding:4,visibility:ST.FRAGMENT,buffer:{type:'uniform'}},
+  {binding:5,visibility:ST.FRAGMENT,buffer:{type:'uniform'}}
  ]});
  const placementLayout=device.createBindGroupLayout({entries:[
   {binding:0,visibility:ST.COMPUTE,buffer:{type:'uniform'}},
@@ -53,7 +55,8 @@ export async function createEngine(canvas,resolution,ci,report){
  const renderGroup=device.createBindGroup({layout:renderLayout,entries:[
   {binding:0,resource:{buffer:uniform}},{binding:1,resource:dispView},
   {binding:2,resource:sampler},{binding:3,resource:{buffer:balls}},
-  {binding:4,resource:{buffer:ballOptions}}
+  {binding:4,resource:{buffer:ballOptions}},
+  {binding:5,resource:{buffer:meniscusOptions}}
  ]});
  const placementGroup=device.createBindGroup({layout:placementLayout,entries:[
   {binding:0,resource:{buffer:uniform}},{binding:1,resource:dispView},
@@ -110,6 +113,7 @@ export async function createEngine(canvas,resolution,ci,report){
   device.queue.writeBuffer(ballOptions,0,new Float32Array([
    count,bounces,settings.spread??32,settings.drift??1
   ]));
+  device.queue.writeBuffer(meniscusOptions,0,new Float32Array([settings.meniscus===false?0:1,0,0,0]));
   const encoder=device.createCommandEncoder();
   report('FFT-dispatch');
   dispatch(encoder,evolve,resolution/8,resolution/8,5);
@@ -157,7 +161,7 @@ export async function createEngine(canvas,resolution,ci,report){
   if(visible<w*h*.8)throw Error('Offscreen render mostly blank');
   canvas.width=w;canvas.height=h;
   canvas.getContext('2d').putImageData(new ImageData(pixels,w,h),0,0);
-  return {sky,water,visible,resolution,cascades:5,count,bounces,positions:spherePos};
+  return {sky,water,visible,resolution,cascades:5,count,bounces,meniscus:settings.meniscus!==false,positions:spherePos};
  }
  return {render};
 }
