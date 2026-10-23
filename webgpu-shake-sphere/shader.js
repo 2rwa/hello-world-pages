@@ -1,3 +1,4 @@
+import {optics} from './optics.js';
 export const wgsl = /* wgsl */ `
 struct Scene {
  screen:vec4f,
@@ -63,90 +64,69 @@ fn shadeMarble(ballIndex:u32,worldXY:vec2f,frontDepth:f32,
  }
  return color;
 }
+` + optics + /* wgsl */ `
 @fragment fn fragmentMain(@builtin(position) pixelPosition:vec4f)->@location(0) vec4f{
  let uv=pixelPosition.xy/scene.screen.xy;
+ // Pixel Y points down; ray coordinates point up.
  let xy=vec2f((uv.x*2.0-1.0)*scene.screen.z,
   (1.0-uv.y*2.0)*scene.screen.w-scene.view.z);
  let containerRadius=scene.view.x;
  let radial=length(xy);
+ let opticalOn=scene.options.x>0.5;
  var color=baseColor(xy);
  if(radial<containerRadius){
-  // The rear wall is visible, while the sphere is optically translucent.
   let zShell=sqrt(max(0.0,containerRadius*containerRadius-radial*radial));
-  let backdrop=color+vec3f(0.035,0.067,0.085)*clamp(zShell/containerRadius,0.0,1.0);
-  color=backdrop;
-  // Sphere tracing of the union of true sphere SDFs along the view ray.
-  // The analytical outer-shell intersection only bounds the marching interval.
-  // Rejecting a bead outside this XY ray's silhouette is safe: it cannot be hit.
-  var depthFront=-1e5;
-  var depthBack=-1e5;
-  var indexFront=0u;
-  var indexBack=0u;
-  var probeDepth=zShell-0.004;
-  for(var traceIndex=0u;traceIndex<64u;traceIndex=traceIndex+1u){
-   if(probeDepth < -zShell-0.005){break;}
-   var nearestDistance=1e4;
-   var nearestIndex=0u;
-   var hasCandidate=false;
-   for(var beadIndex=0u;beadIndex<50u;beadIndex=beadIndex+1u){
-    if(f32(beadIndex)>=scene.view.y){break;}
-    let sphereData=scene.beads[beadIndex];
-    let deltaXY=xy-sphereData.xy;
-    if(dot(deltaXY,deltaXY)>sphereData.w*sphereData.w){continue;}
-    hasCandidate=true;
-    let signedDistance=length(vec3f(deltaXY,probeDepth-sphereData.z))-sphereData.w;
-    if(signedDistance<nearestDistance){
-     nearestDistance=signedDistance;
-     nearestIndex=beadIndex;
+  let entrance=shellEntry(xy,zShell,opticalOn);
+  if(entrance.valid){
+   // Raymarch toward the marble surfaces along the refracted cavity ray.
+   let primaryHit=traceMarbles(entrance.origin,entrance.direction);
+   var transmittedStart=entrance.origin;
+   var transmittedDirection=entrance.direction;
+   var marbleThickness=0.0;
+   if(primaryHit.found){
+    let transmittedRay=beadTransmission(primaryHit,entrance.direction,opticalOn);
+    if(transmittedRay.valid){
+     transmittedStart=transmittedRay.origin;
+     transmittedDirection=transmittedRay.direction;
+     marbleThickness=length(transmittedStart-primaryHit.position);
     }
    }
-   if(!hasCandidate){break;}
-   if(nearestDistance<0.004){
-    if(depthFront< -1e4){
-     depthFront=probeDepth;
-     indexFront=nearestIndex;
-    }else{
-     depthBack=probeDepth;
-     indexBack=nearestIndex;
-     break;
+   var transmissionColor=glassBackground(transmittedStart,transmittedDirection,opticalOn);
+   // Background or rear marble is seen through the front marble's bent rays.
+   if(primaryHit.found){
+    let rearHit=findRearMarble(transmittedStart,transmittedDirection,primaryHit.beadIndex);
+    if(rearHit.found){
+     let rearColor=shadeMarble(rearHit.beadIndex,rearHit.position.xy,
+       rearHit.position.z,transmissionColor);
+     transmissionColor=mix(transmissionColor,rearColor,0.72);
     }
-    // Move to the back of the hit sphere, then resume SDF raymarching.
-    let hitSphere=scene.beads[nearestIndex];
-    let projectedDelta=xy-hitSphere.xy;
-    let exitOffset=sqrt(max(0.0,hitSphere.w*hitSphere.w-dot(projectedDelta,projectedDelta)));
-    probeDepth=hitSphere.z-exitOffset-0.012;
+    let beadColor=shadeMarble(primaryHit.beadIndex,primaryHit.position.xy,
+      primaryHit.position.z,transmissionColor);
+    let transmissionLoss=exp(-marbleThickness*0.19);
+    color=mix(transmissionColor*transmissionLoss,beadColor,0.79);
    }else{
-    probeDepth=probeDepth-max(0.008,nearestDistance*0.90);
+    color=transmissionColor;
    }
+   let domeFacing=zShell/containerRadius;
+   let shellFresnel=pow(1.0-domeFacing,5.0);
+   color=mix(color,vec3f(0.13,0.42,0.56),shellFresnel*0.39);
+   let domeGlint=pow(max(domeFacing*0.86+xy.x/containerRadius*0.18-
+     xy.y/containerRadius*0.21,0.0),22.0);
+   color+=vec3f(0.31,0.52,0.59)*domeGlint*0.046;
+  }else{
+   color=mix(color,vec3f(0.12,0.36,0.46),0.18);
   }
-  if(depthBack>-1e4){
-   let backShade=shadeMarble(indexBack,xy,depthBack,backdrop);
-   color=mix(color,backShade,0.64);
-  }
-  if(depthFront>-1e4){
-   let frontShade=shadeMarble(indexFront,xy,depthFront,color);
-   let opacity=select(0.84,0.65,scene.options.x>0.5);
-   color=mix(color,frontShade,opacity);
-  }
-  let surfaceZ=zShell/containerRadius;
-  let FresnelShell=pow(1.0-surfaceZ,4.0);
-  let overhead=pow(max(surfaceZ*0.86+xy.x/containerRadius*0.18-
-    xy.y/containerRadius*0.21,0.0),19.0);
-  color=mix(color,vec3f(0.22,0.59,0.65),FresnelShell*0.30);
-  color+=vec3f(0.18,0.32,0.37)*overhead*0.065;
  }
- // Glowing glass rim; a thin second rim gives the shell a real thickness.
- let boundary=radial-containerRadius;
- let innerRim=exp(-pow((boundary+0.045)/0.068,2.0));
- let outerRim=exp(-pow((boundary-0.026)/0.060,2.0));
- let angle=atan2(xy.y,xy.x);
- let glint=pow(max(sin(angle*2.0+0.8),0.0),6.0);
- color+=innerRim*vec3f(0.12,0.46,0.56);
- color+=outerRim*(vec3f(0.15,0.44,0.50)+glint*vec3f(0.38,0.49,0.54));
- let brightArc=exp(-pow((angle-2.4)/0.32,2.0));
- color+=innerRim*brightArc*vec3f(0.65,0.78,0.83);
- let film=exp(-pow(boundary/0.25,2.0));
- color+=film*vec3f(0.026,0.053,0.062);
+ // Analytic Fresnel rim of the spherical glass wall (no fake double-sized halo).
+ let rimDistance=radial-containerRadius;
+ let innerRim=exp(-pow((rimDistance+0.045)/0.064,2.0));
+ let outerRim=exp(-pow((rimDistance-0.026)/0.058,2.0));
+ let arcAngle=atan2(xy.y,xy.x);
+ let glint=pow(max(sin(arcAngle*2.0+0.8),0.0),6.0);
+ color+=innerRim*vec3f(0.11,0.40,0.49);
+ color+=outerRim*(vec3f(0.13,0.38,0.45)+glint*vec3f(0.32,0.42,0.46));
+ let brightArc=exp(-pow((arcAngle-2.4)/0.32,2.0));
+ color+=innerRim*brightArc*vec3f(0.62,0.71,0.78);
  let toneMapped=color/(vec3f(1.0)+color*0.34);
  return vec4f(clamp(toneMapped,vec3f(0.0),vec3f(1.0)),1.0);
 }
