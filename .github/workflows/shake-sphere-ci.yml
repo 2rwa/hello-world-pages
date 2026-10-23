@@ -54,7 +54,7 @@ jobs:
             -d "{\"state\":\"$state\",\"context\":\"sphere-shake/webgpu\",\"description\":\"WebGPU GPU pixels, sensors and mobile touch UI\"}" \
             "https://api.github.com/repos/$GITHUB_REPOSITORY/statuses/$HEAD_SHA"
           if [ "$state" = failure ]; then
-            detail=$(grep -m 1 -E 'WGSL |Error:|PAGE ERROR:|BROWSER: error|GPU validation' /tmp/sphere-shake-ci.log 2>/dev/null | cut -c 1-120 || true)
+            detail=$(grep -m 1 -E 'WGSL |Error:|PAGE ERROR:|GPU validation' /tmp/sphere-shake-ci.log 2>/dev/null | cut -c 1-120 || true)
             detail=${detail:-unknown error - inspect CI logs}
             payload=$(jq -nc --arg context "sphere-shake/error/$detail" \
               '{state:"failure",context:$context,description:"Detailed WebGPU regression failure"}')
