@@ -1,0 +1,39 @@
+name: Gravity Glass WebGPU GPU and Physics
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'webgpu-gravity-glass/**'
+      - '.github/workflows/gravity-glass-ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  webgpu-and-physics:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: browser-actions/setup-chrome@v2
+        id: chrome
+        with:
+          chrome-version: stable
+      - name: Check JavaScript syntax
+        run: |
+          node --check webgpu-gravity-glass/main.js
+          node --check webgpu-gravity-glass/shader.js
+          node --check webgpu-gravity-glass/ci-test.mjs
+      - name: Install headless controller
+        run: npm install --no-save puppeteer-core@24
+      - name: Serve Pages directory
+        run: |
+          python3 -m http.server 8000 --bind 127.0.0.1 >/tmp/gravity-glass-http.log 2>&1 &
+          sleep 2
+      - name: Verify actual WebGPU rendering and rolling physics
+        env:
+          CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
+          WEBGPU_FLAGS: "--no-sandbox --enable-unsafe-webgpu --enable-features=Vulkan --use-vulkan=swiftshader --disable-vulkan-fallback-to-gl-for-testing --use-webgpu-adapter=swiftshader --enable-webgpu-developer-features --enable-dawn-features=allow_unsafe_apis --disable-dawn-features=use_dxc --use-gpu-in-tests --enable-unsafe-swiftshader"
+        run: node webgpu-gravity-glass/ci-test.mjs
+      - name: Keep HTTP server log on failure
+        if: failure()
+        run: cat /tmp/gravity-glass-http.log
