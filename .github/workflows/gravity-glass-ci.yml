@@ -21,6 +21,9 @@ jobs:
       - name: Check JavaScript syntax
         run: |
           node --check webgpu-gravity-glass/main.js
+          node --check webgpu-gravity-glass/marbles.js
+          node --check webgpu-gravity-glass/tilt.js
+          node --check webgpu-gravity-glass/ci-run.js
           node --check webgpu-gravity-glass/shader.js
           node --check webgpu-gravity-glass/ci-test.mjs
       - name: Install headless controller

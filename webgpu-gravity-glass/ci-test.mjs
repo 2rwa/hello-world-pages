@@ -18,7 +18,8 @@ try{
  const result=await page.evaluate(()=>window.__gravityGlass);
  console.log('WebGPU CI result:',JSON.stringify(result,null,2));
  if(result?.phase!=='ok')throw Error('GPU CI failed: '+JSON.stringify(result));
- if(result.moved<0.15 || result.pixelRange[1]-result.pixelRange[0]<24){
+ if(result.moved<0.15 || result.pixelRange[1]-result.pixelRange[0]<24 ||
+    result.testedBalls!==50 || result.movedBalls<35 || result.closest<result.radius*2){
    throw Error('Physics or GPU pixel-readback regression');
  }
  console.log('PASS: device, WGSL compilation, pipeline, GPU pixels, gravity physics');
@@ -57,15 +58,17 @@ try{
  if(reverseBefore===reverseAfter)throw Error('Reverse checkbox could not be tapped');
  async function tapRightSide(id){
    const rect=await page.$eval(id,n=>{const r=n.getBoundingClientRect();
-     return {x:r.right-5,y:r.top+r.height/2};});
+     return {x:r.right-1,y:r.top+r.height/2};});
    await page.touchscreen.tap(rect.x,rect.y);
  }
  await tapRightSide('#count');
  const countState=await page.evaluate(()=>({
    value:document.querySelector('#count').value,
-   label:document.querySelector('#countOut').textContent
+   label:document.querySelector('#countOut').textContent,
+   simulatedCount:window.__gravityGlass.activeCount,
+   radius:window.__gravityGlass.radius
  }));
- if(countState.value!=='5'||countState.label!=='5')
+ if(countState.value!=='50'||countState.label!=='50'||countState.simulatedCount!==50||countState.radius<=0)
    throw Error('Count slider touch not applied '+JSON.stringify(countState));
  await tapRightSide('#friction');
  const frictionState=await page.evaluate(()=>({

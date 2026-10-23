@@ -1,14 +1,17 @@
 import {wgsl} from './shader.js';
+import {MAX_BALLS,choosePacking,integrateMarbles} from './marbles.js';
+import {createTiltSensor} from './tilt.js';
+import {runGpuRegression} from './ci-run.js';
 
 const $ = id => document.getElementById(id);
 const canvas=$('view'), status=$('status'), meter=$('meter'), tiltReadout=$('tiltReadout');
 const sensorButton=$('sensorButton'), countPicker=$('count'), frictionPicker=$('friction');
 const isCI=new URLSearchParams(location.search).has('ci');
-const ballRadius=0.65, maximumBalls=5, initialCount=3;
+const maximumBalls=MAX_BALLS,initialCount=3;
+let ballRadius=0.65;
 let halfW=3,halfH=5, gpuDevice, gpuContext, gpuPipeline, gpuGroup, gpuUniform, gpuFormat;
 let running=true, renderWidth=0,renderHeight=0, lastTick=0,frameCounter=0,lastMeterTime=0;
-let sensorActive=false,sensorReceived=false,sensorBaseline=null;
-let sensorG=[0,0], touchG=[0,0], keysG=[0,0], screenG=[0,0];
+let touchG=[0,0],screenG=[0,0];
 let pointerId=null,pointerOrigin=null, pointerCurrent=null;
 let activeCount=initialCount;
 const balls=[];
@@ -16,128 +19,47 @@ window.__gravityGlass={phase:'script-start',source:'touch'};
 function setPhase(phase, extra={}) {Object.assign(window.__gravityGlass,{phase,...extra});}
 function say(message){status.textContent=message;}
 function bounded(value,lo,hi){return Math.max(lo,Math.min(hi,value));}
+const sensor=createTiltSensor($,sensorButton,say);
 function resetBalls(){
-  balls.length=0;
-  for(let i=0;i<maximumBalls;i++){
-    const angle=2.399963*i,ring=i===0?0:0.91*Math.sqrt(i);
-    balls.push({x:Math.cos(angle)*ring,y:Math.sin(angle)*ring,
-      vx:0,vy:0,q:[0,0,0,1]});
+ const width=Math.max(1,canvas.clientWidth),height=Math.max(1,canvas.clientHeight);
+ halfH=5;halfW=halfH*width/height;
+ const packing=choosePacking(activeCount,halfW,halfH);
+ ballRadius=packing.radius;
+ balls.length=0;
+ for(let i=0;i<maximumBalls;i++){
+  const [x,y]=packing.positions[i]??[0,0];
+  balls.push({x,y,vx:0,vy:0,q:[0,0,0,1]});
+ }
+ screenG=[0,0];touchG=[0,0];
+ window.__gravityGlass.activeCount=activeCount;
+ window.__gravityGlass.radius=ballRadius;
+}
+function layoutBounds(cssW,cssH){
+ const previousW=halfW,nextW=halfH*cssW/Math.max(1,cssH);
+ if(Math.abs(previousW-nextW)>0.02){
+  halfW=nextW;
+  const nextPacking=choosePacking(activeCount,halfW,halfH);
+  const oldRadius=ballRadius;
+  ballRadius=nextPacking.radius;
+  if(Math.abs(oldRadius-ballRadius)>0.04){
+   for(let i=0;i<activeCount;i++){
+    const bead=balls[i],[x,y]=nextPacking.positions[i];
+    bead.x=x;bead.y=y;bead.vx=0;bead.vy=0;
+   }
   }
-  screenG=[0,0]; touchG=[0,0]; keysG=[0,0];
+ }
+ const limitX=Math.max(0.015,halfW-ballRadius-0.15);
+ const limitY=halfH-ballRadius-0.15;
+ for(let i=0;i<activeCount;i++){
+  balls[i].x=bounded(balls[i].x,-limitX,limitX);
+  balls[i].y=bounded(balls[i].y,-limitY,limitY);
+ }
+}
+function stepPhysics(dt,gx,gy){
+ integrateMarbles(balls,activeCount,ballRadius,halfW,halfH,
+  dt,gx,gy,Number(frictionPicker.value));
 }
 resetBalls();
-function layoutBounds(cssW,cssH){
-  halfH=5.0;
-  halfW=halfH*cssW/Math.max(1,cssH);
-  // Keep balls completely on the board even on narrow portrait screens.
-  for(const ball of balls){
-    ball.x=bounded(ball.x,-Math.max(0,halfW-ballRadius-0.13),Math.max(0,halfW-ballRadius-0.13));
-    ball.y=bounded(ball.y,-halfH+ballRadius+0.13,halfH-ballRadius-0.13);
-  }
-}
-function mulQuat(a,b){
- return [
-  a[3]*b[0]+a[0]*b[3]+a[1]*b[2]-a[2]*b[1],
-  a[3]*b[1]-a[0]*b[2]+a[1]*b[3]+a[2]*b[0],
-  a[3]*b[2]+a[0]*b[1]-a[1]*b[0]+a[2]*b[3],
-  a[3]*b[3]-a[0]*b[0]-a[1]*b[1]-a[2]*b[2]
- ];
-}
-function stepPhysics(delta,gravityX,gravityY){
- const dt=bounded(delta,0,0.033),friction=Number(frictionPicker.value);
- for(let i=0;i<activeCount;i++){
-  const ball=balls[i],oldX=ball.x,oldY=ball.y;
-  ball.vx+=gravityX*dt*1.25;
-  ball.vy+=gravityY*dt*1.25;
-  const damp=Math.exp(-friction*dt);
-  ball.vx*=damp;ball.vy*=damp;
-  const speed=Math.hypot(ball.vx,ball.vy);
-  if(speed>9){ball.vx*=9/speed;ball.vy*=9/speed;}
-  ball.x+=ball.vx*dt;ball.y+=ball.vy*dt;
-  const limitX=Math.max(0.015,halfW-ballRadius-0.15);
-  const limitY=halfH-ballRadius-0.15;
-  if(ball.x < -limitX){ball.x=-limitX;ball.vx=Math.abs(ball.vx)*0.67;}
-  if(ball.x > limitX){ball.x=limitX;ball.vx=-Math.abs(ball.vx)*0.67;}
-  if(ball.y < -limitY){ball.y=-limitY;ball.vy=Math.abs(ball.vy)*0.67;}
-  if(ball.y > limitY){ball.y=limitY;ball.vy=-Math.abs(ball.vy)*0.67;}
-  // Rolling angular motion: omega = normal cross velocity / radius.
-  const dx=ball.x-oldX,dy=ball.y-oldY,move=Math.hypot(dx,dy);
-  if(move>0.00001){
-   const theta=move/ballRadius,angleHalf=theta*0.5;
-   const rotation=[-dy/move*Math.sin(angleHalf),dx/move*Math.sin(angleHalf),
-     0,Math.cos(angleHalf)];
-   ball.q=mulQuat(rotation,ball.q);
-   const magnitude=Math.hypot(...ball.q);
-   ball.q=ball.q.map(v=>v/magnitude);
-  }
- }
- // Equal-mass discs, positional correction and normal impulse.
- for(let i=0;i<activeCount;i++)for(let j=i+1;j<activeCount;j++){
-  const a=balls[i],b=balls[j],dx=b.x-a.x,dy=b.y-a.y;
-  const distance=Math.hypot(dx,dy);
-  if(distance>=ballRadius*2)continue;
-  const nx=distance>0.001?dx/distance:1,ny=distance>0.001?dy/distance:0;
-  const overlap=ballRadius*2-distance;
-  a.x-=nx*overlap*0.5;a.y-=ny*overlap*0.5;
-  b.x+=nx*overlap*0.5;b.y+=ny*overlap*0.5;
-  const rel=(b.vx-a.vx)*nx+(b.vy-a.vy)*ny;
-  if(rel<0){
-    const impulse=-(1+0.76)*rel*0.5;
-    a.vx-=impulse*nx;a.vy-=impulse*ny;
-    b.vx+=impulse*nx;b.vy+=impulse*ny;
-  }
- }
-}
-function orientationAngle(){
- const angle=screen.orientation?.angle ?? window.orientation ?? 0;
- return ((Math.round(Number(angle)/90)*90)%360+360)%360;
-}
-function convertDeviceGravity(acc){
- // Device axes: x right, y toward phone top; board y is world-up.
- // Accelerometer points opposite down-slope; negate then rotate to viewport.
- const x=acc.x,y=acc.y;
- switch(orientationAngle()){
-  case 90:return [-y,-x];
-  case 180:return [x,-y];
-  case 270:return [y,x];
-  default:return [-x,y];
- }
-}
-function onMotion(event){
- const a=event.accelerationIncludingGravity;
- if(!a || !Number.isFinite(a.x) || !Number.isFinite(a.y))return;
- const rotated=convertDeviceGravity(a);
- if(!sensorBaseline)sensorBaseline=rotated.slice();
- const multiplier=$('reverse').checked?-1:1;
- const targetX=bounded((rotated[0]-sensorBaseline[0])*multiplier,-9.8,9.8);
- const targetY=bounded((rotated[1]-sensorBaseline[1])*multiplier,-9.8,9.8);
- sensorG[0]=sensorG[0]*0.78+targetX*0.22;
- sensorG[1]=sensorG[1]*0.78+targetY*0.22;
- sensorReceived=true;
-}
-sensorButton.addEventListener('click',async()=>{
- try{
-  if(typeof DeviceMotionEvent==='undefined')throw Error('DeviceMotionEvent に非対応');
-  if(typeof DeviceMotionEvent.requestPermission==='function'){
-   const permitted=await DeviceMotionEvent.requestPermission();
-   if(permitted!=='granted')throw Error('モーションセンサーの許可がありません');
-  }
-  if(!sensorActive){
-   window.addEventListener('devicemotion',onMotion,{passive:true});
-   sensorActive=true;
-  }
-  sensorBaseline=null;
-  sensorReceived=false;
-  sensorButton.textContent='センサー有効・再設定';
-  say('センサー待機中… 端末を少し傾けてください');
-  setTimeout(()=>{if(sensorActive&&!sensorReceived)say('センサーデータなし。端末の設定を確認するか、指でドラッグしてください。');},2200);
- }catch(error){
-  say(String(error.message||error)+' ／ ドラッグ操作も使えます');
- }
-});
-$('recenter').addEventListener('click',()=>{
- sensorBaseline=null;sensorG=[0,0];say('現在の角度を水平基準にします');
-});
 $('reset').addEventListener('click',()=>{resetBalls();say('玉を中央に戻しました');});
 $('pause').addEventListener('click',()=>{
  running=!running;$('pause').textContent=running?'一時停止':'再開';
@@ -183,17 +105,17 @@ function keyForce(){
 function updateForce(){
  const keyboard=keyForce();
  // World board y is upward; screen y is downward.
- const sx=sensorG[0]+touchG[0]+keyboard[0];
- const sy=sensorG[1]+touchG[1]-keyboard[1];
+ const sx=sensor.gravity[0]+touchG[0]+keyboard[0];
+ const sy=sensor.gravity[1]+touchG[1]-keyboard[1];
  screenG=[bounded(sx,-12,12),bounded(sy,-12,12)];
  return [screenG[0],-screenG[1]];
 }
 function fillUniforms(width,height){
- const data=new Float32Array(48);
+ const data=new Float32Array(8+maximumBalls*8);
  data.set([width,height,halfW,halfH],0);
  data.set([performance.now()*0.001,activeCount,screenG[0],screenG[1]],4);
  for(let i=0;i<maximumBalls;i++){
-  const ball=balls[i],beadOffset=8+i*4,spinOffset=28+i*4;
+  const ball=balls[i],beadOffset=8+i*4,spinOffset=8+maximumBalls*4+i*4;
   data.set([ball.x,ball.y,0,i<activeCount?ballRadius:0],beadOffset);
   data.set(ball.q,spinOffset);
  }
@@ -232,7 +154,7 @@ async function initGPU(){
   fragment:{module,entryPoint:'fragmentMain',targets:[{format:gpuFormat}]},
   primitive:{topology:'triangle-list'}
  });
- gpuUniform=gpuDevice.createBuffer({size:192,usage:GPUBufferUsage.UNIFORM|GPUBufferUsage.COPY_DST});
+ gpuUniform=gpuDevice.createBuffer({size:(8+maximumBalls*8)*4,usage:GPUBufferUsage.UNIFORM|GPUBufferUsage.COPY_DST});
  gpuGroup=gpuDevice.createBindGroup({layout:gpuPipeline.getBindGroupLayout(0),
   entries:[{binding:0,resource:{buffer:gpuUniform}}]});
  const pipelineError=await gpuDevice.popErrorScope();
@@ -252,7 +174,8 @@ function resize(){
  const cssWidth=Math.max(1,canvas.clientWidth),cssHeight=Math.max(1,canvas.clientHeight);
  layoutBounds(cssWidth,cssHeight);
  const dpr=Math.min(window.devicePixelRatio||1,1.3);
- const density=Math.min(dpr,Math.sqrt(720000/(cssWidth*cssHeight)));
+ const budget=activeCount>20?420000:720000;
+ const density=Math.min(dpr,Math.sqrt(budget/(cssWidth*cssHeight)));
  const w=Math.max(1,Math.round(cssWidth*density)),h=Math.max(1,Math.round(cssHeight*density));
  if(renderWidth!==w||renderHeight!==h){canvas.width=w;canvas.height=h;renderWidth=w;renderHeight=h;}
 }
@@ -269,47 +192,27 @@ function tick(time){
   const fps=Math.round(frameCounter*1000/Math.max(1,time-lastMeterTime));
   meter.textContent=fps+' FPS · '+renderWidth+'×'+renderHeight;
   tiltReadout.textContent='X '+screenG[0].toFixed(1)+' / Y '+screenG[1].toFixed(1)+' m/s²';
-  $('sensorStatus').textContent=sensorReceived?'センサー受信中':sensorActive?'センサー待機':'ドラッグ / 矢印キーでも操作可能';
-  setPhase('rendering',{fps,frames:frameCounter,source:sensorReceived?'sensor':'touch-keyboard'});
+  $('sensorStatus').textContent=sensor.received?'センサー受信中':sensor.active?'センサー待機':'ドラッグ / 矢印キーでも操作可能';
+  setPhase('rendering',{fps,frames:frameCounter,source:sensor.received?'sensor':'touch-keyboard'});
   frameCounter=0;lastMeterTime=time;
  }
  requestAnimationFrame(tick);
 }
-async function ciTest(){
- // Use the real render pipeline but avoid headless canvas swapchain failures.
- layoutBounds(256,360);
- const startX=balls[0].x;
- for(let i=0;i<80;i++)stepPhysics(0.016,4.5,0);
- if(!(balls[0].x>startX+0.15))throw Error('Gravity physics did not move the bead');
- const width=256,height=360,rowPitch=width*4;
- const target=gpuDevice.createTexture({size:[width,height],format:gpuFormat,
-  usage:GPUTextureUsage.RENDER_ATTACHMENT|GPUTextureUsage.COPY_SRC});
- const pixels=gpuDevice.createBuffer({size:rowPitch*height,
-  usage:GPUBufferUsage.MAP_READ|GPUBufferUsage.COPY_DST});
- gpuDevice.pushErrorScope('validation');
- const encoder=encodeRender(width,height,target.createView());
- encoder.copyTextureToBuffer({texture:target},{buffer:pixels,bytesPerRow:rowPitch},{width,height});
- gpuDevice.queue.submit([encoder.finish()]);
- await gpuDevice.queue.onSubmittedWorkDone();
- const validation=await gpuDevice.popErrorScope();
- if(validation)throw Error('Render validation: '+validation.message);
- await pixels.mapAsync(GPUMapMode.READ);
- const rgba=new Uint8Array(pixels.getMappedRange());
- let min=255,max=0,sampleCount=0;
- for(let y=12;y<height-12;y+=17)for(let x=12;x<width-12;x+=17){
-  const idx=(y*width+x)*4;
-  const luminosity=Math.round((rgba[idx]+rgba[idx+1]+rgba[idx+2])/3);
-  min=Math.min(min,luminosity);max=Math.max(max,luminosity);sampleCount++;
- }
- pixels.unmap();pixels.destroy();target.destroy();
- if(max-min<24)throw Error('Rendered pixels are unexpectedly flat: '+min+'…'+max);
- window.__gravityGlass={phase:'ok',moved:balls[0].x-startX,pixelRange:[min,max],
-  samples:sampleCount,rendered:[width,height]};
- document.documentElement.dataset.test='ok';
- say('CI OK: gravity motion + actual GPU pixels '+min+'–'+max);
-}
 try{
  await initGPU();
- if(isCI){await ciTest();}
+ if(isCI){
+  await runGpuRegression({
+   device:gpuDevice,format:gpuFormat,render:encodeRender,
+   setCount:(count,w,h)=>{
+    activeCount=count;countPicker.value=String(count);
+    $('countOut').textContent=String(count);
+    // The headless viewport may be different from the requested render aspect.
+    resetBalls();layoutBounds(w,h);
+   },
+   move:stepPhysics,getBalls:()=>balls.slice(0,activeCount),
+   getRadius:()=>ballRadius,getBounds:()=>[halfW,halfH],
+   report:say
+  });
+ }
  else{say('準備完了。センサーを有効にするか、盤面をドラッグ');requestAnimationFrame(tick);}
 }catch(error){recordError(error);}

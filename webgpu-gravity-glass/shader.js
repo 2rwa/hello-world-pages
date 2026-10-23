@@ -2,8 +2,8 @@ export const wgsl = /* wgsl */ `
 struct FrameData {
   screen: vec4f,
   control: vec4f,
-  beads: array<vec4f, 5>,
-  spins: array<vec4f, 5>,
+  beads: array<vec4f, 50>,
+  spins: array<vec4f, 50>,
 };
 @group(0) @binding(0) var<uniform> frame: FrameData;
 struct VertexOut { @builtin(position) position: vec4f, };
@@ -33,13 +33,17 @@ fn boardShade(boardPoint: vec2f) -> vec3f {
   shade += vec3f(0.07,0.28,0.3)*(1.0-smoothstep(0.02,0.065,radialDistance));
   let frameLine=1.0-smoothstep(0.025,0.085,boundary);
   shade=mix(shade,vec3f(0.10,0.35,0.40),frameLine*0.78);
-  for(var idx=0u;idx<5u;idx=idx+1u) {
+  for(var idx=0u;idx<50u;idx=idx+1u) {
+    if(f32(idx)>=frame.control.y){break;}
     let beadInfo=frame.beads[idx];
-    if(beadInfo.w<=0.0){continue;}
-    let radius2D=length(boardPoint-beadInfo.xy);
-    let shadow=exp(-radius2D*radius2D/(beadInfo.w*beadInfo.w*2.7));
-    let caustic=exp(-pow((radius2D-beadInfo.w*0.82)/(beadInfo.w*0.17),2.0));
-    shade *= (1.0-shadow*0.51);
+    let deltaXY=boardPoint-beadInfo.xy;
+    let radiusSquared=max(0.00001,beadInfo.w*beadInfo.w);
+    let relativeDistanceSquared=dot(deltaXY,deltaXY)/radiusSquared;
+    // Skip expensive caustic maths for distant spheres.
+    if(relativeDistanceSquared>9.0){continue;}
+    let shadow=exp(-relativeDistanceSquared/2.7);
+    let caustic=exp(-pow((sqrt(relativeDistanceSquared)-0.82)/0.17,2.0));
+    shade *= 1.0-shadow*0.51;
     shade += caustic*vec3f(0.035,0.22,0.27);
   }
   return shade;
@@ -77,7 +81,9 @@ fn glassShade(entryPoint: vec3f,rayDir: vec3f,sphereCentre: vec3f,
   let under=boardShade(projected);
   let lightDir=normalize(vec3f(-0.36,0.45,0.82));
   let diffuse=max(dot(surfaceNormal,lightDir),0.0);
-  let tint=vec3f(0.83,0.97,0.99)-f32(beadIndex)*vec3f(0.02,0.008,0.0);
+  let colorPhase=f32(beadIndex)*2.399963;
+  let tint=vec3f(0.82,0.91,0.96) +
+    vec3f(0.12*sin(colorPhase),0.08*sin(colorPhase+2.0),0.05*cos(colorPhase));
   let absorb=exp(-vec3f(0.38,0.11,0.085)*exitDistance);
   let fresnelBase=pow((glassIOR-1.0)/(glassIOR+1.0),2.0);
   let facing=clamp(dot(-rayDir,surfaceNormal),0.0,1.0);
@@ -99,17 +105,24 @@ fn glassShade(entryPoint: vec3f,rayDir: vec3f,sphereCentre: vec3f,
   let rayOrigin=vec3f(planeXY,9.0);
   let rayDir=vec3f(0.0,0.0,-1.0);
   var finalColor=boardShade(planeXY);
-  var nearestHit=1e6;
-  for(var idx=0u;idx<5u;idx=idx+1u){
+  var frontDepth=-1e6;
+  var frontIndex=0u;
+  for(var idx=0u;idx<50u;idx=idx+1u){
+    if(f32(idx)>=frame.control.y){break;}
     let beadInfo=frame.beads[idx];
-    if(beadInfo.w<=0.0){continue;}
-    let sphereCentre=vec3f(beadInfo.xy,beadInfo.w);
-    let hitDistance=sphereHit(rayOrigin,rayDir,sphereCentre,beadInfo.w);
-    if(hitDistance>0.0 && hitDistance<nearestHit){
-      nearestHit=hitDistance;
-      let entry=rayOrigin+hitDistance*rayDir;
-      finalColor=glassShade(entry,rayDir,sphereCentre,beadInfo.w,frame.spins[idx],idx);
+    let toCentre=planeXY-beadInfo.xy;
+    let distSquared=dot(toCentre,toCentre);
+    let radiusSquared=beadInfo.w*beadInfo.w;
+    if(distSquared<radiusSquared){
+      let depth=beadInfo.w+sqrt(max(0.0,radiusSquared-distSquared));
+      if(depth>frontDepth){frontDepth=depth;frontIndex=idx;}
     }
+  }
+  if(frontDepth>0.0){
+    let beadInfo=frame.beads[frontIndex];
+    let entryPoint=vec3f(planeXY,frontDepth);
+    finalColor=glassShade(entryPoint,rayDir,
+      vec3f(beadInfo.xy,beadInfo.w),beadInfo.w,frame.spins[frontIndex],frontIndex);
   }
   var mapped=finalColor/(vec3f(1.0)+finalColor*0.28);
   mapped *= 1.0-0.16*smoothstep(0.26,0.8,length(screenUV-vec2f(0.5,0.5)));
