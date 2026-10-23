@@ -50,6 +50,8 @@ try{
   throw Error('Compression action did not update UI '+JSON.stringify(afterCompress));
  await page.tap('#shake');
  if((await page.evaluate(()=>window.__sphereApp.shakes))<1)throw Error('Shake click failed');
+ if(!await page.$eval('#gravity',n=>n.checked))
+  throw Error('Default tilt gravity must be enabled');
  for(const id of ['xray','overlap','gravity']){
   const before=await page.$eval('#'+id,n=>n.checked);
   await page.tap('#'+id);
@@ -79,7 +81,6 @@ try{
  }));
  if(cameraBefore.yaw===cameraAfter.yaw||cameraBefore.pitch===cameraAfter.pitch)
   throw Error('Touch area did not orbit camera '+JSON.stringify({cameraBefore,cameraAfter}));
- if(!await page.$eval('#gravity',n=>n.checked))
-  throw Error('Default tilt gravity must be enabled');
+
  console.log('PASS: 50 actual spheres, 3D overlaps vs projected overlaps, solver, GPU pixels, UI');
 }finally{await browser.close();}
