@@ -37,6 +37,15 @@ export async function runGpuCheck({
   if(initialMetrics.penetrationPairs!==0)throw Error('30-ball initial placement overlaps');
   const first=await snapshot();
   if(first.max-first.min<28)throw Error('Initial shader output flat '+JSON.stringify(first));
+  const yawControl=document.getElementById('yaw');
+  yawControl.value='88';
+  yawControl.dispatchEvent(new Event('input',{bubbles:true}));
+  const rotated=await snapshot();
+  if(rotated.checksum===first.checksum)
+   throw Error('Changing camera yaw did not change raymarched pixels');
+  yawControl.value='22';
+  yawControl.dispatchEvent(new Event('input',{bubbles:true}));
+  reset();
   setCount(50);
   if(getBalls().length!==50)throw Error('50 balls not created');
   if(getMetrics().penetrationPairs!==0)throw Error('50 balls initially intersect');
@@ -72,8 +81,15 @@ export async function runGpuCheck({
   const sensorVector=sensor.sample(.016);
   if(sensorVector[0]>=-1||sensorVector[1]<=1)
     throw Error('Inertia axis sign incorrect '+JSON.stringify(sensorVector));
+  const shakeBurst=sensor.consumeBurst();
+  if(shakeBurst<0.7)throw Error('Strong motion did not trigger shake burst');
+  sensor.inject({acceleration:{x:0,y:0,z:0},
+    accelerationIncludingGravity:{x:9.81,y:0,z:0}});
+  const tiltedGravity=sensor.gravity;
+  if(tiltedGravity[0]>-8.0||Math.abs(tiltedGravity[1])>1)
+    throw Error('Tilt gravity vector incorrect '+JSON.stringify(tiltedGravity));
   state('ok',{activeCount:50,
-   initial:before,compressed,resolved,
+   initial:before,rotated,compressed,resolved,tiltedGravity,shakeBurst,
    viewPairs,penetrationPairs:afterStats.penetrationPairs,
    maxPenetration:afterStats.maxPenetration,
    solvedPenetration:solved.maxPenetration,sensorVector});
