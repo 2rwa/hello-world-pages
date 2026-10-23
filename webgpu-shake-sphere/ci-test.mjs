@@ -14,7 +14,8 @@ try{
  await page.waitForFunction(()=>['ok','error'].includes(document.documentElement.dataset.test),
   {timeout:70000,polling:200});
  const data=await page.evaluate(()=>window.__sphereApp);
- if(data.tiltedGravity?.[0]>-8 || data.shakeBurst<0.7 || data.rotated?.checksum===data.initial?.checksum)
+ if(data.tiltedGravity?.[0]>-8 || data.shakeBurst<0.7 || data.rotated?.checksum===data.initial?.checksum ||
+    Math.abs(data.refracted?.checksum-data.straightRays?.checksum)<25000)
   throw Error('Sensor or camera GPU check was not exercised '+JSON.stringify(data));
  console.log('SPHERE GPU RESULT',JSON.stringify(data));
  if(data.phase!=='ok'||data.activeCount!==50||data.viewPairs<=0||
@@ -82,5 +83,5 @@ try{
  if(cameraBefore.yaw===cameraAfter.yaw||cameraBefore.pitch===cameraAfter.pitch)
   throw Error('Touch area did not orbit camera '+JSON.stringify({cameraBefore,cameraAfter}));
 
- console.log('PASS: 50 actual spheres, 3D overlaps vs projected overlaps, solver, GPU pixels, UI');
+ console.log('PASS: Snell refraction pixel difference, 50 physical spheres, collision solver and mobile UI');
 }finally{await browser.close();}
