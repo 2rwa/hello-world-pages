@@ -57,12 +57,15 @@ export function makeMotionSensor(status){
  async function activate(){
   if(typeof DeviceMotionEvent==='undefined'&&typeof DeviceOrientationEvent==='undefined')
    throw Error('このブラウザはモーションセンサーに非対応です');
-  if(typeof DeviceMotionEvent!=='undefined'&&typeof DeviceMotionEvent.requestPermission==='function'){
-   if(await DeviceMotionEvent.requestPermission()!=='granted')throw Error('モーションセンサーの利用が許可されませんでした');
-  }
-  if(typeof DeviceOrientationEvent!=='undefined'&&typeof DeviceOrientationEvent.requestPermission==='function'){
-   if(await DeviceOrientationEvent.requestPermission()!=='granted')throw Error('傾きセンサーの利用が許可されませんでした');
-  }
+  // iOS requires both requests to start within the same user gesture.
+  const permissions=[];
+  if(typeof DeviceMotionEvent!=='undefined'&&typeof DeviceMotionEvent.requestPermission==='function')
+   permissions.push(DeviceMotionEvent.requestPermission());
+  if(typeof DeviceOrientationEvent!=='undefined'&&typeof DeviceOrientationEvent.requestPermission==='function')
+   permissions.push(DeviceOrientationEvent.requestPermission());
+  const decisions=await Promise.all(permissions);
+  if(decisions.some(decision=>decision!=='granted'))
+   throw Error('端末のモーション・傾きセンサーを許可してください');
   if(!listening){
    window.addEventListener('devicemotion',consumeMotion,{passive:true});
    window.addEventListener('deviceorientation',consumeOrientation,{passive:true});
