@@ -32,7 +32,9 @@ jobs:
         env:
           CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
           WEBGPU_FLAGS: "--no-sandbox --enable-unsafe-webgpu --enable-features=Vulkan --use-vulkan=swiftshader --disable-vulkan-fallback-to-gl-for-testing --use-webgpu-adapter=swiftshader --enable-webgpu-developer-features --enable-dawn-features=allow_unsafe_apis --disable-dawn-features=use_dxc --use-gpu-in-tests --enable-unsafe-swiftshader"
-        run: node webgpu-shake-sphere/ci-test.mjs
+        run: |
+          set -o pipefail
+          node webgpu-shake-sphere/ci-test.mjs 2>&1 | tee /tmp/sphere-shake-ci.log
       - name: Display HTTP errors
         if: failure()
         run: cat /tmp/sphere-shake-server.log
@@ -51,3 +53,14 @@ jobs:
             -H "X-GitHub-Api-Version: 2022-11-28" \
             -d "{\"state\":\"$state\",\"context\":\"sphere-shake/webgpu\",\"description\":\"WebGPU GPU pixels, sensors and mobile touch UI\"}" \
             "https://api.github.com/repos/$GITHUB_REPOSITORY/statuses/$HEAD_SHA"
+          if [ "$state" = failure ]; then
+            detail=$(grep -m 1 -E 'WGSL |Error:|PAGE ERROR:|BROWSER: error|GPU validation' /tmp/sphere-shake-ci.log 2>/dev/null | cut -c 1-120 || true)
+            detail=${detail:-unknown error - inspect CI logs}
+            payload=$(jq -nc --arg context "sphere-shake/error/$detail" \
+              '{state:"failure",context:$context,description:"Detailed WebGPU regression failure"}')
+            curl --fail --silent --show-error -X POST \
+              -H "Authorization: Bearer $GH_TOKEN" \
+              -H "Accept: application/vnd.github+json" \
+              -d "$payload" \
+              "https://api.github.com/repos/$GITHUB_REPOSITORY/statuses/$HEAD_SHA"
+          fi
