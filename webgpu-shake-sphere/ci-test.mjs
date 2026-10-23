@@ -14,6 +14,8 @@ try{
  await page.waitForFunction(()=>['ok','error'].includes(document.documentElement.dataset.test),
   {timeout:70000,polling:200});
  const data=await page.evaluate(()=>window.__sphereApp);
+ if(data.tiltedGravity?.[0]>-8 || data.shakeBurst<0.7 || data.rotated?.checksum===data.initial?.checksum)
+  throw Error('Sensor or camera GPU check was not exercised '+JSON.stringify(data));
  console.log('SPHERE GPU RESULT',JSON.stringify(data));
  if(data.phase!=='ok'||data.activeCount!==50||data.viewPairs<=0||
     data.penetrationPairs<3||data.maxPenetration<=0.1||
@@ -65,5 +67,19 @@ try{
   throw Error('50 spheres slider event did not update state');
  const field=await page.evaluate(()=>document.elementFromPoint(innerWidth/2,innerHeight*.42)?.id);
  if(field!=='scene')throw Error('Canvas is not draggable: '+field);
+ const cameraBefore=await page.evaluate(()=>({
+   yaw:window.__sphereApp.cameraYaw,pitch:window.__sphereApp.cameraPitch
+ }));
+ await page.mouse.move(170,330);
+ await page.mouse.down();
+ await page.mouse.move(240,375,{steps:6});
+ await page.mouse.up();
+ const cameraAfter=await page.evaluate(()=>({
+   yaw:window.__sphereApp.cameraYaw,pitch:window.__sphereApp.cameraPitch
+ }));
+ if(cameraBefore.yaw===cameraAfter.yaw||cameraBefore.pitch===cameraAfter.pitch)
+  throw Error('Touch area did not orbit camera '+JSON.stringify({cameraBefore,cameraAfter}));
+ if(!await page.$eval('#gravity',n=>n.checked))
+  throw Error('Default tilt gravity must be enabled');
  console.log('PASS: 50 actual spheres, 3D overlaps vs projected overlaps, solver, GPU pixels, UI');
 }finally{await browser.close();}
