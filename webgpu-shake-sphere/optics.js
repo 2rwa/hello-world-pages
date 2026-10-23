@@ -78,6 +78,22 @@ fn traceMarbles(rayStart:vec3f,rayDirection:vec3f)->SphereContact{
   }
   rayTravel+=max(0.008,nearestDistance*0.85);
  }
+ // Finite marching iteration counts can miss thin silhouettes and ray-entry
+ // grazing cases. Exact sphere intersections provide a conservative fallback.
+ // This also ensures every visible sphere remains hittable at mobile resolution.
+ if(!result.found){
+  var nearestRay=rayLimit;
+  for(var exactIndex=0u;exactIndex<50u;exactIndex=exactIndex+1u){
+   if(f32(exactIndex)>=scene.view.y){break;}
+   let candidate=scene.beads[exactIndex];
+   let crossing=raySphereNear(rayStart,rayDirection,candidate.xyz,candidate.w);
+   if(crossing>0.0&&crossing<nearestRay){
+    nearestRay=crossing;
+    let crossingPos=rayStart+rayDirection*crossing;
+    result=SphereContact(crossingPos,normalize(crossingPos-candidate.xyz),exactIndex,true);
+   }
+  }
+ }
  return result;
 }
 fn beadTransmission(contact:SphereContact,incoming:vec3f,refractionOn:bool)->OpticalRay{
