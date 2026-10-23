@@ -75,23 +75,48 @@ fn shadeMarble(ballIndex:u32,worldXY:vec2f,frontDepth:f32,
   let zShell=sqrt(max(0.0,containerRadius*containerRadius-radial*radial));
   let backdrop=color+vec3f(0.035,0.067,0.085)*clamp(zShell/containerRadius,0.0,1.0);
   color=backdrop;
+  // Sphere tracing of the union of true sphere SDFs along the view ray.
+  // The analytical outer-shell intersection only bounds the marching interval.
+  // Rejecting a bead outside this XY ray's silhouette is safe: it cannot be hit.
   var depthFront=-1e5;
   var depthBack=-1e5;
   var indexFront=0u;
   var indexBack=0u;
-  for(var i=0u;i<50u;i=i+1u){
-   if(f32(i)>=scene.view.y){break;}
-   let bead=scene.beads[i];
-   let delta=xy-bead.xy;
-   let distSq=dot(delta,delta);
-   let radiusSq=bead.w*bead.w;
-   if(distSq>=radiusSq){continue;}
-   let depth=bead.z+sqrt(max(0.0,radiusSq-distSq));
-   if(depth>depthFront){
-    depthBack=depthFront;indexBack=indexFront;
-    depthFront=depth;indexFront=i;
-   } else if(depth>depthBack){
-    depthBack=depth;indexBack=i;
+  var probeDepth=zShell-0.004;
+  for(var traceIndex=0u;traceIndex<64u;traceIndex=traceIndex+1u){
+   if(probeDepth < -zShell-0.005){break;}
+   var nearestDistance=1e4;
+   var nearestIndex=0u;
+   var hasCandidate=false;
+   for(var beadIndex=0u;beadIndex<50u;beadIndex=beadIndex+1u){
+    if(f32(beadIndex)>=scene.view.y){break;}
+    let sphereData=scene.beads[beadIndex];
+    let deltaXY=xy-sphereData.xy;
+    if(dot(deltaXY,deltaXY)>sphereData.w*sphereData.w){continue;}
+    hasCandidate=true;
+    let signedDistance=length(vec3f(deltaXY,probeDepth-sphereData.z))-sphereData.w;
+    if(signedDistance<nearestDistance){
+     nearestDistance=signedDistance;
+     nearestIndex=beadIndex;
+    }
+   }
+   if(!hasCandidate){break;}
+   if(nearestDistance<0.004){
+    if(depthFront< -1e4){
+     depthFront=probeDepth;
+     indexFront=nearestIndex;
+    }else{
+     depthBack=probeDepth;
+     indexBack=nearestIndex;
+     break;
+    }
+    // Move to the back of the hit sphere, then resume SDF raymarching.
+    let hitSphere=scene.beads[nearestIndex];
+    let projectedDelta=xy-hitSphere.xy;
+    let exitOffset=sqrt(max(0.0,hitSphere.w*hitSphere.w-dot(projectedDelta,projectedDelta)));
+    probeDepth=hitSphere.z-exitOffset-0.012;
+   }else{
+    probeDepth=probeDepth-max(0.008,nearestDistance*0.90);
    }
   }
   if(depthBack>-1e4){
