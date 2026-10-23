@@ -22,6 +22,9 @@ font-variant-numeric:tabular-nums}
 footer{left:0;right:0;bottom:0;padding:10px 15px calc(env(safe-area-inset-bottom) + 15px);
 background:linear-gradient(0deg,rgba(2,13,23,.98) 0%,rgba(3,17,29,.88) 75%,transparent 100%);
 pointer-events:auto}
+/* .overlay has class specificity; restore hit testing only for the controls. */
+footer.overlay{pointer-events:auto;touch-action:auto}
+footer button,footer input{pointer-events:auto}
 .toolbar{max-width:700px;margin:auto;display:flex;gap:7px;align-items:center;justify-content:center;flex-wrap:wrap}
 button{min-height:42px;border-radius:12px;border:1px solid rgba(138,218,230,.27);background:#163b4c;
 color:#e9ffff;font-size:12px;font-weight:650;padding:9px 12px;cursor:pointer;touch-action:manipulation}
