@@ -8,6 +8,7 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+  statuses: write
 jobs:
   webgpu-overlaps:
     runs-on: ubuntu-latest
@@ -35,3 +36,18 @@ jobs:
       - name: Display HTTP errors
         if: failure()
         run: cat /tmp/sphere-shake-server.log
+
+      - name: Report GPU regression result to commit status
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ github.sha }}
+          JOB_RESULT: ${{ job.status }}
+        run: |
+          if [ "$JOB_RESULT" = "success" ]; then state=success; else state=failure; fi
+          curl --fail --silent --show-error --retry 3 -X POST \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            -d "{\"state\":\"$state\",\"context\":\"sphere-shake/webgpu\",\"description\":\"WebGPU GPU pixels, sensors and mobile touch UI\"}" \
+            "https://api.github.com/repos/$GITHUB_REPOSITORY/statuses/$HEAD_SHA"
