@@ -44,7 +44,8 @@ fn shellEntry(worldXY:vec2f,shellFront:f32,refractionOn:bool)->OpticalRay{
   return OpticalRay(firstPoint,incoming,false);
  }
  let innerPoint=wallOrigin+wallDirection*distanceInner;
- let interiorNormal=-normalize(innerPoint);
+ // The glass-to-cavity normal points toward the incident glass medium.
+ let interiorNormal=normalize(innerPoint);
  let interiorDirection=refract(wallDirection,interiorNormal,GLASS_IOR);
  if(length(interiorDirection)<0.01){
   return OpticalRay(firstPoint,incoming,false);
