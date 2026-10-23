@@ -18,9 +18,10 @@ export async function runGpuCheck({
   if(invalid)throw Error('GPU validation: '+invalid.message);
   await readback.mapAsync(GPUMapMode.READ);
   const pixels=new Uint8Array(readback.getMappedRange());
-  let min=255,max=0,checksum=0,red=0,cyan=0,samples=0;
+  let min=255,max=0,checksum=0,red=0,cyan=0,samples=0,hitPixels=0;
   for(let y=8;y<h-8;y+=4)for(let x=8;x<w-8;x+=4){
    const at=y*pitch+x*4,R=pixels[at],G=pixels[at+1],B=pixels[at+2];
+   if(pixels[at+3]>200)hitPixels++;
    const light=(R+G+B)/3;
    min=Math.min(min,light);max=Math.max(max,light);
    if(R>G+22&&R>B+10&&R>65)red++;
@@ -29,7 +30,7 @@ export async function runGpuCheck({
    samples++;
   }
   readback.unmap();
-  return {min:Math.round(min),max:Math.round(max),checksum,red,cyan,samples};
+  return {min:Math.round(min),max:Math.round(max),checksum,red,cyan,hitPixels,samples};
  }
  try{
   setCount(30);
@@ -37,6 +38,7 @@ export async function runGpuCheck({
   if(initialMetrics.penetrationPairs!==0)throw Error('30-ball initial placement overlaps');
   const first=await snapshot();
   if(first.max-first.min<28)throw Error('Initial shader output flat '+JSON.stringify(first));
+  if(first.hitPixels<15)throw Error('No marbles ray-traced: hits='+first.hitPixels+',checksum='+first.checksum);
   // Optical regression: the SAME scene must visibly change when Snell ray bending
   // is disabled. This compares real rendered GPU pixels, not just UI state.
   const opticalToggle=document.getElementById('xray');
