@@ -60,16 +60,16 @@ background:#0c2634bf}
 }
 </style></head><body>
 <canvas id="scene" aria-label="透明な球体容器の中に3Dガラス玉"></canvas>
-<header><div class="eyebrow">WEBGPU / SPHERICAL CONTAINER / OVERLAP LAB</div>
+<header><div class="eyebrow">WEBGPU / RAYMARCH / MOTION PHYSICS</div>
 <h1>SPHERE <strong>SHAKE</strong></h1>
-<p>容器を振ると小球が3Dで衝突。<br>水色＝画面上の重なり、赤＝実際のめり込み。</p>
+<p>傾けると重力が変化。振ると内部の球が衝突。<br>画面ドラッグで3D視点を回転。</p>
 </header>
 <div id="fps">GPU 初期化中…</div>
 <footer id="controls">
 <div class="buttons">
  <button id="enable" class="primary">◎ センサーを有効にする</button>
  <button id="shake">シェイク！</button>
- <button id="compress" class="warning">重なり実験</button>
+ <button id="compress" class="warning" title="衝突判定の診断モード">重なり実験</button>
  <button id="reset">初期化</button>
  <button id="pause">一時停止</button>
 </div>
@@ -77,12 +77,12 @@ background:#0c2634bf}
  <label>個数 <input id="count" type="range" min="1" max="50" value="30"><output id="countOut">30</output></label>
  <label>感度 <input id="gain" type="range" min=".4" max="3" step=".1" value="1.4"><output id="gainOut">1.4</output></label>
  <label>反復 <input id="iterations" type="range" min="0" max="8" step="1" value="3"><output id="iterationsOut">3</output></label>
- <label>回転 <input id="yaw" type="range" min="-180" max="180" step="1" value="22"><output id="yawOut">22°</output></label>
+ <label>水平視点 <input id="yaw" type="range" min="-180" max="180" step="1" value="22"><output id="yawOut">22°</output></label>
 </div>
 <div class="checks">
  <label><input type="checkbox" id="xray" checked>透視表示</label>
  <label><input type="checkbox" id="overlap" checked>重なり強調</label>
- <label><input type="checkbox" id="gravity">重力を加える</label>
+ <label><input type="checkbox" id="gravity" checked>重力（傾き追従）</label>
 </div>
 <div class="metrics">
  <div class="metric"><span class="name">画面上の重なり</span><strong id="projected">0</strong></div>
@@ -91,7 +91,7 @@ background:#0c2634bf}
  <div class="metric"><span class="name">運動エネルギー</span><strong id="energy">0.0</strong></div>
 </div>
 <div class="diagnostics"><span id="status">WebGPU 初期化中…</span><span id="sensorState">センサーOFF</span></div>
-<p class="note">タッチは盤面だけがドラッグ対象。重なり実験は反復0にして意図的なめり込みを作ります。</p>
+<p class="note">初回は「センサーを有効にする」をタップ。画面ドラッグ＝視点回転、スマホを傾ける＝重力方向、振る＝衝撃。診断用の「重なり実験」は球を意図的にめり込ませます。</p>
 </footer>
 <script type="module" src="./main.js"></script>
 </body></html>
