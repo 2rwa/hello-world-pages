@@ -1,0 +1,97 @@
+<!doctype html><html lang="ja"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#091626">
+<title>SPHERE SHAKE — WebGPU</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,-apple-system,"Hiragino Kaku Gothic ProN",sans-serif}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#071522;color:#e6faff}
+body{position:fixed;inset:0}
+canvas{display:block;width:100%;height:100%;position:absolute;inset:0;touch-action:none}
+header{position:absolute;top:0;left:0;right:0;z-index:2;pointer-events:none;
+padding:calc(16px + env(safe-area-inset-top)) 17px 24px;
+background:linear-gradient(180deg,#061423f4,transparent)}
+header .eyebrow{font-size:10px;font-weight:800;letter-spacing:.2em;color:#85edcf}
+h1{font-size:clamp(27px,5.5vw,44px);margin:6px 0;letter-spacing:-.045em}
+h1 strong{color:#86edce}header p{font-size:11px;color:#acc9d0;margin:0;line-height:1.5}
+#fps{position:absolute;right:15px;top:calc(15px + env(safe-area-inset-top));pointer-events:none;
+z-index:3;color:#b9e5e1;font:10px ui-monospace,monospace}
+footer{position:absolute;bottom:0;left:0;right:0;z-index:5;pointer-events:auto;
+padding:22px 12px calc(13px + env(safe-area-inset-bottom));
+background:linear-gradient(0deg,#071321fa 0%,#071321f5 82%,transparent 100%)}
+.buttons,.sliders,.checks,.diagnostics{max-width:760px;display:flex;align-items:center;justify-content:center;gap:7px;flex-wrap:wrap;margin:auto}
+button{font-size:12px;font-weight:700;color:#e9fcff;background:#193949;border:1px solid #8ecbcc55;
+border-radius:11px;min-height:42px;padding:8px 12px;cursor:pointer;touch-action:manipulation}
+button.primary{background:#89e8cf;border-color:#89e8cf;color:#073331}
+button.warning{background:#513047;border-color:#ab6b8c70;color:#ffd8e4}
+button:active{transform:scale(.985)}
+.sliders{margin-top:12px;gap:11px 20px}
+.sliders label,.checks label{font-size:11px;color:#bad8e1;display:flex;align-items:center;gap:6px;white-space:nowrap}
+.sliders input[type=range]{width:75px;accent-color:#83e6d2;touch-action:auto}
+.sliders output{font-variant-numeric:tabular-nums;color:#a8ffdd;min-width:20px;font-weight:750}
+.checks{margin-top:9px;gap:14px}
+input[type=checkbox]{accent-color:#89e8cf;width:16px;height:16px}
+.diagnostics{justify-content:space-between;margin-top:12px;gap:7px;
+font:11px ui-monospace,SFMono-Regular,monospace;color:#a8cdd4}
+.metrics{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;
+max-width:760px;margin:10px auto 0}
+.metric{flex:1;min-width:115px;border:1px solid #70b5c329;border-radius:9px;padding:8px 10px;
+background:#0c2634bf}
+.metric .name{display:block;font-size:10px;color:#95b3c0}
+.metric strong{font:650 19px/1.35 ui-monospace,monospace;color:#99f3d8}
+.metric.true strong{color:#ff929f}
+#status{max-width:66%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.note{font-size:10px;color:#799da8;text-align:center;margin:8px 0 0}
+@media(max-width:540px){
+ header{padding:calc(14px + env(safe-area-inset-top)) 13px 20px}
+ h1{font-size:28px}header p{max-width:260px;font-size:10px}
+ #fps{right:10px}
+ footer{padding-left:7px;padding-right:7px}
+ button{min-height:39px;padding:8px 9px;font-size:10px}
+ .buttons{gap:5px}
+ .sliders{gap:8px 11px}
+ .sliders input[type=range]{width:56px}
+ .checks{gap:11px;margin-top:8px}
+ .metrics{gap:5px;margin-top:8px}
+ .metric{min-width:85px;padding:6px 7px}
+ .metric strong{font-size:17px}
+ .metric .name{font-size:9px}
+ .note{font-size:9px}
+}
+</style></head><body>
+<canvas id="scene" aria-label="透明な球体容器の中に3Dガラス玉"></canvas>
+<header><div class="eyebrow">WEBGPU / SPHERICAL CONTAINER / OVERLAP LAB</div>
+<h1>SPHERE <strong>SHAKE</strong></h1>
+<p>容器を振ると小球が3Dで衝突。<br>水色＝画面上の重なり、赤＝実際のめり込み。</p>
+</header>
+<div id="fps">GPU 初期化中…</div>
+<footer id="controls">
+<div class="buttons">
+ <button id="enable" class="primary">◎ センサーを有効にする</button>
+ <button id="shake">シェイク！</button>
+ <button id="compress" class="warning">重なり実験</button>
+ <button id="reset">初期化</button>
+ <button id="pause">一時停止</button>
+</div>
+<div class="sliders">
+ <label>個数 <input id="count" type="range" min="1" max="50" value="30"><output id="countOut">30</output></label>
+ <label>感度 <input id="gain" type="range" min=".4" max="3" step=".1" value="1.4"><output id="gainOut">1.4</output></label>
+ <label>反復 <input id="iterations" type="range" min="0" max="8" step="1" value="3"><output id="iterationsOut">3</output></label>
+ <label>回転 <input id="yaw" type="range" min="-180" max="180" step="1" value="22"><output id="yawOut">22°</output></label>
+</div>
+<div class="checks">
+ <label><input type="checkbox" id="xray" checked>透視表示</label>
+ <label><input type="checkbox" id="overlap" checked>重なり強調</label>
+ <label><input type="checkbox" id="gravity">重力を加える</label>
+</div>
+<div class="metrics">
+ <div class="metric"><span class="name">画面上の重なり</span><strong id="projected">0</strong></div>
+ <div class="metric true"><span class="name">3Dめり込みペア</span><strong id="penetrations">0</strong></div>
+ <div class="metric true"><span class="name">最大めり込み量</span><strong id="maxDepth">0.000</strong></div>
+ <div class="metric"><span class="name">運動エネルギー</span><strong id="energy">0.0</strong></div>
+</div>
+<div class="diagnostics"><span id="status">WebGPU 初期化中…</span><span id="sensorState">センサーOFF</span></div>
+<p class="note">タッチは盤面だけがドラッグ対象。重なり実験は反復0にして意図的なめり込みを作ります。</p>
+</footer>
+<script type="module" src="./main.js"></script>
+</body></html>
