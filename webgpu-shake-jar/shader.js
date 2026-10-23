@@ -32,7 +32,8 @@ fn floorShade(plane:vec2f)->vec3f{
  let r=length(plane);
  let radius=frame.view.z;
  let diffuse=vec3f(0.048,0.12,0.15)*(1.0-0.12*r/radius);
- let gx=fract(plane.x*1.45),gy=fract(plane.y*1.45);
+ let gx=fract(plane.x*1.45);
+ let gy=fract(plane.y*1.45);
  let smallGrid=min(min(gx,1.0-gx),min(gy,1.0-gy));
  let micro=1.0-smoothstep(0.005,0.028,smallGrid);
  var color=diffuse+vec3f(0.023,0.068,0.073)*micro;
