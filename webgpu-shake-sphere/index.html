@@ -80,7 +80,7 @@ background:#0c2634bf}
  <label>水平視点 <input id="yaw" type="range" min="-180" max="180" step="1" value="22"><output id="yawOut">22°</output></label>
 </div>
 <div class="checks">
- <label><input type="checkbox" id="xray" checked>透視表示</label>
+ <label><input type="checkbox" id="xray" checked>屈折（ON / OFF比較）</label>
  <label><input type="checkbox" id="overlap" checked>重なり強調</label>
  <label><input type="checkbox" id="gravity" checked>重力（傾き追従）</label>
 </div>
@@ -91,7 +91,7 @@ background:#0c2634bf}
  <div class="metric"><span class="name">運動エネルギー</span><strong id="energy">0.0</strong></div>
 </div>
 <div class="diagnostics"><span id="status">WebGPU 初期化中…</span><span id="sensorState">センサーOFF</span></div>
-<p class="note">初回は「センサーを有効にする」をタップ。画面ドラッグ＝視点回転、スマホを傾ける＝重力方向、振る＝衝撃。診断用の「重なり実験」は球を意図的にめり込ませます。</p>
+<p class="note">屈折ONでガラス外殻と内部球体にスネルの法則を適用。屈折OFFとの見比べも可能。初回はセンサーを許可。ドラッグ＝視点回転、傾ける＝重力、振る＝衝撃。</p>
 </footer>
 <script type="module" src="./main.js"></script>
 </body></html>
