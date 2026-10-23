@@ -74,6 +74,7 @@ fn shadeMarble(ballIndex:u32,worldXY:vec2f,frontDepth:f32,
  let radial=length(xy);
  let opticalOn=scene.options.x>0.5;
  var color=baseColor(xy);
+ var debugHitAlpha=0.25;
  if(radial<containerRadius){
   let zShell=sqrt(max(0.0,containerRadius*containerRadius-radial*radial));
   let entrance=shellEntry(xy,zShell,opticalOn);
@@ -84,6 +85,7 @@ fn shadeMarble(ballIndex:u32,worldXY:vec2f,frontDepth:f32,
    var transmittedDirection=entrance.direction;
    var marbleThickness=0.0;
    if(primaryHit.found){
+    debugHitAlpha=1.0;
     let transmittedRay=beadTransmission(primaryHit,entrance.direction,opticalOn);
     if(transmittedRay.valid){
      transmittedStart=transmittedRay.origin;
@@ -128,6 +130,6 @@ fn shadeMarble(ballIndex:u32,worldXY:vec2f,frontDepth:f32,
  let brightArc=exp(-pow((arcAngle-2.4)/0.32,2.0));
  color+=innerRim*brightArc*vec3f(0.62,0.71,0.78);
  let toneMapped=color/(vec3f(1.0)+color*0.34);
- return vec4f(clamp(toneMapped,vec3f(0.0),vec3f(1.0)),1.0);
+ return vec4f(clamp(toneMapped,vec3f(0.0),vec3f(1.0)),debugHitAlpha);
 }
 `;
