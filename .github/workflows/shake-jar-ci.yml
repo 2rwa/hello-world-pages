@@ -1,0 +1,42 @@
+name: WebGPU Shake Jar CI
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'webgpu-shake-jar/**'
+      - '.github/workflows/shake-jar-ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  gpu-physics-ui:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: browser-actions/setup-chrome@v2
+        id: chrome
+        with:
+          chrome-version: stable
+      - name: Check JavaScript modules
+        run: |
+          node --check webgpu-shake-jar/main.js
+          node --check webgpu-shake-jar/shader.js
+          node --check webgpu-shake-jar/physics.js
+          node --check webgpu-shake-jar/sensor.js
+          node --check webgpu-shake-jar/regression.js
+          node --check webgpu-shake-jar/ci-test.mjs
+      - name: Install browser controller
+        run: npm install --no-save puppeteer-core@24
+      - name: Start test server
+        run: |
+          python3 -m http.server 8000 --bind 127.0.0.1 >/tmp/shake-jar-server.log 2>&1 &
+          sleep 2
+      - name: Test real GPU pixels, shake dynamics and mobile controls
+        env:
+          CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
+          WEBGPU_FLAGS: "--no-sandbox --enable-unsafe-webgpu --enable-features=Vulkan --use-vulkan=swiftshader --disable-vulkan-fallback-to-gl-for-testing --use-webgpu-adapter=swiftshader --enable-webgpu-developer-features --enable-dawn-features=allow_unsafe_apis --disable-dawn-features=use_dxc --use-gpu-in-tests --enable-unsafe-swiftshader"
+        run: node webgpu-shake-jar/ci-test.mjs
+      - name: Print server log if failed
+        if: failure()
+        run: cat /tmp/shake-jar-server.log

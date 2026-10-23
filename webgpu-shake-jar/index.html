@@ -1,0 +1,69 @@
+<!doctype html><html lang="ja"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#070f20">
+<title>SHAKE LAB — Glass Jar</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,-apple-system,"Hiragino Kaku Gothic ProN",sans-serif}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#070f20;color:#e6f8ff}
+body{position:fixed;inset:0}canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;display:block}
+.header{position:absolute;top:0;left:0;right:0;z-index:2;padding:calc(env(safe-area-inset-top) + 20px) 22px 10px;
+background:linear-gradient(180deg,#061222ee,transparent);pointer-events:none}
+.topline{color:#65e4cc;text-transform:uppercase;font-size:10px;letter-spacing:.26em;font-weight:800}
+h1{margin:6px 0 4px;font-size:clamp(28px,5vw,44px);letter-spacing:-.055em;font-weight:780}
+h1 em{font-style:normal;color:#8af3d1}
+.header p{margin:0;font-size:12px;color:#a8bdca;line-height:1.45;max-width:460px}
+#fps{position:absolute;z-index:2;pointer-events:none;top:calc(env(safe-area-inset-top) + 20px);right:18px;
+font:10px ui-monospace,monospace;color:#82b8bc;text-align:right}
+#controls{position:absolute;left:0;right:0;bottom:0;z-index:5;pointer-events:auto;
+padding:19px 12px calc(env(safe-area-inset-bottom) + 16px);
+background:linear-gradient(0deg,#061121f8 0%,#061121f3 77%,transparent 100%)}
+.buttons,.sliders,.readings{max-width:730px;margin:auto;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px}
+button{min-height:43px;border:1px solid #668c995d;border-radius:12px;background:#16384a;
+color:#d9faff;padding:9px 13px;font-size:12px;font-weight:700;cursor:pointer;touch-action:manipulation}
+button.primary{background:#93e8d0;border-color:#93e8d0;color:#063b38;font-weight:800}
+button:active{transform:scale(.98)}
+.sliders{margin-top:12px;gap:10px 22px}
+.sliders label{display:flex;align-items:center;gap:8px;color:#bcd2d9;font-size:11px;white-space:nowrap}
+.sliders input[type=range]{width:90px;accent-color:#7debc9;touch-action:auto}
+.sliders output{color:#c7fff2;font-weight:750;font-variant-numeric:tabular-nums;min-width:21px}
+.readings{justify-content:space-between;margin-top:13px;color:#90b3be;font:10px ui-monospace,monospace}
+#status{max-width:65%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#activity{width:90px;height:6px;background:#142e3a;border-radius:12px;overflow:hidden;display:inline-block;vertical-align:middle;margin-left:7px}
+#activityFill{display:block;height:100%;width:0%;background:linear-gradient(90deg,#57d7c7,#d5ffa5);border-radius:12px;transition:width .12s linear}
+.tip{text-align:center;color:#75939d;font-size:10px;margin:7px auto 0;max-width:580px}
+@media(max-width:480px){
+ .header{padding:calc(env(safe-area-inset-top) + 14px) 15px 10px}
+ h1{font-size:32px}.header p{font-size:11px}
+ #fps{right:10px}
+ #controls{padding-left:7px;padding-right:7px}
+ .buttons{gap:5px}button{min-height:41px;padding:8px 10px;font-size:11px}
+ .sliders{gap:8px 12px}
+ .sliders input[type=range]{width:63px}
+ .readings{gap:7px}
+ #status{max-width:57%}
+}
+</style></head><body>
+<canvas id="scene" aria-label="ガラス容器の中でビー玉をシェイク"></canvas>
+<header class="header"><div class="topline">WebGPU · Motion Dynamics</div>
+<h1>SHAKE <em>LAB</em></h1>
+<p>ガラス容器を振って、ビー玉を跳ね回らせよう。<br>スマホを振る / 盤面を素早くドラッグ。</p></header>
+<div id="fps">GPU 準備中</div>
+<section id="controls" aria-label="シェイク操作">
+ <div class="buttons">
+ <button id="enable" class="primary">◎ センサーを有効にする</button>
+ <button id="shake">シェイク！</button>
+ <button id="reset">玉を戻す</button>
+ <button id="pause">一時停止</button>
+ </div>
+ <div class="sliders">
+ <label>玉の数 <input id="count" type="range" min="1" max="50" value="24"><output id="countValue">24</output></label>
+ <label>振動感度 <input id="sensitivity" type="range" min="0.3" max="3" step="0.1" value="1.4"><output id="sensitivityValue">1.4</output></label>
+ <label>摩擦 <input id="friction" type="range" min="0.2" max="4" step="0.1" value="0.8"><output id="frictionValue">0.8</output></label>
+ </div>
+ <div class="readings"><span id="status">WebGPU 準備中…</span>
+ <span>SHAKE <span id="activity"><span id="activityFill"></span></span> <span id="energy">0.0</span></span></div>
+ <p class="tip">動かすのは容器です。玉には逆向きの慣性力が働きます。容器の外側をドラッグしても操作できます。</p>
+</section>
+<script type="module" src="./main.js"></script>
+</body></html>
