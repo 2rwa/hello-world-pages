@@ -52,13 +52,13 @@ function confine(b,radius){
   }
  }
 }
-export function step(balls,radius,seconds,force,iterations,friction,gravityOn){
+export function step(balls,radius,seconds,force,iterations,friction,gravityVector=[0,-9.81,0]){
  const dt=clamp(seconds,0,0.027);
  const damping=Math.exp(-friction*dt*0.32);
  for(const b of balls){
-  b.vx=clamp((b.vx+clamp(force[0],-48,48)*dt)*damping,-13,13);
-  b.vy=clamp((b.vy+clamp(force[1],-48,48)*dt)*damping,-13,13);
-  b.vz=clamp((b.vz+(clamp(force[2],-48,48)-(gravityOn?9.81:0))*dt)*damping,-13,13);
+  b.vx=clamp((b.vx+clamp(force[0]+gravityVector[0],-48,48)*dt)*damping,-13,13);
+  b.vy=clamp((b.vy+clamp(force[1]+gravityVector[1],-48,48)*dt)*damping,-13,13);
+  b.vz=clamp((b.vz+clamp(force[2]+gravityVector[2],-48,48)*dt)*damping,-13,13);
   b.x+=b.vx*dt;b.y+=b.vy*dt;b.z+=b.vz*dt;
   confine(b,radius);
  }
@@ -92,9 +92,12 @@ export function shake(balls,strength=1){
  const sy=(Math.random()-.5)*11*strength;
  const sz=(Math.random()-.5)*11*strength;
  for(const b of balls){
-  b.vx+=(sx+(Math.random()-.5)*6)*strength;
-  b.vy+=(sy+(Math.random()-.5)*6)*strength;
-  b.vz+=(sz+(Math.random()-.5)*6)*strength;
+  const vx=(sx+(Math.random()-.5)*8)*strength;
+  const vy=(sy+(Math.random()-.5)*8)*strength;
+  const vz=(sz+(Math.random()-.5)*8)*strength;
+  b.vx=clamp(b.vx+vx,-22,22);
+  b.vy=clamp(b.vy+vy,-22,22);
+  b.vz=clamp(b.vz+vz,-22,22);
  }
 }
 export function compress(balls,factor=0.57){
