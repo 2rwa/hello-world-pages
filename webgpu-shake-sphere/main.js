@@ -16,6 +16,7 @@ let guiWidth=1,guiHeight=1,halfW=4.45,halfH=4.45,shiftY=0;
 let gpuDevice,gpuContext,gpuPipeline,gpuFormat,gpuUniform,gpuGroup;
 let renderW=0,renderH=0,paused=false,prevTime=0,frameIndex=0;
 let fpsTime=0,fpsFrames=0,dragging=null,manualForce=[0,0,0],dragEnergy=0;
+let cameraPitch=0.25;
 let statusTimer=0;
 const sensor=makeMotionSensor(message=>{status.textContent=message;});
 function state(stage,extra={}){Object.assign(app,{phase:stage,...extra});}
@@ -25,7 +26,7 @@ function fail(err){
  status.textContent='ERROR: '+detail;document.documentElement.dataset.test='error';
 }
 function cameraAngles(){
- return {yaw:Number($('yaw').value)*Math.PI/180,pitch:0.25};
+ return {yaw:Number($('yaw').value)*Math.PI/180,pitch:cameraPitch};
 }
 function viewPosition(b){
  const {yaw,pitch}=cameraAngles();
@@ -53,6 +54,8 @@ function updateMetrics(){
  $('penetrations').textContent=String(statistics.penetrationPairs);
  $('maxDepth').textContent=statistics.maxPenetration.toFixed(3);
  $('energy').textContent=kineticEnergy(balls).toFixed(1);
+ app.cameraYaw=Number($('yaw').value);
+ app.cameraPitch=cameraPitch;
  app.activeCount=balls.length;
  app.penetrationPairs=statistics.penetrationPairs;
  app.maxPenetration=statistics.maxPenetration;
@@ -101,15 +104,13 @@ canvas.addEventListener('pointerdown',e=>{
 });
 canvas.addEventListener('pointermove',e=>{
  if(!dragging||e.pointerId!==dragging.id)return;
- const now=performance.now(),ms=Math.max(8,now-dragging.time);
  const dx=e.clientX-dragging.x,dy=e.clientY-dragging.y;
- const intensity=Number(gainInput.value);
- const factor=0.15*intensity*Math.min(2,16/ms);
- manualForce[0]=clamp(manualForce[0]-dx*factor,-42,42);
- manualForce[1]=clamp(manualForce[1]+dy*factor,-42,42);
- manualForce[2]=clamp(manualForce[2]+Math.hypot(dx,dy)*0.035,-30,30);
- dragEnergy=Math.max(dragEnergy,Math.hypot(dx,dy)*.7);
- dragging={id:e.pointerId,x:e.clientX,y:e.clientY,time:now};
+ const yaw=$('yaw');
+ yaw.value=String(Math.round(((Number(yaw.value)+dx*.48+540)%360)-180));
+ $('yawOut').textContent=yaw.value+'°';
+ cameraPitch=clamp(cameraPitch+dy*.007,-1.28,1.28);
+ dragging={id:e.pointerId,x:e.clientX,y:e.clientY,time:performance.now()};
+ updateMetrics();
 });
 function release(e){if(!dragging||e.pointerId!==dragging.id)return;dragging=null;}
 canvas.addEventListener('pointerup',release);
@@ -133,6 +134,12 @@ function dimensions(cssW,cssH){
 }
 function applyPhysics(dt){
  const motion=sensor.sample(dt),gain=Number(gainInput.value);
+ const burst=sensor.consumeBurst();
+ if(burst&&!paused){shake(balls,Math.min(2.5,burst*gain));
+   app.sensorShakes=(app.sensorShakes||0)+1;
+   status.textContent='振動検知：球をシェイクしました';}
+ const gravityVector=$('gravity').checked?sensor.gravity:[0,0,0];
+ app.gravityVector=gravityVector;
  const xArrow=Number(keys.has('ArrowRight'))-Number(keys.has('ArrowLeft'));
  const yArrow=Number(keys.has('ArrowUp'))-Number(keys.has('ArrowDown'));
  const force=[
@@ -142,7 +149,7 @@ function applyPhysics(dt){
  ];
  if(!paused){
   const iterations=Number(iterationsInput.value);
-  for(let k=0;k<2;k++)step(balls,radius,dt*0.5,force,iterations,0.88,$('gravity').checked);
+  for(let k=0;k<2;k++)step(balls,radius,dt*0.5,force,iterations,0.88,gravityVector);
  }
  const damping=Math.exp(-7.5*dt);
  for(let k=0;k<3;k++)manualForce[k]*=damping;
@@ -226,7 +233,7 @@ function frame(time){
  fpsFrames++;frameIndex++;
  if(time-fpsTime>700){
   fps.textContent=Math.round(1000*fpsFrames/Math.max(1,time-fpsTime))+' FPS · '+balls.length+' balls';
-  $('sensorState').textContent=sensor.received?'モーション受信中':sensor.listening?'センサー待機中':'ドラッグで振れます';
+  $('sensorState').textContent=sensor.received?'重力・加速度受信中':sensor.listening?'センサー待機中':'センサーOFF';
   state('rendering',{renderedFrames:frameIndex});
   fpsTime=time;fpsFrames=0;
  }
@@ -241,7 +248,7 @@ try{
    compressNow:()=>{$('compress').click();},getApp:()=>app,
    state,status,makeSensor:()=>sensor});
  }else{
-  status.textContent='準備完了。シェイクするか容器をドラッグ';
+  status.textContent='準備完了。ドラッグ＝視点回転、傾き＝重力、振る＝シェイク';
   requestAnimationFrame(frame);
  }
 }catch(error){fail(error);}
