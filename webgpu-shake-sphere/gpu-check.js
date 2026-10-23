@@ -37,6 +37,17 @@ export async function runGpuCheck({
   if(initialMetrics.penetrationPairs!==0)throw Error('30-ball initial placement overlaps');
   const first=await snapshot();
   if(first.max-first.min<28)throw Error('Initial shader output flat '+JSON.stringify(first));
+  // Optical regression: the SAME scene must visibly change when Snell ray bending
+  // is disabled. This compares real rendered GPU pixels, not just UI state.
+  const opticalToggle=document.getElementById('xray');
+  if(!opticalToggle.checked)throw Error('Refraction should be enabled by default');
+  opticalToggle.checked=false;
+  opticalToggle.dispatchEvent(new Event('change',{bubbles:true}));
+  const straightRays=await snapshot();
+  opticalToggle.checked=true;
+  opticalToggle.dispatchEvent(new Event('change',{bubbles:true}));
+  if(Math.abs(first.checksum-straightRays.checksum)<25000)
+   throw Error('Refraction toggle failed to change rendered pixels '+JSON.stringify({first,straightRays}));
   const yawControl=document.getElementById('yaw');
   yawControl.value='88';
   yawControl.dispatchEvent(new Event('input',{bubbles:true}));
@@ -89,12 +100,12 @@ export async function runGpuCheck({
   if(tiltedGravity[0]>-8.0||Math.abs(tiltedGravity[1])>1)
     throw Error('Tilt gravity vector incorrect '+JSON.stringify(tiltedGravity));
   state('ok',{activeCount:50,
-   initial:before,rotated,compressed,resolved,tiltedGravity,shakeBurst,
+   initial:before,straightRays,refracted:first,rotated,compressed,resolved,tiltedGravity,shakeBurst,
    viewPairs,penetrationPairs:afterStats.penetrationPairs,
    maxPenetration:afterStats.maxPenetration,
    solvedPenetration:solved.maxPenetration,sensorVector});
   document.documentElement.dataset.test='ok';
-  status.textContent='CI OK: spherical shell + 50 glass marbles + overlaps';
+  status.textContent='CI OK: Snell refraction + 50 3D glass marbles + overlaps';
  } finally {
   texture.destroy();readback.destroy();
  }
