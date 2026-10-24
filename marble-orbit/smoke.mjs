@@ -11,6 +11,33 @@ try{
   await page.waitForFunction(()=>document.querySelector("#status")?.textContent.includes("fps"),{timeout:20000});
   const init=await page.locator("#status").innerText();
   if(init.includes("エラー"))throw new Error(init);
+  // Regression: compile success does not imply visible marbles.
+  // Compare WebGL center pixels with a centered red marble vs an empty globe.
+  const visibility=await page.evaluate(()=>{
+    const cv=document.createElement("canvas");
+    cv.style.cssText="position:absolute;left:-1000px;top:0;width:192px;height:192px";
+    document.body.appendChild(cv);
+    const renderer=makeMarbleRenderer(cv);
+    renderer.setQuality("high");
+    const gl=cv.getContext("webgl2");
+    const cam={eye:[0,0,4.55],right:[1,0,0],up:[0,1,0],forward:[0,0,-1]};
+    const hiddenGoal=[0,0,100];
+    function pixel(balls){
+      renderer.draw(balls,hiddenGoal,cam,0,0);
+      gl.finish();
+      const p=new Uint8Array(4);
+      gl.readPixels(cv.width>>1,cv.height>>1,1,1,gl.RGBA,gl.UNSIGNED_BYTE,p);
+      return {rgba:Array.from(p),error:gl.getError()};
+    }
+    const empty=pixel([]);
+    const marble=pixel([{p:[0,0,0],r:.47,c:[1,.04,.05]}]);
+    cv.remove();
+    const delta=marble.rgba.slice(0,3).reduce((n,v,i)=>n+Math.abs(v-empty.rgba[i]),0);
+    return {empty,marble,delta};
+  });
+  if(visibility.empty.error!==0||visibility.marble.error!==0||visibility.delta<35)
+    throw new Error("Interior marble invisible through refractive shell: "+JSON.stringify(visibility));
+  console.log("PASS: real pixel comparison finds interior marble.",visibility);
   await page.screenshot({path:"/tmp/marble-orbit-ready.png"});
   await page.locator("#start").click();
   await page.waitForTimeout(1200);
