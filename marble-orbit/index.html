@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#061121"><title>MARBLE ORBIT | WebGL2 Raymarch Game</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,-apple-system,"Hiragino Kaku Gothic ProN",sans-serif}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#061121;color:#e9faff}
+body{position:fixed;inset:0;touch-action:manipulation}
+canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+canvas:active{cursor:grabbing}
+header{position:absolute;z-index:2;left:0;right:0;top:0;pointer-events:none;
+padding:calc(17px + env(safe-area-inset-top)) 18px 12px;background:linear-gradient(#06101fe9,#06101fbd 70%,transparent)}
+.eyebrow{font-size:10px;letter-spacing:.26em;color:#84f4d6;font-weight:800}
+h1{font-size:clamp(28px,5vw,45px);line-height:1;margin:7px 0;letter-spacing:-.065em;font-weight:850}
+h1 em{font-style:normal;color:#8cead7}
+.subtitle{font-size:11px;color:#9ec7d4;margin:0}
+.scoreline{display:flex;gap:19px;margin-top:14px;align-items:end}
+.item{min-width:58px}.label{font-size:10px;color:#719aad;font-weight:650;letter-spacing:.12em}
+.value{font:800 clamp(20px,4vw,29px)/1.15 ui-monospace,monospace;letter-spacing:-.055em}
+#score{color:#ffe6ac}#timer{color:#9cefdc}
+#status{position:absolute;right:16px;top:calc(env(safe-area-inset-top) + 19px);font:11px ui-monospace,monospace;color:#85b3c9;
+max-width:38%;text-align:right;pointer-events:none;z-index:2}
+footer{position:absolute;z-index:3;bottom:0;left:0;right:0;padding:30px 10px calc(12px + env(safe-area-inset-bottom));
+background:linear-gradient(transparent,#061121d9 27%,#061121f9);pointer-events:none}
+.controls{display:flex;gap:7px;justify-content:center;flex-wrap:wrap;max-width:780px;margin:auto;pointer-events:auto}
+button,select{color:#e8feff;background:#153448;border:1px solid #6fa9b255;border-radius:12px;padding:9px 12px;
+font-size:12px;font-weight:750;min-height:43px;cursor:pointer;touch-action:manipulation}
+button:active{transform:scale(.98)}button:hover{border-color:#7feec1}
+button.primary{background:#93efce;color:#073127;border-color:#d6ffee}button:disabled{opacity:.45;cursor:default}
+select{font-weight:500;max-width:91px}
+.help{max-width:800px;margin:9px auto 0;text-align:center;font-size:10px;line-height:1.5;color:#86aabd}
+#splash{position:absolute;z-index:5;inset:0;display:grid;place-items:center;padding:18px;
+background:#0308179c;backdrop-filter:blur(7px)}
+#splash.hidden{display:none}
+.splashbox{max-width:390px;width:100%;border:1px solid #9fe9cb39;border-radius:23px;padding:25px 23px 22px;
+box-shadow:0 22px 100px #0009;background:linear-gradient(145deg,#153b4dee,#071523f5)}
+.splashicon{font-size:39px;filter:drop-shadow(0 0 22px #ffe6a7)}
+.splashbox .eyebrow{margin-top:6px}.splashbox h2{font-size:33px;letter-spacing:-.05em;margin:6px 0 10px;line-height:1.12}
+.splashbox p{color:#b0d3dd;font-size:13px;line-height:1.75;margin:11px 0 18px}
+.splashbox button{width:100%;min-height:49px;font-size:15px}
+#toast{position:absolute;left:50%;top:29%;z-index:4;transform:translateX(-50%);
+color:#d6ffe8;font:800 18px ui-monospace,monospace;pointer-events:none;text-shadow:0 0 18px #70ffaf;opacity:0;transition:opacity .2s}
+#toast.show{opacity:1}
+@media(max-width:600px){header{padding-left:12px}h1{font-size:29px}.subtitle{max-width:270px;font-size:10px}
+.scoreline{gap:12px;margin-top:9px}.value{font-size:22px}.item{min-width:53px}
+#status{font-size:9px;top:calc(env(safe-area-inset-top) + 14px)}
+footer{padding-left:5px;padding-right:5px;padding-bottom:calc(8px + env(safe-area-inset-bottom))}
+.controls{gap:5px}button,select{padding:8px 9px;font-size:11px;min-height:40px}
+.help{font-size:9px;margin-top:7px}.splashbox{padding:22px}}
+</style></head><body>
+<canvas id="view" aria-label="透明な球殻内部で球を転がすゲーム"></canvas>
+<header><div class="eyebrow">WEBGL2 · SDF RAYMARCH · MOTION</div><h1>MARBLE <em>ORBIT</em></h1>
+<p class="subtitle">金色の球を導いて、光るターゲットを集めよう。</p>
+<div class="scoreline"><div class="item"><div class="label">SCORE</div><div class="value" id="score">0000</div></div>
+<div class="item"><div class="label">TIME</div><div class="value" id="timer">75.0</div></div>
+<div class="item"><div class="label">COMBO</div><div class="value" id="combo">×1</div></div>
+<div class="item"><div class="label">BEST</div><div class="value" id="best">0000</div></div></div></header>
+<div id="status">WebGL2 準備中…</div><div id="toast"></div>
+<footer><div class="controls">
+<button id="motion" class="primary">◎ 重力センサー</button><button id="center">傾き基準</button>
+<button id="pulse">✦ ブースト</button><button id="pause">一時停止</button><button id="restart">やり直し</button>
+<select id="quality" title="描画解像度"><option value="auto">画質 自動</option><option value="low">軽量</option><option value="high">高画質</option></select>
+</div><p class="help">スマホ: 傾けて移動 / ドラッグで視点 / タップで弾く / 振ってシェイク　｜　PC: WASD・矢印で重力 / マウスで視点</p></footer>
+<div id="splash"><div class="splashbox"><div class="splashicon">◉</div><div class="eyebrow">75-SECOND MARBLE CHALLENGE</div>
+<h2 id="splashTitle">球の中の、小さな宇宙。</h2>
+<p id="splashText">透明な球殻の中で金色の球を転がし、緑の光を追いかけよう。ほかのマーブルにぶつかりながらターゲットを集めると得点。制限時間内にハイスコアを狙おう。</p>
+<button class="primary" id="start">ゲーム開始 →</button></div></div>
+<script src="shader.js" defer></script><script src="render.js" defer></script><script src="game.js" defer></script>
+</body></html>
