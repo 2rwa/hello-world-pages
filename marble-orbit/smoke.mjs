@@ -103,8 +103,16 @@ try{
   await page.mouse.move(b.x+b.width*.5,b.y+b.height*.5);
   await page.mouse.down();
   await page.mouse.move(b.x+b.width*.86,b.y+b.height*.18,{steps:8});
-  const direction=await page.evaluate(()=>window.__marbleTest.gravityDirection());
-  if(direction[0]<.1)throw Error("Virtual joystick did not steer "+direction);
+  const sample=await page.evaluate(()=>({
+    direction:window.__marbleTest.gravityDirection(),
+    input:window.__marbleTest.inspect(),
+    ball:window.__marbleTest.engine.player.p,
+    diag:window.__marbleGlErrors||{}
+  }));
+  console.log("JOYSTICK DEBUG",JSON.stringify(sample));
+  const direction=sample.direction;
+  if(!direction.every(Number.isFinite)||direction[0]<.1)
+    throw Error("Virtual joystick did not steer: "+JSON.stringify(sample));
   await page.mouse.up();
 
   const cv=await page.locator("#view").boundingBox();
