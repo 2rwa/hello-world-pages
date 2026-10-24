@@ -1,0 +1,27 @@
+name: Marble Orbit WebGL2 smoke
+on:
+  push:
+    branches: [main, feature/marble-orbit-webgl]
+    paths:
+      - marble-orbit/**
+      - .github/workflows/marble-orbit-ci.yml
+  workflow_dispatch:
+jobs:
+  browser-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save playwright@1.55.0
+      - run: npx playwright install --with-deps chromium
+      - run: node marble-orbit/smoke.mjs
+      - name: Screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: marble-orbit-screenshots
+          path: /tmp/marble-orbit-*.png
+          if-no-files-found: ignore
