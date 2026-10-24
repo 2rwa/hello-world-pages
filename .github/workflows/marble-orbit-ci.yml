@@ -1,7 +1,7 @@
 name: Marble Orbit WebGL2 smoke
 on:
   push:
-    branches: [main, feature/marble-orbit-webgl]
+    branches: [main, feature/marble-orbit-webgl, feature/marble-orbit-size-shift]
     paths:
       - marble-orbit/**
       - .github/workflows/marble-orbit-ci.yml

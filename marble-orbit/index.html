@@ -1,68 +1,130 @@
 <!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#061121"><title>MARBLE ORBIT | WebGL2 Raymarch Game</title>
+<html lang="ja"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#060d1b">
+<title>MARBLE ORBIT · SIZE SHIFT | WebGL2</title>
 <style>
 :root{color-scheme:dark;font-family:system-ui,-apple-system,"Hiragino Kaku Gothic ProN",sans-serif}
-*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#061121;color:#e9faff}
-body{position:fixed;inset:0;touch-action:manipulation}
-canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#060d1b;color:#f2faff}
+body{position:fixed;inset:0;touch-action:manipulation;user-select:none}
+canvas{display:block;position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:grab}
 canvas:active{cursor:grabbing}
-header{position:absolute;z-index:2;left:0;right:0;top:0;pointer-events:none;
-padding:calc(17px + env(safe-area-inset-top)) 18px 12px;background:linear-gradient(#06101fe9,#06101fbd 70%,transparent)}
-.eyebrow{font-size:10px;letter-spacing:.26em;color:#84f4d6;font-weight:800}
-h1{font-size:clamp(28px,5vw,45px);line-height:1;margin:7px 0;letter-spacing:-.065em;font-weight:850}
-h1 em{font-style:normal;color:#8cead7}
-.subtitle{font-size:11px;color:#9ec7d4;margin:0}
-.scoreline{display:flex;gap:19px;margin-top:14px;align-items:end}
-.item{min-width:58px}.label{font-size:10px;color:#719aad;font-weight:650;letter-spacing:.12em}
-.value{font:800 clamp(20px,4vw,29px)/1.15 ui-monospace,monospace;letter-spacing:-.055em}
-#score{color:#ffe6ac}#timer{color:#9cefdc}
-#status{position:absolute;right:16px;top:calc(env(safe-area-inset-top) + 19px);font:11px ui-monospace,monospace;color:#85b3c9;
-max-width:38%;text-align:right;pointer-events:none;z-index:2}
-footer{position:absolute;z-index:3;bottom:0;left:0;right:0;padding:30px 10px calc(12px + env(safe-area-inset-bottom));
-background:linear-gradient(transparent,#061121d9 27%,#061121f9);pointer-events:none}
-.controls{display:flex;gap:7px;justify-content:center;flex-wrap:wrap;max-width:780px;margin:auto;pointer-events:auto}
-button,select{color:#e8feff;background:#153448;border:1px solid #6fa9b255;border-radius:12px;padding:9px 12px;
-font-size:12px;font-weight:750;min-height:43px;cursor:pointer;touch-action:manipulation}
-button:active{transform:scale(.98)}button:hover{border-color:#7feec1}
-button.primary{background:#93efce;color:#073127;border-color:#d6ffee}button:disabled{opacity:.45;cursor:default}
-select{font-weight:500;max-width:91px}
-.help{max-width:800px;margin:9px auto 0;text-align:center;font-size:10px;line-height:1.5;color:#86aabd}
-#splash{position:absolute;z-index:5;inset:0;display:grid;place-items:center;padding:18px;
-background:#0308179c;backdrop-filter:blur(7px)}
-#splash.hidden{display:none}
-.splashbox{max-width:390px;width:100%;border:1px solid #9fe9cb39;border-radius:23px;padding:25px 23px 22px;
-box-shadow:0 22px 100px #0009;background:linear-gradient(145deg,#153b4dee,#071523f5)}
-.splashicon{font-size:39px;filter:drop-shadow(0 0 22px #ffe6a7)}
-.splashbox .eyebrow{margin-top:6px}.splashbox h2{font-size:33px;letter-spacing:-.05em;margin:6px 0 10px;line-height:1.12}
-.splashbox p{color:#b0d3dd;font-size:13px;line-height:1.75;margin:11px 0 18px}
-.splashbox button{width:100%;min-height:49px;font-size:15px}
-#toast{position:absolute;left:50%;top:29%;z-index:4;transform:translateX(-50%);
-color:#d6ffe8;font:800 18px ui-monospace,monospace;pointer-events:none;text-shadow:0 0 18px #70ffaf;opacity:0;transition:opacity .2s}
+header{position:absolute;z-index:2;left:0;right:0;top:0;
+padding:calc(13px + env(safe-area-inset-top)) 15px 25px;pointer-events:none;
+background:linear-gradient(#040b18fa,#040b18d8 55%,transparent)}
+.eyebrow{font-size:9px;color:#80e6d6;letter-spacing:.22em;font-weight:850}
+h1{margin:4px 0 8px;font-size:clamp(23px,4.6vw,37px);letter-spacing:-.055em;line-height:1.05}
+h1 em{font-style:normal;color:#f8c769}
+.metrics{display:flex;align-items:flex-start;gap:17px;flex-wrap:wrap}
+.metric{min-width:50px}
+.metric small{font-size:9px;color:#83a8b9;font-weight:800;display:block;letter-spacing:.07em}
+.metric strong{display:block;font:850 clamp(19px,2.9vw,26px)/1.3 ui-monospace,monospace}
+#score{color:#ffd57e}#health{font-size:21px;color:#ff849b;white-space:nowrap}
+#eaten{color:#8effb9}
+#status{position:absolute;z-index:3;right:12px;top:calc(13px + env(safe-area-inset-top));
+font:10px ui-monospace,monospace;color:#93b8c6;pointer-events:none;text-align:right}
+#toast{position:absolute;z-index:5;top:27%;left:50%;transform:translateX(-50%);
+font-weight:850;font-size:clamp(16px,4vw,24px);text-shadow:0 0 18px #64ffc5;
+color:#d5ffe9;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .22s}
 #toast.show{opacity:1}
-@media(max-width:600px){header{padding-left:12px}h1{font-size:29px}.subtitle{max-width:270px;font-size:10px}
-.scoreline{gap:12px;margin-top:9px}.value{font-size:22px}.item{min-width:53px}
-#status{font-size:9px;top:calc(env(safe-area-inset-top) + 14px)}
-footer{padding-left:5px;padding-right:5px;padding-bottom:calc(8px + env(safe-area-inset-bottom))}
-.controls{gap:5px}button,select{padding:8px 9px;font-size:11px;min-height:40px}
-.help{font-size:9px;margin-top:7px}.splashbox{padding:22px}}
+.legend{position:absolute;z-index:2;top:calc(132px + env(safe-area-inset-top));right:12px;
+font-size:11px;line-height:1.7;color:#b9cbd8;pointer-events:none;text-align:right}
+.red{color:#ff6477;font-weight:800}.cyan{color:#6bffcc;font-weight:800}
+#pad{position:absolute;z-index:4;bottom:calc(183px + env(safe-area-inset-bottom));left:15px;
+width:108px;height:108px;border-radius:50%;border:2px solid #9fcbce45;
+background:#0b2b4194;box-shadow:inset 0 0 22px #54b6b018;
+touch-action:none;display:grid;place-items:center;cursor:crosshair}
+#pad:before,#pad:after{content:"";position:absolute;background:#8bc1bd3d}
+#pad:before{width:72px;height:1px}#pad:after{width:1px;height:72px}
+#nub{position:absolute;z-index:1;width:43px;height:43px;border:2px solid #a9f6e3cc;
+border-radius:50%;background:#63dcbd6b;box-shadow:0 0 17px #73edc04d;pointer-events:none}
+.padnote{position:absolute;z-index:4;bottom:calc(170px + env(safe-area-inset-bottom));left:16px;
+width:110px;font:9px ui-monospace,monospace;color:#93bdbb;text-align:center;pointer-events:none}
+footer{position:absolute;z-index:3;bottom:0;left:0;right:0;
+padding:27px 10px calc(9px + env(safe-area-inset-bottom));
+background:linear-gradient(transparent,#060e20e6 21%,#070e1efa 66%);
+pointer-events:none}
+.battle,.tools{display:flex;gap:7px;align-items:center;justify-content:center;flex-wrap:wrap;max-width:700px;margin:auto;pointer-events:auto}
+.battle{margin-bottom:8px}
+button,select{cursor:pointer;touch-action:manipulation;min-height:38px;padding:9px 12px;border-radius:11px;
+font-size:11px;font-weight:780;background:#17364c;color:#e7fbff;border:1px solid #83c5b94b}
+button:active{transform:scale(.98)}button:disabled{opacity:.4}
+button.held{filter:brightness(1.55);transform:scale(.98)}
+button.big{min-height:49px;font-size:14px;padding:11px 17px;touch-action:none}
+#shrink{background:#183f52;color:#9defff;border-color:#66b9df80}
+#grow{background:#624028;color:#ffe2ab;border-color:#ecbd777d}
+#dash{background:#21734d;color:#e8ffe5;border-color:#8ddfa5}
+#motion{color:#85e7d0}
+.energy{min-width:96px;max-width:115px;font:10px ui-monospace,monospace;color:#9fbec7}
+.energy .numbers{display:flex;justify-content:space-between}
+.bar{height:7px;margin-top:5px;overflow:hidden;background:#294658;border-radius:10px}
+#charge{height:100%;width:100%;background:linear-gradient(90deg,#21d4a2,#d3ff9b);border-radius:10px;transition:width .1s}
+.tip{font-size:10px;color:#83a6b5;text-align:center;margin:6px auto 0;pointer-events:none;max-width:650px}
+#splash{position:absolute;z-index:8;inset:0;display:grid;place-items:center;padding:16px;
+background:#020718b3;backdrop-filter:blur(8px)}
+#splash.hidden{display:none}
+.splashbox{width:min(440px,100%);border:1px solid #76d6ce5c;border-radius:24px;padding:26px;
+background:linear-gradient(145deg,#184456f5,#071322f8);box-shadow:0 18px 100px #000b}
+.splashbox h2{font-size:clamp(27px,6vw,37px);line-height:1.15;letter-spacing:-.05em;margin:10px 0}
+.splashbox p{font-size:13px;line-height:1.8;color:#bed3dd;margin:13px 0 18px}
+.splashbox button{width:100%;background:#a4f0c8;border-color:#bfffdd;color:#062c2b;font-size:15px;min-height:49px}
+@media(max-width:580px){
+ header{padding-left:10px;padding-top:calc(10px + env(safe-area-inset-top))}h1{font-size:24px}
+ .eyebrow{font-size:8px}.metrics{gap:10px}.metric{min-width:41px}
+ .metric strong{font-size:20px}#health{font-size:18px}
+ #status{font-size:9px;right:7px;top:calc(10px + env(safe-area-inset-top))}
+ .legend{top:calc(102px + env(safe-area-inset-top));font-size:10px;right:9px}
+ footer{padding-left:4px;padding-right:4px}
+ .battle{gap:5px;margin-bottom:7px}.tools{gap:5px}
+ button,select{font-size:10px;min-height:36px;padding:7px 9px}
+ button.big{font-size:12px;min-height:47px;padding:9px 13px}
+ .energy{min-width:72px;width:77px;font-size:9px}
+ #pad{bottom:calc(168px + env(safe-area-inset-bottom));left:9px;width:92px;height:92px}
+ .padnote{bottom:calc(154px + env(safe-area-inset-bottom));left:5px;width:100px}
+ .tip{font-size:9px}
+ .splashbox{padding:23px}
+}
 </style></head><body>
-<canvas id="view" aria-label="透明な球殻内部で球を転がすゲーム"></canvas>
-<header><div class="eyebrow">WEBGL2 · SDF RAYMARCH · MOTION</div><h1>MARBLE <em>ORBIT</em></h1>
-<p class="subtitle">金色の球を導いて、光るターゲットを集めよう。</p>
-<div class="scoreline"><div class="item"><div class="label">SCORE</div><div class="value" id="score">0000</div></div>
-<div class="item"><div class="label">TIME</div><div class="value" id="timer">75.0</div></div>
-<div class="item"><div class="label">COMBO</div><div class="value" id="combo">×1</div></div>
-<div class="item"><div class="label">BEST</div><div class="value" id="best">0000</div></div></div></header>
-<div id="status">WebGL2 準備中…</div><div id="toast"></div>
-<footer><div class="controls">
-<button id="motion" class="primary">◎ 重力センサー</button><button id="center">傾き基準</button>
-<button id="pulse">✦ ブースト</button><button id="pause">一時停止</button><button id="restart">やり直し</button>
-<select id="quality" title="描画解像度"><option value="auto">画質 自動</option><option value="low">軽量</option><option value="high">高画質</option></select>
-</div><p class="help">スマホ: 傾けて移動 / ドラッグで視点 / タップで弾く / 振ってシェイク　｜　PC: WASD・矢印で重力 / マウスで視点</p></footer>
-<div id="splash"><div class="splashbox"><div class="splashicon">◉</div><div class="eyebrow">75-SECOND MARBLE CHALLENGE</div>
-<h2 id="splashTitle">球の中の、小さな宇宙。</h2>
-<p id="splashText">透明な球殻の中で金色の球を転がし、緑の光を追いかけよう。ほかのマーブルにぶつかりながらターゲットを集めると得点。制限時間内にハイスコアを狙おう。</p>
-<button class="primary" id="start">ゲーム開始 →</button></div></div>
-<script src="shader.js?v=20261024-refraction-fix" defer></script><script src="render.js" defer></script><script src="game.js" defer></script>
+<canvas id="view" aria-label="透明な球の内部で膨張・収縮する敵から逃げる3Dゲーム"></canvas>
+<header><div class="eyebrow">WEBGL2 · RAYMARCH · GRAVITY SURVIVAL</div>
+<h1>MARBLE <em>ORBIT</em> <span style="font-size:.48em;color:#b5d6d8">SIZE SHIFT</span></h1>
+<div class="metrics">
+ <div class="metric"><small>SCORE</small><strong id="score">0000</strong></div>
+ <div class="metric"><small>捕食</small><strong id="eaten">0/10</strong></div>
+ <div class="metric"><small>LIFE</small><strong id="health">♥♥♥</strong></div>
+ <div class="metric"><small>TIME</small><strong id="timer">90.0</strong></div>
+ <div class="metric"><small>BEST</small><strong id="best">0000</strong></div>
+</div></header>
+<div id="status">WebGL2 準備中…</div>
+<div class="legend"><div><span class="red">● 赤 = 危険 <span id="threats">0</span></span></div>
+<div><span class="cyan">● 緑 = 捕食可能 <span id="prey">0</span></span></div>
+<div style="font-size:9px">敵は独立した重力で動く</div></div>
+<div id="toast" aria-live="polite"></div>
+<div id="pad" aria-label="プレイヤーの重力ジョイスティック"><div id="nub"></div></div>
+<div class="padnote">自分の重力方向</div>
+<footer>
+ <div class="battle">
+  <button class="big" id="shrink">◀ 縮小・逃走</button>
+  <button class="big" id="grow">膨張・捕食 ▶</button>
+  <button id="dash">↗ ダッシュ</button>
+  <div class="energy"><div class="numbers"><span>ENERGY</span><span id="size">0.20</span></div><div class="bar"><div id="charge"></div></div></div>
+ </div>
+ <div class="tools">
+  <button id="motion">◎ 重力センサー</button><button id="center">傾き基準</button>
+  <button id="pause">一時停止</button><button id="restart">やり直し</button>
+  <select id="quality" title="描画解像度"><option value="auto">画質 自動</option><option value="low">軽量</option><option value="high">高画質</option></select>
+ </div>
+ <div class="tip">スマホ: 傾き・左スティックで移動 / ドラッグで視点 / 右のボタン長押しで膨張・左で縮小　PC: WASD、Q/E、Shift、Ctrl、Space</div>
+</footer>
+<div id="splash"><div class="splashbox">
+ <div class="eyebrow">SURVIVE · SHRINK · HUNT</div>
+ <h2 id="splashTitle">大きい敵から逃げ、<br>小さくなった瞬間に喰え。</h2>
+ <p id="splashText">敵7体は各自のランダム重力で転がり、膨張・収縮を繰り返す。<b style="color:#ff8191">赤は触れると体力が減る</b>。敵が縮んで<b style="color:#8bffd0">緑に変わったら捕食チャンス</b>！ 自分もボタンで膨張・縮小できる。敵10体を捕食すれば勝利、体力が0になると敗北。</p>
+ <button id="start">ゲーム開始 →</button>
+</div></div>
+<script defer src="shader.js?v=size-shift-2"></script>
+<script defer src="render.js?v=size-shift-2"></script>
+<script defer src="engine.js?v=size-shift-2"></script>
+<script defer src="game.js?v=size-shift-2"></script>
 </body></html>
