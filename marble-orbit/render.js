@@ -25,7 +25,7 @@ window.makeMarbleRenderer=function(canvas){
   function resize(){
     const mobile=Math.min(innerWidth,innerHeight)<680;
     const ratio=mode==="high"?Math.min(devicePixelRatio||1,1.6):
-      mode==="low"?.65:mobile?.82:Math.min(devicePixelRatio||1,1.05);
+      mode==="low"?.52:mobile?.73:Math.min(devicePixelRatio||1,1.05);
     const w=Math.max(1,Math.floor(canvas.clientWidth*ratio));
     const h=Math.max(1,Math.floor(canvas.clientHeight*ratio));
     if(w!==rw||h!==rh){canvas.width=w;canvas.height=h;gl.viewport(0,0,w,h);rw=w;rh=h;}

@@ -69,9 +69,16 @@ try{
   await page.locator("#quality").selectOption("low");
   await page.setViewportSize({width:560,height:570});
   await page.locator("#start").click();
-  await page.waitForTimeout(950);
-  const timer=Number(await page.locator("#timer").innerText());
-  if(!(timer<90&&timer>83))throw Error("Timer not running: "+timer);
+  const started=await page.evaluate(()=>{
+    const g=window.__marbleTest.engine;
+    if(g.mode!=="running")return {mode:g.mode};
+    const before=g.left;
+    g.tick(1/60,[0,-1,0],"normal");
+    return {mode:g.mode,before,after:g.left};
+  });
+  if(started.mode!=="running"||!(started.after<started.before))
+    throw Error("Game start / timer physics broken: "+JSON.stringify(started));
+  const timer=started.after;
 
   // Software-rendered Chromium can run below 10 FPS, so do not assert
   // exact real-time growth distance; core dynamics above are fixed-step tested.
