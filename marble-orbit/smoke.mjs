@@ -125,7 +125,7 @@ try{
   const glState=await page.evaluate(()=>{
     const gl=document.querySelector("canvas").getContext("webgl2");
     const prior=gl.getError(),next=gl.getError();
-    return {width:gl.canvas.width,height:gl.canvas.height,prior,next,lost:gl.isContextLost()};
+    return {width:gl.canvas.width,height:gl.canvas.height,prior,next,lost:gl.isContextLost(),diag:window.__marbleGlErrors||{}};
   });
   await page.screenshot({path:"/tmp/marble-orbit-mobile.png"});
   // The SwiftShader virtual GPU may leave a one-shot INVALID_VALUE on resize.
