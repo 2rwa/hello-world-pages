@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="ja">
+<head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#071322">
+<title>ORBIT SHAKE — 傾ける、振る。 | WebGL2</title>
+<style>
+:root{font-family:system-ui,-apple-system,"Hiragino Kaku Gothic ProN",sans-serif;color-scheme:dark}
+*{box-sizing:border-box}html,body{margin:0;overflow:hidden;width:100%;height:100%;background:#071322;color:#eafcff}
+body{position:fixed;inset:0;touch-action:manipulation;user-select:none}
+canvas{display:block;position:absolute;inset:0;width:100%;height:100%;touch-action:none;pointer-events:none}
+header{position:absolute;z-index:2;top:0;left:0;right:0;padding:calc(env(safe-area-inset-top) + 14px) 15px 28px;pointer-events:none;
+background:linear-gradient(#071321fa,#071321d8 55%,transparent)}
+.eyebrow{font-size:9px;font-weight:850;letter-spacing:.22em;color:#8ee2c6}
+h1{font-size:clamp(28px,5.6vw,44px);letter-spacing:-.065em;line-height:1.08;margin:5px 0 12px}
+h1 em{color:#f6d47f;font-style:normal}
+.stats{display:flex;gap:18px;flex-wrap:wrap}
+.stat{min-width:55px}.stat small{display:block;font-size:10px;font-weight:750;letter-spacing:.07em;color:#92b9c7}
+.stat strong{font:800 clamp(20px,3.4vw,30px)/1.4 ui-monospace,monospace}
+#caught{color:#95ffd1}#life{color:#ff9ca6}#remaining{color:#f6de9a}
+#status{position:absolute;top:calc(env(safe-area-inset-top) + 15px);right:12px;z-index:3;
+text-align:right;pointer-events:none;font:10px ui-monospace,monospace;color:#8fa9bc}
+#hint{position:absolute;top:calc(env(safe-area-inset-top) + 124px);left:0;right:0;z-index:2;
+pointer-events:none;text-align:center;color:#bbd4da;font-size:11px;letter-spacing:.01em}
+#hint strong{color:#fcd089}
+#legend{position:absolute;right:12px;top:calc(env(safe-area-inset-top) + 145px);z-index:2;
+font-size:11px;line-height:1.9;text-align:right;text-shadow:0 1px 8px #000;pointer-events:none}
+.danger{color:#ff697d;font-weight:800}.prey{color:#6dffbd;font-weight:800}
+#notice{position:absolute;left:50%;top:28%;z-index:4;transform:translateX(-50%);
+font:850 19px system-ui;white-space:nowrap;color:#ebffda;text-shadow:0 0 24px #71ffc3;
+opacity:0;transition:opacity .12s;pointer-events:none}
+#notice.on{opacity:1}
+.bottom{position:absolute;left:0;right:0;bottom:0;z-index:3;padding:35px 14px calc(env(safe-area-inset-bottom) + 12px);
+background:linear-gradient(transparent,#071321d9 33%,#071321f8);pointer-events:none}
+.panel{display:flex;max-width:610px;align-items:center;justify-content:space-between;gap:15px;margin:auto}
+.heading{font-weight:850;letter-spacing:.07em;font-size:10px;color:#9cbfca}
+.tiltgroup{display:flex;align-items:center;gap:11px}
+.tiltmap{width:90px;height:90px;position:relative;border-radius:50%;border:1px solid #a3dbc16b;
+background:radial-gradient(circle,#16645b33,#061a2d88);overflow:hidden}
+.tiltmap:before,.tiltmap:after{content:"";position:absolute;left:50%;top:50%;background:#9fc7d23c;transform:translate(-50%,-50%)}
+.tiltmap:before{width:1px;height:70px}.tiltmap:after{height:1px;width:70px}
+#tiltDot{position:absolute;width:17px;height:17px;left:50%;top:50%;
+margin:-8.5px;border-radius:50%;background:#acffe2;box-shadow:0 0 15px #85f0cd}
+.tilttext{font:11px ui-monospace,monospace;color:#bde0d6;min-width:95px}
+#angle{margin-top:5px;color:#8dacbb;font-size:10px}
+.shakegroup{text-align:center;min-width:145px}
+.shakeorb{width:58px;height:58px;border-radius:50%;display:grid;place-items:center;
+font-size:31px;margin:auto auto 5px;border:2px solid #91c2aa6e;background:#13442e7b;
+box-shadow:0 0 20px #58e7a127}
+.shakeorb.active{background:#b08319;box-shadow:0 0 38px #ffe16a}
+#recharge{font:11px ui-monospace,monospace;color:#e9d9a2}
+.actions{display:flex;justify-content:center;gap:8px;margin:10px auto 0;pointer-events:auto}
+button,select{font:750 11px system-ui;min-height:36px;border:1px solid #a0cfbd56;
+border-radius:11px;color:#d7f5eb;background:#15354c;padding:8px 11px;cursor:pointer}
+button:disabled{opacity:.4}
+#splash{position:absolute;inset:0;display:grid;place-items:center;z-index:8;background:#030919b8;
+padding:18px;backdrop-filter:blur(7px)}
+#splash.hidden{display:none}
+.modal{width:min(420px,100%);border:1px solid #91dcc383;border-radius:23px;
+padding:27px 25px;background:linear-gradient(135deg,#154151f9,#071421fa);box-shadow:0 15px 80px #0008}
+.modal h2{font-size:clamp(30px,7vw,40px);letter-spacing:-.05em;line-height:1.15;margin:8px 0 10px}
+.modal h2 em{color:#f6d47f;font-style:normal}
+.modal p{font-size:13px;color:#c1d8d8;line-height:1.8}
+.pictos{display:flex;justify-content:space-between;gap:7px;margin:18px 0}
+.picto{flex:1;text-align:center;padding:13px 5px;border-radius:12px;border:1px solid #8ddcbe36;
+font-size:24px;background:#0d3245}
+.picto span{display:block;margin-top:5px;font-size:11px;color:#a7d5d0}
+#begin{width:100%;min-height:52px;background:#a5edc7;color:#0a3032;border-color:#c8ffe5;font-size:15px;font-weight:850}
+.footnote{text-align:center;font-size:10px;color:#8da9b6;margin-top:12px}
+@media(max-width:530px){
+ header{padding-left:11px;padding-top:calc(env(safe-area-inset-top) + 9px)}h1{font-size:30px;margin-bottom:7px}
+ .stats{gap:12px}.stat{min-width:42px}.stat strong{font-size:21px}.stat small{font-size:9px}
+ #status{font-size:9px;top:calc(env(safe-area-inset-top) + 9px)}
+ #hint{top:calc(env(safe-area-inset-top) + 100px);font-size:10px}
+ #legend{top:calc(env(safe-area-inset-top) + 119px);right:9px;font-size:10px}
+ .bottom{padding-bottom:calc(env(safe-area-inset-bottom) + 7px);padding-left:10px;padding-right:10px}
+ .tiltmap{width:73px;height:73px}.tilttext{min-width:70px;font-size:10px}
+ .shakegroup{min-width:97px}.shakeorb{width:48px;height:48px;font-size:24px}
+ .panel{gap:8px}.heading{font-size:9px}.modal{padding:23px 20px}
+}
+</style></head>
+<body>
+<canvas id="view" aria-label="透明球の中で動く球をWebGL2のレイマーチングで描画"></canvas>
+<header><div class="eyebrow">WEBGL2 · AUTOMATIC ORBIT · MOTION-ONLY</div>
+<h1>ORBIT <em>SHAKE</em></h1>
+<div class="stats">
+<div class="stat"><small>捕食</small><strong id="caught">0/8</strong></div>
+<div class="stat"><small>LIFE</small><strong id="life">♥♥♥</strong></div>
+<div class="stat"><small>TIME</small><strong id="remaining">90.0</strong></div>
+<div class="stat"><small>SCORE</small><strong id="score">000</strong></div>
+</div></header>
+<div id="status">WebGL2 起動中</div>
+<div id="hint">カメラは自動旋回 · <strong>視点操作なし</strong></div>
+<div id="legend"><div class="danger">● 赤：大きく危険</div><div class="prey">● 緑：捕食可能</div></div>
+<div id="notice" aria-live="polite"></div>
+<div class="bottom">
+<div class="panel">
+<div class="tiltgroup">
+<div class="tiltmap" aria-label="傾き方向の表示"><div id="tiltDot"></div></div>
+<div class="tilttext"><div class="heading">TILT</div><div id="motionState">待機中</div><div id="angle">0° / 0°</div></div>
+</div>
+<div class="shakegroup">
+<div class="shakeorb" id="shakeOrb">◉</div>
+<div class="heading">SHAKE TO GROW</div>
+<div id="recharge">READY</div>
+</div></div>
+<div class="actions"><button id="recenter">傾きの基準を再設定</button>
+<select id="quality" aria-label="描画画質"><option value="auto">画質 自動</option><option value="low">画質 軽量</option><option value="high">高画質</option></select>
+<button id="pause">一時停止</button><button id="retry">やり直し</button></div>
+</div>
+<div id="splash"><div class="modal">
+<div class="eyebrow">TILT TO ESCAPE · SHAKE TO HUNT</div>
+<h2 id="splashTitle">傾けて逃げる。<br><em>振って喰らう。</em></h2>
+<p id="splashText">球の内壁に沿って転がる金色の球を、<b>スマホの傾きだけ</b>で動かす。敵は勝手に重力方向を変えて膨張・収縮する。大きな赤い敵から逃げ、小さな緑の敵を狙おう。<b>スマホを振ると1秒ほど巨大化</b>して捕食のチャンス！ 8体捕食で勝利、3回ダメージを受けると敗北。</p>
+<div class="pictos">
+<div class="picto">📱<span>傾ける＝移動</span></div>
+<div class="picto">〰️<span>振る＝巨大化</span></div>
+<div class="picto">◉<span>視点＝自動回転</span></div>
+</div>
+<button id="begin">センサーを許可して開始 →</button>
+<div class="footnote">HTTPS環境のモーションセンサー搭載スマホ向け / タッチ・視点操作なし</div>
+</div></div>
+<script defer src="../marble-orbit/shader.js?v=20261024-refraction-fix"></script>
+<script defer src="../marble-orbit/render.js?v=size-shift-2"></script>
+<script defer src="engine.js?v=tilt-one"></script>
+<script defer src="game.js?v=tilt-one"></script>
+</body></html>

@@ -1,0 +1,27 @@
+name: Orbit Shake WebGL2 motion-only smoke
+on:
+  push:
+    branches: [main, feature/orbit-shake-motion]
+    paths:
+      - orbit-shake/**
+      - .github/workflows/orbit-shake-ci.yml
+  workflow_dispatch:
+jobs:
+  browser-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save playwright@1.55.0
+      - run: npx playwright install --with-deps chromium
+      - run: node orbit-shake/smoke.mjs
+      - name: Save screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: orbit-shake-screenshots
+          path: /tmp/orbit-shake-*.png
+          if-no-files-found: ignore
