@@ -1,0 +1,26 @@
+name: MPS Gaussian Fluid WebGPU CI
+on:
+  push:
+    paths:
+      - 'mps-gaussian-fluid/**'
+      - '.github/workflows/mps-gaussian-fluid-ci.yml'
+  workflow_dispatch:
+jobs:
+  webgpu:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: JavaScript syntax
+        run: |
+          node --check mps-gaussian-fluid/app.js
+          node --check mps-gaussian-fluid/ci-test.mjs
+      - name: Install test browser
+        run: |
+          npm install --no-save playwright@1.58.0
+          npx playwright install --with-deps chromium
+      - name: WebGPU physical dispatch and render readback
+        run: node mps-gaussian-fluid/ci-test.mjs

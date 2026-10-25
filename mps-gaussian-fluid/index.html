@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#061221">
+<title>Gaussian Fluid · MPS-inspired WebGPU</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,-apple-system,"Hiragino Kaku Gothic ProN",sans-serif}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#04101d;color:#e7f5ff}
+canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+.panel{position:fixed;left:12px;top:12px;width:min(330px,calc(100vw - 24px));max-height:calc(100vh - 24px);overflow:auto;z-index:4;padding:14px;border:1px solid #63849c55;border-radius:16px;background:#061322dc;box-shadow:0 14px 55px #0008;backdrop-filter:blur(17px)}
+.panel.collapsed .panelbody{display:none}
+header{display:flex;justify-content:space-between;gap:8px;align-items:start}
+h1{font-size:17px;letter-spacing:.02em;margin:2px 0 4px;font-weight:750}
+.subtitle{font-size:11px;color:#8aacc8;margin:0}
+header button{min-width:32px;padding:5px}
+.chip{display:inline-block;border-radius:5px;background:#143c50;padding:3px 7px;color:#7fe7ef;font-size:10px;margin:12px 0 8px}
+.stats{font:11px/1.7 ui-monospace,SFMono-Regular,monospace;color:#a6d9ea;margin-bottom:10px}
+.actions{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px}
+button,select{background:#132d42;color:#ebf7ff;border:1px solid #66829a66;border-radius:8px;padding:8px;cursor:pointer;font:inherit}
+button:hover{background:#244b62}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid #48cce0}
+.control{padding:7px 0;border-top:1px solid #aac6df1c}
+.control label{display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:12px}
+.output{color:#79dfec;font:12px ui-monospace,monospace}
+input[type=range]{width:100%;margin:8px 0 2px;accent-color:#38bdcc}
+select{width:100%;margin-top:7px;font-size:12px}
+.notes{margin:10px 0 0;font-size:11px;line-height:1.65;color:#a2b6c9}
+.notes strong{color:#c8f2ff}
+#error{position:fixed;z-index:5;right:10px;bottom:10px;left:10px;white-space:pre-wrap;font:12px/1.4 monospace;color:#fff;background:#752c39f0;border-radius:8px;padding:12px}
+.legend{position:fixed;right:12px;bottom:16px;pointer-events:none;font-size:11px;line-height:1.6;color:#9ebed5;text-align:right;text-shadow:0 1px 8px #000}
+@media(max-width:600px){.panel{top:env(safe-area-inset-top,10px);left:8px;width:min(300px,calc(100vw - 16px));padding:10px;max-height:min(75vh,620px)}h1{font-size:14px}.control{padding:5px 0}.legend{font-size:10px}.panel.collapsed{max-height:52px}}
+</style>
+</head>
+<body>
+<canvas id="screen" aria-label="Gaussian splatting fluid simulation"></canvas>
+<section id="panel" class="panel">
+<header>
+<div><h1>Gaussian Fluid Lab</h1><p class="subtitle">WebGPU · MPS-inspired density projection</p></div>
+<button id="collapse" title="パネル開閉">☰</button>
+</header>
+<div class="panelbody">
+<div class="chip">COMPUTE + GAUSSIAN SPLATTING</div>
+<div class="stats">GPU: <span id="stage">starting</span><br>
+<span id="particleCount">512</span> particles · <span id="fps">--</span> FPS · <span id="resolution">--</span></div>
+<div class="actions">
+<button id="pause">一時停止</button><button id="reset">初期化</button><button id="shake">SHAKE!</button>
+</div>
+<div class="control"><label for="count">粒子数 <span class="output" id="v-count">512</span></label>
+<select id="count"><option value="216">216 · 軽量</option><option selected value="512">512 · 標準</option><option value="1000">1000 · 高密度</option></select></div>
+<div class="control"><label for="rigidity">密度補正の強さ <span class="output" id="v-rigidity">0.85</span></label><input id="rigidity" type="range" min="0" max="2" step="0.05" value="0.85"></div>
+<div class="control"><label for="sigma">物理Gaussian σ <span class="output" id="v-sigma">0.235</span></label><input id="sigma" type="range" min="0.15" max="0.38" step="0.005" value="0.235"></div>
+<div class="control"><label for="splat">描画Gaussian σ <span class="output" id="v-splat">0.15</span></label><input id="splat" type="range" min="0.04" max="0.30" step="0.01" value="0.15"></div>
+<div class="control"><label for="opacity">不透明度 <span class="output" id="v-opacity">1.1</span></label><input id="opacity" type="range" min="0.25" max="2.5" step="0.05" value="1.1"></div>
+<div class="control"><label for="damping">減衰 <span class="output" id="v-damping">0.015</span></label><input id="damping" type="range" min="0" max="0.09" step="0.005" value="0.015"></div>
+<div class="control"><label for="gravity">重力 <span class="output" id="v-gravity">6</span></label><input id="gravity" type="range" min="0" max="15" step="0.5" value="6"></div>
+<div class="control"><label for="palette">色彩</label><select id="palette"><option value="0">水色 / Blue Water</option><option value="1">紫 / Plasma</option><option value="2">緑 / Bioluminescence</option></select></div>
+<div class="actions" style="display:block;margin-top:11px"><button id="sensor" style="width:100%">スマホの傾きセンサーを使う</button></div>
+<p class="notes"><strong>操作:</strong> ドラッグで視点回転、ピンチ/ホイールでズーム。SHAKE! で粒子を攪拌。<br>
+Gaussian重みの密度制約をGPUで反復補正。厳密なMPS圧力ポアソン解法ではなく、MPSの考え方を利用した実験です。</p>
+</div>
+</section>
+<div class="legend">DRAG · ORBIT<br>PINCH · ZOOM<br>SHAKE · IMPULSE</div>
+<pre id="error" hidden></pre>
+<script type="module" src="./app.js"></script>
+</body>
+</html>
