@@ -35,6 +35,7 @@ jobs:
           JOB_STATUS: ${{ job.status }}
           REPO: ${{ github.repository }}
           SHA: ${{ github.sha }}
+          RUN_ID: ${{ github.run_id }}
         run: |
           status=failure
           if [ "$JOB_STATUS" = "success" ]; then status=success; fi
@@ -42,4 +43,4 @@ jobs:
             -H "Authorization: Bearer $GH_TOKEN" \
             -H "Accept: application/vnd.github+json" \
             -X POST "https://api.github.com/repos/$REPO/statuses/$SHA" \
-            -d "{\"state\":\"$status\",\"context\":\"gaussian-ocean/webgpu-readback\",\"description\":\"Chromium SwiftShader WGSL + render readback\"}"
+            -d "{\"state\":\"$status\",\"context\":\"gaussian-ocean/webgpu-readback\",\"description\":\"Chromium SwiftShader WGSL + render readback\",\"target_url\":\"https://github.com/$REPO/actions/runs/$RUN_ID\"}"
