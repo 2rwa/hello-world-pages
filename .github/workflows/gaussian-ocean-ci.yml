@@ -1,0 +1,27 @@
+name: Gaussian Ocean WebGPU CI
+on:
+  push:
+    paths:
+      - 'gaussian-ocean/**'
+      - '.github/workflows/gaussian-ocean-ci.yml'
+  workflow_dispatch:
+jobs:
+  gpu:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check JavaScript syntax
+        run: |
+          node --check gaussian-ocean/ui.js
+          node --check gaussian-ocean/app.js
+          node --check gaussian-ocean/ci-test.mjs
+      - name: Install headless Chromium
+        run: |
+          npm install --no-save playwright@1.58.0
+          npx playwright install --with-deps chromium
+      - name: Compile WGSL and verify GPU readback
+        run: node gaussian-ocean/ci-test.mjs
