@@ -51,7 +51,7 @@ fn tonemap(color:vec3f)->vec3f{
   let film=color/(color+vec3f(1.0));
   return pow(clamp(film,vec3f(0.0),vec3f(1.0)),vec3f(0.79));
 }
-fn diagnostic(uv:vec2f)->vec4f{
+fn debugField(uv:vec2f)->vec4f{
   let worldPosition=uv*22.5;
   let data=readField(worldPosition);
   let signedHeight=clamp(data.x*0.75+0.5,0.0,1.0);
@@ -76,7 +76,7 @@ fn diagnostic(uv:vec2f)->vec4f{
   let screen=params.resolution.xy;
   let uv=vec2f(pixel.x/screen.x*2.0-1.0,1.0-pixel.y/screen.y*2.0);
   if(params.lighting.y>0.5){
-    return diagnostic(uv);
+    return debugField(uv);
   }
   let aspect=screen.x/screen.y;
   let yaw=params.view.y;
