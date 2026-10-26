@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="ja"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Gaussian Ocean · WebGPU</title><link rel="stylesheet" href="style.css">
+</head><body>
+<canvas id="ocean" aria-label="WebGPUによるGaussian Fluidの海"></canvas>
+<header id="topbar"><div class="eyebrow">WEBGPU / FLUID EXPERIMENT 01</div><h1>GAUSSIAN <i>OCEAN</i></h1><p>Gaussian wave packets × shallow-water dynamics</p></header>
+<div id="badges"><span id="gpuStatus" data-state="boot">INIT</span><span id="perf">— FPS</span><span>576 GAUSSIANS</span></div>
+<button id="togglePanel" aria-expanded="true" aria-controls="panel" title="設定を表示・非表示">☷</button>
+<aside id="panel"><div class="panelHead"><strong>OCEAN CONTROLS</strong><small>LIVE PARAMETERS</small></div>
+<div class="control"><label for="seaState">Wave energy <output id="seaStateVal">1.00</output></label><input id="seaState" type="range" min="0.2" max="2.2" step="0.05" value="1"></div>
+<div class="control"><label for="chop">Choppiness <output id="chopVal">1.25</output></label><input id="chop" type="range" min="0.4" max="2.6" step="0.05" value="1.25"></div>
+<div class="control"><label for="wind">Wind speed <output id="windVal">1.00</output></label><input id="wind" type="range" min="0.1" max="2.8" step="0.1" value="1"></div>
+<div class="control"><label for="foam">Whitecaps <output id="foamVal">0.70</output></label><input id="foam" type="range" min="0" max="2" step="0.05" value="0.7"></div>
+<div class="control"><label for="sun">Sun elevation <output id="sunVal">0.30</output></label><input id="sun" type="range" min="0.08" max="0.9" step="0.02" value="0.3"></div>
+<div class="control"><label for="cameraHeight">Camera height <output id="cameraHeightVal">4.5</output></label><input id="cameraHeight" type="range" min="1.5" max="15" step="0.5" value="4.5"></div>
+<label class="switch"><input type="checkbox" id="gaussianView"><span>Show Gaussian envelopes</span></label>
+<div class="actions"><button id="pause">PAUSE</button><button id="reset">RESET</button></div>
+<div class="hint">Drag to look around · Tap the ocean to create a ripple<br>Gaussian kernels drive a damped wave simulation (not 3DGS / full Navier–Stokes).</div>
+</aside>
+<div id="legend">DRAG TO LOOK <b>·</b> TAP FOR RIPPLE <b>·</b> WEBGPU</div>
+<div id="fatal" hidden></div><script type="module" src="app.js"></script>
+</body></html>
