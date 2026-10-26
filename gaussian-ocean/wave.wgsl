@@ -48,7 +48,9 @@ fn update(@builtin(global_invocation_id) gid: vec3<u32>) {
       let delta = vec2<f32>(wrappedOffset(point.x - center.x), wrappedOffset(point.y - center.y));
       let along = dot(delta,direction);
       let across = dot(delta,vec2<f32>(-direction.y,direction.x));
-      let kernel = exp(-0.5 * (pow(along / packet.shape.y,2.0) + pow(across / packet.shape.z,2.0)));
+      let normalizedAlong = along / packet.shape.y;
+      let normalizedAcross = across / packet.shape.z;
+      let kernel = exp(-0.5 * (normalizedAlong*normalizedAlong + normalizedAcross*normalizedAcross));
       let carrier = cos(packet.shape.w * along - time * packet.motion.x * windSpeed + packet.motion.y);
       heightTarget = heightTarget + packet.shape.x * kernel * carrier;
       gaussianDensity = gaussianDensity + kernel * packet.shape.x;
