@@ -5,6 +5,9 @@ on:
       - 'gaussian-ocean/**'
       - '.github/workflows/gaussian-ocean-ci.yml'
   workflow_dispatch:
+permissions:
+  contents: read
+  statuses: write
 jobs:
   gpu:
     runs-on: ubuntu-latest
@@ -25,3 +28,18 @@ jobs:
           npx playwright install --with-deps chromium
       - name: Compile WGSL and verify GPU readback
         run: node gaussian-ocean/ci-test.mjs
+      - name: Publish GPU smoke-test result to commit status
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          JOB_STATUS: ${{ job.status }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: |
+          status=failure
+          if [ "$JOB_STATUS" = "success" ]; then status=success; fi
+          curl --fail --silent --show-error \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            -X POST "https://api.github.com/repos/$REPO/statuses/$SHA" \
+            -d "{\"state\":\"$status\",\"context\":\"gaussian-ocean/webgpu-readback\",\"description\":\"Chromium SwiftShader WGSL + render readback\"}"
