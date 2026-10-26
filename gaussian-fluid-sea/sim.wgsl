@@ -33,12 +33,12 @@ fn gridIndex(x:i32,z:i32)->u32 {
 fn shortestDisplacement(delta:vec2f)->vec2f {
   return delta-EXTENT*round(delta/EXTENT);
 }
-fn hashIndex(where:vec2f)->u32 {
-  let cellCoord=vec2u(floor(fract(where/EXTENT+vec2f(0.5))*f32(HASH)));
+fn hashIndex(worldPosition:vec2f)->u32 {
+  let cellCoord=vec2u(floor(fract(worldPosition/EXTENT+vec2f(0.5))*f32(HASH)));
   return cellCoord.x+HASH*cellCoord.y;
 }
-fn fieldLookup(where:vec2f)->vec4f {
-  let cellCoord=vec2u(floor(fract(where/EXTENT+vec2f(0.5))*f32(GRID)));
+fn fieldLookup(worldPosition:vec2f)->vec4f {
+  let cellCoord=vec2u(floor(fract(worldPosition/EXTENT+vec2f(0.5))*f32(GRID)));
   return stateOld[cellCoord.x+cellCoord.y*GRID];
 }
 

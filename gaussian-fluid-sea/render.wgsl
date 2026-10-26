@@ -17,25 +17,25 @@ fn wrapIndex(v:i32)->u32{
 fn atPoint(gridPos:vec2i)->vec4f{
   return field[wrapIndex(gridPos.x)+wrapIndex(gridPos.y)*GRID];
 }
-fn readField(where:vec2f)->vec4f{
-  let texCoord=fract(where/EXTENT+vec2f(0.5))*160.0-vec2f(0.5);
+fn readField(worldPosition:vec2f)->vec4f{
+  let texCoord=fract(worldPosition/EXTENT+vec2f(0.5))*160.0-vec2f(0.5);
   let baseCoord=vec2i(floor(texCoord));
   let fracCoord=fract(texCoord);
   let a=mix(atPoint(baseCoord),atPoint(baseCoord+vec2i(1,0)),fracCoord.x);
   let b=mix(atPoint(baseCoord+vec2i(0,1)),atPoint(baseCoord+vec2i(1,1)),fracCoord.x);
   return mix(a,b,fracCoord.y);
 }
-fn swells(where:vec2f)->f32{
+fn swells(worldPosition:vec2f)->f32{
   let time=params.step.x;
   let amplitude=params.lighting.z;
-  let waveA=sin(where.x*0.19+where.y*0.27-time*0.80);
-  let waveB=sin(where.x*0.44-where.y*0.15+time*1.15);
-  let waveC=sin(where.x*1.17+where.y*0.68-time*2.45);
-  let longWave=sin(where.y*0.061+where.x*0.046-time*0.37);
+  let waveA=sin(worldPosition.x*0.19+worldPosition.y*0.27-time*0.80);
+  let waveB=sin(worldPosition.x*0.44-worldPosition.y*0.15+time*1.15);
+  let waveC=sin(worldPosition.x*1.17+worldPosition.y*0.68-time*2.45);
+  let longWave=sin(worldPosition.y*0.061+worldPosition.x*0.046-time*0.37);
   return amplitude*(waveA*0.25+waveB*0.10+waveC*0.035+longWave*0.42);
 }
-fn surfaceHeight(where:vec2f)->f32{
-  return readField(where).x*0.75+swells(where);
+fn surfaceHeight(worldPosition:vec2f)->f32{
+  return readField(worldPosition).x*0.75+swells(worldPosition);
 }
 fn atmosphere(direction:vec3f,sunDirection:vec3f)->vec3f{
   let climb=clamp(direction.y*0.75+0.20,0.0,1.0);
@@ -52,13 +52,13 @@ fn tonemap(color:vec3f)->vec3f{
   return pow(clamp(film,vec3f(0.0),vec3f(1.0)),vec3f(0.79));
 }
 fn diagnostic(uv:vec2f)->vec4f{
-  let where=uv*22.5;
-  let data=readField(where);
+  let worldPosition=uv*22.5;
+  let data=readField(worldPosition);
   let signedHeight=clamp(data.x*0.75+0.5,0.0,1.0);
   let energy=clamp(length(data.yz)*0.35,0.0,1.0);
   var col=mix(vec3f(0.005,0.09,0.18),vec3f(0.15,0.72,0.75),signedHeight);
   col=col+vec3f(0.22,0.05,0.00)*energy+vec3f(data.w*0.28);
-  let minorGrid=abs(fract(where/3.0)-vec2f(0.5));
+  let minorGrid=abs(fract(worldPosition/3.0)-vec2f(0.5));
   let guide=1.0-smoothstep(0.477,0.495,max(minorGrid.x,minorGrid.y));
   col=mix(col,col*0.75,guide*0.10);
   let fade=1.0-smoothstep(0.94,1.0,max(abs(uv.x),abs(uv.y)));
@@ -99,8 +99,8 @@ fn diagnostic(uv:vec2f)->vec4f{
   }
   // Fixed point iteration for non-SDF heightfield, not sphere tracing.
   for(var iter=0;iter<4;iter=iter+1){
-    let where=origin.xz+rayDirection.xz*distanceToWater;
-    let height=surfaceHeight(where);
+    let worldPosition=origin.xz+rayDirection.xz*distanceToWater;
+    let height=surfaceHeight(worldPosition);
     distanceToWater=(height-origin.y)/rayDirection.y;
     distanceToWater=clamp(distanceToWater,0.0,230.0);
   }
