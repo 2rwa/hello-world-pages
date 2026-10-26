@@ -136,7 +136,7 @@ fn cameraRay(screenUV:vec2<f32>) -> vec3<f32> {
   let slope = length(gradient);
   let breaker = smoothstep(0.37,1.08,slope*1.7 + max(0.0,water.x)*0.29);
   let foamTexture = noise2(contact.xz*2.1 + vec2<f32>(time*0.22,time*0.13));
-  let whitecap = breaker*smoothstep(0.22,0.88,foamTexture)*params.controls1.x;
+  var whitecap = breaker*smoothstep(0.22,0.88,foamTexture)*params.controls1.x;
   // CPU-side tap launches an actual Gaussian impulse in the wave solver.
   let recentSplash = step(0.0,params.controls3.x) * (1.0-smoothstep(1.0,3.5,params.controls3.x));
   let ringRadius = params.controls3.x*4.5;
