@@ -1,0 +1,25 @@
+name: Gaussian Fluid Sea / WebGPU smoke
+on:
+  push:
+    paths:
+      - 'gaussian-fluid-sea/**'
+      - '.github/workflows/gaussian-fluid-sea-ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  webgpu:
+    name: Chrome SwiftShader GPU integration
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install CDP transport
+        run: python -m pip install --disable-pip-version-check websocket-client==1.8.0
+      - name: Probe real GPU compute and offscreen rendering
+        run: |
+          command -v google-chrome || command -v chromium
+          python gaussian-fluid-sea/test-cdp.py
