@@ -140,7 +140,8 @@ fn cameraRay(screenUV:vec2<f32>) -> vec3<f32> {
   // CPU-side tap launches an actual Gaussian impulse in the wave solver.
   let recentSplash = step(0.0,params.controls3.x) * (1.0-smoothstep(1.0,3.5,params.controls3.x));
   let ringRadius = params.controls3.x*4.5;
-  let rippleRing = exp(-pow((length(contact.xz-params.controls2.zw)-ringRadius)*1.2,2.0))*0.5*recentSplash;
+  let ringDelta = (length(contact.xz-params.controls2.zw)-ringRadius)*1.2;
+  let rippleRing = exp(-ringDelta*ringDelta)*0.5*recentSplash;
   whitecap = clamp(whitecap + rippleRing,0.0,0.94);
   waterColor = mix(waterColor,vec3<f32>(0.65,0.88,0.87),whitecap);
   let farFog = smoothstep(115.0,760.0,distance);
