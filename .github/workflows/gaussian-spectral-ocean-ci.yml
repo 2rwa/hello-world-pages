@@ -1,0 +1,23 @@
+name: Gaussian Spectral Ocean GPU Validation
+on:
+  push:
+    paths:
+      - 'gaussian-spectral-ocean/**'
+      - '.github/workflows/gaussian-spectral-ocean-ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  webgpu-ocean:
+    name: Chrome SwiftShader / Gaussian deep-water spectrum and foam
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: CDP transport
+        run: python -m pip install --disable-pip-version-check websocket-client==1.8.0
+      - name: Compile production WGSL and read back ocean GPU textures
+        run: python gaussian-spectral-ocean/test-cdp.py

@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#061623">
+<title>Gaussian Spectral Ocean — WebGPU</title><link rel="stylesheet" href="./style.css"></head>
+<body><canvas id="ocean" aria-label="FFT風のガウシアン波束合成によるWebGPU海面"></canvas>
+<div class="mast"><small>OCEAN LAB / WEBGPU • 06</small><h1>GAUSSIAN<br><em>SPECTRAL OCEAN</em></h1><p>Deep-water dispersion · 90 Gaussian wave packets<br>Five cascade scales / no FFT</p></div>
+<div class="telemetry"><span id="status" data-error="0">INITIALIZING</span><span id="fps">-- FPS</span><span>5 GAUSSIAN CASCADES</span><span>90 WAVE PACKETS</span></div>
+<button id="toggle" title="設定パネルを開閉">CONTROLS −</button>
+<aside id="panel">
+<header><b>GAUSSIAN SEA LAB</b><small>WAVE PHYSICS & RENDERING</small></header>
+<div class="control"><label for="height">Wave amplitude <output id="heightValue"></output></label><input id="height" type="range" min=".15" max="3.5" step=".05" value="1.25"></div>
+<div class="control"><label for="choppiness">Horizontal choppiness <output id="choppinessValue"></output></label><input id="choppiness" type="range" min="0" max="3" step=".05" value="1.50"></div>
+<div class="control"><label for="foam">Jacobian whitecaps <output id="foamValue"></output></label><input id="foam" type="range" min="0" max="3.5" step=".05" value="1.45"></div>
+<div class="control"><label for="direction">Wind direction ° <output id="directionValue"></output></label><input id="direction" type="range" min="-180" max="180" step="1" value="24"></div>
+<div class="control"><label for="sun">Sun elevation rad <output id="sunValue"></output></label><input id="sun" type="range" min=".10" max="1.25" step=".05" value=".48"></div>
+<div class="control"><label for="turbidity">Turbidity <output id="turbidityValue"></output></label><input id="turbidity" type="range" min=".1" max="3" step=".05" value="1.00"></div>
+<div class="control"><label for="camera">Eye height (m) <output id="cameraValue"></output></label><input id="camera" type="range" min="3" max="35" step="1" value="11"></div>
+<div class="control"><label for="resolution">Render scale <output id="resolutionValue"></output></label><input id="resolution" type="range" min=".5" max="1.0" step=".05" value=".85"></div>
+<div class="control"><label for="debug">Display mode</label><select id="debug">
+<option value="0">Beauty / Ocean</option><option value="1">Surface normals</option>
+<option value="2">Compression / foam</option><option value="3">Roughness / wave height</option></select></div>
+<div class="actions"><button id="pause">PAUSE</button><button id="reset">RESET SPECTRUM</button></div>
+<p class="note">FFTとは異なり、波数空間のガウシアン分布から選んだ波束をGPUで直接合成します。位相速度は深水波の分散関係、波束の包絡は群速度に従います。海面は水平変位つきメッシュで描画し、Jacobianから白波を生成します。</p>
+</aside>
+<div class="footer">DRAG TO LOOK AROUND · WEBGPU ONLY · NO SPRAY PARTICLE OVERLAY</div>
+<div id="ci-state" hidden>boot</div><script type="module" src="./app.js"></script>
+</body></html>
