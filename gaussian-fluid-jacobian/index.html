@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#07111b">
+<title>Jacobian Foam · Gaussian Fluid / WebGPU</title>
+<link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<canvas id="ocean" aria-label="Gaussian粒子で駆動するWebGPU流体海面"></canvas>
+<div class="mast"><div class="kicker">EXPERIMENT / WEBGPU 03</div><h1>GAUSSIAN<br><em>JACOBIAN FOAM</em></h1><p>Advected Gaussian pressure × fluid deformation<br>det(I + ∇D) → compression-triggered whitecaps</p></div>
+<div class="telemetry"><span id="state" data-status="init">INITIALIZING</span><span id="fps">-- FPS</span><span>384 PARTICLES</span><span>160² FLUID GRID</span></div>
+<button id="toggle" class="toggle" aria-expanded="true" aria-controls="panel" title="設定を開閉">☷</button>
+<aside id="panel">
+  <div class="paneltop"><div><b>SEA LAB</b><small>SIMULATION PARAMETERS</small></div><button id="hide" title="パネルを閉じる">×</button></div>
+  <div class="control"><label for="energy">Gaussian pressure <output id="energyValue">1.00</output></label><input type="range" id="energy" min="0" max="2.5" step=".05" value="1"></div>
+  <div class="control"><label for="wind">Particle drift <output id="windValue">1.00</output></label><input type="range" id="wind" min="0" max="2.5" step=".05" value="1"></div>
+  <div class="control"><label for="swell">Background swell <output id="swellValue">0.75</output></label><input type="range" id="swell" min="0" max="2.5" step=".05" value=".75"></div>
+  <div class="control"><label for="breaking">Jacobian breaking <output id="breakingValue">1.40</output></label><input type="range" id="breaking" min="0" max="3.0" step=".05" value="1.40"></div>
+  <div class="control"><label for="foam">Foam intensity <output id="foamValue">1.00</output></label><input type="range" id="foam" min="0" max="2.5" step=".05" value="1"></div>
+  <div class="control"><label for="sun">Sun height <output id="sunValue">0.33</output></label><input type="range" id="sun" min=".10" max=".88" step=".01" value=".33"></div>
+  <div class="control"><label for="height">Camera height <output id="heightValue">4.0</output></label><input type="range" id="height" min="1.5" max="12" step=".5" value="4"></div>
+  <div class="control"><label for="resolution">Render scale <output id="resolutionValue">0.85</output></label><input type="range" id="resolution" min=".45" max="1.0" step=".05" value=".85"></div>
+  <div class="control"><label for="diagnosticMode">Debug view</label><select id="diagnosticMode" style="width:100%;background:#0b2738;color:#d5eaf0;border:1px solid #609eaa88;padding:8px">
+    <option value="0">Ocean / Whitecaps</option>
+    <option value="1">Height + Foam map</option>
+    <option value="2">Jacobian map (red = compression)</option>
+  </select></div>
+  <div class="actions"><button id="pause">PAUSE</button><button id="reset">RESET</button></div>
+  <div class="about">GPU Gaussian pressure → shallow-water velocity / height → short-memory displacement map → Jacobian-based foam. Red pixels in Jacobian debug show compression. Set Jacobian breaking to 0 to disable generated whitecaps.<br><br>タップで波紋、ドラッグで視点回転。こちらは前作の波束合成とは別の実装です。</div>
+</aside>
+<div class="footer"><span>DRAG TO ORBIT</span><span>·</span><span>TAP FOR IMPULSE</span><span>·</span><span>WEBGPU ONLY</span></div>
+<div id="error" hidden></div>
+<div id="ci-state" hidden>boot</div>
+<script type="module" src="./app.js"></script>
+</body></html>
