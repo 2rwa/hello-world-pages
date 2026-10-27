@@ -1,0 +1,25 @@
+name: Gaussian Fluid RGBA Foam Evolution / WebGPU smoke
+on:
+  push:
+    paths:
+      - 'gaussian-fluid-foam-evolution/**'
+      - '.github/workflows/gaussian-fluid-foam-evolution-ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  jacobian-webgpu:
+    name: Chrome SwiftShader / RGBA foam evolution GPU integration
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install CDP transport
+        run: python -m pip install --disable-pip-version-check websocket-client==1.8.0
+      - name: GPU compute, foam and framebuffer readback
+        run: |
+          command -v google-chrome || command -v chromium
+          python gaussian-fluid-foam-evolution/test-cdp.py
