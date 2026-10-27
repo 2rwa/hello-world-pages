@@ -52,16 +52,33 @@ export async function testOcean({gpu,drawFrame,waveTexture,normalTexture,foamTex
   if(stats.maxJ-stats.minJ<0.015)throw Error("Jacobian variation missing: "+JSON.stringify(stats));
   if(stats.foam<0.0001)throw Error("Foam history not generating: "+JSON.stringify(stats));
   if(maxR-minR<20)throw Error("Blank or flat ocean+sky: red "+minR+".."+maxR);
+
+  // Explicitly verify that the displaced sea covers screen pixels.
+  // Sky should remain unchanged while ocean pixels switch to diagnostics.
   document.getElementById("debug").value="2";
-  drawFrame(0);
-  await gpu.queue.onSubmittedWorkDone();
   gpu.pushErrorScope("validation");
   drawFrame(0);
   await gpu.queue.onSubmittedWorkDone();
   const debugError=await gpu.popErrorScope();
-  if(debugError)throw Error("Debug draw validation: "+debugError.message);
+  if(debugError)throw Error("Debug ocean render: "+debugError.message);
+  const debugRead=readback(outBytes);
+  const debugCopy=gpu.createCommandEncoder();
+  debugCopy.copyTextureToBuffer({texture:offscreen},
+    {buffer:debugRead,bytesPerRow:canvas.width*4,rowsPerImage:canvas.height},
+    {width:canvas.width,height:canvas.height});
+  gpu.queue.submit([debugCopy.finish()]);
+  await gpu.queue.onSubmittedWorkDone();
+  const diagnostic=await read(debugRead);
+  let waterPixels=0;
+  for(let pixel=0;pixel<outBytes;pixel+=4){
+    const diff=Math.abs(diagnostic.getUint8(pixel)-pixels.getUint8(pixel))
+      +Math.abs(diagnostic.getUint8(pixel+1)-pixels.getUint8(pixel+1))
+      +Math.abs(diagnostic.getUint8(pixel+2)-pixels.getUint8(pixel+2));
+    if(diff>18)waterPixels++;
+  }
+  if(waterPixels<200)throw Error("Ocean geometry might not be visible: changed "+waterPixels+" pixels");
   ciStage.textContent="ok: frames=7; gaussianWave="+stats.minH.toFixed(3)+".."+stats.maxH.toFixed(3)
     +"; J="+stats.minJ.toFixed(3)+".."+stats.maxJ.toFixed(3)
-    +"; foam="+stats.foam.toFixed(4)+"; imageR="+minR+".."+maxR+"; checksum="+sampleSum;
+    +"; foam="+stats.foam.toFixed(4)+"; oceanPx="+waterPixels+"; imageR="+minR+".."+maxR+"; checksum="+sampleSum;
   status("CI GPU: FIVE GAUSSIAN BANDS + FOAM PASS");
 }

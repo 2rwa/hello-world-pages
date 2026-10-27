@@ -6,7 +6,7 @@ export function createPackets(windAngle=0.25){
   let seed=0x12345421;
   const rand=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
   // Spatially varying Gaussian envelopes, frequency vectors from Gaussian lobes.
-  const energy=[1.85,0.88,0.40,0.145,0.039];
+  const energy=[0.78,0.52,0.27,0.10,0.032];
   const cycles=[10,9,9,10,10];
   const data=new Float32Array(5*PACKETS_PER_BAND*12);
   for(let band=0;band<5;band++){
