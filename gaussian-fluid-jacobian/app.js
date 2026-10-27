@@ -154,7 +154,7 @@ function draw(dt){
   const idx=phase;
   if(!paused){
     const bindings=simGroups[idx];
-    for(const entryPoint of ["clearGrid","moveGaussians","heightStep","velocityStep"]){
+    for(const entryPoint of ["clearGrid","moveGaussians","heightStep","velocityStep","displaceStep"]){
       const pass=command.beginComputePass({label:entryPoint});
       pass.setPipeline(simPipelines[entryPoint]);
       pass.setBindGroup(0,bindings);
