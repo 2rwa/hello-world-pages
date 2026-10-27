@@ -1,3 +1,4 @@
+const COUNT=384;
 export function gaussianParticles(){
   let seed=16327;
   function rand(){seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;}
