@@ -1,0 +1,25 @@
+name: Dynamic Wave Trains WebGPU CI
+on:
+  push:
+    paths:
+      - "dynamic-wave-trains/**"
+      - ".github/workflows/dynamic-wave-trains-webgpu.yml"
+  workflow_dispatch:
+jobs:
+  shader-and-readback:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install lightweight Playwright client
+        run: npm install --no-save playwright-core
+      - name: Verify WebGPU pipeline and rendered pixels
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/dwt-http.log 2>&1 &
+          sleep 2
+          node dynamic-wave-trains/test-webgpu.mjs
