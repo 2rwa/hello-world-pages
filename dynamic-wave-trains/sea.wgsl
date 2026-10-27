@@ -115,12 +115,12 @@ fn oceanShading(rayDir:vec3f,position:vec3f,travel:f32)->vec3f {
  let right=vec3f(cos(yaw),0.0,-sin(yaw));
  let cameraUp=normalize(cross(forward,right));
  let rayDir=normalize(forward+right*uv.x*aspect*0.78+cameraUp*uv.y*0.78);
- let eye=vec3f(0.0,scene.camera.x,0.0);
+ let eye=vec3f(0.0,max(scene.camera.x,3.3*scene.waves.x+0.6),0.0);
  var pixelColor=skyColor(rayDir);
  // Height fields are not distance fields. We bracket the first sign change,
  // then refine with bisection; never use naive SDF sphere tracing.
  if(rayDir.y < -0.0025){
-  let heightBound=2.65*scene.waves.x+0.15;
+  let heightBound=3.3*scene.waves.x+0.15;
   let nearT=max(0.0,(eye.y-heightBound)/(-rayDir.y));
   let farT=min(1450.0,(eye.y+heightBound)/(-rayDir.y));
   if(nearT<farT && nearT<1450.0){
