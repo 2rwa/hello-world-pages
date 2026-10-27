@@ -1,0 +1,25 @@
+name: Gaussian Fluid 3D Bubbles & Spray WebGPU CI
+on:
+  push:
+    paths:
+      - 'gaussian-fluid-particles-3d/**'
+      - '.github/workflows/gaussian-fluid-particles-3d-ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  gpu-3d-particles:
+    name: Chrome SwiftShader / live compute + 3D particle geometry
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install CDP transport
+        run: python -m pip install --disable-pip-version-check websocket-client==1.8.0
+      - name: Compile, dispatch, render, read back and compare 3D particle output
+        run: |
+          command -v google-chrome || command -v chromium
+          python gaussian-fluid-particles-3d/test-cdp.py
