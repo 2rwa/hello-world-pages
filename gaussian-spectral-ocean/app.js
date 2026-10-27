@@ -87,7 +87,7 @@ async function initialize(){
     format=navigator.gpu.getPreferredCanvasFormat();
     context.configure({device:gpu,format,alphaMode:"opaque"});
   }
-  skyPipeline=await gpu.createRenderPipelineAsync({label:"procedural sky",layout:gpu.createPipelineLayout({bindGroupLayouts:[drawLayout]}),vertex:{module:renderWGSL,entryPoint:"skyVertex"},fragment:{module:renderWGSL,entryPoint:"skyFragment",targets:[{format}]},primitive:{topology:"triangle-list"}});
+  skyPipeline=await gpu.createRenderPipelineAsync({label:"procedural sky",layout:gpu.createPipelineLayout({bindGroupLayouts:[drawLayout]}),vertex:{module:renderWGSL,entryPoint:"skyVertex"},fragment:{module:renderWGSL,entryPoint:"skyFragment",targets:[{format}]},primitive:{topology:"triangle-list"},depthStencil:{format:"depth24plus",depthWriteEnabled:false,depthCompare:"always"}});
   seaPipeline=await gpu.createRenderPipelineAsync({label:"Gaussian 5-band displaced ocean mesh",layout:gpu.createPipelineLayout({bindGroupLayouts:[drawLayout]}),vertex:{module:renderWGSL,entryPoint:"oceanVertex"},fragment:{module:renderWGSL,entryPoint:"oceanFragment",targets:[{format}]},primitive:{topology:"triangle-list",cullMode:"none"},depthStencil:{format:"depth24plus",depthWriteEnabled:true,depthCompare:"less"}});
   waveGroup=gpu.createBindGroup({layout:waveLayout,entries:[
     {binding:0,resource:{buffer:paramsBuffer}},
