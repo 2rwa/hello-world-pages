@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#081525">
+<title>Dynamic Wave Trains | WebGPU Ocean</title>
+<style>
+:root {color-scheme:dark;font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#0b1e30}
+canvas{display:block;width:100vw;height:100dvh;touch-action:none;cursor:grab}
+canvas:active{cursor:grabbing}
+.panel{position:fixed;z-index:4;top:max(14px,env(safe-area-inset-top));left:max(14px,env(safe-area-inset-left));width:min(325px,calc(100vw - 28px));max-height:calc(100dvh - 36px);overflow:auto;background:rgba(8,19,34,.79);border:1px solid rgba(202,232,251,.18);border-radius:18px;padding:17px 17px 12px;box-shadow:0 14px 65px #0411217a;backdrop-filter:blur(18px)}
+.topline{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.eyebrow{font:600 10px ui-monospace,SFMono-Regular,monospace;letter-spacing:.23em;color:#72cde5}
+h1{font-size:19px;letter-spacing:-.035em;margin:5px 0 2px;line-height:1.2}
+.subtitle{font-size:11px;color:#b4cbd7;line-height:1.5;margin:6px 0 0}
+button,select{font:inherit;color:#e5f7ff;background:#143047;border:1px solid #36556b;border-radius:9px;padding:7px 10px;cursor:pointer}
+button:hover,select:hover{border-color:#73bfd1;background:#1c4057}
+#collapse{padding:6px 10px;font-size:12px}
+.panel.collapsed{width:auto;padding:12px 14px}
+.panel.collapsed .body{display:none}
+.panel.collapsed .subtitle{display:none}
+.panel.collapsed h1{font-size:15px}
+.pills{display:flex;gap:6px;margin:14px 0 12px;flex-wrap:wrap}
+.pill{font:10px ui-monospace,monospace;color:#aad5e5;border:1px solid #335368;background:#0b2935;border-radius:50px;padding:5px 7px}
+hr{border:0;border-top:1px solid #34526966;margin:12px 0}
+.section{font-size:10px;color:#84b9c9;font-weight:700;letter-spacing:.12em;margin:12px 0}
+.control{display:block;margin:12px 0}
+.control .labels{display:flex;align-items:baseline;justify-content:space-between;gap:10px;font-size:12px;color:#d8ebf3}
+.control .value{color:#91e4eb;font:12px ui-monospace,SFMono-Regular,monospace}
+input[type=range]{display:block;accent-color:#74d5df;width:100%;margin:8px 0 2px;cursor:pointer}
+.row{display:flex;gap:7px;margin:12px 0;align-items:center;flex-wrap:wrap}
+.row button{flex:1;font-size:12px}
+small,.hint{font-size:11px;line-height:1.6;color:#9dbbc9}
+a{color:#9ae3ff;text-decoration:none}a:hover{text-decoration:underline}
+.status{position:fixed;z-index:2;bottom:max(12px,env(safe-area-inset-bottom));left:max(14px,env(safe-area-inset-left));font:11px/1.6 ui-monospace,monospace;letter-spacing:.015em;color:#d9f3f9;text-shadow:0 1px 8px #082331aa;pointer-events:none}
+.error{position:fixed;inset:0;z-index:20;display:none;align-items:center;justify-content:center;background:#071825f5;padding:28px}
+.error.visible{display:flex}
+.error article{max-width:560px;line-height:1.7}
+.error pre{white-space:pre-wrap;word-break:break-word;font-size:12px}
+@media(max-width:680px){.panel{padding:13px;max-height:80dvh}.panel:not(.collapsed){width:min(288px,calc(100vw - 24px))}.panel:not(.collapsed) h1{font-size:17px}}
+</style>
+</head>
+<body>
+<canvas id="sea" aria-label="リアルタイムの波列海面"></canvas>
+<section class="panel" id="panel" aria-label="海面パラメータ">
+ <div class="topline"><div><div class="eyebrow">PROCEDURAL OCEAN / 2026</div><h1>Dynamic Wave Trains</h1></div><button id="collapse" type="button" aria-expanded="true">閉じる</button></div>
+ <div class="body">
+  <p class="subtitle">FFTなし・波列別の位相場と空間制御。<br>高さ場の交差をレイマーチングで描画。</p>
+  <div class="pills"><span class="pill">WEBGPU / WGSL</span><span class="pill">HEIGHT-FIELD RAYCAST</span><span class="pill">NO FFT</span></div>
+  <div class="section">SEA CONDITIONS / 海況</div>
+  <div id="waveControls"></div>
+  <hr>
+  <div class="section">CAMERA / 視点</div>
+  <div id="cameraControls"></div>
+  <div class="row"><button id="calm" type="button">穏やかな海</button><button id="storm" type="button">荒れた海</button><button id="reset" type="button">初期化</button></div>
+  <div class="row"><button id="pause" type="button">⏸ 一時停止</button><button id="recenter" type="button">視点リセット</button></div>
+  <p class="hint">海面をドラッグ：視線移動 ／ ホイール・2本指：高度調節。波の進行方向、局所的な風、白波を個別に変更できます。</p>
+  <p class="hint">研究論文に着想を得た軽量近似です。複素ガウス・タイル合成の原論文完全再現ではありません。<a href="https://doi.org/10.1111/cgf.70495" target="_blank" rel="noopener">論文を読む</a></p>
+ </div>
+</section>
+<div id="status" class="status" aria-live="polite">Initializing WebGPU…</div>
+<div id="error" class="error"><article><h2>WebGPU の初期化に失敗しました</h2><pre id="errorText"></pre><p>WebGPU対応のChrome / Edge / SafariでHTTPSから開いてください。</p></article></div>
+<script type="module" src="./main.js"></script>
+</body></html>
