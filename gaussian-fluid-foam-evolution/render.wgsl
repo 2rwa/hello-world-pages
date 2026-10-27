@@ -193,11 +193,11 @@ fn debugJacobian(uv:vec2f)->vec4f{
   color=color+directSun*0.8;
   // RGB/opacity are derived from FOUR independently aging foam channels.
   let foam=sampleFoam(hit.xz);
-  let patch=foamNoise(hit.xz*0.85+vec2f(4.2,-3.1));
+  let foamPatchNoise=foamNoise(hit.xz*0.85+vec2f(4.2,-3.1));
   let detail=foamNoise(hit.xz*3.1);
   let filaments=0.5+0.5*sin(hit.x*2.7+sin(hit.z*1.2)*2.7)
                                 *sin(hit.z*2.2);
-  let lace=mix(patch,filaments*0.70+detail*0.30,0.53);
+  let lace=mix(foamPatchNoise,filaments*0.70+detail*0.30,0.53);
   let organicEdge=smoothstep(0.20,0.83,lace);
   let coverage=clamp(foam.x*1.16*(0.29+0.71*organicEdge)+foam.z*0.14,0.0,0.96);
   let freshness=clamp(foam.y/(foam.x+0.055),0.0,1.0);
