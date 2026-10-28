@@ -1,0 +1,124 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>THU-03 Spinodal Decomposition Sponge</title>
+<style>:root{color-scheme:light}*{box-sizing:border-box}body{margin:0;background:#e5e0d4;color:#222;font:14px/1.5 system-ui,sans-serif}main{max-width:1080px;margin:auto;padding:16px}h1{font-size:clamp(1.5rem,4vw,2.5rem);margin:.2em 0}canvas{display:block;width:100%;height:min(65vh,560px);background:#dcd4c3;border:1px solid #bcb5a8;border-radius:14px}.controls{display:flex;gap:12px;flex-wrap:wrap;padding:15px 0}label{display:flex;flex-direction:column;min-width:125px;flex:1}button{padding:9px 18px;border:1px solid #999;border-radius:8px;background:#faf6eb;color:#222;cursor:pointer}input{width:100%;accent-color:#504d47}#status{white-space:pre-wrap;font:12px/1.5 ui-monospace,monospace}small{color:#555}</style></head><body><main>
+<h1>Spinodal Decomposition Sponge</h1><p>THU-03 · 3D Cahn–Hilliard · cream / charcoal cutaway specimen</p><canvas id="scene"></canvas>
+<div class="controls"><button id="pause">Pause</button><button id="reset">Reset mixture</button>
+<label>Steps / frame<input id="speed" type="range" min="0" max="12" value="6"></label>
+<label>Cutaway<input id="clip" type="range" min="-0.8" max="1.5" step="0.01" value="0.35"></label>
+<label>Opacity<input id="opacity" type="range" min="0.3" max="5" step="0.1" value="2.5"></label></div>
+<pre id="status">Initializing WebGPU…</pre><small>Periodic 32³ lattice; μ=c³−c−0.45∇²c, ∂c/∂t=∇²μ; explicit Euler Δt=0.018. Dimensionless educational model, not calibrated to physical materials. No sphere tracing. Research: Cahn–Hilliard (1958), TUAT phase-field tutorial, NIST/PFHub lectures.</small></main>
+<script>(async()=>{
+const el=id=>document.getElementById(id),canvas=el('scene'),status=el('status'),show=s=>status.textContent=s;
+let paused=false,resetFlag=false,steps=0,slot=0,dead=false;
+el('pause').onclick=()=>{paused=!paused;el('pause').textContent=paused?'Resume':'Pause'};
+el('reset').onclick=()=>resetFlag=true;
+if(!navigator.gpu){show('WebGPU unavailable');return}
+let adapter;try{adapter=await navigator.gpu.requestAdapter()}catch(e){show('Adapter request failed: '+e);return}
+if(!adapter){show('WebGPU adapter unavailable');return}
+let device;try{device=await adapter.requestDevice()}catch(e){show('Device request failed: '+e);return}
+device.addEventListener('uncapturederror',e=>show('Uncaptured WebGPU error: '+e.error.message));
+device.lost.then(info=>{dead=true;show('WebGPU device lost: '+info.reason+' '+info.message)});
+const code=/* wgsl */`
+const N:i32=32;
+@group(0) @binding(0) var<storage,read> source:array<f32>;
+@group(0) @binding(1) var<storage,read_write> destination:array<f32>;
+@group(0) @binding(2) var<storage,read> oldConcentration:array<f32>;
+@group(1) @binding(0) var<storage,read> concentration:array<f32>;
+struct View { clip:f32, opacity:f32, aspect:f32, pad:f32, }
+@group(1) @binding(1) var<uniform> view:View;
+fn ix(p:vec3i)->u32{let q=(p+vec3i(32))%vec3i(32);return u32(q.x+32*(q.y+32*q.z));}
+fn lap(p:vec3i)->f32{
+let c=source[ix(p)];
+return source[ix(p+vec3i(1,0,0))]+source[ix(p-vec3i(1,0,0))]
++source[ix(p+vec3i(0,1,0))]+source[ix(p-vec3i(0,1,0))]
++source[ix(p+vec3i(0,0,1))]+source[ix(p-vec3i(0,0,1))]-6.0*c;
+}
+@compute @workgroup_size(4,4,4) fn chemical(@builtin(global_invocation_id) gid:vec3u){
+if(any(gid>=vec3u(32u))){return;}
+let p=vec3i(gid);let c=source[ix(p)];
+destination[ix(p)]=c*c*c-c-0.45*lap(p);
+}
+@compute @workgroup_size(4,4,4) fn evolve(@builtin(global_invocation_id) gid:vec3u){
+if(any(gid>=vec3u(32u))){return;}
+let p=vec3i(gid);let n=ix(p);
+destination[n]=oldConcentration[n]+0.018*lap(p);
+}
+struct Out { @builtin(position) pos:vec4f, @location(0) uv:vec2f, }
+@vertex fn vertexMain(@builtin(vertex_index) vi:u32)->Out{
+let a=array<vec2f,3>(vec2f(-1.0,-3.0),vec2f(-1.0,1.0),vec2f(3.0,1.0));
+var o:Out;o.pos=vec4f(a[vi],0.0,1.0);o.uv=a[vi]*vec2f(0.5,-0.5)+vec2f(0.5);return o;
+}
+fn cell(p:vec3i)->f32{
+let q=clamp(p,vec3i(0),vec3i(31));return concentration[u32(q.x+32*(q.y+32*q.z))];
+}
+fn field(p:vec3f)->f32{
+let g=clamp((p*0.5+vec3f(0.5))*32.0-vec3f(0.5),vec3f(0.0),vec3f(30.999));
+let b=vec3i(floor(g));let f=fract(g);
+let a=mix(cell(b),cell(b+vec3i(1,0,0)),f.x);
+let c=mix(cell(b+vec3i(0,1,0)),cell(b+vec3i(1,1,0)),f.x);
+let d=mix(cell(b+vec3i(0,0,1)),cell(b+vec3i(1,0,1)),f.x);
+let e=mix(cell(b+vec3i(0,1,1)),cell(b+vec3i(1,1,1)),f.x);
+return mix(mix(a,c,f.y),mix(d,e,f.y),f.z);
+}
+@fragment fn fragmentMain(v:Out)->@location(0) vec4f{
+let uv=vec2f((v.uv.x*2.0-1.0)*view.aspect,1.0-v.uv.y*2.0);
+let ro=vec3f(2.8,2.1,3.2);let fw=normalize(-ro);
+let rt=normalize(cross(fw,vec3f(0.0,1.0,0.0)));let up=normalize(cross(rt,fw));
+let rd=normalize(fw*2.2+rt*uv.x+up*uv.y);
+let a=(-vec3f(1.0)-ro)/rd;let b=(vec3f(1.0)-ro)/rd;
+let lo=min(a,b);let hi=max(a,b);
+let nearDist=max(0.0,max(max(lo.x,lo.y),lo.z));let farDist=min(min(hi.x,hi.y),hi.z);
+let bg=vec3f(0.88,0.85,0.78);
+if(farDist<=nearDist){return vec4f(bg,1.0);}
+var trans=1.0;var rgb=vec3f(0.0);let span=farDist-nearDist;
+for(var k:u32=0u;k<64u;k=k+1u){
+let p=ro+rd*(nearDist+(f32(k)+0.5)*span/64.0);
+let cut=p.x+0.35*p.y-view.clip;if(cut>0.0){continue;}
+let c=field(p);let edge=exp(-abs(c)*6.0);
+let slice=1.0-smoothstep(0.0,0.055,-cut);
+let density=0.028+0.18*edge+0.17*slice;
+let tone=smoothstep(-0.42,0.42,c);
+let col=mix(vec3f(0.095,0.115,0.13),vec3f(0.99,0.92,0.78),tone);
+let alpha=1.0-exp(-density*span*3.0*view.opacity/64.0);
+rgb=rgb+trans*alpha*col*(0.75+0.25*(0.5+0.5*p.y));
+trans=trans*(1.0-alpha);if(trans<0.012){break;}
+}
+return vec4f(pow(max(rgb+trans*bg,vec3f(0.0)),vec3f(0.92)),1.0);
+}`;
+try{
+const module=device.createShaderModule({code}),info=await module.getCompilationInfo();
+const errs=info.messages.filter(m=>m.type==='error');
+if(errs.length){show('WGSL compilation failed:\n'+errs.map(m=>m.lineNum+':'+m.linePos+' '+m.message).join('\n'));return}
+device.pushErrorScope('validation');
+const chem=await device.createComputePipelineAsync({layout:'auto',compute:{module,entryPoint:'chemical'}});
+const evolve=await device.createComputePipelineAsync({layout:'auto',compute:{module,entryPoint:'evolve'}});
+const format=navigator.gpu.getPreferredCanvasFormat();
+const render=await device.createRenderPipelineAsync({layout:'auto',vertex:{module,entryPoint:'vertexMain'},fragment:{module,entryPoint:'fragmentMain',targets:[{format}]},primitive:{topology:'triangle-list'}});
+const context=canvas.getContext('webgpu');context.configure({device,format,alphaMode:'opaque'});
+const size=32**3*4,usage=GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST;
+const phase=[0,1].map(()=>device.createBuffer({size,usage})),mu=device.createBuffer({size,usage});
+const uniform=device.createBuffer({size:16,usage:GPUBufferUsage.UNIFORM|GPUBufferUsage.COPY_DST});
+function seed(){let a=new Float32Array(32**3),state=17029;
+for(let z=0;z<32;z++)for(let y=0;y<32;y++)for(let x=0;x<32;x++){
+state^=state<<13;state^=state>>>17;state^=state<<5;
+a[x+32*(y+32*z)]=0.13*(state/4294967296)+0.09*Math.sin(x*.39+y*.22)*Math.cos(z*.33)+0.05*Math.sin((x+y+z)*.44)}
+let mean=a.reduce((p,q)=>p+q,0)/a.length;for(let i=0;i<a.length;i++)a[i]-=mean;
+device.queue.writeBuffer(phase[0],0,a);device.queue.writeBuffer(phase[1],0,a);slot=0;steps=0}seed();
+const group=(pipe,items)=>device.createBindGroup({layout:pipe.getBindGroupLayout(0),entries:items.map(([binding,buffer])=>({binding,resource:{buffer}}))});
+const chemBG=[group(chem,[[0,phase[0]],[1,mu]]),group(chem,[[0,phase[1]],[1,mu]])];
+const evolveBG=[group(evolve,[[0,mu],[1,phase[1]],[2,phase[0]]]),group(evolve,[[0,mu],[1,phase[0]],[2,phase[1]]])];
+const renderBG=[0,1].map(i=>device.createBindGroup({layout:render.getBindGroupLayout(1),entries:[{binding:0,resource:{buffer:phase[i]}},{binding:1,resource:{buffer:uniform}}]}));
+const initErr=await device.popErrorScope();if(initErr){show('Pipeline validation error: '+initErr.message);return}
+function resize(){let w=Math.min(560,Math.max(1,Math.floor(canvas.clientWidth*devicePixelRatio))),h=Math.min(520,Math.max(1,Math.floor(canvas.clientHeight*devicePixelRatio)));if(w!==canvas.width||h!==canvas.height){canvas.width=w;canvas.height=h}}
+function frame(){if(dead)return;try{
+resize();if(resetFlag){seed();resetFlag=false}
+device.queue.writeBuffer(uniform,0,new Float32Array([+el('clip').value,+el('opacity').value,canvas.width/canvas.height,0]));
+let encoder=device.createCommandEncoder();
+if(!paused){let pass=encoder.beginComputePass(),count=+el('speed').value;
+for(let j=0;j<count;j++){pass.setPipeline(chem);pass.setBindGroup(0,chemBG[slot]);pass.dispatchWorkgroups(8,8,8);
+pass.setPipeline(evolve);pass.setBindGroup(0,evolveBG[slot]);pass.dispatchWorkgroups(8,8,8);slot^=1;steps++}pass.end()}
+let pass=encoder.beginRenderPass({colorAttachments:[{view:context.getCurrentTexture().createView(),clearValue:{r:.88,g:.85,b:.78,a:1},loadOp:'clear',storeOp:'store'}]});
+pass.setPipeline(render);pass.setBindGroup(1,renderBG[slot]);pass.draw(3);pass.end();device.queue.submit([encoder.finish()]);
+show('32³ conserved concentration · '+steps+' steps · '+(paused?'paused':'running')+'\nTwo-pass chemical potential / divergence · 64-sample volume');
+requestAnimationFrame(frame)}catch(e){show('Runtime error: '+e.stack)}}requestAnimationFrame(frame)
+}catch(e){show('WebGPU setup error: '+e.stack)}
+})();</script></body></html>
