@@ -1,0 +1,67 @@
+name: Linux FTP Lab / le00 bootstrap
+on:
+  push:
+    branches: [main]
+    paths:
+      - "linux-ftp-lab/**"
+      - ".github/workflows/linux-ftp-lab-le00.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  static-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check JS and shell syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash -n linux-ftp-lab/scripts/prepare-assets.sh
+          sed -n '/^<script>$/,/^<\/script>/p' linux-ftp-lab/index.html | sed '1d;$d' > /tmp/linux-ftp-lab.js
+          node --check /tmp/linux-ftp-lab.js
+          grep -q 'new V86' linux-ftp-lab/index.html
+  le00-install:
+    needs: static-check
+    runs-on: [self-hosted, Linux, X64, le00-runner]
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download v86 and Linux image
+        run: bash linux-ftp-lab/scripts/prepare-assets.sh
+      - name: Install and start standalone static server
+        shell: bash
+        run: |
+          set -euo pipefail
+          dst="$HOME/.local/share/browser-linux-ftp-lab"
+          mkdir -p "$dst/vendor" "$HOME/.config/systemd/user" "$HOME/.local/state/browser-linux-ftp-lab"
+          cp linux-ftp-lab/index.html "$dst/index.html"
+          cp linux-ftp-lab/vendor/* "$dst/vendor/"
+          cat > "$HOME/.config/systemd/user/browser-linux-ftp-lab.service" <<EOF
+          [Unit]
+          Description=Browser Linux FTP Lab
+          [Service]
+          WorkingDirectory=$dst
+          ExecStart=/usr/bin/python3 -m http.server 8765 --bind 0.0.0.0
+          Restart=on-failure
+          [Install]
+          WantedBy=default.target
+          EOF
+          if systemctl --user daemon-reload && systemctl --user enable --now browser-linux-ftp-lab.service; then
+            echo "user systemd service started"
+          else
+            echo "user systemd unavailable; trying detached server"
+            if ! curl -fsS --connect-timeout 2 http://127.0.0.1:8765/ -o /dev/null; then
+              cd "$dst"
+              RUNNER_TRACKING_ID= nohup /usr/bin/python3 -m http.server 8765 --bind 0.0.0.0 > "$HOME/.local/state/browser-linux-ftp-lab/server.log" 2>&1 < /dev/null &
+            fi
+          fi
+          sleep 2
+          curl -fsS --retry 4 --retry-delay 2 http://127.0.0.1:8765/ -o /dev/null
+          curl -fsS http://127.0.0.1:8765/vendor/v86.wasm -o /dev/null
+          echo "LE00_STATIC_HTTP_OK"
+      - name: Install diagnostic
+        if: always()
+        run: |
+          test ! -d "$HOME/.local/share/browser-linux-ftp-lab/vendor" || du -sh "$HOME/.local/share/browser-linux-ftp-lab/vendor"
