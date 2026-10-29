@@ -103,7 +103,7 @@ $("uname").onclick=()=>send("uname -a; cat /proc/version");
 $("list").onclick=()=>send("/tmp/busybox-i386 --list | grep -E '^(ftpd|ftpput|tcpsvd|httpd|wget)$'");
 $("mount").onclick=()=>send("ls -la /mnt; mount | grep 9p; mkdir -p /srv/www");
 $("install").onclick=async()=>{try{status("FTP/HTTP BusyBoxを転送中");const r=await fetch("./vendor/busybox-i386");if(!r.ok)throw Error("busybox-i386 HTTP "+r.status);const bytes=new Uint8Array(await r.arrayBuffer());await vm.create_file("/busybox-i386",bytes);print("\n[9p] BusyBox binary "+bytes.length+" bytes staged in guest /mnt\n");send("cp /mnt/busybox-i386 /tmp/busybox-i386; chmod +x /tmp/busybox-i386; /tmp/busybox-i386 ifconfig lo 127.0.0.1 up; /tmp/busybox-i386 ifconfig lo; /tmp/busybox-i386 --list | grep -E '^(ftpd|ftpput|tcpsvd|httpd|wget)$'")}catch(e){status("BusyBox導入失敗: "+e.message,true)}};
-$("ftpd").onclick=()=>send("/tmp/busybox-i386 tcpsvd -E 127.0.0.1 2121 /tmp/busybox-i386 ftpd -w /srv/www >/tmp/ftp-lab.log 2>&1 &");
+$("ftpd").onclick=()=>send("/tmp/busybox-i386 tcpsvd -E 127.0.0.1 2121 /tmp/busybox-i386 ftpd -A -w /srv/www >/tmp/ftp-lab.log 2>&1 &");
 $("stage").onclick=async()=>{try{await vm.create_file("/index.html",encoder.encode($("html").value));print("\n[9p] /index.html を作成\n");status("9pに配置。次にFTP転送してください")}catch(e){status("9p書込失敗: "+e.message,true)}};
 $("put").onclick=()=>send("/tmp/busybox-i386 ftpput -v -P 2121 -u anonymous -p demo 127.0.0.1 index.html /mnt/index.html; ls -l /srv/www");
 $("httpd").onclick=()=>send("/tmp/busybox-i386 httpd -p 8080 -h /srv/www; cat /proc/net/tcp");
