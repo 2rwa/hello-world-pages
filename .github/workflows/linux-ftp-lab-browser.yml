@@ -1,0 +1,42 @@
+name: Linux FTP Lab / real browser integration
+on:
+  push:
+    branches: [main]
+    paths:
+      - "linux-ftp-lab/**"
+      - ".github/workflows/linux-ftp-lab-browser.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  browser-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download Linux kernel and v86 assets
+        run: bash linux-ftp-lab/scripts/prepare-assets.sh
+      - name: Install headless Chromium driver
+        shell: bash
+        run: |
+          npm install --no-save playwright-core@1.55.0
+          (command -v google-chrome || command -v chromium || command -v google-chrome-stable) > /tmp/linux-browser-path
+      - name: Start static server
+        shell: bash
+        run: |
+          python3 -m http.server 8123 --bind 127.0.0.1 > /tmp/linux-http.log 2>&1 &
+          sleep 2
+      - name: Boot Linux + check FTP and HTTP data path
+        shell: bash
+        run: |
+          CHROME_PATH="$(cat /tmp/linux-browser-path)" node linux-ftp-lab/ci/smoke.mjs 2>&1 | tee /tmp/linux-ftp-smoke.log
+      - name: Upload diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-ftp-lab-browser
+          path: |
+            /tmp/linux-ftp-lab.png
+            /tmp/linux-http.log
+            /tmp/linux-ftp-smoke.log
+          if-no-files-found: ignore
