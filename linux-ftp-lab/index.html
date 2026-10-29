@@ -35,7 +35,7 @@ details{border-top:1px solid #304b60;margin:18px 0;padding-top:10px}summary{curs
 </section>
 <section class="panel"><h2>2. FTP → Web 公開</h2>
 <div class="step"><strong>A. 9pファイル共有</strong><p class="muted">ブラウザのHTML編集内容を仮想Linuxの共有フォルダに渡すために使用します。</p>
-<button id="mount" disabled>9pマウント</button></div>
+<div class="toolbar"><button id="mount" disabled>9p共有を確認</button><button id="install" disabled>FTP/HTTPツール導入</button></div></div>
 <div class="step"><strong>B. Linux内FTPサーバー</strong><p class="muted">仮想Linuxのループバック127.0.0.1:2121でFTP待受を開始します。</p>
 <button id="ftpd" disabled>ftpdを起動</button></div>
 <div class="step"><strong>C. HTMLをFTP転送</strong><p><label for="html">index.html</label></p>
@@ -55,7 +55,7 @@ details{border-top:1px solid #304b60;margin:18px 0;padding-top:10px}summary{curs
 <p><code>uname -a</code>、<code>cat /proc/version</code>、<code>ps</code>をLinuxの中で実行してください。シェル、カーネル、仮想NIC、TCP、FTP/HTTPは見せかけではありません。</p>
 <p>ブラウザはゲストのTCPポートを直接開きません。HTTPプレビューはゲスト内wgetが取得した応答を9p経由で読みます。</p></details>
 <details><summary>注意・現状の検証範囲</summary>
-<p>ベースに公式v86のBuildroot Linuxを使用。FTP関連BusyBoxアプレットが全て組み込まれているかは未確認です。未搭載の場合はLinux側でそのコマンドが失敗します（成功画面の偽装はしません）。</p>
+<p>公式v86のBuildroot LinuxにはFTPコマンドが不足しているため、静的リンクしたi686版BusyBoxをゲストに転送します。未搭載の場合はLinux側でそのコマンドが失敗します（成功画面の偽装はしません）。</p>
 <p>FTP/HTTPは仮想Linux内の127.0.0.1に限定します。Web表示はsandbox付きiframeでスクリプトの実行を禁止。VMデータは通常ブラウザの再読み込みで失われます。</p></details>
 <p class="muted">Engine: <a href="https://github.com/copy/v86">copy/v86</a> (BSD-2-Clause), serial boot modeled after the upstream serial example.</p>
 <div id="screen_container"><div></div><canvas></canvas></div>
@@ -65,7 +65,7 @@ details{border-top:1px solid #304b60;margin:18px 0;padding-top:10px}summary{curs
 const $ = id => document.getElementById(id);
 const terminal = $("terminal");
 let vm=null, ready=false, loading=false, log="", tail="";
-const guestButtons=["uname","list","mount","ftpd","stage","put","httpd","wget","preview","send"];
+const guestButtons=["uname","list","mount","install","ftpd","stage","put","httpd","wget","preview","send"];
 const encoder=new TextEncoder(), decoder=new TextDecoder();
 function status(s,err){$("status").textContent=s;$("status").style.color=err?"#ffbbbb":"#bcf5d4"}
 function print(s){log+=s;if(log.length>150000)log=log.slice(-115000);terminal.textContent=log;terminal.scrollTop=terminal.scrollHeight}
@@ -100,7 +100,37 @@ async function boot(){
 $("boot").onclick=boot;
 $("clear").onclick=()=>{log="";terminal.textContent=""};
 $("uname").onclick=()=>send("uname -a; cat /proc/version");
-$("list").onclick=()=>send("busybox --list | grep -E '^(ftpd|ftpput|tcpsvd|httpd|wget)$'");
+$("list").onclick=()=>send("/tmp/busybox-i386 --list | grep -E '^(ftpd|ftpput|tcpsvd|httpd|wget)
+$("mount").onclick=()=>send("ls -la /mnt; mount | grep 9p; mkdir -p /srv/www");
+$("install").onclick=async()=>{try{status("FTP/HTTP BusyBoxを転送中");const r=await fetch("./vendor/busybox-i386");if(!r.ok)throw Error("busybox-i386 HTTP "+r.status);const bytes=new Uint8Array(await r.arrayBuffer());await vm.create_file("/busybox-i386",bytes);print("\n[9p] BusyBox binary "+bytes.length+" bytes staged in guest /mnt\n");send("cp /mnt/busybox-i386 /tmp/busybox-i386; chmod +x /tmp/busybox-i386; /tmp/busybox-i386 --list | grep -E '^(ftpd|ftpput|tcpsvd|httpd|wget)
+$("ftpd").onclick=()=>send("/tmp/busybox-i386 tcpsvd -E 127.0.0.1 2121 /tmp/busybox-i386 ftpd -w /srv/www >/tmp/ftp-lab.log 2>&1 &");
+$("stage").onclick=async()=>{try{await vm.create_file("/index.html",encoder.encode($("html").value));print("\n[9p] /index.html を作成\n");status("9pに配置。次にFTP転送してください")}catch(e){status("9p書込失敗: "+e.message,true)}};
+$("put").onclick=()=>send("/tmp/busybox-i386 ftpput -v -P 2121 -u anonymous -p demo 127.0.0.1 index.html /mnt/index.html; ls -l /srv/www");
+$("httpd").onclick=()=>send("/tmp/busybox-i386 httpd -p 8080 -h /srv/www; cat /proc/net/tcp");
+$("wget").onclick=()=>send("/tmp/busybox-i386 wget -q -O /mnt/preview.html http://127.0.0.1:8080/; wc -c /mnt/preview.html");
+$("preview").onclick=async()=>{try{const bytes=await vm.read_file("/preview.html");const html=decoder.decode(bytes);if(!html.trim())throw Error("HTTP応答が空");$("result").srcdoc=html;status("Linuxの実HTTP応答を表示")}catch(e){status("HTTPレスポンス未取得: "+e.message,true)}};
+$("form").onsubmit=e=>{e.preventDefault();const c=$("cmd");if(c.value.trim())send(c.value);c.value=""};
+window.addEventListener("unhandledrejection",e=>status("非同期エラー: "+String(e.reason),true));
+</script></body></html>");
+$("mount").onclick=()=>send("mkdir -p /mnt/share /srv/www; mount -t 9p -o trans=virtio,version=9p2000.L host9p /mnt/share; mount | grep 9p");
+$("ftpd").onclick=()=>send("busybox tcpsvd -E 127.0.0.1 2121 busybox ftpd -w /srv/www >/tmp/ftp-lab.log 2>&1 &");
+$("stage").onclick=async()=>{try{await vm.create_file("/index.html",encoder.encode($("html").value));print("\n[9p] /index.html を作成\n");status("9pに配置。次にFTP転送してください")}catch(e){status("9p書込失敗: "+e.message,true)}};
+$("put").onclick=()=>send("busybox ftpput -v -P 2121 -u anonymous -p demo 127.0.0.1 index.html /mnt/share/index.html; ls -l /srv/www");
+$("httpd").onclick=()=>send("busybox httpd -p 8080 -h /srv/www; cat /proc/net/tcp");
+$("wget").onclick=()=>send("busybox wget -q -O /mnt/share/preview.html http://127.0.0.1:8080/; wc -c /mnt/share/preview.html");
+$("preview").onclick=async()=>{try{const bytes=await vm.read_file("/preview.html");const html=decoder.decode(bytes);if(!html.trim())throw Error("HTTP応答が空");$("result").srcdoc=html;status("Linuxの実HTTP応答を表示")}catch(e){status("HTTPレスポンス未取得: "+e.message,true)}};
+$("form").onsubmit=e=>{e.preventDefault();const c=$("cmd");if(c.value.trim())send(c.value);c.value=""};
+window.addEventListener("unhandledrejection",e=>status("非同期エラー: "+String(e.reason),true));
+</script></body></html>")}catch(e){status("BusyBox導入失敗: "+e.message,true)}};
+$("ftpd").onclick=()=>send("busybox tcpsvd -E 127.0.0.1 2121 busybox ftpd -w /srv/www >/tmp/ftp-lab.log 2>&1 &");
+$("stage").onclick=async()=>{try{await vm.create_file("/index.html",encoder.encode($("html").value));print("\n[9p] /index.html を作成\n");status("9pに配置。次にFTP転送してください")}catch(e){status("9p書込失敗: "+e.message,true)}};
+$("put").onclick=()=>send("busybox ftpput -v -P 2121 -u anonymous -p demo 127.0.0.1 index.html /mnt/share/index.html; ls -l /srv/www");
+$("httpd").onclick=()=>send("busybox httpd -p 8080 -h /srv/www; cat /proc/net/tcp");
+$("wget").onclick=()=>send("busybox wget -q -O /mnt/share/preview.html http://127.0.0.1:8080/; wc -c /mnt/share/preview.html");
+$("preview").onclick=async()=>{try{const bytes=await vm.read_file("/preview.html");const html=decoder.decode(bytes);if(!html.trim())throw Error("HTTP応答が空");$("result").srcdoc=html;status("Linuxの実HTTP応答を表示")}catch(e){status("HTTPレスポンス未取得: "+e.message,true)}};
+$("form").onsubmit=e=>{e.preventDefault();const c=$("cmd");if(c.value.trim())send(c.value);c.value=""};
+window.addEventListener("unhandledrejection",e=>status("非同期エラー: "+String(e.reason),true));
+</script></body></html>");
 $("mount").onclick=()=>send("mkdir -p /mnt/share /srv/www; mount -t 9p -o trans=virtio,version=9p2000.L host9p /mnt/share; mount | grep 9p");
 $("ftpd").onclick=()=>send("busybox tcpsvd -E 127.0.0.1 2121 busybox ftpd -w /srv/www >/tmp/ftp-lab.log 2>&1 &");
 $("stage").onclick=async()=>{try{await vm.create_file("/index.html",encoder.encode($("html").value));print("\n[9p] /index.html を作成\n");status("9pに配置。次にFTP転送してください")}catch(e){status("9p書込失敗: "+e.message,true)}};

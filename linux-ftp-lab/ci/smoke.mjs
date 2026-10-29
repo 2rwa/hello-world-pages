@@ -16,6 +16,10 @@ try {
   console.log('REAL_LINUX_SHELL_READY');
   await page.locator('#uname').click();
   await page.waitForTimeout(1500);
+  await page.locator('#mount').click();
+  await page.waitForTimeout(1000);
+  await page.locator('#install').click();
+  await page.waitForTimeout(2400);
   await page.locator('#list').click();
   await page.waitForTimeout(2000);
   const initial=await page.locator('#terminal').textContent();
@@ -25,8 +29,6 @@ try {
   const found=applets.filter(a=>lines.some(s=>s===a));
   console.log('BUSYBOX_APPLETS='+found.join(','));
   if(found.length<applets.length)throw new Error('Missing applets: '+applets.filter(a=>!found.includes(a)).join(','));
-  await page.locator('#mount').click();
-  await page.waitForTimeout(1300);
   await page.locator('#stage').click();
   await page.waitForTimeout(700);
   await page.locator('#ftpd').click();
