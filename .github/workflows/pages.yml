@@ -25,6 +25,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
+      - name: Include Linux FTP Lab v86 and BusyBox assets
+        run: bash linux-ftp-lab/scripts/prepare-assets.sh
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
 

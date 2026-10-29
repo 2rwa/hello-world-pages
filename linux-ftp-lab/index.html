@@ -57,7 +57,7 @@ details{border-top:1px solid #304b60;margin:18px 0;padding-top:10px}summary{curs
 <details><summary>注意・現状の検証範囲</summary>
 <p>公式v86のBuildroot LinuxにはFTPコマンドが不足しているため、静的リンクしたi686版BusyBoxをゲストに転送します。未搭載の場合はLinux側でそのコマンドが失敗します（成功画面の偽装はしません）。</p>
 <p>FTP/HTTPは仮想Linux内の127.0.0.1に限定します。Web表示はsandbox付きiframeでスクリプトの実行を禁止。VMデータは通常ブラウザの再読み込みで失われます。</p></details>
-<p class="muted">Engine: <a href="https://github.com/copy/v86">copy/v86</a> (BSD-2-Clause), serial boot modeled after the upstream serial example.</p>
+<p class="muted">Engine: <a href="https://github.com/copy/v86">copy/v86</a> (BSD-2-Clause); BusyBox (GPLv2) <a href="./vendor/busybox-1.35.0.tar.bz2">source</a> / <a href="./vendor/busybox-i386.config">build config</a>. Serial boot based on the upstream example.</p>
 <div id="screen_container"><div></div><canvas></canvas></div>
 </main>
 <script>

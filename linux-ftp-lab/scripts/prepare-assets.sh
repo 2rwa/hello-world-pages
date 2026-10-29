@@ -16,7 +16,9 @@ get https://copy.sh/v86/bios/seabios.bin seabios.bin 10000
 get https://copy.sh/v86/bios/vgabios.bin vgabios.bin 10000
 get https://i.copy.sh/buildroot-bzimage68.bin buildroot-bzimage68.bin 200000
 get https://busybox.net/downloads/binaries/1.35.0-i686-linux-musl/busybox busybox-i386 300000
+get https://busybox.net/downloads/binaries/1.35.0-i686-linux-musl/config busybox-i386.config 10000
+get https://busybox.net/downloads/busybox-1.35.0.tar.bz2 busybox-1.35.0.tar.bz2 1000000
 chmod +x "$dest/busybox-i386"
 for cmd in ftpd ftpput tcpsvd httpd wget; do "$dest/busybox-i386" --list | grep -qx "$cmd"; done
-(cd "$dest" && sha256sum libv86.js v86.wasm seabios.bin vgabios.bin buildroot-bzimage68.bin busybox-i386 > SHA256SUMS)
+(cd "$dest" && sha256sum libv86.js v86.wasm seabios.bin vgabios.bin buildroot-bzimage68.bin busybox-i386 busybox-i386.config busybox-1.35.0.tar.bz2 > SHA256SUMS)
 echo "Ready: $dest"

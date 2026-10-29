@@ -1,32 +1,46 @@
-# Linux FTP Lab — real Linux kernel in the browser
+# Linux FTP Lab: real Linux kernel in browser
 
-Uses the v86 WebAssembly x86 emulator and an actual Buildroot Linux kernel. This is not a mock terminal and not a syscall-only Linux emulation layer.
+A working interactive educational experiment: **real Linux kernel 6.8.12 inside an x86 v86 emulated computer in the visitor's browser**, complete with serial console and real guest TCP networking.
 
-## Guest flow
+## What is real?
 
-1. Boot real Linux; inspect uname -a, /proc/version, and ps.
-2. Mount writable 9p shared filesystem in guest under /mnt/share.
-3. Edit index.html in the browser and stage it into the guest share.
-4. Start a BusyBox ftpd server via tcpsvd, bound to GUEST loopback 127.0.0.1:2121.
-5. Use guest ftpput to upload index.html over real guest TCP to /srv/www.
-6. Start guest httpd on 127.0.0.1:8080 and capture actual guest HTTP GET using wget into /mnt/share/preview.html.
-7. Read HTTP output through the v86 9p API and display it inside a sandboxed iframe.
+- v86 emulates the x86 CPU/hardware and boots a real kernel. Verify via uname -a, /proc/version and /proc/net/tcp in the console.
+- The stock v86 Buildroot image does not include FTP applets. A static i686-musl BusyBox 1.35.0 binary is delivered to the guest via v86's 9p host9p filesystem and copied into /tmp.
+- BusyBox ifconfig brings guest lo/127.0.0.1 up.
+- A genuine guest FTP server (tcpsvd + ftpd -A -w) listens on guest 127.0.0.1:2121, accepting anonymous writes ONLY inside the browser VM.
+- BusyBox ftpput sends index.html using guest TCP and FTP protocol into /srv/www/index.html.
+- Guest httpd listens on 127.0.0.1:8080 and serves that file. Guest wget fetches the HTTP response into /mnt/preview.html.
+- JS reads the guest 9p response and displays it using sandboxed iframe. There is **no browser TCP-to-guest direct connection**.
+- Everything other than serving static assets runs in the visitor's browser, not on le00.
 
-The browser does not directly forward guest HTTP/TCP. HTTP preview shows the response fetched by the Linux guest.
+## CI proof
 
-Unverified requirement: The upstream v86 Buildroot image may not contain all BusyBox applets (tcpsvd, ftpd, ftpput, httpd). If absent, commands genuinely fail, and we must create a custom guest image. The first commit is a proof-of-concept, not a verified full FTP end-to-end release.
+The real Chromium CI run https://github.com/2rwa/hello-world-pages/actions/runs/40908322575 logged both REAL_LINUX_SHELL_READY and FTP_HTTP_END_TO_END_OK. It verified uname -a and the exact HTML string in the guest's HTTP response.
 
-## Host on le00
+## Public test
 
-Run these from the linux-ftp-lab folder:
+https://2rwa.github.io/hello-world-pages/linux-ftp-lab/
+
+The central GitHub Pages deployment pipeline downloads v86, the Buildroot kernel, the BusyBox binary and its corresponding source code/configuration into linux-ftp-lab/vendor before publishing, so the browser can run without depending on cross-origin upstream scripts.
+
+## le00 LAN hosting
+
+The project has a push-triggered workflow (.github/workflows/linux-ftp-lab-le00.yml) for [self-hosted, Linux, X64, le00-runner]. It downloads assets, installs a static-only HTTP application into the runner user's home under ~/.local/share/browser-linux-ftp-lab, and tries to start port 8765 via user-scope systemd, with a detached HTTP fallback. No sudo or system nginx changes.
+
+Manual setup from linux-ftp-lab directory:
 
     bash scripts/prepare-assets.sh
     python3 -m http.server 8765 --bind 0.0.0.0
 
-Open http://le00:8765/ on LAN, if name resolution works. The repo includes a push-triggered GitHub Actions workflow that installs the app and downloads v86 assets onto le00-runner under the runner user's home directory, no sudo or nginx changes.
+Open http://le00:8765/ if DNS is configured for le00.
 
-The GitHub Pages test URL is https://2rwa.github.io/hello-world-pages/linux-ftp-lab/ and uses upstream URLs if vendor assets are not present, potentially limited by CORS.
+**Runner installation is not verified** as of the CI success; the le00-install jobs were queued rather than assigned to a runner. A successful GitHub browser CI test proves functionality but does NOT prove le00 has installed the app.
 
-## Safety
+## Licensing and security
 
-FTP and HTTP are loopback-only within the guest. Browser HTTP preview has iframe sandbox without script privileges. The host only serves static files; input commands do not execute on le00. LAN-bound port 8765 is unauthenticated: do not forward it to public internet without access control. Vendor dependencies must be pinned and audited for production.
+- v86 is BSD-2-Clause; https://github.com/copy/v86
+- BusyBox is GPLv2; corresponding 1.35.0 source tarball and binary configuration are shipped next to the binary (vendor/busybox-1.35.0.tar.bz2 and vendor/busybox-i386.config). The binary comes from the BusyBox project's official static build directory.
+- Guest ftpd -A -w is anonymous and writable, but only binds to 127.0.0.1 **inside the guest virtual machine**, never to le00's host network.
+- Guest HTTP binds to guest loopback. The iframe has sandbox="" (no active scripts or same-origin).
+- Don't store secrets in an ephemeral browser guest; the static LAN service on le00:8765 must not be Internet-exposed without authorization.
+- Pin checksums before long-term or production operation; initial bootstrap currently downloads third-party artifacts from upstream on CI.
