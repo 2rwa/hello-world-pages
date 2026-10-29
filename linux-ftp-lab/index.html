@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Linux FTP Lab | real Linux kernel in browser</title>
+<style>
+:root{color-scheme:dark;font:15px system-ui,sans-serif;background:#0b1422;color:#eaf3ff}
+*{box-sizing:border-box}body{margin:0}header{padding:28px 3vw;background:linear-gradient(110deg,#163e47,#141b30);border-bottom:1px solid #375368}
+main{padding:22px 3vw;max-width:1440px;margin:auto}h1{font-size:clamp(24px,4vw,38px);margin:8px 0}h2{font-size:18px;margin:2px 0 12px}
+p{line-height:1.6}.eyebrow{font:700 12px system-ui;letter-spacing:.12em;color:#78e7c5}
+.status{display:inline-block;padding:7px 10px;background:#304556;border-radius:20px;font:12px monospace}
+.layout{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(310px,.9fr);gap:16px}
+.panel{min-width:0;padding:18px;background:#162235;border:1px solid #385269;border-radius:13px}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+button{border:1px solid #496883;background:#2d4868;color:white;font:600 13px system-ui;padding:10px 11px;border-radius:7px;cursor:pointer}
+button:hover{background:#416489}button.primary{background:#12796e}button:disabled{opacity:.44;cursor:not-allowed}
+.terminal{background:#050e14;color:#bcf5d3;border:1px solid #31574f;height:390px;padding:13px;border-radius:8px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;font:13px/1.45 ui-monospace,Consolas,monospace}
+form{display:flex;gap:8px;margin:10px 0}input{flex:1;min-width:0;background:#091624;border:1px solid #456178;color:white;font:14px monospace;padding:10px;border-radius:8px}
+textarea{display:block;width:100%;background:#081725;color:#e3ffef;border:1px solid #3c5d72;border-radius:8px;padding:11px;font:13px/1.45 monospace;resize:vertical}
+.step{border-top:1px solid #334c61;padding:12px 0}.step strong{color:#7ce6c7}
+.muted{color:#acbdd2;font-size:13px}iframe{width:100%;height:280px;border:1px solid #889db5;border-radius:8px;background:white}
+details{border-top:1px solid #304b60;margin:18px 0;padding-top:10px}summary{cursor:pointer}code{color:#b7f0f9}
+#screen_container{position:absolute;visibility:hidden;pointer-events:none}#screen_container canvas{display:none}a{color:#87d8ff}
+@media(max-width:800px){.layout{grid-template-columns:1fr}.terminal{height:300px}.panel{padding:13px}}
+</style></head><body>
+<header><div class="eyebrow">V86 / WEBASSEMBLY / REAL LINUX KERNEL</div><h1>Linux FTP Lab</h1>
+<p>ブラウザ内のx86仮想マシンで本物のLinuxを起動。LinuxのシェルでFTP転送し、HTTPサーバーの応答を表示する実験です。</p>
+<span id="status" class="status">停止中。Linux起動を押してください</span></header>
+<main><div class="layout">
+<section class="panel"><h2>1. Linuxシリアルターミナル</h2>
+<div class="toolbar"><button id="boot" class="primary">Linux起動</button><button id="uname" disabled>uname -a</button>
+<button id="list" disabled>FTPコマンド確認</button><button id="clear">画面消去</button></div>
+<pre id="terminal" class="terminal" role="log">Linuxの実際のカーネルログとシリアル出力を表示します。</pre>
+<form id="form"><input id="cmd" disabled autocomplete="off" spellcheck="false" placeholder="Linuxコマンドを入力 (例: cat /proc/version)">
+<button id="send" type="submit" disabled>Enter</button></form>
+<p class="muted">ここで入力した文字列を実際のLinuxシリアルポートへ送信します。</p>
+</section>
+<section class="panel"><h2>2. FTP → Web 公開</h2>
+<div class="step"><strong>A. 9pファイル共有</strong><p class="muted">ブラウザのHTML編集内容を仮想Linuxの共有フォルダに渡すために使用します。</p>
+<button id="mount" disabled>9pマウント</button></div>
+<div class="step"><strong>B. Linux内FTPサーバー</strong><p class="muted">仮想Linuxのループバック127.0.0.1:2121でFTP待受を開始します。</p>
+<button id="ftpd" disabled>ftpdを起動</button></div>
+<div class="step"><strong>C. HTMLをFTP転送</strong><p><label for="html">index.html</label></p>
+<textarea id="html" rows="7" spellcheck="false"><!doctype html>
+<html lang="ja"><meta charset="utf-8">
+<title>FTPが成功しました</title>
+<style>body{background:#e9fff8;color:#09694d;font:20px system-ui;margin:40px}</style>
+<h1>Hello from Linux!</h1>
+<p>このページは本物のLinuxでFTP転送されました。</p>
+</html></textarea>
+<div class="toolbar"><button id="stage" disabled>HTMLを9p共有</button><button id="put" disabled>ftpputで転送</button></div></div>
+<div class="step"><strong>D. LinuxのHTTPサーバー</strong><p class="muted">ゲストのhttpdを起動後、ゲストのwgetでHTTP応答を取得。9p経由で表示します。</p>
+<div class="toolbar"><button id="httpd" disabled>httpd起動</button><button id="wget" disabled>HTTP GET</button><button id="preview" class="primary" disabled>ページ表示</button></div>
+<iframe id="result" title="guest Linux HTTP response" sandbox="" referrerpolicy="no-referrer" srcdoc="<p style='font:16px system-ui;padding:20px;color:#667'>まだHTTPレスポンスはありません。</p>"></iframe>
+</div></section></div>
+<details><summary>本当にカーネルが動いているのか確認</summary>
+<p><code>uname -a</code>、<code>cat /proc/version</code>、<code>ps</code>をLinuxの中で実行してください。シェル、カーネル、仮想NIC、TCP、FTP/HTTPは見せかけではありません。</p>
+<p>ブラウザはゲストのTCPポートを直接開きません。HTTPプレビューはゲスト内wgetが取得した応答を9p経由で読みます。</p></details>
+<details><summary>注意・現状の検証範囲</summary>
+<p>ベースに公式v86のBuildroot Linuxを使用。FTP関連BusyBoxアプレットが全て組み込まれているかは未確認です。未搭載の場合はLinux側でそのコマンドが失敗します（成功画面の偽装はしません）。</p>
+<p>FTP/HTTPは仮想Linux内の127.0.0.1に限定します。Web表示はsandbox付きiframeでスクリプトの実行を禁止。VMデータは通常ブラウザの再読み込みで失われます。</p></details>
+<p class="muted">Engine: <a href="https://github.com/copy/v86">copy/v86</a> (BSD-2-Clause), serial boot modeled after the upstream serial example.</p>
+<div id="screen_container"><div></div><canvas></canvas></div>
+</main>
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const terminal = $("terminal");
+let vm=null, ready=false, loading=false, log="", tail="";
+const guestButtons=["uname","list","mount","ftpd","stage","put","httpd","wget","preview","send"];
+const encoder=new TextEncoder(), decoder=new TextDecoder();
+function status(s,err){$("status").textContent=s;$("status").style.color=err?"#ffbbbb":"#bcf5d4"}
+function print(s){log+=s;if(log.length>150000)log=log.slice(-115000);terminal.textContent=log;terminal.scrollTop=terminal.scrollHeight}
+function send(command){if(!vm||!ready){status("Linuxのシェルがまだ利用できません",true);return}print("\n[guest command] "+command+"\n");vm.serial0_send(command+"\n")}
+function serial(byte){const c=String.fromCharCode(byte);if(c==="\r")return;print(c);tail=(tail+c).slice(-320);
+ if(!ready&&/(?:~% |(?:^|\n)[^\n]{0,70}(?:# |\$ ))$/.test(tail)){ready=true;status("Linuxシェル起動完了");guestButtons.forEach(x=>$(x).disabled=false);$("cmd").disabled=false}}
+function loadScript(src){return new Promise((yes,no)=>{const s=document.createElement("script");s.src=src;s.onload=yes;s.onerror=()=>no(Error("Cannot load "+src));document.head.append(s)})}
+async function boot(){
+ if(loading)return;loading=true;$("boot").disabled=true;log="";terminal.textContent="";
+ try{
+  status("v86エンジンをロード中");
+  let local=false;
+  try{local=(await fetch("./vendor/libv86.js",{method:"HEAD"})).ok}catch{}
+  const base=local?"./vendor/":"https://copy.sh/v86/";
+  await loadScript(base+(local?"libv86.js":"build/libv86.js"));
+  if(typeof V86!=="function")throw Error("V86 APIが見つかりません");
+  status("Linuxカーネルをダウンロード・起動中");
+  vm=new V86({
+   wasm_path:base+(local?"v86.wasm":"build/v86.wasm"),
+   bios:{url:base+(local?"seabios.bin":"bios/seabios.bin")},
+   vga_bios:{url:base+(local?"vgabios.bin":"bios/vgabios.bin")},
+   bzimage:{url:local?base+"buildroot-bzimage68.bin":"https://i.copy.sh/buildroot-bzimage68.bin"},
+   filesystem:{},memory_size:128*1024*1024,vga_memory_size:2*1024*1024,
+   cmdline:"tsc=reliable mitigations=off random.trust_cpu=on",
+   screen_container:$("screen_container"),disable_keyboard:true,disable_mouse:true,disable_speaker:true,autostart:true
+  });
+  vm.add_listener("serial0-output-byte",serial);
+  vm.add_listener("emulator-ready",()=>status("Linuxカーネルのシリアル出力待ち"));
+  vm.add_listener("emulator-stopped",()=>status("エミュレータ停止",true));
+ }catch(e){print("\nERROR: "+e.message+"\n");status("起動失敗: "+e.message,true);$("boot").disabled=false;loading=false}
+}
+$("boot").onclick=boot;
+$("clear").onclick=()=>{log="";terminal.textContent=""};
+$("uname").onclick=()=>send("uname -a; cat /proc/version");
+$("list").onclick=()=>send("busybox --list | grep -E '^(ftpd|ftpput|tcpsvd|httpd|wget)$'");
+$("mount").onclick=()=>send("mkdir -p /mnt/share /srv/www; mount -t 9p -o trans=virtio,version=9p2000.L host9p /mnt/share; mount | grep 9p");
+$("ftpd").onclick=()=>send("busybox tcpsvd -E 127.0.0.1 2121 busybox ftpd -w /srv/www >/tmp/ftp-lab.log 2>&1 &");
+$("stage").onclick=async()=>{try{await vm.create_file("/index.html",encoder.encode($("html").value));print("\n[9p] /index.html を作成\n");status("9pに配置。次にFTP転送してください")}catch(e){status("9p書込失敗: "+e.message,true)}};
+$("put").onclick=()=>send("busybox ftpput -v -P 2121 -u anonymous -p demo 127.0.0.1 index.html /mnt/share/index.html; ls -l /srv/www");
+$("httpd").onclick=()=>send("busybox httpd -p 8080 -h /srv/www; cat /proc/net/tcp");
+$("wget").onclick=()=>send("busybox wget -q -O /mnt/share/preview.html http://127.0.0.1:8080/; wc -c /mnt/share/preview.html");
+$("preview").onclick=async()=>{try{const bytes=await vm.read_file("/preview.html");const html=decoder.decode(bytes);if(!html.trim())throw Error("HTTP応答が空");$("result").srcdoc=html;status("Linuxの実HTTP応答を表示")}catch(e){status("HTTPレスポンス未取得: "+e.message,true)}};
+$("form").onsubmit=e=>{e.preventDefault();const c=$("cmd");if(c.value.trim())send(c.value);c.value=""};
+window.addEventListener("unhandledrejection",e=>status("非同期エラー: "+String(e.reason),true));
+</script></body></html>
