@@ -1,0 +1,165 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Quantum Iris | Hydrogenic Orbital Specimen</title>
+<style>
+:root{font:14px/1.5 system-ui,-apple-system,sans-serif;color:#273344;background:#f3f5f6}*{box-sizing:border-box}body{margin:0}canvas{position:fixed;inset:0;width:100%;height:100%;display:block}
+aside{position:fixed;left:24px;top:24px;bottom:24px;width:285px;max-height:calc(100vh - 48px);overflow:auto;background:#fffef9eb;border:1px solid #d9e0e5;border-radius:18px;box-shadow:0 18px 55px #27334419;padding:22px;backdrop-filter:blur(12px)}
+.kicker{letter-spacing:.19em;font-size:10px;color:#758391;font-weight:750}h1{font-size:28px;font-weight:520;letter-spacing:-.05em;line-height:1.06;margin:9px 0 12px}p{font-size:12px;color:#5f6e7b;margin:8px 0 17px}
+label{display:block;font-size:11px;font-weight:700;letter-spacing:.05em;margin-top:17px;color:#435365}
+select,input{width:100%;margin-top:7px}select{background:white;border:1px solid #cbd6dd;padding:10px;border-radius:9px;color:#243347}
+input{accent-color:#ac5a56}small{display:block;font-size:11px;color:#77838e;margin-top:9px}
+.legend{display:flex;gap:12px;margin-top:19px;font-size:11px}.dot{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:5px;background:#b54c4b}.blue{background:#4777a7}
+footer{border-top:1px solid #e0e6ea;padding-top:14px;margin-top:18px;font-size:10px;color:#75818d}
+#status{position:fixed;right:20px;bottom:16px;font:11px ui-monospace,monospace;color:#5d6a74;background:#ffffffda;border:1px solid #dce3e7;border-radius:7px;padding:6px 10px}
+#annotation{position:fixed;right:3%;top:30px;text-align:right;pointer-events:none;color:#586875;font:11px ui-monospace,monospace;letter-spacing:.12em}
+@media(max-width:750px){aside{left:9px;top:9px;bottom:auto;width:235px;max-height:60vh;padding:14px}h1{font-size:22px}#annotation{top:auto;bottom:48px}}
+</style>
+<canvas id="view" aria-label="Hydrogenic orbital volume and axial slice"></canvas>
+<aside><div class="kicker">SPECIMEN 08 / SUNDAY LAB</div><h1>Quantum<br>Iris</h1>
+<p>Hydrogenic probability cloud as an iris-like museum specimen. The central void is a <b>mathematical node</b>, not a quantum eye.</p>
+<label>QUANTUM STATE<select id="state">
+<option value="0">2p₀ · real · nodal plane</option><option value="1">2p₊₁ · complex · phase winding</option>
+<option value="2">3d₀ · real · conical nodes</option><option value="3">3d₊₂ · complex · double winding</option>
+<option value="4">2s · real · radial node</option></select></label>
+<label>AXIAL SLICE / y (a₀)<input id="slice" type="range" min="-4" max="4" step=".1" value="0"></label>
+<label>CLOUD OPACITY<input id="gain" type="range" min=".25" max="2.4" step=".05" value="1.05"></label>
+<label>VIEW ANGLE<input id="angle" type="range" min="-1.2" max="1.2" step=".02" value=".48"></label>
+<div class="legend"><span><i class="dot"></i>Re ψ positive</span><span><i class="dot blue"></i>Re ψ negative</span></div>
+<small>For m≠0, colors show the sign of Re ψ in a fixed phase convention; |ψ|² is independent of this convention. The complex phase winds azimuthally.</small>
+<footer>Hydrogen, Z=1 · atomic units a₀=1<br>Analytic stationary eigenstates · 96-sample emission–absorption · right panel: x–z slice at selected y.<br>Probability density is not a solid surface. Not an anatomical or medical model.</footer>
+</aside><div id="annotation">HYDROGEN / ψₙₗₘ<br>VOLUME + AXIAL SECTION</div><div id="status" role="status">INITIALIZING</div>
+<script>
+const wgsl=/* wgsl */ `
+struct Params { controls:vec4f, }
+@group(0) @binding(0) var<uniform> params:Params;
+struct VertexOut { @builtin(position) position:vec4f, @location(0) uv:vec2f, }
+@vertex fn vertexMain(@builtin(vertex_index) vertexIndex:u32)->VertexOut{
+ var out:VertexOut;
+ let corner=array<vec2f,3>(vec2f(-1.0,-1.0),vec2f(3.0,-1.0),vec2f(-1.0,3.0));
+ let xy=corner[vertexIndex];
+ out.position=vec4f(xy,0.0,1.0);
+ out.uv=xy*0.5+vec2f(0.5);
+ return out;
+}
+fn wave(p:vec3f, mode:i32)->vec2f{
+ let radius=length(p);
+ let decay2=exp(-0.5*radius);
+ let decay3=exp(-radius/3.0);
+ if(mode==0){return vec2f(0.09973557*p.z*decay2,0.0);}
+ if(mode==1){return -0.07052370*vec2f(p.x,p.y)*decay2;}
+ if(mode==2){return vec2f(0.00284410*(3.0*p.z*p.z-radius*radius)*decay3,0.0);}
+ if(mode==3){return 0.00348224*vec2f(p.x*p.x-p.y*p.y,2.0*p.x*p.y)*decay3;}
+ return vec2f(0.09973557*(2.0-radius)*decay2,0.0);
+}
+fn densityScale(mode:i32)->f32{
+ if(mode==2 || mode==3){return 950.0;}
+ if(mode==4){return 70.0;}
+ return 190.0;
+}
+fn phaseTint(w:vec2f)->vec3f{
+ let red=vec3f(0.74,0.23,0.24);
+ let blue=vec3f(0.23,0.44,0.70);
+ return select(blue,red,w.x>=0.0);
+}
+@fragment fn fragmentMain(in:VertexOut)->@location(0) vec4f{
+ // WebGPU NDC +Y is up; convert to top-down panel coordinates exactly here.
+ let uv=vec2f(in.uv.x,1.0-in.uv.y);
+ let mode=i32(clamp(params.controls.x,0.0,4.0));
+ let sliceY=clamp(params.controls.y,-4.0,4.0);
+ let opacity=select(params.controls.z,1.0,params.controls.z<=0.0);
+ let yaw=params.controls.w+0.2;
+ let scale=densityScale(mode);
+ let white=vec3f(0.973,0.978,0.982);
+ if(uv.x>0.785){
+   let px=(uv.x-0.885)*88.0;
+   let pz=(0.5-uv.y)*20.0;
+   let samplePos=vec3f(px,sliceY,pz);
+   let waveValue=wave(samplePos,mode);
+   let rho=dot(waveValue,waveValue)*scale;
+   let weight=1.0-exp(-rho*2.6);
+   var col=mix(white,phaseTint(waveValue),clamp(weight,0.0,0.88));
+   let xGrid=abs(fract(px*0.5+0.5)-0.5);
+   let zGrid=abs(fract(pz*0.5+0.5)-0.5);
+   if(xGrid<0.009 || zGrid<0.009){col=col*0.965;}
+   if(abs(px)<0.028 || abs(pz)<0.028){col=col*0.86;}
+   // Near-zero crossing probes mark nodal curves, not SDF surfaces.
+   let wNext=wave(samplePos+vec3f(0.12,0.0,0.0),mode);
+   let wUp=wave(samplePos+vec3f(0.0,0.0,0.12),mode);
+   let nearby=max(dot(wNext,wNext),dot(wUp,wUp))*scale;
+   if((mode==0 || mode==2 || mode==4) && (waveValue.x*wNext.x<0.0 || waveValue.x*wUp.x<0.0) && nearby>0.0006){
+      col=mix(col,vec3f(0.22,0.27,0.34),0.58);
+   }
+   if(uv.x<0.788){col=vec3f(0.72,0.77,0.81);}
+   return vec4f(col,1.0);
+ }
+ let xx=(uv.x-0.51)*21.0;
+ let yy=(0.50-uv.y)*15.0;
+ let c=cos(yaw);
+ let s=sin(yaw);
+ let rightAxis=vec3f(c,0.0,-s);
+ let depthAxis=vec3f(s,0.0,c);
+ let origin=rightAxis*xx+vec3f(0.0,yy,0.0);
+ var sum=vec3f(0.0);
+ var transmittance=1.0;
+ for(var stepIndex:i32=0;stepIndex<96;stepIndex=stepIndex+1){
+   let dist=-9.6+f32(stepIndex)*0.2;
+   let p=origin+depthAxis*dist;
+   let w=wave(p,mode);
+   let rho=dot(w,w)*scale;
+   let alpha=1.0-exp(-rho*0.14*opacity);
+   let color=mix(vec3f(0.76,0.79,0.82),phaseTint(w),0.76);
+   sum+=transmittance*alpha*color;
+   transmittance*=1.0-alpha;
+   if(transmittance<0.014){break;}
+ }
+ var background=white;
+ let ring=length(vec2f(xx,yy));
+ if(abs(fract(ring/2.0)-0.5)<0.009){background*=0.962;}
+ if(abs(xx)<0.018 || abs(yy)<0.018){background*=0.956;}
+ let outputColor=sum+transmittance*background;
+ return vec4f(outputColor,1.0);
+}
+`;
+const canvas=document.querySelector('#view'),status=document.querySelector('#status');
+let device,context,pipeline,uniform,bindGroup,format;
+function report(msg){status.textContent=msg;}
+async function start(){
+ if(!navigator.gpu){report('WEBGPU UNAVAILABLE');return;}
+ try{
+  const adapter=await navigator.gpu.requestAdapter();
+  if(!adapter){report('ADAPTER UNAVAILABLE');return;}
+  device=await adapter.requestDevice();
+  device.lost.then(info=>report('DEVICE LOST: '+info.reason+' '+info.message));
+  device.addEventListener('uncapturederror',ev=>report('GPU ERROR: '+ev.error.message));
+  device.pushErrorScope('validation');
+  const module=device.createShaderModule({code:wgsl});
+  const diagnostics=await module.getCompilationInfo();
+  const errors=diagnostics.messages.filter(m=>m.type==='error');
+  if(errors.length){report('WGSL: '+errors.map(m=>'L'+m.lineNum+' '+m.message).join(' | '));return;}
+  format=navigator.gpu.getPreferredCanvasFormat();
+  context=canvas.getContext('webgpu');
+  pipeline=await device.createRenderPipelineAsync({layout:'auto',vertex:{module,entryPoint:'vertexMain'},fragment:{module,entryPoint:'fragmentMain',targets:[{format}]},primitive:{topology:'triangle-list'}});
+  uniform=device.createBuffer({size:16,usage:GPUBufferUsage.UNIFORM|GPUBufferUsage.COPY_DST});
+  bindGroup=device.createBindGroup({layout:pipeline.getBindGroupLayout(0),entries:[{binding:0,resource:{buffer:uniform}}]});
+  const err=await device.popErrorScope();
+  if(err){report('VALIDATION: '+err.message);return;}
+  for(const control of document.querySelectorAll('select,input'))control.addEventListener('input',draw);
+  new ResizeObserver(draw).observe(canvas);
+  draw();
+ }catch(error){report('WEBGPU INIT: '+error.message);}
+}
+function draw(){
+ if(!device || !pipeline)return;
+ const width=Math.max(1,Math.min(1800,Math.round(canvas.clientWidth*devicePixelRatio)));
+ const height=Math.max(1,Math.min(1200,Math.round(canvas.clientHeight*devicePixelRatio)));
+ if(canvas.width!==width || canvas.height!==height){canvas.width=width;canvas.height=height;context.configure({device,format,alphaMode:'opaque'});}
+ const values=new Float32Array(['state','slice','gain','angle'].map(id=>Number(document.getElementById(id).value)));
+ device.queue.writeBuffer(uniform,0,values);
+ device.pushErrorScope('validation');
+ const encoder=device.createCommandEncoder();
+ const pass=encoder.beginRenderPass({colorAttachments:[{view:context.getCurrentTexture().createView(),clearValue:{r:0.97,g:0.98,b:0.99,a:1},loadOp:'clear',storeOp:'store'}]});
+ pass.setPipeline(pipeline);pass.setBindGroup(0,bindGroup);pass.draw(3);pass.end();
+ device.queue.submit([encoder.finish()]);
+ device.popErrorScope().then(error=>{if(error)report('VALIDATION: '+error.message);else report('READY · '+width+' × '+height);}).catch(e=>report('GPU: '+e.message));
+}
+start();
+</script></html>
