@@ -1,0 +1,122 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Acoustic Room-Mode Cloud / TUE-06</title><style>
+*{box-sizing:border-box}body{margin:0;font:14px system-ui;background:#e9e5da;color:#253e4c;overflow:hidden}canvas{display:block;width:100vw;height:100vh}aside{position:fixed;left:12px;top:12px;width:min(325px,calc(100vw - 24px));background:#f7f2e9e9;border:1px solid #aeb9b5;border-radius:12px;padding:14px;box-shadow:0 10px 28px #2343}h1{font:600 22px Georgia;margin:5px 0}small{color:#637780}.row{display:flex;align-items:center;gap:8px;margin:12px 0}.row label{width:48px}.row input{flex:1;min-width:0;accent-color:#b74c38}.row output{width:57px;text-align:right;font:12px monospace}.buttons{display:flex;gap:6px}button{background:#294d61;color:white;border:0;border-radius:6px;padding:8px;cursor:pointer}#status{font:12px monospace;color:#357084}footer{position:fixed;bottom:12px;right:12px;background:#f7f2e9dd;padding:8px;border-radius:8px;font-size:11px}a{color:#236184}@media(max-width:600px){footer{display:none}}</style></head>
+<body><canvas id="scene" aria-label="3D acoustic pressure in a room"></canvas><aside><small>TUE-06 · WAVE LAB · 2026-11-03</small><h1>Acoustic Room-Mode Cloud</h1><small>Rigid room 5 × 3 × 4 m · c=343 m/s</small>
+<div class="row"><label>Drive</label><input id="freq" type="range" min="28" max="120" step=".1" value="57.2"><output id="hz"></output></div>
+<div class="row"><label>Cloud</label><input id="exp" type="range" min=".3" max="3" step=".05" value="1.5"><output id="op"></output></div>
+<div class="row"><label>Depth</label><input id="cut" type="range" min="1" max="9" step=".1" value="8"><output id="dep"></output></div>
+<div class="buttons"><button id="sweep">Sweep ON</button><button id="pause">Phase PLAY</button><button id="reset">Reset</button></div><p id="mode"></p><small><b style="color:#b53d30">Red +pressure</b> · <b style="color:#2864a4">Blue −pressure</b> · clear nodes</small><p><small>Click canvas for pointer look; WASD/Q/E to move, Esc unlock. Phase is stroboscopic, not actual audio frequency.</small></p><div id="status">Starting WebGPU…</div></aside>
+<footer>Ideal rigid-wall modes; Q=16 illustrative damping. <a href="https://doc.comsol.com/6.4/doc/com.comsol.help.models.mph.eigenmodes_of_room/eigenmodes_of_room.html">COMSOL</a> · <a href="https://engineering.purdue.edu/ME513/animations/room.htm">Purdue</a></footer>
+<script>
+const shader=/* wgsl */ `
+struct Params { t:f32, drive:f32, gain:f32, phase:f32, ex:f32, ey:f32, ez:f32, yaw:f32, pitch:f32, aspect:f32, cut:f32, p0:f32, p1:f32, p2:f32, p3:f32, p4:f32, };
+@group(0) @binding(0) var<uniform> prm:Params;
+struct Vert { @builtin(position) pos:vec4f, @location(0) uv:vec2f, };
+@vertex fn vs(@builtin(vertex_index) i:u32)->Vert {
+ let a=array<vec2f,3>(vec2f(-1.0,-1.0),vec2f(3.0,-1.0),vec2f(-1.0,3.0));
+ var v:Vert;v.pos=vec4f(a[i],0.0,1.0);v.uv=vec2f(0.5+a[i].x*0.5,0.5-a[i].y*0.5);return v;
+}
+const PI:f32=3.14159265;
+const BOX:vec3f=vec3f(2.5,1.5,2.0);
+fn modeIndex(j:i32)->vec3f {
+ switch j {
+ case 0:{return vec3f(1.0,0.0,0.0);}
+ case 1:{return vec3f(0.0,0.0,1.0);}
+ case 2:{return vec3f(0.0,1.0,0.0);}
+ case 3:{return vec3f(1.0,0.0,1.0);}
+ case 4:{return vec3f(2.0,0.0,0.0);}
+ case 5:{return vec3f(1.0,1.0,0.0);}
+ case 6:{return vec3f(0.0,1.0,1.0);}
+ default:{return vec3f(1.0,1.0,1.0);}
+ }
+}
+fn pressure(p:vec3f,drive:f32,phase:f32)->f32 {
+ let u=(p+BOX)/(2.0*BOX);var total=0.0;
+ for(var j:i32=0;j<8;j=j+1){
+  let n=modeIndex(j);let fnat=171.5*length(n/vec3f(5.0,3.0,4.0));
+  let ratio=drive/fnat;let real=1.0-ratio*ratio;let imag=ratio/16.0;
+  let denom=max(0.001,real*real+imag*imag);
+  let shape=cos(PI*n.x*u.x)*cos(PI*n.y*u.y)*cos(PI*n.z*u.z);
+  let source=cos(PI*n.x*0.13)*cos(PI*n.y*0.17)*cos(PI*n.z*0.19);
+  total=total+shape*source*(real*cos(phase)+imag*sin(phase))/denom;
+ }
+ return clamp(total/13.0,-2.0,2.0);
+}
+fn wall(p:vec3f)->vec3f {
+ var g=0.0;
+ if(abs(p.y)>1.49){g=min(abs(sin(PI*p.x*2.0)),abs(sin(PI*p.z*2.0)));}
+ else if(abs(p.x)>2.49){g=min(abs(sin(PI*p.y*2.0)),abs(sin(PI*p.z*2.0)));}
+ else{g=min(abs(sin(PI*p.x*2.0)),abs(sin(PI*p.y*2.0)));}
+ return vec3f(0.89,0.86,0.79)*(0.7+0.3*smoothstep(0.02,0.09,g));
+}
+@fragment fn fs(v:Vert)->@location(0) vec4f {
+ let uv=v.uv;let aspect=select(prm.aspect,1.0,prm.aspect<0.3);
+ var eye=vec3f(prm.ex,prm.ey,prm.ez);
+ if(length(eye)<0.001){eye=vec3f(0.0,-0.3,-1.4);}
+ let fw=normalize(vec3f(sin(prm.yaw)*cos(prm.pitch),sin(prm.pitch),cos(prm.yaw)*cos(prm.pitch)));
+ let rt=normalize(cross(vec3f(0.0,1.0,0.0),fw));let up=cross(fw,rt);
+ let rd=normalize(fw+rt*((uv.x-0.5)*1.6*aspect)+up*((0.5-uv.y)*1.6));
+ let t0=(-BOX-eye)/(rd+vec3f(0.000001));let t1=(BOX-eye)/(rd+vec3f(0.000001));
+ let lo=min(t0,t1);let hi=max(t0,t1);
+ let start=max(0.0,max(lo.x,max(lo.y,lo.z)));let stop=min(hi.x,min(hi.y,hi.z));
+ if(stop<=start){return vec4f(0.92,0.9,0.84,1.0);}
+ let cut=select(prm.cut,8.0,prm.cut<0.9);let finish=min(stop,cut);
+ let drive=select(prm.drive,57.2,prm.drive<20.0);
+ let gain=select(prm.gain,1.5,prm.gain<0.1);
+ var col=vec3f(0.0);var trans=1.0;
+ let dt=max(0.00001,(finish-start)/88.0);
+ for(var k:i32=0;k<88;k=k+1){
+  let p=pressure(eye+rd*(start+(f32(k)+0.5)*dt),drive,prm.phase);
+  let density=pow(max(0.0,abs(p)-0.07),1.2);
+  let alpha=clamp(density*gain*0.85*dt,0.0,0.15);
+  var tint=vec3f(0.10,0.32,0.69);
+  if(p>=0.0){tint=vec3f(0.86,0.20,0.12);}
+  col=col+trans*alpha*(tint*1.35+vec3f(0.08));trans=trans*(1.0-alpha);
+  if(trans<0.012){break;}
+ }
+ col=col+trans*wall(eye+rd*stop);
+ return vec4f(pow(max(col,vec3f(0.0)),vec3f(0.94)),1.0);
+}
+`;
+const $=id=>document.getElementById(id),canvas=$('scene'),freq=$('freq'),exp=$('exp'),cut=$('cut');
+let sweeping=true,playing=true,eye=[0,-.3,-1.4],yaw=0,pitch=0,keys={},phase=0,frequency=57.2,last=0;
+const modes=[[1,0,0],[0,0,1],[0,1,0],[1,0,1],[2,0,0],[1,1,0],[0,1,1],[1,1,1]].map(n=>({n,f:171.5*Math.hypot(n[0]/5,n[1]/3,n[2]/4)}));
+function refresh(){frequency=+freq.value;$('hz').textContent=frequency.toFixed(1)+'Hz';$('op').textContent=(+exp.value).toFixed(2);$('dep').textContent=(+cut.value).toFixed(1)+'m';let m=modes.reduce((a,b)=>Math.abs(a.f-frequency)<Math.abs(b.f-frequency)?a:b);$('mode').textContent='Nearest mode ('+m.n.join(',')+') · '+m.f.toFixed(1)+'Hz';}
+for(const el of [freq,exp,cut])el.oninput=()=>{if(el===freq){sweeping=false;$('sweep').textContent='Sweep OFF';}refresh();};
+$('sweep').onclick=e=>{sweeping=!sweeping;e.target.textContent='Sweep '+(sweeping?'ON':'OFF');};
+$('pause').onclick=e=>{playing=!playing;e.target.textContent='Phase '+(playing?'PLAY':'HOLD');};
+$('reset').onclick=()=>{eye=[0,-.3,-1.4];yaw=0;pitch=0;};
+canvas.onclick=()=>canvas.requestPointerLock?.();
+document.onmousemove=e=>{if(document.pointerLockElement===canvas){yaw+=e.movementX*.0024;pitch=Math.max(-1.35,Math.min(1.35,pitch-e.movementY*.0024));}};
+document.onkeydown=e=>{if(/^Key[WASDQE]$/.test(e.code)){keys[e.code]=true;e.preventDefault();}};
+document.onkeyup=e=>{keys[e.code]=false;};
+function move(dt){let a=(keys.KeyD?1:0)-(keys.KeyA?1:0),b=(keys.KeyW?1:0)-(keys.KeyS?1:0),c=(keys.KeyE?1:0)-(keys.KeyQ?1:0),len=Math.hypot(a,b,c)||1;eye[0]+=(Math.cos(yaw)*a+Math.sin(yaw)*b)/len*dt*1.8;eye[2]+=(-Math.sin(yaw)*a+Math.cos(yaw)*b)/len*dt*1.8;eye[1]+=c/len*dt*1.8;eye=eye.map((v,i)=>Math.max(-[2.35,1.35,1.85][i],Math.min([2.35,1.35,1.85][i],v)));}
+function report(s){$('status').textContent=s;}
+async function start(){
+ if(!navigator.gpu){report('WebGPU unavailable.');return;}
+ try{
+  report('requestAdapter()');const adapter=await navigator.gpu.requestAdapter();if(!adapter){report('Adapter unavailable.');return;}
+  report('requestDevice()');const device=await adapter.requestDevice();let lost=false;
+  device.lost.then(info=>{lost=true;report('GPU device lost: '+info.reason+' '+info.message);});
+  device.addEventListener('uncapturederror',e=>report('Uncaptured WebGPU error: '+e.error.message));
+  const module=device.createShaderModule({code:shader}),info=await module.getCompilationInfo(),errors=info.messages.filter(m=>m.type==='error');
+  if(errors.length){report('WGSL compile: '+errors.map(m=>'L'+m.lineNum+': '+m.message).join(' | '));return;}
+  const format=navigator.gpu.getPreferredCanvasFormat(),context=canvas.getContext('webgpu');
+  const pipeline=await device.createRenderPipelineAsync({layout:'auto',vertex:{module,entryPoint:'vs'},fragment:{module,entryPoint:'fs',targets:[{format}]},primitive:{topology:'triangle-list'}});
+  context.configure({device,format,alphaMode:'opaque'});
+  const buffer=device.createBuffer({size:64,usage:GPUBufferUsage.UNIFORM|GPUBufferUsage.COPY_DST});
+  const bind=device.createBindGroup({layout:pipeline.getBindGroupLayout(0),entries:[{binding:0,resource:{buffer}}]});
+  const data=new Float32Array(16);report('WebGPU ready · WGSL compiled');
+  function frame(ms){if(lost)return;const dt=Math.min(.06,last?(ms-last)/1000:0);last=ms;move(dt);
+   if(sweeping){freq.value=String(74+45*Math.sin(ms*.00015));refresh();}
+   if(playing)phase+=dt*1.25;
+   const dpr=Math.min(devicePixelRatio||1,1.5),w=Math.max(1,Math.floor(canvas.clientWidth*dpr)),h=Math.max(1,Math.floor(canvas.clientHeight*dpr));
+   if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;}
+   data.set([ms*.001,frequency,+exp.value,phase,eye[0],eye[1],eye[2],yaw,pitch,w/h,+cut.value,0,0,0,0,0]);device.queue.writeBuffer(buffer,0,data);
+   const enc=device.createCommandEncoder(),pass=enc.beginRenderPass({colorAttachments:[{view:context.getCurrentTexture().createView(),loadOp:'clear',storeOp:'store',clearValue:{r:.92,g:.9,b:.84,a:1}}]});
+   pass.setPipeline(pipeline);pass.setBindGroup(0,bind);pass.draw(3);pass.end();device.queue.submit([enc.finish()]);requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+ }catch(e){report('WebGPU initialization / validation failed: '+(e?.message||e));console.error(e);}
+}
+refresh();start();
+</script></body></html>
