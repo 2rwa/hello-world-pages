@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>第6章 WebGPUレイトレーシング | 3Dレンダリング史</title>
+<meta name="description" content="WebGPU Compute ShaderとWGSLで球・平面のレイ交差、影、反射を実装し、ブラウザ上で操作する教材">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="site.css"><link rel="stylesheet" href="style.css"></head><body>
+<header class="sitebar"><a href="https://tmp-3d.pages.dev/">3D RENDERING HISTORY</a><nav><a href="https://tmp-3d.pages.dev/chapters/06-webgpu-raytracing/textbook.html">数式とGPUの仕組み</a><a href="https://tmp-3d.pages.dev/chapters/05-ray-tracing-marching/">CPU版との比較</a></nav></header>
+<main class="container raygpu">
+<div class="eyebrow">CHAPTER 06 · WEBGPU / WGSL / COMPUTE SHADER</div>
+<h1>一本ずつのレイを、GPUで並列に。</h1>
+<p class="lead">第5章の解析的な交差判定をWGSLのCompute Shaderへ移し、反射や影のための二次レイまで追跡する。物体と交差する計算をGPUの各スレッドで実行します。</p>
+<div class="gpu-layout">
+<section class="gpu-display" aria-label="WebGPUレイトレーシング実験">
+<div class="gpu-top"><span>LIVE · WEBGPU COMPUTE</span><span id="gpu-stage" role="status" aria-live="polite">script-start</span></div>
+<canvas id="gpu-canvas" width="384" height="240" aria-label="WebGPUで球2つと床をレイトレーシングした結果"></canvas>
+<p id="gpu-state" class="gpu-status" aria-live="polite">WebGPUを初期化しています…</p>
+<p id="gpu-adapter" class="small">アダプターの情報を確認中</p>
+<p id="gpu-timing" class="small">GPU処理の完了待ち時間を表示します</p>
+<p id="gpu-details" class="small"></p>
+</section>
+<section class="gpu-settings">
+<h2>操作</h2>
+<label>反射回数 <output id="reflection-value">1</output>
+<select id="reflections"><option value="0">0回（一次レイ）</option><option value="1" selected>1回</option><option value="2">2回</option><option value="3">3回</option></select></label>
+<label>視線Y回転 <output id="yaw-value">0°</output>
+<input type="range" id="yaw" min="-35" max="35" step="1" value="0"></label>
+<label>描画解像度<select id="resolution">
+<option value="256">256×160</option><option value="384" selected>384×240</option><option value="512">512×320</option>
+</select></label>
+<label>露光係数 <output id="brightness-value">1.0×</output>
+<input type="range" id="brightness" min="0.5" max="1.8" step="0.1" value="1"></label>
+<label class="gpu-check"><input type="checkbox" id="shadows" checked> 影用レイを追う</label>
+<div class="gpu-actions"><button type="button" id="render-now">再描画</button><button type="button" id="reset">初期化</button></div>
+<p class="small">WebGPUが使えない端末では、その理由を表示します。Canvas 2Dへの無言のフォールバックは行いません。</p>
+</section>
+</div>
+<div class="gpu-explain">
+<section><span class="eyebrow">01 / PRIMARY RAY</span><h2>各画素をGPUのスレッドに</h2><p>8×8スレッドを1ワークグループとして起動し、球2個と床との交差を計算。最短の正の距離から法線と色を求めます。</p></section>
+<section><span class="eyebrow">02 / SECONDARY RAYS</span><h2>影と反射もレイで調べる</h2><p>「影」をONにすると光源方向への遮蔽検査を追加。反射回数を増やすと反射方向に次のレイを飛ばします。</p></section>
+<section><span class="eyebrow">03 / GPU PIPELINE</span><h2>計算と画面表示は別</h2><p>Compute Shaderで <code>rgba8unorm</code> のGPUテクスチャに書き込み、画面表示は専用の頂点・フラグメントシェーダーに渡します。</p></section>
+</div>
+<section class="gpu-footnote"><h2>レイトレーシングの種類に注意</h2><p>この教材は<b>Compute Shaderによるソフトウェア交差判定</b>です。専用のハードウェアRTパイプラインやBVHを使う実装ではありません。また確率的なパストレーシングでもなく、球と平面に限った鏡面反射の練習用実装です。</p>
+<p><a href="https://tmp-3d.pages.dev/chapters/06-webgpu-raytracing/textbook.html">レイ方程式・反射・WGSL・制約を教科書で読む ↗</a></p></section>
+<p class="gpu-footer"><a href="https://tmp-3d.pages.dev/chapters/05-ray-tracing-marching/">第5章のCPU版</a> ／ <a href="https://tmp-3d.pages.dev/chapters/06-webgpu-raytracing/textbook.html">第6章の教科書</a> ／ <a href="https://tmp-3d.pages.dev/">目次へ戻る</a></p>
+</main><footer class="foot">© 2026 · 3D RENDERING HISTORY</footer>
+<script src="gpu-engine.js"></script><script src="app.js"></script></body></html>
