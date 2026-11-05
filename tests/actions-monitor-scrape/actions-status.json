@@ -98,6 +98,70 @@
       ]
     },
     {
+      "name": "gamepad-scroll-macos",
+      "url": "https://github.com/2rwa/gamepad-scroll-macos",
+      "actions_url": "https://github.com/2rwa/gamepad-scroll-macos/actions",
+      "runs": [
+        {
+          "id": 37759992223,
+          "title": "Add Apple Silicon only Gamepad Scroll app and macOS Actions",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 1 of macOS ARM64 build and test. Add Apple Silicon only Gamepad Scroll app and macOS Actions",
+          "branch": "main",
+          "time": "2026-10-08T09:55:25Z",
+          "url": "https://github.com/2rwa/gamepad-scroll-macos/actions/runs/37759992223"
+        }
+      ]
+    },
+    {
+      "name": "ps-eye-acoustic-localizer",
+      "url": "https://github.com/2rwa/ps-eye-acoustic-localizer",
+      "actions_url": "https://github.com/2rwa/ps-eye-acoustic-localizer/actions",
+      "runs": [
+        {
+          "id": 37586946933,
+          "title": "Document PS Eye reconnect and reset behavior",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 17 of Static and standalone checks. Document PS Eye reconnect and reset behavior",
+          "branch": "main",
+          "time": "2026-10-07T07:22:43Z",
+          "url": "https://github.com/2rwa/ps-eye-acoustic-localizer/actions/runs/37586946933"
+        },
+        {
+          "id": 37586923865,
+          "title": "Expose standalone PS Eye reset endpoint",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 16 of Static and standalone checks. Expose standalone PS Eye reset endpoint",
+          "branch": "main",
+          "time": "2026-10-07T07:22:29Z",
+          "url": "https://github.com/2rwa/ps-eye-acoustic-localizer/actions/runs/37586923865"
+        },
+        {
+          "id": 37586903581,
+          "title": "Add standalone forced capture restart",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 15 of Static and standalone checks. Add standalone forced capture restart",
+          "branch": "main",
+          "time": "2026-10-07T07:22:17Z",
+          "url": "https://github.com/2rwa/ps-eye-acoustic-localizer/actions/runs/37586903581"
+        },
+        {
+          "id": 37586743354,
+          "title": "Fix near-field backend reset handler",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 14 of Static and standalone checks. Fix near-field backend reset handler",
+          "branch": "main",
+          "time": "2026-10-07T07:20:42Z",
+          "url": "https://github.com/2rwa/ps-eye-acoustic-localizer/actions/runs/37586743354"
+        }
+      ]
+    },
+    {
       "name": "sph-web-samples",
       "url": "https://github.com/2rwa/sph-web-samples",
       "actions_url": "https://github.com/2rwa/sph-web-samples/actions",
@@ -145,29 +209,96 @@
       ]
     },
     {
+      "name": "tmp-202611",
+      "url": "https://github.com/2rwa/tmp-202611",
+      "actions_url": "https://github.com/2rwa/tmp-202611/actions",
+      "runs": [
+        {
+          "id": 41980977684,
+          "title": "Publish verified PLaMo browser runtime",
+          "status": "completed",
+          "conclusion": "skipped",
+          "status_label": "skipped:  Run 3 of Publish verified PLaMo browser runtime.",
+          "branch": null,
+          "time": "2026-11-05T06:31:26Z",
+          "url": "https://github.com/2rwa/tmp-202611/actions/runs/41980977684"
+        },
+        {
+          "id": 41979105170,
+          "title": "fix(plamo): bundle matching Safari compatibility worker and WASM, tes…",
+          "status": "completed",
+          "conclusion": "failure",
+          "status_label": "failed:  Run 3 of PLaMo 3-compatible wllama upstream build. fix(plamo): bundle matching Safari compatibility worker and WASM, tes…",
+          "branch": "main",
+          "time": "2026-11-05T06:14:37Z",
+          "url": "https://github.com/2rwa/tmp-202611/actions/runs/41979105170"
+        },
+        {
+          "id": 41979105131,
+          "title": "fix(plamo): bundle matching Safari compatibility worker and WASM, tes…",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 7 of PLaMo Browser Translation. fix(plamo): bundle matching Safari compatibility worker and WASM, tes…",
+          "branch": "main",
+          "time": "2026-11-05T06:14:37Z",
+          "url": "https://github.com/2rwa/tmp-202611/actions/runs/41979105131"
+        },
+        {
+          "id": 41979105117,
+          "title": "fix(plamo): bundle matching Safari compatibility worker and WASM, tes…",
+          "status": "completed",
+          "conclusion": "failure",
+          "status_label": "failed:  Run 16 of Publish NEON BREAK to Pages. fix(plamo): bundle matching Safari compatibility worker and WASM, tes…",
+          "branch": "main",
+          "time": "2026-11-05T06:14:37Z",
+          "url": "https://github.com/2rwa/tmp-202611/actions/runs/41979105117"
+        }
+      ]
+    },
+    {
       "name": "tmp-android",
       "url": "https://github.com/2rwa/tmp-android",
       "actions_url": "https://github.com/2rwa/tmp-android/actions",
       "runs": [
         {
-          "id": 37396881692,
-          "title": "Fix Android SDK setup on current Actions runner",
+          "id": 38207289835,
+          "title": "Package and smoke-build standalone Wadaiko Android source artifact",
           "status": "completed",
-          "conclusion": "failure",
-          "status_label": "failed:  Run 2 of Build Android APK. Fix Android SDK setup on current Actions runner",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 4 of Wadaiko Native Android. Package and smoke-build standalone Wadaiko Android source artifact",
           "branch": "main",
-          "time": "2026-10-06T00:59:41Z",
-          "url": "https://github.com/2rwa/tmp-android/actions/runs/37396881692"
+          "time": "2026-10-12T05:17:22Z",
+          "url": "https://github.com/2rwa/tmp-android/actions/runs/38207289835"
         },
         {
-          "id": 37396710350,
-          "title": "Add Android 9+ Hello World APK sample",
+          "id": 38207289790,
+          "title": "Package and smoke-build standalone Wadaiko Android source artifact",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 14 of Build Android APK. Package and smoke-build standalone Wadaiko Android source artifact",
+          "branch": "main",
+          "time": "2026-10-12T05:17:22Z",
+          "url": "https://github.com/2rwa/tmp-android/actions/runs/38207289790"
+        },
+        {
+          "id": 38205241410,
+          "title": "Fix Wadaiko settings calibration field visibility",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 3 of Wadaiko Native Android. Fix Wadaiko settings calibration field visibility",
+          "branch": "main",
+          "time": "2026-10-12T04:47:50Z",
+          "url": "https://github.com/2rwa/tmp-android/actions/runs/38205241410"
+        },
+        {
+          "id": 38205241385,
+          "title": "Fix Wadaiko settings calibration field visibility",
           "status": "completed",
           "conclusion": "failure",
-          "status_label": "failed:  Run 1 of Build Android APK. Add Android 9+ Hello World APK sample",
+          "status_label": "failed:  Run 13 of Build Android APK. Fix Wadaiko settings calibration field visibility",
           "branch": "main",
-          "time": "2026-10-06T00:57:42Z",
-          "url": "https://github.com/2rwa/tmp-android/actions/runs/37396710350"
+          "time": "2026-10-12T04:47:50Z",
+          "url": "https://github.com/2rwa/tmp-android/actions/runs/38205241385"
         }
       ]
     },
@@ -224,44 +355,44 @@
       "actions_url": "https://github.com/2rwa/tmp-blender-52/actions",
       "runs": [
         {
-          "id": 37200248718,
-          "title": "test: add 10-way tropical coast diagnostic sweep",
+          "id": 38518316394,
+          "title": "test: add five Gemini 3.8 Flash High Workbench color-gated procedural…",
           "status": "completed",
           "conclusion": "success",
-          "status_label": "completed successfully:  Run 1 of Tropical coast 10-way diagnostic sweep. test: add 10-way tropical coast diagnostic sweep",
+          "status_label": "completed successfully:  Run 1 of Gemini 3.8 Flash High - Workbench color test five. test: add five Gemini 3.8 Flash High Workbench color-gated procedural…",
           "branch": "main",
-          "time": "2026-10-04T11:53:30Z",
-          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/37200248718"
+          "time": "2026-10-14T05:45:10Z",
+          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/38518316394"
         },
         {
-          "id": 37199868321,
-          "title": "chore: publish pass 4 diagnostic render",
+          "id": 38514462060,
+          "title": "test: prepare isolated Gemini 3.8 Flash High five-model Workbench col…",
           "status": "completed",
           "conclusion": "success",
-          "status_label": "completed successfully:  Run 6 of Tropical resort coast still. chore: publish pass 4 diagnostic render",
+          "status_label": "completed successfully:  Run 19 of GitHub Pages. test: prepare isolated Gemini 3.8 Flash High five-model Workbench col…",
           "branch": "main",
-          "time": "2026-10-04T11:46:33Z",
-          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/37199868321"
+          "time": "2026-10-14T05:01:48Z",
+          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/38514462060"
         },
         {
-          "id": 37199586542,
-          "title": "feat: deepen lagoon detail and guard dark bands",
-          "status": "completed",
-          "conclusion": "failure",
-          "status_label": "failed:  Run 5 of Tropical resort coast still. feat: deepen lagoon detail and guard dark bands",
-          "branch": "main",
-          "time": "2026-10-04T11:41:26Z",
-          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/37199586542"
-        },
-        {
-          "id": 37198862335,
-          "title": "feat: rebuild tropical water surface pass 3",
+          "id": 38513218049,
+          "title": "test: add five Claude Sonnet 5.5 Medium Workbench color-gated procedu…",
           "status": "completed",
           "conclusion": "success",
-          "status_label": "completed successfully:  Run 4 of Tropical resort coast still. feat: rebuild tropical water surface pass 3",
+          "status_label": "completed successfully:  Run 1 of Claude Sonnet 5.5 Medium - Workbench color test five. test: add five Claude Sonnet 5.5 Medium Workbench color-gated procedu…",
           "branch": "main",
-          "time": "2026-10-04T11:28:34Z",
-          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/37198862335"
+          "time": "2026-10-14T04:47:31Z",
+          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/38513218049"
+        },
+        {
+          "id": 38512900234,
+          "title": "test: add five Gemini Flash Low Workbench color-gated procedural models",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 1 of Gemini Flash 3.8 Low - Workbench color test five. test: add five Gemini Flash Low Workbench color-gated procedural models",
+          "branch": "main",
+          "time": "2026-10-14T04:43:55Z",
+          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/38512900234"
         }
       ]
     },
@@ -346,6 +477,100 @@
           "branch": "main",
           "time": "2026-09-26T02:53:38Z",
           "url": "https://github.com/2rwa/tmp-blender-telop/actions/runs/36213102957"
+        }
+      ]
+    },
+    {
+      "name": "tmp-jetson-nano",
+      "url": "https://github.com/2rwa/tmp-jetson-nano",
+      "actions_url": "https://github.com/2rwa/tmp-jetson-nano/actions",
+      "runs": [
+        {
+          "id": 39081113474,
+          "title": "Document Raspberry Pi compatibility and ARM64 rootfs reuse limits",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 11 of Publish documentation to GitHub Pages. Document Raspberry Pi compatibility and ARM64 rootfs reuse limits",
+          "branch": "main",
+          "time": "2026-10-18T00:00:00Z",
+          "url": "https://github.com/2rwa/tmp-jetson-nano/actions/runs/39081113474"
+        },
+        {
+          "id": 39080900581,
+          "title": "Record successful ARM64 QEMU login boot and adjust first-login NIC ex…",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 10 of Publish documentation to GitHub Pages. Record successful ARM64 QEMU login boot and adjust first-login NIC ex…",
+          "branch": "main",
+          "time": "2026-10-17T23:56:17Z",
+          "url": "https://github.com/2rwa/tmp-jetson-nano/actions/runs/39080900581"
+        },
+        {
+          "id": 39080262634,
+          "title": "Fix QEMU root partition discovery using GPT rootfs label",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 2 of QEMU ARM64 boot smoke test. Fix QEMU root partition discovery using GPT rootfs label",
+          "branch": "main",
+          "time": "2026-10-17T23:45:56Z",
+          "url": "https://github.com/2rwa/tmp-jetson-nano/actions/runs/39080262634"
+        },
+        {
+          "id": 39080262456,
+          "title": "Fix QEMU root partition discovery using GPT rootfs label",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 9 of Publish documentation to GitHub Pages. Fix QEMU root partition discovery using GPT rootfs label",
+          "branch": "main",
+          "time": "2026-10-17T23:45:56Z",
+          "url": "https://github.com/2rwa/tmp-jetson-nano/actions/runs/39080262456"
+        }
+      ]
+    },
+    {
+      "name": "tmp-mac",
+      "url": "https://github.com/2rwa/tmp-mac",
+      "actions_url": "https://github.com/2rwa/tmp-mac/actions",
+      "runs": [
+        {
+          "id": 38665650342,
+          "title": "Use hybrid cursor follow screenshots and stationary SCStream, adjusta…",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 3 of Cursor Magnifier Stream (macOS arm64). Use hybrid cursor follow screenshots and stationary SCStream, adjusta…",
+          "branch": "main",
+          "time": "2026-10-15T01:26:24Z",
+          "url": "https://github.com/2rwa/tmp-mac/actions/runs/38665650342"
+        },
+        {
+          "id": 38665650252,
+          "title": "Use hybrid cursor follow screenshots and stationary SCStream, adjusta…",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 16 of macOS 26 M1 environment and browsers. Use hybrid cursor follow screenshots and stationary SCStream, adjusta…",
+          "branch": "main",
+          "time": "2026-10-15T01:26:24Z",
+          "url": "https://github.com/2rwa/tmp-mac/actions/runs/38665650252"
+        },
+        {
+          "id": 38664155713,
+          "title": "Add Xcode project and shared Run scheme for stream magnifier",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 2 of Cursor Magnifier Stream (macOS arm64). Add Xcode project and shared Run scheme for stream magnifier",
+          "branch": "main",
+          "time": "2026-10-15T01:10:05Z",
+          "url": "https://github.com/2rwa/tmp-mac/actions/runs/38664155713"
+        },
+        {
+          "id": 38664155701,
+          "title": "Add Xcode project and shared Run scheme for stream magnifier",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 15 of macOS 26 M1 environment and browsers. Add Xcode project and shared Run scheme for stream magnifier",
+          "branch": "main",
+          "time": "2026-10-15T01:10:05Z",
+          "url": "https://github.com/2rwa/tmp-mac/actions/runs/38664155701"
         }
       ]
     },
@@ -444,6 +669,100 @@
       ]
     },
     {
+      "name": "tmp-speech",
+      "url": "https://github.com/2rwa/tmp-speech",
+      "actions_url": "https://github.com/2rwa/tmp-speech/actions",
+      "runs": [
+        {
+          "id": 38219275840,
+          "title": "Add verified calculus problems and hiragana narrated Irodori TTS less…",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 1 of Irodori calculus lessons (hiragana TTS + Pages). Add verified calculus problems and hiragana narrated Irodori TTS less…",
+          "branch": "main",
+          "time": "2026-10-12T07:42:45Z",
+          "url": "https://github.com/2rwa/tmp-speech/actions/runs/38219275840"
+        },
+        {
+          "id": 38215936815,
+          "title": "Experiment with Irodori mathematical notation versus spoken Japanese",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 1 of Irodori mathematical pronunciation A-B. Experiment with Irodori mathematical notation versus spoken Japanese",
+          "branch": "main",
+          "time": "2026-10-12T07:06:33Z",
+          "url": "https://github.com/2rwa/tmp-speech/actions/runs/38215936815"
+        },
+        {
+          "id": 38193611123,
+          "title": "Deploy WebGPU UI independently of long-running CPU benchmarks",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 2 of Irodori WebGPU UI smoke + Pages. Deploy WebGPU UI independently of long-running CPU benchmarks",
+          "branch": "main",
+          "time": "2026-10-12T01:53:00Z",
+          "url": "https://github.com/2rwa/tmp-speech/actions/runs/38193611123"
+        },
+        {
+          "id": 38193548204,
+          "title": "Add Irodori-TTS WebGPU browser test page and Pages deploy workflow",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 1 of Irodori WebGPU UI smoke + Pages. Add Irodori-TTS WebGPU browser test page and Pages deploy workflow",
+          "branch": "main",
+          "time": "2026-10-12T01:52:02Z",
+          "url": "https://github.com/2rwa/tmp-speech/actions/runs/38193548204"
+        }
+      ]
+    },
+    {
+      "name": "tmp-wpe-kms",
+      "url": "https://github.com/2rwa/tmp-wpe-kms",
+      "actions_url": "https://github.com/2rwa/tmp-wpe-kms/actions",
+      "runs": [
+        {
+          "id": 40100759872,
+          "title": "Fix baseline CPU flags for both WebKit engine and launcher",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 2 of Build le00 x86-64 baseline WPE WebGL. Fix baseline CPU flags for both WebKit engine and launcher",
+          "branch": "test/le00-wpe-webgl-baseline-20261024",
+          "time": "2026-10-24T14:02:53Z",
+          "url": "https://github.com/2rwa/tmp-wpe-kms/actions/runs/40100759872"
+        },
+        {
+          "id": 40100697766,
+          "title": "Build CPU-baseline WPE WebGL for AMD le00 without replacing Core2",
+          "status": "completed",
+          "conclusion": "failure",
+          "status_label": "failed:  Run 1 of Build le00 x86-64 baseline WPE WebGL. Build CPU-baseline WPE WebGL for AMD le00 without replacing Core2",
+          "branch": "test/le00-wpe-webgl-baseline-20261024",
+          "time": "2026-10-24T14:02:04Z",
+          "url": "https://github.com/2rwa/tmp-wpe-kms/actions/runs/40100697766"
+        },
+        {
+          "id": 39806774783,
+          "title": "Add isolated WebGL and experimental WebRTC WPE 2.54.1 build",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 1 of Build isolated WPE WebGL and experimental WebRTC. Add isolated WebGL and experimental WebRTC WPE 2.54.1 build",
+          "branch": "main",
+          "time": "2026-10-22T15:38:46Z",
+          "url": "https://github.com/2rwa/tmp-wpe-kms/actions/runs/39806774783"
+        },
+        {
+          "id": 39806774406,
+          "title": "Add isolated WebGL and experimental WebRTC WPE 2.54.1 build",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 16 of Build, regression and Pages. Add isolated WebGL and experimental WebRTC WPE 2.54.1 build",
+          "branch": "main",
+          "time": "2026-10-22T15:38:46Z",
+          "url": "https://github.com/2rwa/tmp-wpe-kms/actions/runs/39806774406"
+        }
+      ]
+    },
+    {
       "name": "tmp-zunda",
       "url": "https://github.com/2rwa/tmp-zunda",
       "actions_url": "https://github.com/2rwa/tmp-zunda/actions",
@@ -472,5 +791,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-10-06T01:09:56Z"
+  "updated_at": "2026-11-05T08:50:19Z"
 }
