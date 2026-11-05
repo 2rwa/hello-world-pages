@@ -214,44 +214,44 @@
       "actions_url": "https://github.com/2rwa/tmp-202611/actions",
       "runs": [
         {
-          "id": 41980977684,
-          "title": "Publish verified PLaMo browser runtime",
-          "status": "completed",
-          "conclusion": "skipped",
-          "status_label": "skipped:  Run 3 of Publish verified PLaMo browser runtime.",
-          "branch": null,
-          "time": "2026-11-05T06:31:26Z",
-          "url": "https://github.com/2rwa/tmp-202611/actions/runs/41980977684"
-        },
-        {
-          "id": 41979105170,
-          "title": "fix(plamo): bundle matching Safari compatibility worker and WASM, tes…",
-          "status": "completed",
-          "conclusion": "failure",
-          "status_label": "failed:  Run 3 of PLaMo 3-compatible wllama upstream build. fix(plamo): bundle matching Safari compatibility worker and WASM, tes…",
-          "branch": "main",
-          "time": "2026-11-05T06:14:37Z",
-          "url": "https://github.com/2rwa/tmp-202611/actions/runs/41979105170"
-        },
-        {
-          "id": 41979105131,
-          "title": "fix(plamo): bundle matching Safari compatibility worker and WASM, tes…",
+          "id": 42017401679,
+          "title": "test(simulator): prefer iOS 26.2 iPhone 16 Pro over older installed r…",
           "status": "completed",
           "conclusion": "success",
-          "status_label": "completed successfully:  Run 7 of PLaMo Browser Translation. fix(plamo): bundle matching Safari compatibility worker and WASM, tes…",
+          "status_label": "completed successfully:  Run 2 of Safari Memory and iPhone Simulator diagnostics. test(simulator): prefer iOS 26.2 iPhone 16 Pro over older installed r…",
           "branch": "main",
-          "time": "2026-11-05T06:14:37Z",
-          "url": "https://github.com/2rwa/tmp-202611/actions/runs/41979105131"
+          "time": "2026-11-05T11:14:49Z",
+          "url": "https://github.com/2rwa/tmp-202611/actions/runs/42017401679"
         },
         {
-          "id": 41979105117,
-          "title": "fix(plamo): bundle matching Safari compatibility worker and WASM, tes…",
+          "id": 42017401408,
+          "title": "test(simulator): prefer iOS 26.2 iPhone 16 Pro over older installed r…",
           "status": "completed",
-          "conclusion": "failure",
-          "status_label": "failed:  Run 16 of Publish NEON BREAK to Pages. fix(plamo): bundle matching Safari compatibility worker and WASM, tes…",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 27 of Brick Breaker Regression. test(simulator): prefer iOS 26.2 iPhone 16 Pro over older installed r…",
           "branch": "main",
-          "time": "2026-11-05T06:14:37Z",
-          "url": "https://github.com/2rwa/tmp-202611/actions/runs/41979105117"
+          "time": "2026-11-05T11:14:49Z",
+          "url": "https://github.com/2rwa/tmp-202611/actions/runs/42017401408"
+        },
+        {
+          "id": 42016507795,
+          "title": "test(safari): profile macOS Safari PLaMo RSS and probe iPhone Simulator",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 1 of Safari Memory and iPhone Simulator diagnostics. test(safari): profile macOS Safari PLaMo RSS and probe iPhone Simulator",
+          "branch": "main",
+          "time": "2026-11-05T11:08:30Z",
+          "url": "https://github.com/2rwa/tmp-202611/actions/runs/42016507795"
+        },
+        {
+          "id": 42016507580,
+          "title": "test(safari): profile macOS Safari PLaMo RSS and probe iPhone Simulator",
+          "status": "completed",
+          "conclusion": "success",
+          "status_label": "completed successfully:  Run 21 of Publish NEON BREAK to Pages. test(safari): profile macOS Safari PLaMo RSS and probe iPhone Simulator",
+          "branch": "main",
+          "time": "2026-11-05T11:08:30Z",
+          "url": "https://github.com/2rwa/tmp-202611/actions/runs/42016507580"
         }
       ]
     },
@@ -791,5 +791,5 @@
     }
   ],
   "errors": [],
-  "updated_at": "2026-11-05T08:50:19Z"
+  "updated_at": "2026-11-05T17:42:25Z"
 }
