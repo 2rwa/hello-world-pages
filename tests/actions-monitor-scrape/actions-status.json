@@ -7,789 +7,111 @@
       "name": "2rwa-public",
       "url": "https://github.com/2rwa/2rwa-public",
       "actions_url": "https://github.com/2rwa/2rwa-public/actions",
-      "runs": [
-        {
-          "id": 36148827794,
-          "title": "pages build and deployment",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 47 of pages-build-deployment. pages build and deployment",
-          "branch": "main",
-          "time": "2026-09-25T14:38:24Z",
-          "url": "https://github.com/2rwa/2rwa-public/actions/runs/36148827794"
-        },
-        {
-          "id": 36080318720,
-          "title": "pages build and deployment",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 46 of pages-build-deployment. pages build and deployment",
-          "branch": "main",
-          "time": "2026-09-25T01:03:20Z",
-          "url": "https://github.com/2rwa/2rwa-public/actions/runs/36080318720"
-        },
-        {
-          "id": 35966763259,
-          "title": "pages build and deployment",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 45 of pages-build-deployment. pages build and deployment",
-          "branch": "main",
-          "time": "2026-09-24T06:54:02Z",
-          "url": "https://github.com/2rwa/2rwa-public/actions/runs/35966763259"
-        },
-        {
-          "id": 35965621968,
-          "title": "pages build and deployment",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 44 of pages-build-deployment. pages build and deployment",
-          "branch": "main",
-          "time": "2026-09-24T06:40:20Z",
-          "url": "https://github.com/2rwa/2rwa-public/actions/runs/35965621968"
-        }
-      ]
+      "runs": []
     },
     {
       "name": "devlog",
       "url": "https://github.com/2rwa/devlog",
       "actions_url": "https://github.com/2rwa/devlog/actions",
-      "runs": [
-        {
-          "id": 33871506222,
-          "title": "pages build and deployment",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 5 of pages-build-deployment. pages build and deployment",
-          "branch": "main",
-          "time": "2026-09-04T12:11:11Z",
-          "url": "https://github.com/2rwa/devlog/actions/runs/33871506222"
-        },
-        {
-          "id": 33871208617,
-          "title": "pages build and deployment",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 4 of pages-build-deployment. pages build and deployment",
-          "branch": "main",
-          "time": "2026-09-04T12:07:33Z",
-          "url": "https://github.com/2rwa/devlog/actions/runs/33871208617"
-        },
-        {
-          "id": 33871099114,
-          "title": "pages build and deployment",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 3 of pages-build-deployment. pages build and deployment",
-          "branch": "main",
-          "time": "2026-09-04T12:06:13Z",
-          "url": "https://github.com/2rwa/devlog/actions/runs/33871099114"
-        },
-        {
-          "id": 33870989305,
-          "title": "pages build and deployment",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 2 of pages-build-deployment. pages build and deployment",
-          "branch": "main",
-          "time": "2026-09-04T12:04:55Z",
-          "url": "https://github.com/2rwa/devlog/actions/runs/33870989305"
-        }
-      ]
+      "runs": []
     },
     {
       "name": "gamepad-scroll-macos",
       "url": "https://github.com/2rwa/gamepad-scroll-macos",
       "actions_url": "https://github.com/2rwa/gamepad-scroll-macos/actions",
-      "runs": [
-        {
-          "id": 37759992223,
-          "title": "Add Apple Silicon only Gamepad Scroll app and macOS Actions",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 1 of macOS ARM64 build and test. Add Apple Silicon only Gamepad Scroll app and macOS Actions",
-          "branch": "main",
-          "time": "2026-10-08T09:55:25Z",
-          "url": "https://github.com/2rwa/gamepad-scroll-macos/actions/runs/37759992223"
-        }
-      ]
+      "runs": []
     },
     {
       "name": "ps-eye-acoustic-localizer",
       "url": "https://github.com/2rwa/ps-eye-acoustic-localizer",
       "actions_url": "https://github.com/2rwa/ps-eye-acoustic-localizer/actions",
-      "runs": [
-        {
-          "id": 37586946933,
-          "title": "Document PS Eye reconnect and reset behavior",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 17 of Static and standalone checks. Document PS Eye reconnect and reset behavior",
-          "branch": "main",
-          "time": "2026-10-07T07:22:43Z",
-          "url": "https://github.com/2rwa/ps-eye-acoustic-localizer/actions/runs/37586946933"
-        },
-        {
-          "id": 37586923865,
-          "title": "Expose standalone PS Eye reset endpoint",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 16 of Static and standalone checks. Expose standalone PS Eye reset endpoint",
-          "branch": "main",
-          "time": "2026-10-07T07:22:29Z",
-          "url": "https://github.com/2rwa/ps-eye-acoustic-localizer/actions/runs/37586923865"
-        },
-        {
-          "id": 37586903581,
-          "title": "Add standalone forced capture restart",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 15 of Static and standalone checks. Add standalone forced capture restart",
-          "branch": "main",
-          "time": "2026-10-07T07:22:17Z",
-          "url": "https://github.com/2rwa/ps-eye-acoustic-localizer/actions/runs/37586903581"
-        },
-        {
-          "id": 37586743354,
-          "title": "Fix near-field backend reset handler",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 14 of Static and standalone checks. Fix near-field backend reset handler",
-          "branch": "main",
-          "time": "2026-10-07T07:20:42Z",
-          "url": "https://github.com/2rwa/ps-eye-acoustic-localizer/actions/runs/37586743354"
-        }
-      ]
+      "runs": []
     },
     {
       "name": "sph-web-samples",
       "url": "https://github.com/2rwa/sph-web-samples",
       "actions_url": "https://github.com/2rwa/sph-web-samples/actions",
-      "runs": [
-        {
-          "id": 36647882141,
-          "title": "fix: expose GenericParameters to PBD motor probe",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 64 of SPlisHSPlasH WASM build probe. fix: expose GenericParameters to PBD motor probe",
-          "branch": "main",
-          "time": "2026-09-29T23:57:31Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36647882141"
-        },
-        {
-          "id": 36647882136,
-          "title": "fix: expose GenericParameters to PBD motor probe",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 18 of SPlisHSPlasH PBD WASM compile probe. fix: expose GenericParameters to PBD motor probe",
-          "branch": "main",
-          "time": "2026-09-29T23:57:31Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36647882136"
-        },
-        {
-          "id": 36647882130,
-          "title": "fix: expose GenericParameters to PBD motor probe",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 149 of Test, build WASM, and deploy Pages. fix: expose GenericParameters to PBD motor probe",
-          "branch": "main",
-          "time": "2026-09-29T23:57:31Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36647882130"
-        },
-        {
-          "id": 36647682763,
-          "title": "feat: run PBD browser through upstream timestep",
-          "status": "completed",
-          "conclusion": "cancelled",
-          "status_label": "cancelled:  Run 148 of Test, build WASM, and deploy Pages. feat: run PBD browser through upstream timestep",
-          "branch": "main",
-          "time": "2026-09-29T23:55:04Z",
-          "url": "https://github.com/2rwa/sph-web-samples/actions/runs/36647682763"
-        }
-      ]
+      "runs": []
     },
     {
       "name": "tmp-202611",
       "url": "https://github.com/2rwa/tmp-202611",
       "actions_url": "https://github.com/2rwa/tmp-202611/actions",
-      "runs": [
-        {
-          "id": 42017401679,
-          "title": "test(simulator): prefer iOS 26.2 iPhone 16 Pro over older installed r…",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 2 of Safari Memory and iPhone Simulator diagnostics. test(simulator): prefer iOS 26.2 iPhone 16 Pro over older installed r…",
-          "branch": "main",
-          "time": "2026-11-05T11:14:49Z",
-          "url": "https://github.com/2rwa/tmp-202611/actions/runs/42017401679"
-        },
-        {
-          "id": 42017401408,
-          "title": "test(simulator): prefer iOS 26.2 iPhone 16 Pro over older installed r…",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 27 of Brick Breaker Regression. test(simulator): prefer iOS 26.2 iPhone 16 Pro over older installed r…",
-          "branch": "main",
-          "time": "2026-11-05T11:14:49Z",
-          "url": "https://github.com/2rwa/tmp-202611/actions/runs/42017401408"
-        },
-        {
-          "id": 42016507795,
-          "title": "test(safari): profile macOS Safari PLaMo RSS and probe iPhone Simulator",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 1 of Safari Memory and iPhone Simulator diagnostics. test(safari): profile macOS Safari PLaMo RSS and probe iPhone Simulator",
-          "branch": "main",
-          "time": "2026-11-05T11:08:30Z",
-          "url": "https://github.com/2rwa/tmp-202611/actions/runs/42016507795"
-        },
-        {
-          "id": 42016507580,
-          "title": "test(safari): profile macOS Safari PLaMo RSS and probe iPhone Simulator",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 21 of Publish NEON BREAK to Pages. test(safari): profile macOS Safari PLaMo RSS and probe iPhone Simulator",
-          "branch": "main",
-          "time": "2026-11-05T11:08:30Z",
-          "url": "https://github.com/2rwa/tmp-202611/actions/runs/42016507580"
-        }
-      ]
+      "runs": []
     },
     {
       "name": "tmp-android",
       "url": "https://github.com/2rwa/tmp-android",
       "actions_url": "https://github.com/2rwa/tmp-android/actions",
-      "runs": [
-        {
-          "id": 38207289835,
-          "title": "Package and smoke-build standalone Wadaiko Android source artifact",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 4 of Wadaiko Native Android. Package and smoke-build standalone Wadaiko Android source artifact",
-          "branch": "main",
-          "time": "2026-10-12T05:17:22Z",
-          "url": "https://github.com/2rwa/tmp-android/actions/runs/38207289835"
-        },
-        {
-          "id": 38207289790,
-          "title": "Package and smoke-build standalone Wadaiko Android source artifact",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 14 of Build Android APK. Package and smoke-build standalone Wadaiko Android source artifact",
-          "branch": "main",
-          "time": "2026-10-12T05:17:22Z",
-          "url": "https://github.com/2rwa/tmp-android/actions/runs/38207289790"
-        },
-        {
-          "id": 38205241410,
-          "title": "Fix Wadaiko settings calibration field visibility",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 3 of Wadaiko Native Android. Fix Wadaiko settings calibration field visibility",
-          "branch": "main",
-          "time": "2026-10-12T04:47:50Z",
-          "url": "https://github.com/2rwa/tmp-android/actions/runs/38205241410"
-        },
-        {
-          "id": 38205241385,
-          "title": "Fix Wadaiko settings calibration field visibility",
-          "status": "completed",
-          "conclusion": "failure",
-          "status_label": "failed:  Run 13 of Build Android APK. Fix Wadaiko settings calibration field visibility",
-          "branch": "main",
-          "time": "2026-10-12T04:47:50Z",
-          "url": "https://github.com/2rwa/tmp-android/actions/runs/38205241385"
-        }
-      ]
+      "runs": []
     },
     {
       "name": "tmp-blender",
       "url": "https://github.com/2rwa/tmp-blender",
       "actions_url": "https://github.com/2rwa/tmp-blender/actions",
-      "runs": [
-        {
-          "id": 36509029173,
-          "title": "ci: rebuild Pages after fracture 3D publish",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 37 of Pages gallery. ci: rebuild Pages after fracture 3D publish",
-          "branch": "main",
-          "time": "2026-09-29T01:40:42Z",
-          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36509029173"
-        },
-        {
-          "id": 36508959357,
-          "title": "ci: publish successful fracture 3D artifact without recompute",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 1 of Publish fracture 3D extreme. ci: publish successful fracture 3D artifact without recompute",
-          "branch": "main",
-          "time": "2026-09-29T01:39:50Z",
-          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36508959357"
-        },
-        {
-          "id": 36504337819,
-          "title": "Pages gallery",
-          "status": "completed",
-          "conclusion": "skipped",
-          "status_label": "skipped:  Run 36 of Pages gallery.",
-          "branch": null,
-          "time": "2026-09-29T00:41:44Z",
-          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36504337819"
-        },
-        {
-          "id": 36492307754,
-          "title": "ci: publish Blender fracture 3D result to Pages",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 35 of Pages gallery. ci: publish Blender fracture 3D result to Pages",
-          "branch": "main",
-          "time": "2026-09-28T22:25:34Z",
-          "url": "https://github.com/2rwa/tmp-blender/actions/runs/36492307754"
-        }
-      ]
+      "runs": []
     },
     {
       "name": "tmp-blender-52",
       "url": "https://github.com/2rwa/tmp-blender-52",
       "actions_url": "https://github.com/2rwa/tmp-blender-52/actions",
-      "runs": [
-        {
-          "id": 38518316394,
-          "title": "test: add five Gemini 3.8 Flash High Workbench color-gated procedural…",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 1 of Gemini 3.8 Flash High - Workbench color test five. test: add five Gemini 3.8 Flash High Workbench color-gated procedural…",
-          "branch": "main",
-          "time": "2026-10-14T05:45:10Z",
-          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/38518316394"
-        },
-        {
-          "id": 38514462060,
-          "title": "test: prepare isolated Gemini 3.8 Flash High five-model Workbench col…",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 19 of GitHub Pages. test: prepare isolated Gemini 3.8 Flash High five-model Workbench col…",
-          "branch": "main",
-          "time": "2026-10-14T05:01:48Z",
-          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/38514462060"
-        },
-        {
-          "id": 38513218049,
-          "title": "test: add five Claude Sonnet 5.5 Medium Workbench color-gated procedu…",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 1 of Claude Sonnet 5.5 Medium - Workbench color test five. test: add five Claude Sonnet 5.5 Medium Workbench color-gated procedu…",
-          "branch": "main",
-          "time": "2026-10-14T04:47:31Z",
-          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/38513218049"
-        },
-        {
-          "id": 38512900234,
-          "title": "test: add five Gemini Flash Low Workbench color-gated procedural models",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 1 of Gemini Flash 3.8 Low - Workbench color test five. test: add five Gemini Flash Low Workbench color-gated procedural models",
-          "branch": "main",
-          "time": "2026-10-14T04:43:55Z",
-          "url": "https://github.com/2rwa/tmp-blender-52/actions/runs/38512900234"
-        }
-      ]
+      "runs": []
     },
     {
       "name": "tmp-blender-rigid-cloth",
       "url": "https://github.com/2rwa/tmp-blender-rigid-cloth",
       "actions_url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions",
-      "runs": [
-        {
-          "id": 36496409168,
-          "title": "chore: trigger SQLite-backed Pages rebuild",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 29 of Blender experiment. chore: trigger SQLite-backed Pages rebuild",
-          "branch": "main",
-          "time": "2026-09-28T23:08:42Z",
-          "url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions/runs/36496409168"
-        },
-        {
-          "id": 36496409114,
-          "title": "chore: trigger SQLite-backed Pages rebuild",
-          "status": "completed",
-          "conclusion": "failure",
-          "status_label": "failed:  Run 5 of Pages gallery. chore: trigger SQLite-backed Pages rebuild",
-          "branch": "main",
-          "time": "2026-09-28T23:08:42Z",
-          "url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions/runs/36496409114"
-        },
-        {
-          "id": 36496376134,
-          "title": "feat: index experiment results with SQLite-backed Pages",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 28 of Blender experiment. feat: index experiment results with SQLite-backed Pages",
-          "branch": "main",
-          "time": "2026-09-28T23:08:22Z",
-          "url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions/runs/36496376134"
-        },
-        {
-          "id": 36496375887,
-          "title": "feat: index experiment results with SQLite-backed Pages",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 4 of Pages gallery. feat: index experiment results with SQLite-backed Pages",
-          "branch": "main",
-          "time": "2026-09-28T23:08:22Z",
-          "url": "https://github.com/2rwa/tmp-blender-rigid-cloth/actions/runs/36496375887"
-        }
-      ]
+      "runs": []
     },
     {
       "name": "tmp-blender-telop",
       "url": "https://github.com/2rwa/tmp-blender-telop",
       "actions_url": "https://github.com/2rwa/tmp-blender-telop/actions",
-      "runs": [
-        {
-          "id": 36217773152,
-          "title": "Simplify baseline to Hello world",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 2 of Blender telop experiment. Simplify baseline to Hello world",
-          "branch": "main",
-          "time": "2026-09-26T04:25:13Z",
-          "url": "https://github.com/2rwa/tmp-blender-telop/actions/runs/36217773152"
-        },
-        {
-          "id": 36216238965,
-          "title": "Set up Blender telop render pipeline",
-          "status": "completed",
-          "conclusion": "failure",
-          "status_label": "failed:  Run 1 of Blender telop experiment. Set up Blender telop render pipeline",
-          "branch": "main",
-          "time": "2026-09-26T03:54:28Z",
-          "url": "https://github.com/2rwa/tmp-blender-telop/actions/runs/36216238965"
-        },
-        {
-          "id": 36213102957,
-          "title": "Set up GitHub Pages",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 1 of Deploy static content to Pages. Set up GitHub Pages",
-          "branch": "main",
-          "time": "2026-09-26T02:53:38Z",
-          "url": "https://github.com/2rwa/tmp-blender-telop/actions/runs/36213102957"
-        }
-      ]
+      "runs": []
     },
     {
       "name": "tmp-jetson-nano",
       "url": "https://github.com/2rwa/tmp-jetson-nano",
       "actions_url": "https://github.com/2rwa/tmp-jetson-nano/actions",
-      "runs": [
-        {
-          "id": 39081113474,
-          "title": "Document Raspberry Pi compatibility and ARM64 rootfs reuse limits",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 11 of Publish documentation to GitHub Pages. Document Raspberry Pi compatibility and ARM64 rootfs reuse limits",
-          "branch": "main",
-          "time": "2026-10-18T00:00:00Z",
-          "url": "https://github.com/2rwa/tmp-jetson-nano/actions/runs/39081113474"
-        },
-        {
-          "id": 39080900581,
-          "title": "Record successful ARM64 QEMU login boot and adjust first-login NIC ex…",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 10 of Publish documentation to GitHub Pages. Record successful ARM64 QEMU login boot and adjust first-login NIC ex…",
-          "branch": "main",
-          "time": "2026-10-17T23:56:17Z",
-          "url": "https://github.com/2rwa/tmp-jetson-nano/actions/runs/39080900581"
-        },
-        {
-          "id": 39080262634,
-          "title": "Fix QEMU root partition discovery using GPT rootfs label",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 2 of QEMU ARM64 boot smoke test. Fix QEMU root partition discovery using GPT rootfs label",
-          "branch": "main",
-          "time": "2026-10-17T23:45:56Z",
-          "url": "https://github.com/2rwa/tmp-jetson-nano/actions/runs/39080262634"
-        },
-        {
-          "id": 39080262456,
-          "title": "Fix QEMU root partition discovery using GPT rootfs label",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 9 of Publish documentation to GitHub Pages. Fix QEMU root partition discovery using GPT rootfs label",
-          "branch": "main",
-          "time": "2026-10-17T23:45:56Z",
-          "url": "https://github.com/2rwa/tmp-jetson-nano/actions/runs/39080262456"
-        }
-      ]
+      "runs": []
     },
     {
       "name": "tmp-mac",
       "url": "https://github.com/2rwa/tmp-mac",
       "actions_url": "https://github.com/2rwa/tmp-mac/actions",
-      "runs": [
-        {
-          "id": 38665650342,
-          "title": "Use hybrid cursor follow screenshots and stationary SCStream, adjusta…",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 3 of Cursor Magnifier Stream (macOS arm64). Use hybrid cursor follow screenshots and stationary SCStream, adjusta…",
-          "branch": "main",
-          "time": "2026-10-15T01:26:24Z",
-          "url": "https://github.com/2rwa/tmp-mac/actions/runs/38665650342"
-        },
-        {
-          "id": 38665650252,
-          "title": "Use hybrid cursor follow screenshots and stationary SCStream, adjusta…",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 16 of macOS 26 M1 environment and browsers. Use hybrid cursor follow screenshots and stationary SCStream, adjusta…",
-          "branch": "main",
-          "time": "2026-10-15T01:26:24Z",
-          "url": "https://github.com/2rwa/tmp-mac/actions/runs/38665650252"
-        },
-        {
-          "id": 38664155713,
-          "title": "Add Xcode project and shared Run scheme for stream magnifier",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 2 of Cursor Magnifier Stream (macOS arm64). Add Xcode project and shared Run scheme for stream magnifier",
-          "branch": "main",
-          "time": "2026-10-15T01:10:05Z",
-          "url": "https://github.com/2rwa/tmp-mac/actions/runs/38664155713"
-        },
-        {
-          "id": 38664155701,
-          "title": "Add Xcode project and shared Run scheme for stream magnifier",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 15 of macOS 26 M1 environment and browsers. Add Xcode project and shared Run scheme for stream magnifier",
-          "branch": "main",
-          "time": "2026-10-15T01:10:05Z",
-          "url": "https://github.com/2rwa/tmp-mac/actions/runs/38664155701"
-        }
-      ]
+      "runs": []
     },
     {
       "name": "tmp-music",
       "url": "https://github.com/2rwa/tmp-music",
       "actions_url": "https://github.com/2rwa/tmp-music/actions",
-      "runs": [
-        {
-          "id": 37250686333,
-          "title": "Structure Cutter Lab Pages smoke",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 19 of Structure Cutter Lab Pages smoke.",
-          "branch": null,
-          "time": "2026-10-05T01:15:00Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37250686333"
-        },
-        {
-          "id": 37250686322,
-          "title": "M6 Pages smoke",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 56 of M6 Pages smoke.",
-          "branch": null,
-          "time": "2026-10-05T01:15:00Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37250686322"
-        },
-        {
-          "id": 37250610899,
-          "title": "docs: close Structure Cutter Lab implementation experiment",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 59 of Deploy GitHub Pages. docs: close Structure Cutter Lab implementation experiment",
-          "branch": "main",
-          "time": "2026-10-05T01:13:51Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37250610899"
-        },
-        {
-          "id": 37250610884,
-          "title": "docs: close Structure Cutter Lab implementation experiment",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 104 of Analysis cheap CI. docs: close Structure Cutter Lab implementation experiment",
-          "branch": "main",
-          "time": "2026-10-05T01:13:51Z",
-          "url": "https://github.com/2rwa/tmp-music/actions/runs/37250610884"
-        }
-      ]
+      "runs": []
     },
     {
       "name": "tmp-sho",
       "url": "https://github.com/2rwa/tmp-sho",
       "actions_url": "https://github.com/2rwa/tmp-sho/actions",
-      "runs": [
-        {
-          "id": 36302527144,
-          "title": "pages: publish 2026-09-27 shō listening lab",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 4 of Diagnose and deploy GitHub Pages. pages: publish 2026-09-27 shō listening lab",
-          "branch": "main",
-          "time": "2026-09-27T07:15:12Z",
-          "url": "https://github.com/2rwa/tmp-sho/actions/runs/36302527144"
-        },
-        {
-          "id": 36300492329,
-          "title": "Publish shō engineering checkpoint",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 3 of Diagnose and deploy GitHub Pages. Publish shō engineering checkpoint",
-          "branch": "main",
-          "time": "2026-09-27T06:34:29Z",
-          "url": "https://github.com/2rwa/tmp-sho/actions/runs/36300492329"
-        },
-        {
-          "id": 36298908053,
-          "title": "Search passive shō constant-reflection retune",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 1 of Shō passive constant-reflection retune. Search passive shō constant-reflection retune",
-          "branch": "main",
-          "time": "2026-09-27T06:02:05Z",
-          "url": "https://github.com/2rwa/tmp-sho/actions/runs/36298908053"
-        },
-        {
-          "id": 36298800629,
-          "title": "Map constant-reflection shō passivity feasibility",
-          "status": "completed",
-          "conclusion": "failure",
-          "status_label": "failed:  Run 1 of Shō constant-reflection feasibility map. Map constant-reflection shō passivity feasibility",
-          "branch": "main",
-          "time": "2026-09-27T06:00:06Z",
-          "url": "https://github.com/2rwa/tmp-sho/actions/runs/36298800629"
-        }
-      ]
+      "runs": []
     },
     {
       "name": "tmp-speech",
       "url": "https://github.com/2rwa/tmp-speech",
       "actions_url": "https://github.com/2rwa/tmp-speech/actions",
-      "runs": [
-        {
-          "id": 38219275840,
-          "title": "Add verified calculus problems and hiragana narrated Irodori TTS less…",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 1 of Irodori calculus lessons (hiragana TTS + Pages). Add verified calculus problems and hiragana narrated Irodori TTS less…",
-          "branch": "main",
-          "time": "2026-10-12T07:42:45Z",
-          "url": "https://github.com/2rwa/tmp-speech/actions/runs/38219275840"
-        },
-        {
-          "id": 38215936815,
-          "title": "Experiment with Irodori mathematical notation versus spoken Japanese",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 1 of Irodori mathematical pronunciation A-B. Experiment with Irodori mathematical notation versus spoken Japanese",
-          "branch": "main",
-          "time": "2026-10-12T07:06:33Z",
-          "url": "https://github.com/2rwa/tmp-speech/actions/runs/38215936815"
-        },
-        {
-          "id": 38193611123,
-          "title": "Deploy WebGPU UI independently of long-running CPU benchmarks",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 2 of Irodori WebGPU UI smoke + Pages. Deploy WebGPU UI independently of long-running CPU benchmarks",
-          "branch": "main",
-          "time": "2026-10-12T01:53:00Z",
-          "url": "https://github.com/2rwa/tmp-speech/actions/runs/38193611123"
-        },
-        {
-          "id": 38193548204,
-          "title": "Add Irodori-TTS WebGPU browser test page and Pages deploy workflow",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 1 of Irodori WebGPU UI smoke + Pages. Add Irodori-TTS WebGPU browser test page and Pages deploy workflow",
-          "branch": "main",
-          "time": "2026-10-12T01:52:02Z",
-          "url": "https://github.com/2rwa/tmp-speech/actions/runs/38193548204"
-        }
-      ]
+      "runs": []
     },
     {
       "name": "tmp-wpe-kms",
       "url": "https://github.com/2rwa/tmp-wpe-kms",
       "actions_url": "https://github.com/2rwa/tmp-wpe-kms/actions",
-      "runs": [
-        {
-          "id": 40100759872,
-          "title": "Fix baseline CPU flags for both WebKit engine and launcher",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 2 of Build le00 x86-64 baseline WPE WebGL. Fix baseline CPU flags for both WebKit engine and launcher",
-          "branch": "test/le00-wpe-webgl-baseline-20261024",
-          "time": "2026-10-24T14:02:53Z",
-          "url": "https://github.com/2rwa/tmp-wpe-kms/actions/runs/40100759872"
-        },
-        {
-          "id": 40100697766,
-          "title": "Build CPU-baseline WPE WebGL for AMD le00 without replacing Core2",
-          "status": "completed",
-          "conclusion": "failure",
-          "status_label": "failed:  Run 1 of Build le00 x86-64 baseline WPE WebGL. Build CPU-baseline WPE WebGL for AMD le00 without replacing Core2",
-          "branch": "test/le00-wpe-webgl-baseline-20261024",
-          "time": "2026-10-24T14:02:04Z",
-          "url": "https://github.com/2rwa/tmp-wpe-kms/actions/runs/40100697766"
-        },
-        {
-          "id": 39806774783,
-          "title": "Add isolated WebGL and experimental WebRTC WPE 2.54.1 build",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 1 of Build isolated WPE WebGL and experimental WebRTC. Add isolated WebGL and experimental WebRTC WPE 2.54.1 build",
-          "branch": "main",
-          "time": "2026-10-22T15:38:46Z",
-          "url": "https://github.com/2rwa/tmp-wpe-kms/actions/runs/39806774783"
-        },
-        {
-          "id": 39806774406,
-          "title": "Add isolated WebGL and experimental WebRTC WPE 2.54.1 build",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 16 of Build, regression and Pages. Add isolated WebGL and experimental WebRTC WPE 2.54.1 build",
-          "branch": "main",
-          "time": "2026-10-22T15:38:46Z",
-          "url": "https://github.com/2rwa/tmp-wpe-kms/actions/runs/39806774406"
-        }
-      ]
+      "runs": []
     },
     {
       "name": "tmp-zunda",
       "url": "https://github.com/2rwa/tmp-zunda",
       "actions_url": "https://github.com/2rwa/tmp-zunda/actions",
-      "runs": [
-        {
-          "id": 36991729055,
-          "title": "feat: add Pages A/B comparison UI",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 1 of Deploy GitHub Pages. feat: add Pages A/B comparison UI",
-          "branch": "main",
-          "time": "2026-10-02T09:46:39Z",
-          "url": "https://github.com/2rwa/tmp-zunda/actions/runs/36991729055"
-        },
-        {
-          "id": 36980585782,
-          "title": "test: add 120min haiku scale sweep",
-          "status": "completed",
-          "conclusion": "success",
-          "status_label": "completed successfully:  Run 1 of Zundamon Haiku Scale 120min Sweep. test: add 120min haiku scale sweep",
-          "branch": "main",
-          "time": "2026-10-02T07:49:12Z",
-          "url": "https://github.com/2rwa/tmp-zunda/actions/runs/36980585782"
-        }
-      ]
+      "runs": []
     }
   ],
   "errors": [],
-  "updated_at": "2026-11-05T17:42:25Z"
+  "updated_at": "2026-11-05T22:53:20Z"
 }
