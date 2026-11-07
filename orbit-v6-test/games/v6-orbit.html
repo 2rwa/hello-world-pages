@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#080e20">
+<meta name="description" content="ORBIT BREAK v6 — コンボと多彩な的、変化するアリーナで遊ぶ円形ブロック崩し">
+<title>ORBIT BREAK v6 — COMBO &amp; MORPH</title>
+<link rel="stylesheet" href="../orbit/style.css">
+<link rel="stylesheet" href="../orbit/v6-style.css">
+</head>
+<body>
+<main class="shell">
+ <header>
+  <div><p class="eyebrow"><a href="../index.html">NEON BREAK LAB</a> / EXPERIMENT 06</p><h1>ORBIT <em>BREAK</em> <span class="version">v6</span></h1><p class="subtitle">Lv4から遊びやすく。コンボで高得点とステージごとに一度のLIFEボーナス。</p></div>
+  <div class="scores" aria-label="スコアと進行状況">
+   <div class="score"><small>SCORE</small><strong id="score">0</strong></div>
+   <div class="score"><small>BEST</small><strong id="best">0</strong></div>
+   <div class="score"><small>STAGE</small><strong id="level">1</strong></div>
+   <div class="score"><small>LIVES</small><strong id="lives">♥♥♥</strong></div>
+   <div class="score combo-score"><small>COMBO</small><strong id="combo">×0</strong></div>
+   <div class="score energy-score"><small>ENERGY</small><strong id="energy">100%</strong></div>
+  </div>
+ </header>
+ <div class="arena-wrap" id="arena-wrap"><button id="fullscreen-exit" class="fullscreen-exit" type="button" aria-label="全画面を終了">× 閉じる</button>
+  <canvas id="arena" width="800" height="600" role="img" aria-label="ORBIT BREAK v6。パドルでボールを充電して的を破壊し、的とパドルの衝突を避けるゲーム。Lv6から膨張、Lv9から分裂する的。Lv12から外殻が変化します。"></canvas>
+ </div>
+ <div class="energy-panel"><div class="energy-caption"><strong>ボールの攻撃エネルギー</strong><span>パドル接触で充電 / 攻撃で消費</span></div><div class="energy-track" role="progressbar" aria-label="ボールのエネルギー" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100"><span id="energy-fill" style="width:100%"></span></div></div>
+ <div class="toolbar">
+  <div class="instructions"><span>← → / A D / マウス・タッチ：パドル移動</span><span>SPACE：開始・一時停止 / P：一時停止 / R：リセット</span></div>
+  <div class="buttons"><button class="primary" id="start">スタート</button><button id="pause">一時停止</button><button id="reset">リセット</button><button id="fullscreen" aria-pressed="false">⛶ 全画面</button></div>
+ </div>
+ <div class="info">
+  <div class="legend"><span class="cyan">●</span> パドルで充電 <span class="pink">●</span> 的がパドルに当たるとLIFE −1 <span class="gold">●</span> Lv6 膨張 / Lv9 分裂 / Lv12 外殻変化</div>
+  <div class="progress">状態 <b id="status">READY</b> <span class="bullet">·</span> 残りターゲット <b id="remaining">0</b></div>
+ </div>
+ <section class="result-panel" id="result" hidden aria-live="polite">
+  <div><strong>GAME OVER — 記録</strong><p>最終ステージ <b id="final-stage">1</b> · スコア <b id="final-score">0</b> · 最大コンボ <b id="final-combo">0</b></p></div>
+  <button class="primary" id="capture">結果をPNG画像に保存</button>
+ </section>
+ <section class="share-panel" aria-label="友だちに教える">
+  <div><strong>友だちに教える</strong><p>v6のURLを共有。ゲームオーバー後は結果画像も保存できます。</p></div>
+  <div class="share-actions">
+   <button id="share">共有</button><button id="copy-link">リンクをコピー</button>
+   <details class="qr-details"><summary>QRコード</summary><div class="qr-content"><img width="200" height="200" loading="lazy" alt="ORBIT BREAK v6のページを開くQRコード" src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&amp;margin=8&amp;data=https%3A%2F%2F2rwa.github.io%2Ftmp-202611%2Fgames%2Fv6-orbit.html"><small>QRコードは外部サービスから取得します</small></div></details>
+   <a class="star-link" href="https://github.com/2rwa/tmp-202611" target="_blank" rel="noopener noreferrer">★ GitHubでStar</a>
+  </div>
+  <p id="share-status" class="share-status" role="status" aria-live="polite"></p>
+ </section>
+ <footer><a href="../index.html">← バージョン一覧に戻る</a><span>Lv1〜3はv5と同じ物理・難易度。Lv4から緩和、コンボ4で一度LIFE +1（Lv4以降）。</span></footer>
+</main>
+<script src="../orbit/v6-specials.js"></script>
+<script src="../orbit/v6-physics.js"></script>
+<script src="../orbit/v6-render.js"></script>
+<script src="../orbit/v6-game.js"></script>
+</body>
+</html>
