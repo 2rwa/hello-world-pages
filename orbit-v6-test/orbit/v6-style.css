@@ -23,11 +23,43 @@ button{touch-action:manipulation}
 .qr-content small{color:#40576a;font-size:.68rem;text-align:center}
 .share-status{width:100%;margin:0!important;min-height:0;color:#8ff1dc!important}
 [hidden]{display:none!important}
-.arena-wrap:fullscreen,.arena-wrap:-webkit-full-screen,body.v6-immersive .arena-wrap{display:grid;place-items:center;width:100vw;height:100vh;height:100dvh;border:0;border-radius:0;background:#050c19}
-.arena-wrap:fullscreen canvas,.arena-wrap:-webkit-full-screen canvas,body.v6-immersive .arena-wrap canvas{width:min(100vw,133.333vh);width:min(100vw,133.333dvh);height:auto;max-height:100vh;max-height:100dvh}
-body.v6-immersive .arena-wrap{position:fixed;z-index:1000;inset:0}
-@media(max-width:600px){.share-panel{display:block}.share-actions{margin-top:12px}.result-panel button{margin-left:0}.qr-details[open] .qr-content{right:auto;left:0}}
 
+/* Fullscreen keeps the complete HUD while maximizing the physical arena. */
 .arena-wrap{position:relative}
-.fullscreen-exit{display:none;position:absolute;top:12px;right:12px;z-index:4;background:#091727eb;border-color:#9bbbd4}
-.arena-wrap:fullscreen .fullscreen-exit,.arena-wrap:-webkit-full-screen .fullscreen-exit,body.v6-immersive .fullscreen-exit{display:block}
+.fullscreen-exit{display:none;position:absolute;top:8px;right:8px;z-index:6;background:#091727ed;border-color:#9bbbd4}
+:is(#game-shell:fullscreen,#game-shell:-webkit-full-screen,body.v6-immersive #game-shell){
+ position:fixed;inset:0;max-width:none;width:100vw;height:100vh;height:100dvh;
+ margin:0;padding:env(safe-area-inset-top) max(4px,env(safe-area-inset-right)) env(safe-area-inset-bottom) max(4px,env(safe-area-inset-left));
+ background:#070d1c;display:grid;grid-template-columns:minmax(0,1fr);
+ grid-template-rows:auto minmax(0,1fr) auto auto auto;gap:2px;overflow:hidden;
+}
+:is(#game-shell:fullscreen,#game-shell:-webkit-full-screen,body.v6-immersive #game-shell) header{padding:3px 0;display:block;min-width:0}
+:is(#game-shell:fullscreen,#game-shell:-webkit-full-screen,body.v6-immersive #game-shell) header>div:first-child{display:none}
+:is(#game-shell:fullscreen,#game-shell:-webkit-full-screen,body.v6-immersive #game-shell) .scores{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px;width:100%}
+:is(#game-shell:fullscreen,#game-shell:-webkit-full-screen,body.v6-immersive #game-shell) .score{min-width:0;padding:3px 4px;border-radius:6px}
+:is(#game-shell:fullscreen,#game-shell:-webkit-full-screen,body.v6-immersive #game-shell) .score small{font-size:.57rem}
+:is(#game-shell:fullscreen,#game-shell:-webkit-full-screen,body.v6-immersive #game-shell) .score strong{font-size:clamp(.8rem,2vw,1.2rem)}
+:is(#game-shell:fullscreen,#game-shell:-webkit-full-screen,body.v6-immersive #game-shell) .arena-wrap{width:100%;height:100%;min-height:0;border:0;border-radius:0;box-shadow:none;overflow:hidden;display:block}
+:is(#game-shell:fullscreen,#game-shell:-webkit-full-screen,body.v6-immersive #game-shell) .arena-wrap canvas{width:100%;height:100%;max-width:none;max-height:none;aspect-ratio:auto;display:block}
+:is(#game-shell:fullscreen,#game-shell:-webkit-full-screen,body.v6-immersive #game-shell) .fullscreen-exit{display:block}
+:is(#game-shell:fullscreen,#game-shell:-webkit-full-screen,body.v6-immersive #game-shell) .energy-panel{margin:0;padding:4px 8px;border-radius:7px}
+:is(#game-shell:fullscreen,#game-shell:-webkit-full-screen,body.v6-immersive #game-shell) .energy-caption{margin:0 0 3px;font-size:.68rem}
+:is(#game-shell:fullscreen,#game-shell:-webkit-full-screen,body.v6-immersive #game-shell) .energy-caption span{font-size:.65rem}
+:is(#game-shell:fullscreen,#game-shell:-webkit-full-screen,body.v6-immersive #game-shell) .energy-track{height:7px}
+:is(#game-shell:fullscreen,#game-shell:-webkit-full-screen,body.v6-immersive #game-shell) .toolbar{padding:2px;justify-content:center}
+:is(#game-shell:fullscreen,#game-shell:-webkit-full-screen,body.v6-immersive #game-shell) .toolbar .instructions{display:none}
+:is(#game-shell:fullscreen,#game-shell:-webkit-full-screen,body.v6-immersive #game-shell) .buttons{width:auto;gap:4px}
+:is(#game-shell:fullscreen,#game-shell:-webkit-full-screen,body.v6-immersive #game-shell) .buttons button{font-size:.71rem;padding:6px 9px}
+:is(#game-shell:fullscreen,#game-shell:-webkit-full-screen,body.v6-immersive #game-shell) .info{padding:2px 5px;margin:0;justify-content:center;font-size:.7rem}
+:is(#game-shell:fullscreen,#game-shell:-webkit-full-screen,body.v6-immersive #game-shell) .info .legend{display:none}
+:is(#game-shell:fullscreen,#game-shell:-webkit-full-screen,body.v6-immersive #game-shell) .share-panel,
+:is(#game-shell:fullscreen,#game-shell:-webkit-full-screen,body.v6-immersive #game-shell) footer{display:none}
+:is(#game-shell:fullscreen,#game-shell:-webkit-full-screen,body.v6-immersive #game-shell) .result-panel:not([hidden]){
+ position:absolute;z-index:7;top:50%;left:50%;transform:translate(-50%,-50%);
+ max-width:95vw;justify-content:center;box-shadow:0 0 60px #000c;
+}
+@media(max-width:600px){
+ :is(#game-shell:fullscreen,#game-shell:-webkit-full-screen,body.v6-immersive #game-shell) .scores{grid-template-columns:repeat(3,minmax(0,1fr))}
+ :is(#game-shell:fullscreen,#game-shell:-webkit-full-screen,body.v6-immersive #game-shell) .energy-caption span{display:none}
+ :is(#game-shell:fullscreen,#game-shell:-webkit-full-screen,body.v6-immersive #game-shell) .buttons button{padding:5px 7px}
+}

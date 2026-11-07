@@ -26,20 +26,20 @@ function starRadius(angle){
  }
  return Number.isFinite(nearest)?nearest:ARENA;
 }
-function outerRadius(level,elapsed,angle){
+function outerRadius(level,elapsed,angle,scale=1){
  const mode=stageShape(level);
- if(mode==='circle')return ARENA;
- if(mode==='square')return 238/Math.max(Math.abs(Math.cos(angle)),Math.abs(Math.sin(angle)),1e-6);
+ if(mode==='circle')return ARENA*scale;
+ if(mode==='square')return scale*238/Math.max(Math.abs(Math.cos(angle)),Math.abs(Math.sin(angle)),1e-6);
  const star=starRadius(angle);
- if(mode==='star')return star;
+ if(mode==='star')return star*scale;
  const mix=.5-.5*Math.cos(elapsed*TAU/10);
- return ARENA+(star-ARENA)*mix;
+ return (ARENA+(star-ARENA)*mix)*scale;
 }
-function traceBoundary(ctx,level,elapsed){
+function traceBoundary(ctx,level,elapsed,scale=1){
  ctx.beginPath();
  const points=240;
  for(let i=0;i<=points;i++){
-  const a=i*TAU/points,r=outerRadius(level,elapsed,a);
+  const a=i*TAU/points,r=outerRadius(level,elapsed,a,scale);
   const x=C.x+Math.cos(a)*r,y=C.y+Math.sin(a)*r;
   if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
  }
@@ -47,8 +47,8 @@ function traceBoundary(ctx,level,elapsed){
 }
 function wallContact(g,normalizeBall,emit,reflect){
  const b=g.ball,dx=b.x-C.x,dy=b.y-C.y,d=Math.hypot(dx,dy)||1;
- const a=Math.atan2(dy,dx),rad=outerRadius(g.level,g.elapsed,a);
- const delta=.002,dr=(outerRadius(g.level,g.elapsed,a+delta)-outerRadius(g.level,g.elapsed,a-delta))/(2*delta);
+ const a=Math.atan2(dy,dx),rad=outerRadius(g.level,g.elapsed,a,g.arenaScale);
+ const delta=.002,dr=(outerRadius(g.level,g.elapsed,a+delta,g.arenaScale)-outerRadius(g.level,g.elapsed,a-delta,g.arenaScale))/(2*delta);
  const n=unit(Math.cos(a)+dr/d*Math.sin(a),Math.sin(a)-dr/d*Math.cos(a));
  const alignment=Math.max(.32,n.x*Math.cos(a)+n.y*Math.sin(a));
  const limit=rad-b.r/alignment;
@@ -72,8 +72,24 @@ function prepareTargets(targets,level){
  }
  return targets;
 }
-function reset(g){g.combo=0;g.bestCombo=0;g.lastComboAt=-Infinity;g.bonusClaimed=false;g.maxStage=1;}
-function newStage(g){g.combo=0;g.lastComboAt=-Infinity;g.bonusClaimed=false;g.maxStage=Math.max(g.maxStage||1,g.level);}
+function updateArena(g,dt){
+ const n=g.targets.length;
+ if(n>0&&n<10)g.shrinkGoal=Math.min(g.shrinkGoal,Math.max(.73,1-.03*(10-n)));
+ const old=g.arenaScale,next=old+(g.shrinkGoal-old)*Math.min(1,dt*2.4);
+ if(Math.abs(next-old)<1e-8)return;
+ const ratio=next/old;
+ const move=p=>{p.x=C.x+(p.x-C.x)*ratio;p.y=C.y+(p.y-C.y)*ratio;};
+ move(g.ball);
+ for(const t of g.targets)move(t);
+ for(const p of g.trail)move(p);
+ g.arenaScale=next;
+}
+function targetLimit(g,t,angle){
+ const scale=g.arenaScale;
+ return scale>.999?210-1:Math.min(210*scale-1,outerRadius(g.level,g.elapsed,angle,scale)-t.r-3);
+}
+function reset(g){g.arenaScale=1;g.shrinkGoal=1;g.combo=0;g.bestCombo=0;g.lastComboAt=-Infinity;g.bonusClaimed=false;g.maxStage=1;}
+function newStage(g){g.arenaScale=1;g.shrinkGoal=1;g.combo=0;g.lastComboAt=-Infinity;g.bonusClaimed=false;g.maxStage=Math.max(g.maxStage||1,g.level);}
 function poweredHit(g,t,i,hit,emit){
  const current=g.elapsed;
  g.combo=current-g.lastComboAt<=4?g.combo+1:1;
@@ -110,5 +126,5 @@ function poweredHit(g,t,i,hit,emit){
   if(g.lives<6){g.lives++;emit('life-bonus',{lives:g.lives});}
  }
 }
-root.OrbitV6Extras=Object.freeze({stageShape,outerRadius,traceBoundary,wallContact,prepareTargets,reset,newStage,poweredHit});
+root.OrbitV6Extras=Object.freeze({stageShape,outerRadius,traceBoundary,wallContact,prepareTargets,reset,newStage,poweredHit,updateArena,targetLimit});
 })(globalThis);

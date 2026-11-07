@@ -4,7 +4,7 @@ const F=root.OrbitPhysicsV6,R=root.OrbitRenderV6,V=root.OrbitV6Extras;
 const GAME_URL="https://2rwa.github.io/tmp-202611/games/v6-orbit.html";
 const canvas=document.getElementById('arena'),renderer=R.createRenderer(canvas);
 const ui={score:document.getElementById('score'),best:document.getElementById('best'),level:document.getElementById('level'),lives:document.getElementById('lives'),remaining:document.getElementById('remaining'),status:document.getElementById('status'),energy:document.getElementById('energy'),energyFill:document.getElementById('energy-fill'),start:document.getElementById('start'),pause:document.getElementById('pause'),reset:document.getElementById('reset'),
- combo:document.getElementById('combo'),fullscreen:document.getElementById('fullscreen'),
+ combo:document.getElementById('combo'),fullscreen:document.getElementById('fullscreen'),shell:document.getElementById('game-shell'),
  arenaWrap:document.getElementById('arena-wrap'),share:document.getElementById('share'),
  copyLink:document.getElementById('copy-link'),shareStatus:document.getElementById('share-status'),
  result:document.getElementById('result'),capture:document.getElementById('capture'),
@@ -20,10 +20,10 @@ function snapshot(){
   remaining:world.targets.length,frontHits:world.frontHits,rearHits:world.rearHits,wallHits:world.wallHits,
   energy:world.energy,chargedHits:world.chargedHits,paddleObjectHits:world.paddleObjectHits,damageCooldown:world.damageCooldown,
   speed:Math.hypot(world.ball.vx,world.ball.vy),expectedSpeed:engine.speed(),paddleAngle:world.paddleAngle,
-  ball:{...world.ball},elapsed:world.elapsed,events:world.events.slice()};
+  ball:{...world.ball},arenaScale:world.arenaScale,shrinkGoal:world.shrinkGoal,viewport:renderer.view(),elapsed:world.elapsed,events:world.events.slice()};
 }
 function updateHud(){
- if(world.score>best){best=world.score;try{localStorage.setItem('orbitBreakerBest',String(best))}catch(_){}}
+ if(world.score>best){best=world.score;try{localStorage.setItem('orbitBreakerV6Best',String(best))}catch(_){}}
  ui.score.textContent=world.score.toLocaleString('ja-JP');
  ui.best.textContent=best.toLocaleString('ja-JP');
  ui.level.textContent=world.level;
@@ -50,9 +50,8 @@ function begin(){
 function toggle(){engine.pause();updateHud();renderer.draw(world);}
 function reset(){engine.reset();updateHud();renderer.draw(world);}
 function canvasAngle(e){
- const rect=canvas.getBoundingClientRect();
- const x=(e.clientX-rect.left)/rect.width*canvas.width-F.C.x;
- const y=(e.clientY-rect.top)/rect.height*canvas.height-F.C.y;
+ const p=renderer.worldPoint(e.clientX,e.clientY);
+ const x=p.x-F.C.x,y=p.y-F.C.y;
  if(Math.hypot(x,y)<34)return null;
  return Math.atan2(y,x);
 }
@@ -80,7 +79,6 @@ root.addEventListener('keydown',e=>{
  if(e.code==='Space'){if(world.state==='playing')toggle();else begin();}
  if(e.code==='KeyP'){if(world.state==='playing'||world.state==='paused')toggle();}
  if(e.code==='KeyR')reset();
- if(e.code==='Escape'&&document.body.classList.contains('v6-immersive')){document.body.classList.remove('v6-immersive');updateFullscreenLabel();}
 });
 root.addEventListener('keyup',e=>{
  if(e.code==='ArrowLeft'||e.code==='KeyA')left=false;
@@ -90,22 +88,7 @@ root.addEventListener('blur',()=>{left=false;right=false;pointerHeld=false;if(wo
 ui.start.addEventListener('click',begin);
 ui.pause.addEventListener('click',toggle);
 ui.reset.addEventListener('click',reset);
-function updateFullscreenLabel(){
- const active=!!document.fullscreenElement||document.body.classList.contains('v6-immersive');
- ui.fullscreen.textContent=active?'⛶ 全画面を終了':'⛶ 全画面';
- ui.fullscreen.setAttribute('aria-pressed',String(active));
-}
-async function toggleFullscreen(){
- try{
-  if(document.fullscreenElement){await document.exitFullscreen();}
-  else if(ui.arenaWrap.requestFullscreen){await ui.arenaWrap.requestFullscreen();}
-  else document.body.classList.toggle('v6-immersive');
- }catch(_){document.body.classList.toggle('v6-immersive');}
- updateFullscreenLabel();
-}
-ui.fullscreen.addEventListener('click',toggleFullscreen);
-document.getElementById('fullscreen-exit').addEventListener('click',toggleFullscreen);
-document.addEventListener('fullscreenchange',updateFullscreenLabel);
+root.OrbitFullscreenV6.install({shell:ui.shell,button:ui.fullscreen,exitButton:document.getElementById('fullscreen-exit')});
 function shareMessage(message){ui.shareStatus.textContent=message;}
 async function copyLink(){
  try{
@@ -138,7 +121,9 @@ function captureResultCanvas(){
  c.fillStyle='#fff8ec';c.font='bold 26px system-ui';
  c.fillText('FINAL STAGE '+world.level,25,79);
  c.fillText('SCORE '+world.score.toLocaleString('en-US'),400,79);
- c.drawImage(canvas,0,96,800,600);
+ const scale=Math.min(800/canvas.width,600/canvas.height);
+ const w=canvas.width*scale,h=canvas.height*scale;
+ c.drawImage(canvas,(800-w)/2,96+(600-h)/2,w,h);
  c.fillStyle='#b9d4ee';c.font='17px system-ui';
  c.fillText('MAX COMBO ×'+world.bestCombo+'   •   '+GAME_URL,25,733);
  return image;
@@ -176,7 +161,7 @@ if(root.location&&new URLSearchParams(root.location.search).has('test')){
   setTargets:targets=>{world.targets=targets.map(t=>({...t}));updateHud();renderer.draw(world);},
   setStage:n=>{world.level=n;engine.newLevel();world.state='playing';updateHud();renderer.draw(world);},
   captureDataURL:()=>captureResultCanvas().toDataURL('image/png'),
-  outerRadius:(a)=>V.outerRadius(world.level,world.elapsed,a),
+  outerRadius:(a)=>V.outerRadius(world.level,world.elapsed,a,world.arenaScale),
   skipCooldown:()=>{world.damageCooldown=0;},
   loseLife:()=>{engine.loseLife();updateHud();renderer.draw(world);}
  });

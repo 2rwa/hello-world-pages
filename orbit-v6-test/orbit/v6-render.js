@@ -3,6 +3,31 @@
 const F=root.OrbitPhysicsV6,V=root.OrbitV6Extras;
 function createRenderer(canvas){
  const ctx=canvas.getContext('2d'),{C,ARENA,PADDLE_R,PADDLE_THICK,PADDLE_HALF,TAU}=F;
+ let view={scale:1,tx:0,ty:0,full:false,width:800,height:600};
+ function fullscreen(){return !!document.fullscreenElement||document.body.classList.contains('v6-immersive');}
+ function worldPoint(clientX,clientY){
+  const rect=canvas.getBoundingClientRect();
+  const x=(clientX-rect.left)*canvas.width/rect.width;
+  const y=(clientY-rect.top)*canvas.height/rect.height;
+  return{x:(x-view.tx)/view.scale,y:(y-view.ty)/view.scale};
+ }
+ function setupView(w){
+  const full=fullscreen(),r=canvas.getBoundingClientRect();
+  const dpr=full?Math.min(1.5,root.devicePixelRatio||1):1;
+  const width=full?Math.max(1,Math.min(2300,Math.round(r.width*dpr))):800;
+  const height=full?Math.max(1,Math.min(2300,Math.round(r.height*dpr))):600;
+  if(canvas.width!==width)canvas.width=width;
+  if(canvas.height!==height)canvas.height=height;
+  const mode=V.stageShape(w.level);
+  const maxR=mode==='square'?340:mode==='star'||mode==='morph'?258:246;
+  const margin=full?18*dpr:0;
+  const scale=full?Math.max(.1,Math.min((width-2*margin)/(2*maxR),(height-2*margin)/(2*maxR))):mode==='square'?.85:1;
+  const tx=width/2-F.C.x*scale,ty=height/2-F.C.y*scale;
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.fillStyle='#080e20';ctx.fillRect(0,0,width,height);
+  ctx.setTransform(scale,0,0,scale,tx,ty);
+  view={scale,tx,ty,full,width,height};
+ }
  const stars=Array.from({length:75},(_,i)=>({x:(67+i*157)%800,y:(41+i*101)%600,size:i%7===0?1.5:.8}));
  function circle(x,y,r){ctx.beginPath();ctx.arc(x,y,r,0,TAU);}
  function pathVertices(vertices){ctx.beginPath();vertices.forEach((v,i)=>i===0?ctx.moveTo(v.x,v.y):ctx.lineTo(v.x,v.y));ctx.closePath();}
@@ -13,7 +38,7 @@ function createRenderer(canvas){
   for(const s of stars){
     ctx.globalAlpha=.25;ctx.fillStyle='#b3d9ff';circle(s.x,s.y,s.size);ctx.fill();
   }ctx.globalAlpha=1;
-  ctx.save();V.traceBoundary(ctx,w.level,w.elapsed);ctx.clip();
+  ctx.save();V.traceBoundary(ctx,w.level,w.elapsed,w.arenaScale);ctx.clip();
   const rg=ctx.createRadialGradient(C.x,C.y,30,C.x,C.y,ARENA);
   rg.addColorStop(0,'#142746');rg.addColorStop(.72,'#0d1b35');rg.addColorStop(1,'#162845');
   ctx.fillStyle=rg;ctx.fillRect(C.x-ARENA,C.y-ARENA,ARENA*2,ARENA*2);
@@ -21,13 +46,13 @@ function createRenderer(canvas){
   for(let x=C.x-ARENA;x<C.x+ARENA;x+=32){ctx.beginPath();ctx.moveTo(x,C.y-ARENA);ctx.lineTo(x,C.y+ARENA);ctx.stroke();}
   for(let y=C.y-ARENA;y<C.y+ARENA;y+=32){ctx.beginPath();ctx.moveTo(C.x-ARENA,y);ctx.lineTo(C.x+ARENA,y);ctx.stroke();}
   ctx.strokeStyle='#ffffff0d';ctx.lineWidth=1;
-  for(let r of [65,132,185]){circle(C.x,C.y,r);ctx.stroke();}
+  for(let r of [65,132,185]){circle(C.x,C.y,r*w.arenaScale);ctx.stroke();}
   ctx.restore();
   ctx.save();ctx.shadowBlur=20;ctx.shadowColor='#7169e7';ctx.strokeStyle='#7574d4';ctx.lineWidth=5;
-  V.traceBoundary(ctx,w.level,w.elapsed);ctx.stroke();
-  ctx.shadowBlur=0;ctx.strokeStyle='#b4b6ff66';ctx.lineWidth=1.5;V.traceBoundary(ctx,w.level,w.elapsed);ctx.stroke();
+  V.traceBoundary(ctx,w.level,w.elapsed,w.arenaScale);ctx.stroke();
+  ctx.shadowBlur=0;ctx.strokeStyle='#b4b6ff66';ctx.lineWidth=1.5;V.traceBoundary(ctx,w.level,w.elapsed,w.arenaScale);ctx.stroke();
   for(let i=0;i<48;i++){
-   const a=i*TAU/48,r=ARENA+8,p=C;
+   const a=i*TAU/48,r=V.outerRadius(w.level,w.elapsed,a,w.arenaScale)+8,p=C;
    ctx.strokeStyle=i%4===0?'#9b9add70':'#4d628f55';ctx.lineWidth=1;
    ctx.beginPath();ctx.moveTo(p.x+Math.cos(a)*r,p.y+Math.sin(a)*r);
    ctx.lineTo(p.x+Math.cos(a)*(r+(i%4===0?8:3)),p.y+Math.sin(a)*(r+(i%4===0?8:3)));ctx.stroke();
@@ -51,18 +76,18 @@ function createRenderer(canvas){
   ctx.restore();
  }
  function drawPaddle(w){
-  const a=w.paddleAngle,half=F.paddleHalfAt(w.level),from=a-half,to=a+half;
+  const a=w.paddleAngle,half=F.paddleHalfAt(w.level),from=a-half,to=a+half,pr=PADDLE_R*w.arenaScale;
   ctx.save();ctx.lineCap='round';
   ctx.shadowBlur=24;ctx.shadowColor=w.damageCooldown>0?'#ff526a':'#69f6e4';
   ctx.strokeStyle=w.damageCooldown>0?'#ff526a':'#37bed4';ctx.lineWidth=PADDLE_THICK;
-  ctx.beginPath();ctx.arc(C.x,C.y,PADDLE_R,from,to);ctx.stroke();
+  ctx.beginPath();ctx.arc(C.x,C.y,pr,from,to);ctx.stroke();
   ctx.shadowBlur=0;
   ctx.strokeStyle=w.damageCooldown>0?'#ffdfdd':'#ccfffb';ctx.lineWidth=5;
-  ctx.beginPath();ctx.arc(C.x,C.y,PADDLE_R-PADDLE_THICK/2+1,from+.012,to-.012);ctx.stroke();
+  ctx.beginPath();ctx.arc(C.x,C.y,pr-PADDLE_THICK/2+1,from+.012,to-.012);ctx.stroke();
   ctx.strokeStyle='#9feaff';ctx.lineWidth=4;
-  ctx.beginPath();ctx.arc(C.x,C.y,PADDLE_R+PADDLE_THICK/2-1,from+.016,to-.016);ctx.stroke();
+  ctx.beginPath();ctx.arc(C.x,C.y,pr+PADDLE_THICK/2-1,from+.016,to-.016);ctx.stroke();
   ctx.fillStyle='#aaf6f3';
-  for(const theta of [from,to]){circle(C.x+Math.cos(theta)*PADDLE_R,C.y+Math.sin(theta)*PADDLE_R,7);ctx.fill();}
+  for(const theta of [from,to]){circle(C.x+Math.cos(theta)*pr,C.y+Math.sin(theta)*pr,7);ctx.fill();}
   ctx.restore();
  }
  function drawBall(w){
@@ -92,6 +117,7 @@ function createRenderer(canvas){
   ctx.restore();
  }
  function draw(w){
+  setupView(w);
   drawBackground(w);
   for(const t of w.targets)drawTarget(t,w.elapsed);
   drawPaddle(w);
@@ -101,6 +127,7 @@ function createRenderer(canvas){
    ctx.fillStyle='#ffe9a0';ctx.shadowColor='#ffc56a';ctx.shadowBlur=14;
    ctx.fillText('LIFE +1',C.x,C.y+52);ctx.restore();
   }
+  if(w.targets.length>0&&w.targets.length<10){ctx.save();ctx.textAlign='center';ctx.font='bold 13px system-ui';ctx.fillStyle='#ffdeaa';ctx.fillText('ARENA SHRINK',C.x,C.y-ARENA*w.arenaScale-13);ctx.restore();}
   if(w.combo>=2){ctx.save();ctx.textAlign='center';ctx.fillStyle='#ffe3a4';ctx.shadowColor='#ffb768';ctx.shadowBlur=11;ctx.font='900 23px system-ui';ctx.fillText(w.combo+' COMBO',C.x,C.y-ARENA-16);ctx.restore();}
   if(w.damageCooldown>0&&w.state==='playing'){
     ctx.save();ctx.font='bold 19px system-ui';ctx.textAlign='center';
@@ -110,7 +137,7 @@ function createRenderer(canvas){
   }
   overlay(w);
  }
- return{draw};
+ return{draw,worldPoint,view:()=>({...view})};
 }
 root.OrbitRenderV6={createRenderer};
 })(globalThis);

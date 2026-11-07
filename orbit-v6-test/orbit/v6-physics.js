@@ -87,9 +87,9 @@ destroyed:0,paddleAngle:Math.PI/2,paddleOmega:0,events:[],targets:[],trail:[],
 ball:{x:400,y:458,vx:0,vy:0,r:BALL_R}
 };
 const emit=(type,data={})=>{g.events.push({type,...data});if(g.events.length>16)g.events.shift();};
-const currentSpeed=()=>speedAt(g.level);
+const currentSpeed=()=>speedAt(g.level),pr=()=>PADDLE_R*g.arenaScale;
 function placeBall(){
-const a=g.paddleAngle,rad=PADDLE_R-42;
+const a=g.paddleAngle,rad=pr()-42*g.arenaScale;
 g.ball.x=C.x+Math.cos(a)*rad;g.ball.y=C.y+Math.sin(a)*rad;
 g.energy=ENERGY_MAX;g.damageCooldown=0;
 const theta=a+.23;
@@ -137,7 +137,7 @@ function updateTargets(dt){
 for(const t of g.targets){
 t.x+=t.vx*dt;t.y+=t.vy*dt;t.rotation+=t.spin*dt;
 const dx=t.x-C.x,dy=t.y-C.y,d=Math.hypot(dx,dy);
-const max=PADDLE_R-1;
+const max=V.targetLimit(g,t,Math.atan2(dy,dx));
 if(d>max){
 const n=norm(dx,dy);t.x=C.x+n.x*(max-.2);t.y=C.y+n.y*(max-.2);
 if(t.vx*n.x+t.vy*n.y>0){const v=reflect(t.vx,t.vy,n.x,n.y);t.vx=v.x;t.vy=v.y;}
@@ -149,7 +149,7 @@ function targetPaddleContact(t){
 const angle=Math.atan2(t.y-C.y,t.x-C.x);
 const offset=angleDiff(angle,g.paddleAngle);
 const a=g.paddleAngle+clamp(offset,-paddleHalfAt(g.level),paddleHalfAt(g.level));
-const px=C.x+Math.cos(a)*PADDLE_R,py=C.y+Math.sin(a)*PADDLE_R;
+const px=C.x+Math.cos(a)*pr(),py=C.y+Math.sin(a)*pr();
 const dx=t.x-px,dy=t.y-py,dist=Math.hypot(dx,dy);
 const limit=t.r+PADDLE_THICK/2;
 if(dist>=limit){
@@ -176,17 +176,17 @@ function paddleContact(px,py){
 const b=g.ball,dx=b.x-C.x,dy=b.y-C.y,dist=Math.hypot(dx,dy)||1;
 const n={x:dx/dist,y:dy/dist};
 const a=Math.atan2(dy,dx),delta=Math.abs(angleDiff(a,g.paddleAngle));
-const angularMargin=Math.asin(clamp(b.r/Math.max(PADDLE_R,dist),0,.2));
+const angularMargin=Math.asin(clamp(b.r/Math.max(pr(),dist),0,.2));
 if(delta>paddleHalfAt(g.level)+angularMargin)return false;
-const inner=PADDLE_R-PADDLE_THICK/2-b.r;
-const outer=PADDLE_R+PADDLE_THICK/2+b.r;
+const inner=pr()-PADDLE_THICK/2-b.r;
+const outer=pr()+PADDLE_THICK/2+b.r;
 const prevR=Math.hypot(px-C.x,py-C.y);
 const radialVelocity=b.vx*n.x+b.vy*n.y;
 if(radialVelocity>0&&prevR<inner+.8&&dist>=inner){
 const v=reflect(b.vx,b.vy,n.x,n.y);
 b.vx=v.x;b.vy=v.y;
 const tangent={x:-n.y,y:n.x};
-const steer=clamp(g.paddleOmega*PADDLE_R*.08,-45,45);
+const steer=clamp(g.paddleOmega*pr()*.08,-45,45);
 b.vx+=tangent.x*steer;b.vy+=tangent.y*steer;
 normalizeBall();
 b.x=C.x+n.x*(inner-.45);b.y=C.y+n.y*(inner-.45);
@@ -206,7 +206,7 @@ return false;
 function wallContact(){
 if(g.level>=12)return V.wallContact(g,normalizeBall,emit,reflect);
 const b=g.ball,dx=b.x-C.x,dy=b.y-C.y,d=Math.hypot(dx,dy);
-const limit=ARENA-b.r;
+const limit=ARENA*g.arenaScale-b.r;
 if(d<=limit)return false;
 const n=norm(dx,dy);
 b.x=C.x+n.x*(limit-.2);b.y=C.y+n.y*(limit-.2);
@@ -244,7 +244,7 @@ if(g.state!=='playing')return;
 const total=clamp(dt,0,.05),steps=Math.max(1,Math.ceil(total/(1/240)));
 const step=total/steps;
 for(let i=0;i<steps&&g.state==='playing';i++){
-g.elapsed+=step;g.damageCooldown=Math.max(0,g.damageCooldown-step);
+g.elapsed+=step;V.updateArena(g,step);g.damageCooldown=Math.max(0,g.damageCooldown-step);
 updateTargets(step);
 for(const t of g.targets)targetPaddleContact(t);
 if(g.state!=='playing')break;
