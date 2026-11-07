@@ -9,12 +9,12 @@ function stageShape(level){
  return level%2===0?'star':'square';
 }
 const cross=(a,b,c,d)=>a*d-b*c;
+const STAR_VERTICES=Array.from({length:10},(_,i)=>{
+ const a=-Math.PI/2+i*Math.PI/5,r=i%2===0?251:230;
+ return{x:Math.cos(a)*r,y:Math.sin(a)*r};
+});
 function starRadius(angle){
- const dx=Math.cos(angle),dy=Math.sin(angle),v=[];
- for(let i=0;i<10;i++){
-  const a=-Math.PI/2+i*Math.PI/5,r=i%2===0?251:230;
-  v.push({x:Math.cos(a)*r,y:Math.sin(a)*r});
- }
+ const dx=Math.cos(angle),dy=Math.sin(angle),v=STAR_VERTICES;
  let nearest=Infinity;
  for(let i=0;i<10;i++){
   const p=v[i],q=v[(i+1)%10],ex=q.x-p.x,ey=q.y-p.y;
