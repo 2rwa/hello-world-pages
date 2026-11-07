@@ -255,6 +255,7 @@ wallContact();
 destroyContact();
 }
 if(g.state==='playing'){
+if(g.combo>0&&g.elapsed-g.lastComboAt>4)g.combo=0;
 g.trail.push({x:g.ball.x,y:g.ball.y});
 if(g.trail.length>15)g.trail.shift();
 }

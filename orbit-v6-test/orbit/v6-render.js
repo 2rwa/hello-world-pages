@@ -96,6 +96,11 @@ function createRenderer(canvas){
   for(const t of w.targets)drawTarget(t,w.elapsed);
   drawPaddle(w);
   drawBall(w);
+  if(w.bonusClaimed&&w.combo>=4&&w.elapsed-w.lastComboAt<.8){
+   ctx.save();ctx.font='900 26px system-ui';ctx.textAlign='center';
+   ctx.fillStyle='#ffe9a0';ctx.shadowColor='#ffc56a';ctx.shadowBlur=14;
+   ctx.fillText('LIFE +1',C.x,C.y+52);ctx.restore();
+  }
   if(w.combo>=2){ctx.save();ctx.textAlign='center';ctx.fillStyle='#ffe3a4';ctx.shadowColor='#ffb768';ctx.shadowBlur=11;ctx.font='900 23px system-ui';ctx.fillText(w.combo+' COMBO',C.x,C.y-ARENA-16);ctx.restore();}
   if(w.damageCooldown>0&&w.state==='playing'){
     ctx.save();ctx.font='bold 19px system-ui';ctx.textAlign='center';

@@ -28,7 +28,7 @@ function updateHud(){
  ui.best.textContent=best.toLocaleString('ja-JP');
  ui.level.textContent=world.level;
  ui.lives.textContent='♥'.repeat(world.lives)||'—';
- ui.combo.textContent=world.combo>=2?'×'+world.combo:'×0';
+ ui.combo.textContent=world.combo?'×'+world.combo:'×0';
  ui.remaining.textContent=world.targets.length;
  ui.energy.textContent=world.energy+'%';
  ui.energyFill.style.width=world.energy+'%';
