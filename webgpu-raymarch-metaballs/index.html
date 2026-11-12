@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>WebGPU Raymarching Metaballs — シロ</title>
+<style>
+  :root{color-scheme:dark}
+  *{box-sizing:border-box}
+  html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#05070d;color:#fff;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+  canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+  canvas:active{cursor:grabbing}
+  .panel{position:fixed;left:14px;top:14px;z-index:2;max-width:min(360px,calc(100vw - 28px));padding:14px 16px;border:1px solid rgba(255,255,255,.16);border-radius:16px;background:rgba(5,8,15,.68);backdrop-filter:blur(10px)}
+  .panel h1{font-size:16px;margin:0 0 6px}
+  .panel p{font-size:12px;line-height:1.6;opacity:.82;margin:4px 0}
+  .row{display:flex;align-items:center;gap:8px;margin-top:9px;font-size:12px}
+  .row label{flex:0 0 86px;opacity:.9}
+  .row input[type=range]{flex:1;min-width:90px}
+  .row output{flex:0 0 34px;text-align:right;font-family:ui-monospace,monospace}
+  .btns{display:flex;gap:8px;margin-top:11px;flex-wrap:wrap}
+  button{padding:7px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.1);color:#fff;cursor:pointer;font-size:12px}
+  button:hover{background:rgba(255,255,255,.18)}
+  .stats{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;opacity:.75;margin-top:9px}
+  #fallback{position:fixed;inset:0;display:none;place-items:center;padding:24px;background:#0b1020;z-index:5;text-align:center;line-height:1.8}
+  #fallback .box{max-width:560px}
+  a{color:#9fd0ff}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<div class="panel">
+  <h1>WebGPU レイマーチング・メタボール</h1>
+  <p>WGSL のフラグメントシェーダで SDF を sphere tracing。複数の球が箱の中で反射しながら跳ね、近づくと smooth-min で溶けて合体します。ドラッグで回転できます。</p>
+  <div class="row"><label>ボールの数</label><input id="count" type="range" min="3" max="12" step="1" value="8"><output id="countV">8</output></div>
+  <div class="row"><label>溶け具合</label><input id="smooth" type="range" min="0.10" max="1.10" step="0.01" value="0.48"><output id="smoothV">0.48</output></div>
+  <div class="row"><label>速さ</label><input id="speed" type="range" min="0" max="2.2" step="0.05" value="1"><output id="speedV">1.0</output></div>
+  <div class="btns">
+    <button id="pause">⏸ 一時停止</button>
+    <button id="spin">回転: ON</button>
+  </div>
+  <div class="stats" id="stats">初期化中…</div>
+</div>
+
+<div id="fallback"><div class="box">
+  <h2>WebGPU が使えませんでした</h2>
+  <p>このデモは WebGPU 前提です。対応ブラウザ（最新の Chrome / Edge など）で開いてください。<br>環境によっては <code>chrome://flags</code> の設定や GPU が必要です。</p>
+  <p id="err" style="opacity:.7;font-size:13px"></p>
+</div></div>
+
+<script type="module">
+const canvas = document.getElementById('c');
+const statsEl = document.getElementById('stats');
+const fallback = document.getElementById('fallback');
+const errEl = document.getElementById('err');
+
+function showFallback(msg){
+  fallback.style.display = 'grid';
+  errEl.textContent = msg || '';
+  statsEl.textContent = 'WebGPU 利用不可';
+}
+
+// ---------- balls (CPU physics) ----------
+const MAX = 12;
+const palette = [
+  [1.00,0.32,0.28],[1.00,0.68,0.18],[0.45,0.95,0.40],[0.22,0.58,1.00],
+  [0.68,0.42,1.00],[0.20,0.92,0.92],[1.00,0.45,0.78],[0.62,1.00,0.72],
+  [1.00,0.85,0.35],[0.35,0.80,1.00],[0.90,0.55,0.25],[0.55,0.95,0.85],
+];
+const seeds = [
+  [-1.6, 0.3, 0.2,  1.15, 0.85, 0.62, 0.58],
+  [ 1.4,-0.4, -0.6, -0.95, 1.05, 0.78, 0.50],
+  [ 0.2, 1.0, 0.9,   0.72,-0.88, -1.0, 0.46],
+  [ 0.9, 0.1, 1.2,  -1.2, 0.45, -0.7, 0.62],
+  [-1.1, 0.9, -1.0,  0.88,-1.1,  1.1, 0.42],
+  [ 1.8, 0.9, 0.6,  -0.65,-0.75, -1.2, 0.44],
+  [-0.4,-0.6, 1.3,   1.05, 1.2,  -0.55,0.48],
+  [-1.8,-0.5, -0.4,  1.3, 0.65,  0.9, 0.40],
+  [ 0.6,-0.8, -1.3, -0.8, 1.15,  1.0, 0.52],
+  [ 2.0, 0.2, -1.1,  -1.1,-0.55,  0.65,0.38],
+  [-0.9, 1.2, 0.4,   0.55,-1.25, -0.85,0.44],
+  [ 0.0, 0.0, -0.2,  1.4, 0.95, -0.45,0.36],
+];
+const balls = seeds.map(s => ({ p:[s[0],s[1],s[2]], v:[s[3],s[4],s[5]], r:s[6] }));
+const BOX = { x:2.45, yMin:-1.32, yMax:1.75, z:1.75 };
+
+function stepBalls(dt){
+  for(const b of balls){
+    b.p[0]+=b.v[0]*dt; b.p[1]+=b.v[1]*dt; b.p[2]+=b.v[2]*dt;
+    if(b.p[0] < -BOX.x+b.r){ b.p[0]=-BOX.x+b.r; b.v[0]= Math.abs(b.v[0]); }
+    if(b.p[0] >  BOX.x-b.r){ b.p[0]= BOX.x-b.r; b.v[0]=-Math.abs(b.v[0]); }
+    if(b.p[1] < BOX.yMin+b.r){ b.p[1]=BOX.yMin+b.r; b.v[1]= Math.abs(b.v[1]); }
+    if(b.p[1] > BOX.yMax-b.r){ b.p[1]=BOX.yMax-b.r; b.v[1]=-Math.abs(b.v[1]); }
+    if(b.p[2] < -BOX.z+b.r){ b.p[2]=-BOX.z+b.r; b.v[2]= Math.abs(b.v[2]); }
+    if(b.p[2] >  BOX.z-b.r){ b.p[2]= BOX.z-b.r; b.v[2]=-Math.abs(b.v[2]); }
+  }
+}
+
+// ---------- UI ----------
+let ballCount = 8, smoothK = 0.48, speed = 1.0, paused = false, autoSpin = true;
+let yaw = 0.55, pitch = 0.32, camDist = 7.2;
+const $ = id => document.getElementById(id);
+$('count').addEventListener('input', e=>{ ballCount=+e.target.value; $('countV').textContent=ballCount; });
+$('smooth').addEventListener('input', e=>{ smoothK=+e.target.value; $('smoothV').textContent=smoothK.toFixed(2); });
+$('speed').addEventListener('input', e=>{ speed=+e.target.value; $('speedV').textContent=speed.toFixed(1); });
+$('pause').addEventListener('click', ()=>{ paused=!paused; $('pause').textContent = paused ? '▶ 再開' : '⏸ 一時停止'; });
+$('spin').addEventListener('click', ()=>{ autoSpin=!autoSpin; $('spin').textContent = '回転: ' + (autoSpin?'ON':'OFF'); });
+
+let dragging=false, lastX=0, lastY=0;
+canvas.addEventListener('pointerdown', e=>{ dragging=true; lastX=e.clientX; lastY=e.clientY; canvas.setPointerCapture(e.pointerId); });
+canvas.addEventListener('pointermove', e=>{
+  if(!dragging) return;
+  yaw   += (e.clientX-lastX)*0.005;
+  pitch += (e.clientY-lastY)*0.005;
+  pitch = Math.max(-1.1, Math.min(1.25, pitch));
+  lastX=e.clientX; lastY=e.clientY;
+});
+canvas.addEventListener('pointerup', ()=> dragging=false);
+canvas.addEventListener('wheel', e=>{ e.preventDefault(); camDist = Math.max(4.5, Math.min(11, camDist + e.deltaY*0.005)); }, {passive:false});
+
+// ---------- WebGPU ----------
+if(!navigator.gpu){ showFallback('navigator.gpu がありません'); throw new Error('no webgpu'); }
+
+let device, context, pipeline, uniformBuffer, bindGroup, format;
+const UNIFORM_SIZE = 416; // see WGSL struct layout
+
+const shaderCode = /* wgsl */`
+struct Uniforms {
+  time: f32,
+  aspect: f32,
+  smoothness: f32,
+  count: f32,
+  camYaw: f32,
+  camPitch: f32,
+  camDist: f32,
+  pad: f32,
+  balls: array<vec4f, 12>,
+  colors: array<vec4f, 12>,
+};
+@group(0) @binding(0) var<uniform> u: Uniforms;
+
+struct VSOut {
+  @builtin(position) pos: vec4f,
+  @location(0) vUv: vec2f,
+};
+
+@vertex
+fn vs(@builtin(vertex_index) idx: u32) -> VSOut {
+  var pts = array<vec2f, 3>(vec2f(-1.0,-1.0), vec2f(3.0,-1.0), vec2f(-1.0,3.0));
+  let p = pts[idx];
+  var o: VSOut;
+  o.pos = vec4f(p, 0.0, 1.0);
+  o.vUv = p;
+  return o;
+}
+
+fn smin(a: f32, b: f32, k: f32) -> f32 {
+  let h = clamp(0.5 + 0.5 * (b - a) / k, 0.0, 1.0);
+  return mix(b, a, h) - k * h * (1.0 - h);
+}
+
+fn ballDist(p: vec3f) -> f32 {
+  var d = 1e5;
+  for (var i: i32 = 0; i < 12; i++) {
+    if (f32(i) >= u.count) { break; }
+    let b = u.balls[i];
+    d = smin(d, length(p - b.xyz) - b.w, u.smoothness);
+  }
+  return d;
+}
+
+fn sceneDist(p: vec3f) -> f32 {
+  let db = ballDist(p);
+  let df = p.y + 1.32;
+  return smin(db, df, 0.12);
+}
+
+fn sceneNormal(p: vec3f) -> vec3f {
+  let e = 0.0016;
+  let k1 = vec3f( 1.0, -1.0, -1.0);
+  let k2 = vec3f(-1.0, -1.0,  1.0);
+  let k3 = vec3f(-1.0,  1.0, -1.0);
+  let k4 = vec3f( 1.0,  1.0,  1.0);
+  return normalize(
+    k1 * sceneDist(p + k1 * e) +
+    k2 * sceneDist(p + k2 * e) +
+    k3 * sceneDist(p + k3 * e) +
+    k4 * sceneDist(p + k4 * e)
+  );
+}
+
+fn ballColor(p: vec3f) -> vec3f {
+  var col = vec3f(0.0);
+  var sum = 0.0;
+  for (var i: i32 = 0; i < 12; i++) {
+    if (f32(i) >= u.count) { break; }
+    let b = u.balls[i];
+    let d = max(length(p - b.xyz), 0.05);
+    let w = 1.0 / (d * d * d * d);
+    col += u.colors[i].rgb * w;
+    sum += w;
+  }
+  return col / max(sum, 1e-5);
+}
+
+fn softShadow(ro: vec3f, rd: vec3f) -> f32 {
+  var res = 1.0;
+  var t = 0.03;
+  for (var i: i32 = 0; i < 32; i++) {
+    let d = sceneDist(ro + rd * t);
+    res = min(res, 10.0 * d / t);
+    t += clamp(d, 0.02, 0.25);
+    if (t > 8.0 || res < 0.02) { break; }
+  }
+  return clamp(res, 0.0, 1.0);
+}
+
+@fragment
+fn fs(@location(0) vUv: vec2f) -> @location(0) vec4f {
+  var uv = vUv;
+  uv.x *= u.aspect;
+
+  // camera
+  let target = vec3f(0.0, 0.15, 0.0);
+  let cy = cos(u.camYaw); let sy = sin(u.camYaw);
+  let cp = cos(u.camPitch); let sp = sin(u.camPitch);
+  let ro = target + u.camDist * vec3f(cy * cp, sp, sy * cp);
+  let fw = normalize(target - ro);
+  let rt = normalize(cross(fw, vec3f(0.0, 1.0, 0.0)));
+  let up = cross(rt, fw);
+  let rd = normalize(fw * 1.6 + rt * uv.x + up * uv.y);
+
+  // background
+  var bg = mix(vec3f(0.015,0.02,0.045), vec3f(0.07,0.11,0.22), smoothstep(-0.6, 0.9, rd.y));
+  bg += vec3f(0.10,0.05,0.14) * pow(max(0.0, 1.0 - abs(rd.y)), 3.0);
+
+  // raymarching / sphere tracing
+  var t = 0.0;
+  var hit = false;
+  var p = ro;
+  for (var i: i32 = 0; i < 110; i++) {
+    p = ro + rd * t;
+    let d = sceneDist(p);
+    if (d < 0.0012 * max(1.0, t)) { hit = true; break; }
+    t += d;
+    if (t > 30.0) { break; }
+  }
+  if (!hit) {
+    return vec4f(bg, 1.0);
+  }
+
+  let n = sceneNormal(p);
+  let lightDir = normalize(vec3f(0.55 + 0.35 * sin(u.time * 0.35), 0.85, 0.45 + 0.35 * cos(u.time * 0.28)));
+  let viewDir = normalize(ro - p);
+  let halfV = normalize(lightDir + viewDir);
+
+  // floor plane is y = -1.32, so hit points very close to it are floor
+  var base: vec3f;
+  if (p.y < -1.29) {
+    let chk = fract((floor(p.x) + floor(p.z)) * 0.5);
+    let tile = mix(vec3f(0.10,0.11,0.14), vec3f(0.16,0.18,0.24), step(0.26, chk));
+    base = tile;
+  } else {
+    base = ballColor(p);
+  }
+
+  let diff = max(dot(n, lightDir), 0.0);
+  let shadow = softShadow(p + n * 0.02, lightDir);
+  let spec = pow(max(dot(n, halfV), 0.0), 64.0) * 0.9;
+  let fres = pow(1.0 - max(dot(n, viewDir), 0.0), 3.0);
+  let ao = clamp(sceneDist(p + n * 0.18) / 0.18, 0.0, 1.0) * 0.35 + 0.65;
+
+  var col = base * (0.22 + diff * shadow * 0.95) * ao;
+  col += vec3f(1.0) * spec * shadow;
+  col += fres * vec3f(0.35, 0.48, 0.75) * 0.55;
+  col = mix(col, bg, smoothstep(9.0, 26.0, t));
+
+  // ACES-ish tonemap + gamma
+  col = (col * (2.51 * col + 0.03)) / (col * (2.43 * col + 0.59) + 0.14);
+  col = pow(clamp(col, vec3f(0.0), vec3f(1.0)), vec3f(0.4545));
+  return vec4f(col, 1.0);
+}
+`;
+
+async function init(){
+  const adapter = await navigator.gpu.requestAdapter();
+  if(!adapter){ showFallback('GPUAdapter が取得できませんでした'); return; }
+  device = await adapter.requestDevice();
+  context = canvas.getContext('webgpu');
+  format = navigator.gpu.getPreferredCanvasFormat();
+  context.configure({ device, format, alphaMode:'opaque' });
+
+  const module = device.createShaderModule({ code: shaderCode });
+  pipeline = device.createRenderPipeline({
+    layout: 'auto',
+    vertex: { module, entryPoint:'vs' },
+    fragment: { module, entryPoint:'fs', targets:[{ format }] },
+    primitive: { topology:'triangle-list' },
+  });
+
+  uniformBuffer = device.createBuffer({ size: UNIFORM_SIZE, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
+  bindGroup = device.createBindGroup({
+    layout: pipeline.getBindGroupLayout(0),
+    entries: [{ binding:0, resource:{ buffer: uniformBuffer } }],
+  });
+
+  requestAnimationFrame(frame);
+}
+
+function resize(){
+  const dpr = Math.min(window.devicePixelRatio || 1, 1.6);
+  const w = Math.floor(canvas.clientWidth * dpr);
+  const h = Math.floor(canvas.clientHeight * dpr);
+  if(canvas.width !== w || canvas.height !== h){ canvas.width=w; canvas.height=h; }
+}
+window.addEventListener('resize', resize);
+
+const uni = new ArrayBuffer(UNIFORM_SIZE);
+const uniF = new Float32Array(uni);
+let last = performance.now(), start = last, fpsFrames=0, fpsTime=0, simTime=0;
+
+function frame(now){
+  requestAnimationFrame(frame);
+  resize();
+  const dt = Math.min((now-last)/1000, 0.033); last = now;
+  fpsFrames++; fpsTime += dt;
+  if(fpsTime >= 0.5){ statsEl.textContent = Math.round(fpsFrames/fpsTime) + ' FPS · ' + ballCount + ' balls · ' + canvas.width + '×' + canvas.height; fpsFrames=0; fpsTime=0; }
+
+  if(!paused && speed>0) stepBalls(dt * speed);
+  simTime += dt;
+  if(autoSpin && !dragging) yaw += dt * 0.18;
+
+  uniF[0]=simTime; uniF[1]=canvas.width/Math.max(canvas.height,1); uniF[2]=smoothK; uniF[3]=ballCount;
+  uniF[4]=yaw; uniF[5]=pitch; uniF[6]=camDist; uniF[7]=0;
+  for(let i=0;i<MAX;i++){
+    const o = 8 + i*4;
+    uniF[o]=balls[i].p[0]; uniF[o+1]=balls[i].p[1]; uniF[o+2]=balls[i].p[2]; uniF[o+3]=balls[i].r;
+    const c = 56 + i*4;
+    uniF[c]=palette[i][0]; uniF[c+1]=palette[i][1]; uniF[c+2]=palette[i][2]; uniF[c+3]=1;
+  }
+  device.queue.writeBuffer(uniformBuffer, 0, uni);
+
+  const encoder = device.createCommandEncoder();
+  const pass = encoder.beginRenderPass({
+    colorAttachments:[{ view: context.getCurrentTexture().createView(), loadOp:'clear', clearValue:{r:0.02,g:0.03,b:0.06,a:1}, storeOp:'store' }],
+  });
+  pass.setPipeline(pipeline);
+  pass.setBindGroup(0, bindGroup);
+  pass.draw(3);
+  pass.end();
+  device.queue.submit([encoder.finish()]);
+}
+
+init().catch(e=>{ console.error(e); showFallback(String(e && e.message || e)); });
+</script>
+</body>
+</html>
