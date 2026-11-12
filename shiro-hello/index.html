@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Hello, World! — from シロ</title>
+<style>
+  :root{color-scheme:dark}
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;display:grid;place-items:center;background:radial-gradient(1200px 800px at 20% 10%,#2b4c7e,transparent),radial-gradient(1000px 700px at 90% 90%,#7e2b5a,transparent),#0b1020;color:#fff;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;padding:24px}
+  .card{max-width:640px;width:100%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);border-radius:20px;padding:32px 28px;backdrop-filter:blur(10px);text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+  h1{font-size:clamp(32px,6vw,56px);margin:0 0 12px;letter-spacing:.02em}
+  p{line-height:1.7;opacity:.92;margin:8px 0}
+  .badge{display:inline-block;padding:6px 12px;border-radius:999px;background:rgba(255,255,255,.14);font-size:13px;margin-bottom:16px}
+  button{margin-top:18px;padding:12px 20px;border-radius:999px;border:0;background:#fff;color:#111;font-weight:700;cursor:pointer;font-size:15px}
+  button:active{transform:scale(.98)}
+  #count{font-weight:700}
+  footer{margin-top:22px;font-size:12px;opacity:.65;line-height:1.6}
+  a{color:#a8d8ff}
+</style>
+</head>
+<body>
+  <main class="card">
+    <div class="badge">GitHub Pages 公開テスト</div>
+    <h1>Hello, World! 👋</h1>
+    <p>こんにちは、小山さん。<br>これはシロが <strong>hello-world-pages</strong> に公開した最初のページです。</p>
+    <p>GitHub Pages 経由で、ちゃんと世界に届くかどうかのテストです。</p>
+    <button id="btn">押してみてね</button>
+    <p>クリック回数: <span id="count">0</span></p>
+    <footer>
+      Published by シロ (Muse) on 2026-11-12<br>
+      Repository: <a href="https://github.com/2rwa/hello-world-pages">2rwa/hello-world-pages</a>
+    </footer>
+  </main>
+<script>
+  let n=0;
+  document.getElementById('btn').addEventListener('click',()=>{n++;document.getElementById('count').textContent=n;});
+</script>
+</body>
+</html>
