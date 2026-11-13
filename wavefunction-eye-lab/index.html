@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>波動関数の眼 | Quantum Wave Lab</title>
+<style>
+:root{color-scheme:dark;--bg:#080e1a;--panel:#111c2d;--line:#26374b;--ink:#e9f2ff;--muted:#98acc4;--accent:#83e8d4}*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 20% 0%,#193048 0%,var(--bg) 55%);color:var(--ink);font-family:system-ui,-apple-system,sans-serif;line-height:1.6}main{max-width:1360px;margin:auto;padding:22px 24px 40px}header{display:flex;justify-content:space-between;align-items:end;gap:16px;margin-bottom:18px}h1{font-size:clamp(26px,4vw,44px);margin:0;letter-spacing:.05em;line-height:1.15}h1 span{font-size:13px;color:var(--accent);display:block;letter-spacing:.18em;margin-bottom:9px}header p{margin:8px 0 0;color:var(--muted);font-size:14px}#status{font-size:12px;color:var(--accent);white-space:nowrap;border:1px solid var(--line);padding:5px 10px;border-radius:20px}.layout{display:grid;grid-template-columns:minmax(0,1.8fr) minmax(290px,1fr);gap:16px}.stage{position:relative;overflow:hidden;border:1px solid var(--line);border-radius:18px;background:#070e1c;min-height:410px;aspect-ratio:1.35;touch-action:none}#gpu,#dots{position:absolute;inset:0;width:100%;height:100%;display:block}#dots{pointer-events:none}.eye{position:absolute;display:flex;align-items:center;gap:6px;background:#0b1424e8;border:1px solid #42617c;border-radius:30px;color:#b8cce0;padding:7px 10px;cursor:pointer;font-size:12px;box-shadow:0 4px 20px #0008;transition:.2s}.eye:hover,.eye[aria-pressed=true]{border-color:#83e8d4;color:#fff;background:#20394b;box-shadow:0 0 18px #83e8d455}.eye svg{width:36px;height:25px;overflow:visible}.eye .iris{transition:transform .13s}.eye:nth-of-type(1){left:12px;top:15px}.eye:nth-of-type(2){right:12px;top:15px}.eye:nth-of-type(3){left:12px;top:47%}.eye:nth-of-type(4){right:12px;top:47%}.eye:nth-of-type(5){left:12px;bottom:16px}.stagehint{position:absolute;bottom:16px;right:14px;font-size:11px;color:#9cb1cb;background:#0a1420bb;padding:5px 8px;border-radius:8px;pointer-events:none}.legend{position:absolute;left:50%;bottom:15px;transform:translateX(-50%);font-size:11px;text-align:center;color:#b4c8df;pointer-events:none;white-space:nowrap}.spectrum{height:6px;width:112px;background:linear-gradient(90deg,#ff776f,#ffe366,#71eaa2,#65bfff,#a994ff,#ff776f);border-radius:6px;margin:0 auto 3px}.panel{border:1px solid var(--line);background:var(--panel);border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:12px}.eyebrow{font-size:12px;letter-spacing:.12em;color:var(--accent)}h2{font-size:23px;margin:0;line-height:1.3}.panel p{margin:0;font-size:14px;color:#c8d8e9}.equation{padding:12px 14px;border-radius:10px;background:#091321;border-left:3px solid var(--accent);font-family:ui-monospace,monospace;font-size:14px;overflow-wrap:anywhere}.tip{color:#aee5e0!important;font-size:13px!important;border-top:1px solid var(--line);padding-top:12px}.controls{display:grid;gap:12px;padding-top:8px;border-top:1px solid var(--line)}.control{display:grid;gap:4px}.control label{display:flex;justify-content:space-between;font-size:13px;color:var(--muted)}output{color:#fff;font-variant-numeric:tabular-nums}input[type=range]{width:100%;accent-color:var(--accent);margin:3px 0;cursor:pointer}.buttons{display:flex;flex-wrap:wrap;gap:6px}button{font:inherit}button.action{padding:7px 12px;border:1px solid #38516b;background:#17263a;color:#c3d6e9;border-radius:8px;cursor:pointer;font-size:12px}button.action[aria-pressed=true],button.action:hover{background:#27554f;border-color:#83e8d4;color:white}button:focus-visible{outline:2px solid #fff;outline-offset:3px}.plot{margin-top:16px;background:#101b2b;border:1px solid var(--line);border-radius:15px;padding:12px 15px}.plothead{display:flex;justify-content:space-between;gap:10px;font-size:12px;color:var(--muted);flex-wrap:wrap}.plot canvas{width:100%;height:145px;display:block}.ampl{color:#82d4ff}.dens{color:#f8c47b}.measure{font-size:12px;color:#b7c9dc;min-height:22px}.note{font-size:12px;color:#8ca0b9;margin:14px 0 0}#error{display:none;position:absolute;top:37%;left:15%;right:15%;background:#381d27;padding:15px;border-radius:10px;z-index:3;text-align:center}#error.show{display:block}@media(max-width:820px){main{padding:14px 12px 26px}.layout{grid-template-columns:1fr}.stage{min-height:350px;aspect-ratio:1.2}header{align-items:start;flex-direction:column;gap:6px}.eye{padding:5px 7px;font-size:11px}.eye svg{width:28px}.legend{bottom:53px}.stagehint{font-size:10px}.panel{padding:16px}}@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style></head><body><main><header><div><h1><span>QUANTUM WAVE LAB / 01</span>波動関数の眼</h1><p>波は重なり、位相は巡り、観測は点になる。5つの目を開いて、量子の世界を探索する。</p></div><div id="status" data-state="script-start">WebGPU 初期化</div></header>
+<div class="layout"><div><div class="stage" id="stage"><canvas id="gpu" aria-label="波動関数の3次元等値面"></canvas><canvas id="dots"></canvas>
+<button class="eye" data-lesson="0" aria-pressed="true" aria-label="1 波動関数"><span class="eyeart"></span>01 波動関数</button>
+<button class="eye" data-lesson="1" aria-pressed="false" aria-label="2 振幅と確率"><span class="eyeart"></span>02 確率</button>
+<button class="eye" data-lesson="2" aria-pressed="false" aria-label="3 位相"><span class="eyeart"></span>03 位相</button>
+<button class="eye" data-lesson="3" aria-pressed="false" aria-label="4 干渉"><span class="eyeart"></span>04 干渉</button>
+<button class="eye" data-lesson="4" aria-pressed="false" aria-label="5 観測"><span class="eyeart"></span>05 観測</button>
+<div class="legend"><div class="spectrum"></div>複素位相 0 → 2π</div><div class="stagehint">ドラッグ：回転 / ホイール：拡縮</div><div id="error" role="alert"></div></div>
+<div class="plot"><div class="plothead"><span>中心断面 x 軸（y=z=0）</span><span><b class="ampl">━ |ψ|</b>　<b class="dens">━ |ψ|²</b>　・ しきい値</span></div><canvas id="plot" aria-label="振幅と確率密度の断面グラフ"></canvas></div></div>
+<section class="panel" aria-live="polite"><div class="eyebrow" id="num"></div><h2 id="title"></h2><p id="body"></p><div class="equation" id="eq"></div><p id="tip" class="tip"></p><div class="controls">
+<div class="control"><label>表示する等値面</label><div class="buttons"><button class="action" id="amp" aria-pressed="false">振幅 |ψ|</button><button class="action" id="density" aria-pressed="true">確率密度 |ψ|²</button></div></div>
+<div class="control"><label for="sep">波束の間隔 d <output id="sepv"></output></label><input id="sep" type="range" min=".35" max="3.6" step=".01" value="1.6"></div>
+<div class="control"><label for="phase">相対位相 φ <output id="phasev"></output></label><input id="phase" type="range" min="0" max="360" step="1" value="0"><div class="buttons"><button class="action" id="plus">同位相 0°</button><button class="action" id="minus">逆位相 180°</button></div></div>
+<div class="control"><label for="iso">等値面しきい値 <output id="isov"></output></label><input id="iso" type="range" min=".05" max=".85" step=".01" value=".28"></div>
+<div class="buttons"><button class="action" id="play" aria-pressed="true">位相アニメーション ON</button><button class="action" id="reset">視点リセット</button></div>
+<div class="buttons"><button class="action" id="sample">観測 × 100</button><button class="action" id="clear">観測点を消去</button></div><div class="measure" id="measure">観測点 0</div>
+</div></section></div><p class="note">モデル：幅 σ=0.9 の正規化ガウス波束。表示面は確率密度または振幅の等値面であり、粒子の輪郭・軌道ではありません。単位を省いた教材用モデルで、時間変化は共通位相の回転のみ（波束の拡散やシュレーディンガー方程式の時間発展は解いていません）。観測点は独立に同じ状態を準備した試行の位置標本です。</p></main>
+<script type="module">
+const $=id=>document.getElementById(id);
+const status=$('status'),stage=$('stage'),gpu=$('gpu'),dots=$('dots'),plot=$('plot');
+const ci=new URLSearchParams(location.search).has('ci');
+const lessons=[
+{title:'波動関数は、空間に広がる情報',body:'量子状態は、位置ごとに複素数を持つ関数 ψ(x,y,z) で表せます。目の前のメタボールは、その大きさが一定になる場所を囲む等値面です。粒子そのものの形ではありません。',eq:'ψ(r) = A exp(−|r|² / 2σ²) · exp(iθ)',tip:'しきい値を下げると、より小さな振幅まで見えるようになります。',pair:false,mode:1,sep:1.6,phase:0,iso:.28},
+{title:'振幅を二乗すると確率密度',body:'ψ の絶対値は振幅。位置の測定確率を得るには、その二乗 |ψ|² を使います。狭い領域の確率は密度をその体積で積分した値です。',eq:'ρ(r) = |ψ(r)|²　　∫ρ(r) d³r = 1',tip:'同じしきい値で振幅と密度を切り替え、裾の広がりの違いを断面グラフでも確認してください。',pair:false,mode:1,sep:1.6,phase:0,iso:.28},
+{title:'位相は色として見える',body:'波動関数には大きさだけでなく複素平面上の角度があります。色はその角度を示します。全体の位相が同じだけ回転しても、確率密度は変わりません。',eq:'ψ = |ψ| exp(iθ)　　|exp(iθ)|² = 1',tip:'位相アニメーションを ON/OFF。色が変わっても形が変わらないことに注目。相対位相は次の眼で扱います。',pair:false,mode:1,sep:1.6,phase:0,iso:.28},
+{title:'波を足すと干渉が起きる',body:'2つの波束を重ねます。同位相では中央の振幅が強まり、逆位相では中央の波が打ち消し合います。単純なメタボールの加算と異なり、振幅を複素数として足した結果を描きます。',eq:'ψ = (g₁ + exp(iφ)g₂) exp(iθ) / N\n|ψ|² ∝ g₁² + g₂² + 2g₁g₂ cos φ',tip:'同位相／逆位相を切り替え、間隔を 1.6 前後に。180°では中央断面に節が現れます。',pair:true,mode:1,sep:1.6,phase:0,iso:.17},
+{title:'観測すると、位置は点になる',body:'同じ波動関数を持つ粒子を繰り返し準備し、位置を測定する思考実験です。1回の位置はランダムですが、多数の点を重ねると確率密度の分布が現れます。',eq:'P(r ∈ V) = ∫ᵥ |ψ(r)|² d³r',tip:'観測 × 100 を何度か押して分布を確認。逆位相の節の近くには点が少なくなります。点は1粒子の軌跡ではありません。',pair:true,mode:1,sep:1.6,phase:180,iso:.17}
+];
+const state={lesson:0,pair:false,mode:1,sep:1.6,phase:0,iso:.28,animate:!matchMedia('(prefers-reduced-motion: reduce)').matches,yaw:.28,pitch:.12,distance:8,time:0,points:[]};
+let dirty=true,plotDirty=true,last=0,backend=null;
+function setStatus(s,t=s){status.dataset.state=s;status.textContent=t}
+function fail(e){setStatus('error','WebGPU エラー');$('error').classList.add('show');$('error').textContent=String(e);console.error(e)}
+const eyeSVG='<svg viewBox="0 0 44 30" aria-hidden="true"><path d="M1 15Q22 -7 43 15Q22 37 1 15Z" fill="#e1f4f2" stroke="#7adfda" stroke-width="1.5"/><g class="iris"><circle cx="22" cy="15" r="9" fill="#469fa6"/><circle cx="22" cy="15" r="5.5" fill="#0b1729"/><circle cx="19" cy="12" r="2.2" fill="white"/></g></svg>';
+document.querySelectorAll('.eyeart').forEach(el=>el.innerHTML=eyeSVG);
+function clearPoints(){state.points=[];dirty=true;updateMeasure()}
+function updateMeasure(){$('measure').textContent='観測点 '+state.points.length.toLocaleString()+'　中央 x=0 の相対密度 '+fieldAt([0,0,0]).toFixed(4)}
+function refresh(){const l=lessons[state.lesson];$('num').textContent='EYE '+String(state.lesson+1).padStart(2,'0')+' / 05';$('title').textContent=l.title;$('body').textContent=l.body;$('eq').textContent=l.eq;$('eq').style.whiteSpace='pre-line';$('tip').textContent=l.tip;for(const k of ['sep','phase','iso']){$(k).value=state[k]}$('sep').disabled=!state.pair;$('phase').disabled=!state.pair;$('plus').disabled=!state.pair;$('minus').disabled=!state.pair;$('sepv').textContent=state.pair?state.sep.toFixed(2):'単一波束';$('phasev').textContent=state.pair?state.phase+'°':'—';$('isov').textContent=state.iso.toFixed(2);$('amp').setAttribute('aria-pressed',String(state.mode===0));$('density').setAttribute('aria-pressed',String(state.mode===1));$('play').setAttribute('aria-pressed',String(state.animate));$('play').textContent='位相アニメーション '+(state.animate?'ON':'OFF');document.querySelectorAll('.eye').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.lesson===state.lesson)));updateMeasure();dirty=plotDirty=true}
+function selectLesson(i){Object.assign(state,lessons[i],{lesson:i});clearPoints();refresh()}
+document.querySelectorAll('.eye').forEach(b=>b.onclick=()=>selectLesson(+b.dataset.lesson));
+function setPhase(v){state.phase=v;clearPoints();refresh()}
+for(const k of ['sep','phase','iso'])$(k).oninput=e=>{state[k]=+e.target.value;if(k!=='iso')clearPoints();refresh()};
+$('plus').onclick=()=>setPhase(0);$('minus').onclick=()=>setPhase(180);
+$('amp').onclick=()=>{state.mode=0;refresh()};$('density').onclick=()=>{state.mode=1;refresh()};
+$('play').onclick=()=>{state.animate=!state.animate;refresh()};
+$('reset').onclick=()=>{state.yaw=.28;state.pitch=.12;state.distance=8;dirty=true};
+$('clear').onclick=clearPoints;
+let drag=null;
+stage.addEventListener('pointerdown',e=>{if(e.target.closest('button'))return;drag=[e.clientX,e.clientY];stage.setPointerCapture(e.pointerId)});
+stage.addEventListener('pointermove',e=>{if(drag){state.yaw-=(e.clientX-drag[0])*.008;state.pitch=Math.max(-1.35,Math.min(1.35,state.pitch+(e.clientY-drag[1])*.008));drag=[e.clientX,e.clientY];dirty=true}for(const b of document.querySelectorAll('.eye')){const r=b.querySelector('svg').getBoundingClientRect(),dx=e.clientX-r.left-r.width/2,dy=e.clientY-r.top-r.height/2,d=Math.hypot(dx,dy)||1;b.querySelector('.iris').style.transform='translate('+dx/d*3+'px,'+dy/d*2+'px)'}});
+for(const evt of ['pointerup','pointercancel','lostpointercapture'])stage.addEventListener(evt,()=>drag=null);
+stage.addEventListener('wheel',e=>{e.preventDefault();state.distance=Math.max(5,Math.min(13,state.distance*Math.exp(e.deltaY*.001)));dirty=true},{passive:false});
+const sigma=.9;
+function gauss(p,c){return Math.exp(-((p[0]-c)**2+p[1]**2+p[2]**2)/(2*sigma*sigma))}
+function fieldAt(p){const a=gauss(p,state.pair?-state.sep/2:0);if(!state.pair)return a*a;const b=gauss(p,state.sep/2),cos=Math.cos(state.phase*Math.PI/180),ov=Math.exp(-state.sep**2/(4*sigma*sigma));return Math.max(0,(a*a+b*b+2*a*b*cos)/(2+2*ov*cos))}
+function normalRandom(){return Math.sqrt(-2*Math.log(Math.max(1e-12,Math.random())))*Math.cos(2*Math.PI*Math.random())}
+function samplePoints(n){for(let i=0;i<n&&state.points.length<6000;i++){for(let j=0;j<10000;j++){let c=state.pair?(Math.random()<.5?-state.sep/2:state.sep/2):0,p=[normalRandom()*sigma/Math.SQRT2+c,normalRandom()*sigma/Math.SQRT2,normalRandom()*sigma/Math.SQRT2];if(state.pair){const a=gauss(p,-state.sep/2),b=gauss(p,state.sep/2),prob=(a*a+b*b+2*a*b*Math.cos(state.phase*Math.PI/180))/(2*(a*a+b*b));if(Math.random()>prob)continue}state.points.push(p);break}}dirty=true;updateMeasure()}
+$('sample').onclick=()=>samplePoints(100);
+const dot=(a,b)=>a.reduce((s,v,i)=>s+v*b[i],0);
+function camera(){const y=state.yaw,p=state.pitch,cp=Math.cos(p),pos=[Math.sin(y)*cp*state.distance,Math.sin(p)*state.distance,Math.cos(y)*cp*state.distance],right=[Math.cos(y),0,-Math.sin(y)],up=[-Math.sin(y)*Math.sin(p),cp,-Math.cos(y)*Math.sin(p)],forward=pos.map(v=>-v/state.distance);return {pos,right,up,forward}}
+function resize(){const r=stage.getBoundingClientRect(),d=Math.min(devicePixelRatio,1.25),scale=Math.min(d,850/r.width,650/r.height);gpu.width=Math.max(1,Math.round(r.width*scale));gpu.height=Math.max(1,Math.round(r.height*scale));dots.width=Math.round(r.width*d);dots.height=Math.round(r.height*d);dirty=plotDirty=true}
+new ResizeObserver(resize).observe(stage);resize();
+function drawDots(){const ctx=dots.getContext('2d'),w=dots.width,h=dots.height,c=camera();ctx.clearRect(0,0,w,h);ctx.fillStyle='#fff3c9';ctx.shadowColor='#ffd795';ctx.shadowBlur=4;ctx.globalAlpha=.72;for(const p of state.points){const q=p.map((v,i)=>v-c.pos[i]),z=dot(q,c.forward);if(z<=0)continue;const x=w/2+dot(q,c.right)/z*1.7*h/2,y=h/2-dot(q,c.up)/z*1.7*h/2;ctx.beginPath();ctx.arc(x,y,1.65,0,Math.PI*2);ctx.fill()}ctx.globalAlpha=1}
+function drawPlot(){const r=plot.getBoundingClientRect(),d=Math.min(devicePixelRatio,2);plot.width=Math.max(1,Math.round(r.width*d));plot.height=Math.max(1,Math.round(r.height*d));const g=plot.getContext('2d'),w=plot.width,h=plot.height,L=30*d,R=w-12*d,T=9*d,B=h-23*d,x=v=>L+(v+4.5)/9*(R-L),y=v=>B-v*(B-T)/1.3;g.clearRect(0,0,w,h);g.font=10*d+'px system-ui';g.lineWidth=d;g.strokeStyle='#293e54';g.fillStyle='#8da4be';for(const v of [0,.5,1]){g.beginPath();g.moveTo(L,y(v));g.lineTo(R,y(v));g.stroke();g.fillText(String(v),3*d,y(v)+3*d)}for(const v of [-4,-2,0,2,4]){g.beginPath();g.moveTo(x(v),T);g.lineTo(x(v),B);g.stroke();g.fillText(String(v),x(v)-5*d,B+15*d)}g.strokeStyle='#70859d';g.setLineDash([4*d,4*d]);g.beginPath();g.moveTo(L,y(state.iso));g.lineTo(R,y(state.iso));g.stroke();g.setLineDash([]);for(const mode of [0,1]){g.strokeStyle=mode?'#f8c47b':'#82d4ff';g.lineWidth=2*d;g.beginPath();for(let i=0;i<=360;i++){const v=-4.5+9*i/360,f=fieldAt([v,0,0]),py=y(mode?f:Math.sqrt(f));i?g.lineTo(x(v),py):g.moveTo(x(v),py)}g.stroke()}}
+const wgsl=`
+struct Uniforms { camPos:vec4<f32>, camRight:vec4<f32>, camUp:vec4<f32>, camForward:vec4<f32>, waveParams:vec4<f32>, screenParams:vec4<f32> }
+@group(0) @binding(0) var<uniform> uniforms:Uniforms;
+@vertex fn vsMain(@builtin(vertex_index) vertexId:u32)->@builtin(position) vec4<f32>{
+  let vertices=array<vec2<f32>,3>(vec2<f32>(-1.,-1.),vec2<f32>(3.,-1.),vec2<f32>(-1.,3.));
+  return vec4<f32>(vertices[vertexId],0.,1.);
+}
+fn waveAt(samplePos:vec3<f32>)->vec2<f32>{
+  let pairFlag=uniforms.waveParams.w>0.5;
+  let separation=uniforms.waveParams.x;
+  let relativePhase=uniforms.waveParams.y;
+  let shift=select(0.,separation*0.5,pairFlag);
+  let offsetA=samplePos+vec3<f32>(shift,0.,0.);
+  let offsetB=samplePos-vec3<f32>(shift,0.,0.);
+  let gaussianA=exp(-dot(offsetA,offsetA)/1.62);
+  let gaussianB=exp(-dot(offsetB,offsetB)/1.62);
+  var complexWave=vec2<f32>(gaussianA,0.);
+  if(pairFlag){
+    let overlapFactor=exp(-separation*separation/3.24);
+    let normFactor=sqrt(max(0.00001,2.+2.*overlapFactor*cos(relativePhase)));
+    complexWave=(complexWave+gaussianB*vec2<f32>(cos(relativePhase),sin(relativePhase)))/normFactor;
+  }
+  let commonPhase=samplePos.x*1.8-uniforms.screenParams.z;
+  let phaseRot=vec2<f32>(cos(commonPhase),sin(commonPhase));
+  return vec2<f32>(complexWave.x*phaseRot.x-complexWave.y*phaseRot.y,complexWave.x*phaseRot.y+complexWave.y*phaseRot.x);
+}
+fn densityAt(samplePos:vec3<f32>)->f32{
+  let complexWave=waveAt(samplePos);
+  return dot(complexWave,complexWave);
+}
+fn implicitField(samplePos:vec3<f32>)->f32{
+  let densityValue=densityAt(samplePos);
+  return select(sqrt(densityValue),densityValue,uniforms.screenParams.w>0.5)-uniforms.waveParams.z;
+}
+fn normalAt(samplePos:vec3<f32>)->vec3<f32>{
+  let eps=0.008;
+  let gradientVec=vec3<f32>(implicitField(samplePos+vec3<f32>(eps,0.,0.))-implicitField(samplePos-vec3<f32>(eps,0.,0.)),implicitField(samplePos+vec3<f32>(0.,eps,0.))-implicitField(samplePos-vec3<f32>(0.,eps,0.)),implicitField(samplePos+vec3<f32>(0.,0.,eps))-implicitField(samplePos-vec3<f32>(0.,0.,eps)));
+  return -gradientVec/max(length(gradientVec),0.000001);
+}
+fn phaseColor(phaseAngle:f32)->vec3<f32>{
+  return 0.55+0.43*cos(vec3<f32>(phaseAngle,phaseAngle-2.0944,phaseAngle+2.0944));
+}
+@fragment fn fsMain(@builtin(position) pixelPos:vec4<f32>)->@location(0) vec4<f32>{
+  let screenSize=uniforms.screenParams.xy;
+  let screenUv=vec2<f32>((2.*pixelPos.x-screenSize.x)/screenSize.y,(screenSize.y-2.*pixelPos.y)/screenSize.y);
+  let rayOrigin=uniforms.camPos.xyz;
+  let rayDir=normalize(uniforms.camForward.xyz*1.7+uniforms.camRight.xyz*screenUv.x+uniforms.camUp.xyz*screenUv.y);
+  let rayB=dot(rayOrigin,rayDir);
+  let discriminant=rayB*rayB-dot(rayOrigin,rayOrigin)+20.25;
+  let backgroundColor=vec3<f32>(0.021,0.036,0.067)+vec3<f32>(0.035,0.065,0.095)*exp(-dot(screenUv,screenUv)*0.9);
+  if(discriminant<0.){return vec4<f32>(backgroundColor,1.);}
+  let rootDisc=sqrt(discriminant);
+  var rayT=max(0.,-rayB-rootDisc);
+  let endT=-rayB+rootDisc;
+  var prevT=rayT;
+  var prevField=implicitField(rayOrigin+rayDir*rayT);
+  var hitFlag=false;
+  for(var stepIndex=0u;stepIndex<180u;stepIndex+=1u){
+    rayT=min(endT,rayT+0.055);
+    let nextField=implicitField(rayOrigin+rayDir*rayT);
+    if(nextField>=0. && prevField<0.){
+      var lowT=prevT;
+      var highT=rayT;
+      for(var refineIndex=0u;refineIndex<9u;refineIndex+=1u){
+        let midT=(lowT+highT)*0.5;
+        if(implicitField(rayOrigin+rayDir*midT)>=0.){highT=midT;}else{lowT=midT;}
+      }
+      rayT=(lowT+highT)*0.5;
+      hitFlag=true;
+      break;
+    }
+    if(rayT>=endT){break;}
+    prevT=rayT;prevField=nextField;
+  }
+  if(!hitFlag){return vec4<f32>(backgroundColor,1.);}
+  let hitPos=rayOrigin+rayDir*rayT;
+  let surfaceNormal=normalAt(hitPos);
+  let complexWave=waveAt(hitPos);
+  let phaseAngle=atan2(complexWave.y,complexWave.x);
+  let hueColor=phaseColor(phaseAngle);
+  let lightDir=normalize(vec3<f32>(-0.6,0.9,0.8));
+  let diffuseLight=max(dot(surfaceNormal,lightDir),0.);
+  let viewFacing=max(dot(surfaceNormal,-rayDir),0.);
+  let rimLight=pow(1.-viewFacing,3.);
+  let halfDir=normalize(lightDir-rayDir);
+  let specularLight=pow(max(dot(surfaceNormal,halfDir),0.),38.);
+  let contourLight=0.5+0.5*cos(phaseAngle*4.);
+  let surfaceColor=hueColor*(0.32+0.7*diffuseLight+0.08*contourLight)+vec3<f32>(0.34,0.65,0.8)*rimLight+vec3<f32>(0.85)*specularLight*0.65;
+  return vec4<f32>(clamp(surfaceColor,vec3<f32>(0.),vec3<f32>(1.)),1.);
+}
+`;
+function uniformData(w,h){const c=camera();return new Float32Array([...c.pos,0,...c.right,0,...c.up,0,...c.forward,0,state.sep,state.phase*Math.PI/180,state.iso,+state.pair,w,h,state.time,state.mode])}
+async function init(){
+ if(!navigator.gpu)throw Error('WebGPU 非対応です。HTTPS の Chrome / Edge などで開いてください。');
+ setStatus('request-adapter');const adapter=await navigator.gpu.requestAdapter();if(!adapter)throw Error('GPU adapter を取得できません');
+ setStatus('request-device');const device=await adapter.requestDevice();device.lost.then(info=>fail('device.lost: '+info.reason+' '+info.message));device.addEventListener('uncapturederror',e=>fail(e.error.message));
+ const format=navigator.gpu.getPreferredCanvasFormat(),context=ci?null:gpu.getContext('webgpu');
+ if(!ci){if(!context)throw Error('WebGPU canvas context を取得できません');context.configure({device,format,alphaMode:'opaque'})}
+ setStatus('shader-compilation-info');const module=device.createShaderModule({code:wgsl});const info=await module.getCompilationInfo();const errors=info.messages.filter(m=>m.type==='error');if(errors.length)throw Error(errors.map(m=>m.lineNum+': '+m.message).join('\n'));
+ setStatus('create-pipeline');device.pushErrorScope('validation');
+ const pipeline=await device.createRenderPipelineAsync({layout:'auto',vertex:{module,entryPoint:'vsMain'},fragment:{module,entryPoint:'fsMain',targets:[{format}]},primitive:{topology:'triangle-list'}});
+ const uniformBuffer=device.createBuffer({size:96,usage:GPUBufferUsage.UNIFORM|GPUBufferUsage.COPY_DST});
+ const bindGroup=device.createBindGroup({layout:pipeline.getBindGroupLayout(0),entries:[{binding:0,resource:{buffer:uniformBuffer}}]});
+ const validation=await device.popErrorScope();if(validation)throw Error(validation.message);
+ function encode(texture,w,h,readBuffer=null){device.queue.writeBuffer(uniformBuffer,0,uniformData(w,h));const encoder=device.createCommandEncoder();const pass=encoder.beginRenderPass({colorAttachments:[{view:texture.createView(),loadOp:'clear',storeOp:'store',clearValue:{r:0,g:0,b:0,a:1}}]});pass.setPipeline(pipeline);pass.setBindGroup(0,bindGroup);pass.draw(3);pass.end();if(readBuffer)encoder.copyTextureToBuffer({texture},{buffer:readBuffer,bytesPerRow:w*4},{width:w,height:h,depthOrArrayLayers:1});device.queue.submit([encoder.finish()])}
+ async function renderTest(){const w=192,h=144,texture=device.createTexture({size:[w,h],format,usage:GPUTextureUsage.RENDER_ATTACHMENT|GPUTextureUsage.COPY_SRC}),buffer=device.createBuffer({size:w*h*4,usage:GPUBufferUsage.COPY_DST|GPUBufferUsage.MAP_READ});device.pushErrorScope('validation');try{encode(texture,w,h,buffer);const error=await device.popErrorScope();if(error)throw Error(error.message);await device.queue.onSubmittedWorkDone();await buffer.mapAsync(GPUMapMode.READ);const bytes=new Uint8Array(buffer.getMappedRange());let hash=2166136261,bright=0;for(let i=0;i<bytes.length;i+=4){for(let j=0;j<3;j++)hash=Math.imul(hash^bytes[i+j],16777619);if(Math.max(bytes[i],bytes[i+1],bytes[i+2])>95)bright++}const center=(Math.floor(h/2)*w+Math.floor(w/2))*4;const result={hash:hash>>>0,bright,center:[bytes[center],bytes[center+1],bytes[center+2]],density:fieldAt([0,0,0])};buffer.unmap();return result}finally{buffer.destroy();texture.destroy()}}
+ backend={draw(){if(context)encode(context.getCurrentTexture(),gpu.width,gpu.height)},renderTest};
+ setStatus('validation-scope');if(ci){await renderTest()}else{device.pushErrorScope('validation');backend.draw();const err=await device.popErrorScope();if(err)throw Error(err.message)}
+ setStatus('submitted-work-wait');await device.queue.onSubmittedWorkDone();setStatus('ok','WebGPU • ready');dirty=true;
+}
+window.waveLab={state,selectLesson,setPhase,fieldAt,samplePoints,renderTest:()=>backend.renderTest()};
+function frame(now){const dt=last?Math.min(.05,(now-last)/1000):0;last=now;if(state.animate&&!ci&&backend){state.time=(state.time+dt*.65)%(Math.PI*2);dirty=true}if(plotDirty){drawPlot();plotDirty=false}if(dirty){if(backend&&!ci)backend.draw();drawDots();dirty=false}requestAnimationFrame(frame)}
+selectLesson(0);requestAnimationFrame(frame);init().catch(fail);
+</script></body></html>

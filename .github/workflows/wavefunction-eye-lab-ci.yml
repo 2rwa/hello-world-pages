@@ -1,0 +1,28 @@
+name: Wavefunction Eye Lab WebGPU CI
+on:
+  push:
+    paths:
+      - 'wavefunction-eye-lab/**'
+      - '.github/workflows/wavefunction-eye-lab-ci.yml'
+  workflow_dispatch:
+jobs:
+  webgpu-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: browser-actions/setup-chrome@v1
+        id: chrome
+        with:
+          chrome-version: stable
+      - name: Install Puppeteer
+        run: npm install --no-save --no-package-lock puppeteer-core@24
+      - name: Start HTTP server
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/wavefunction-server.log 2>&1 &
+          sleep 2
+          curl -fsS http://127.0.0.1:8765/wavefunction-eye-lab/ -o /dev/null
+      - name: WebGPU validation and pixel readback
+        env:
+          CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
+        run: node wavefunction-eye-lab/tests/webgpu-smoke.cjs
