@@ -1,191 +1,198 @@
 <!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>波動関数の眼 | Quantum Wave Lab</title>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>QUANTUM EYES — 波動関数の眼</title>
 <style>
-:root{color-scheme:dark;--bg:#080e1a;--panel:#111c2d;--line:#26374b;--ink:#e9f2ff;--muted:#98acc4;--accent:#83e8d4}*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 20% 0%,#193048 0%,var(--bg) 55%);color:var(--ink);font-family:system-ui,-apple-system,sans-serif;line-height:1.6}main{max-width:1360px;margin:auto;padding:22px 24px 40px}header{display:flex;justify-content:space-between;align-items:end;gap:16px;margin-bottom:18px}h1{font-size:clamp(26px,4vw,44px);margin:0;letter-spacing:.05em;line-height:1.15}h1 span{font-size:13px;color:var(--accent);display:block;letter-spacing:.18em;margin-bottom:9px}header p{margin:8px 0 0;color:var(--muted);font-size:14px}#status{font-size:12px;color:var(--accent);white-space:nowrap;border:1px solid var(--line);padding:5px 10px;border-radius:20px}.layout{display:grid;grid-template-columns:minmax(0,1.8fr) minmax(290px,1fr);gap:16px}.stage{position:relative;overflow:hidden;border:1px solid var(--line);border-radius:18px;background:#070e1c;min-height:410px;aspect-ratio:1.35;touch-action:none}#gpu,#dots{position:absolute;inset:0;width:100%;height:100%;display:block}#dots{pointer-events:none}.eye{position:absolute;display:flex;align-items:center;gap:6px;background:#0b1424e8;border:1px solid #42617c;border-radius:30px;color:#b8cce0;padding:7px 10px;cursor:pointer;font-size:12px;box-shadow:0 4px 20px #0008;transition:.2s}.eye:hover,.eye[aria-pressed=true]{border-color:#83e8d4;color:#fff;background:#20394b;box-shadow:0 0 18px #83e8d455}.eye svg{width:36px;height:25px;overflow:visible}.eye .iris{transition:transform .13s}.eye:nth-of-type(1){left:12px;top:15px}.eye:nth-of-type(2){right:12px;top:15px}.eye:nth-of-type(3){left:12px;top:47%}.eye:nth-of-type(4){right:12px;top:47%}.eye:nth-of-type(5){left:12px;bottom:16px}.stagehint{position:absolute;bottom:16px;right:14px;font-size:11px;color:#9cb1cb;background:#0a1420bb;padding:5px 8px;border-radius:8px;pointer-events:none}.legend{position:absolute;left:50%;bottom:15px;transform:translateX(-50%);font-size:11px;text-align:center;color:#b4c8df;pointer-events:none;white-space:nowrap}.spectrum{height:6px;width:112px;background:linear-gradient(90deg,#ff776f,#ffe366,#71eaa2,#65bfff,#a994ff,#ff776f);border-radius:6px;margin:0 auto 3px}.panel{border:1px solid var(--line);background:var(--panel);border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:12px}.eyebrow{font-size:12px;letter-spacing:.12em;color:var(--accent)}h2{font-size:23px;margin:0;line-height:1.3}.panel p{margin:0;font-size:14px;color:#c8d8e9}.equation{padding:12px 14px;border-radius:10px;background:#091321;border-left:3px solid var(--accent);font-family:ui-monospace,monospace;font-size:14px;overflow-wrap:anywhere}.tip{color:#aee5e0!important;font-size:13px!important;border-top:1px solid var(--line);padding-top:12px}.controls{display:grid;gap:12px;padding-top:8px;border-top:1px solid var(--line)}.control{display:grid;gap:4px}.control label{display:flex;justify-content:space-between;font-size:13px;color:var(--muted)}output{color:#fff;font-variant-numeric:tabular-nums}input[type=range]{width:100%;accent-color:var(--accent);margin:3px 0;cursor:pointer}.buttons{display:flex;flex-wrap:wrap;gap:6px}button{font:inherit}button.action{padding:7px 12px;border:1px solid #38516b;background:#17263a;color:#c3d6e9;border-radius:8px;cursor:pointer;font-size:12px}button.action[aria-pressed=true],button.action:hover{background:#27554f;border-color:#83e8d4;color:white}button:focus-visible{outline:2px solid #fff;outline-offset:3px}.plot{margin-top:16px;background:#101b2b;border:1px solid var(--line);border-radius:15px;padding:12px 15px}.plothead{display:flex;justify-content:space-between;gap:10px;font-size:12px;color:var(--muted);flex-wrap:wrap}.plot canvas{width:100%;height:145px;display:block}.ampl{color:#82d4ff}.dens{color:#f8c47b}.measure{font-size:12px;color:#b7c9dc;min-height:22px}.note{font-size:12px;color:#8ca0b9;margin:14px 0 0}#error{display:none;position:absolute;top:37%;left:15%;right:15%;background:#381d27;padding:15px;border-radius:10px;z-index:3;text-align:center}#error.show{display:block}@media(max-width:820px){main{padding:14px 12px 26px}.layout{grid-template-columns:1fr}.stage{min-height:350px;aspect-ratio:1.2}header{align-items:start;flex-direction:column;gap:6px}.eye{padding:5px 7px;font-size:11px}.eye svg{width:28px}.legend{bottom:53px}.stagehint{font-size:10px}.panel{padding:16px}}@media(prefers-reduced-motion:reduce){*{transition:none!important}}
-</style></head><body><main><header><div><h1><span>QUANTUM WAVE LAB / 01</span>波動関数の眼</h1><p>波は重なり、位相は巡り、観測は点になる。5つの目を開いて、量子の世界を探索する。</p></div><div id="status" data-state="script-start">WebGPU 初期化</div></header>
-<div class="layout"><div><div class="stage" id="stage"><canvas id="gpu" aria-label="波動関数の3次元等値面"></canvas><canvas id="dots"></canvas>
-<button class="eye" data-lesson="0" aria-pressed="true" aria-label="1 波動関数"><span class="eyeart"></span>01 波動関数</button>
-<button class="eye" data-lesson="1" aria-pressed="false" aria-label="2 振幅と確率"><span class="eyeart"></span>02 確率</button>
-<button class="eye" data-lesson="2" aria-pressed="false" aria-label="3 位相"><span class="eyeart"></span>03 位相</button>
-<button class="eye" data-lesson="3" aria-pressed="false" aria-label="4 干渉"><span class="eyeart"></span>04 干渉</button>
-<button class="eye" data-lesson="4" aria-pressed="false" aria-label="5 観測"><span class="eyeart"></span>05 観測</button>
-<div class="legend"><div class="spectrum"></div>複素位相 0 → 2π</div><div class="stagehint">ドラッグ：回転 / ホイール：拡縮</div><div id="error" role="alert"></div></div>
-<div class="plot"><div class="plothead"><span>中心断面 x 軸（y=z=0）</span><span><b class="ampl">━ |ψ|</b>　<b class="dens">━ |ψ|²</b>　・ しきい値</span></div><canvas id="plot" aria-label="振幅と確率密度の断面グラフ"></canvas></div></div>
-<section class="panel" aria-live="polite"><div class="eyebrow" id="num"></div><h2 id="title"></h2><p id="body"></p><div class="equation" id="eq"></div><p id="tip" class="tip"></p><div class="controls">
-<div class="control"><label>表示する等値面</label><div class="buttons"><button class="action" id="amp" aria-pressed="false">振幅 |ψ|</button><button class="action" id="density" aria-pressed="true">確率密度 |ψ|²</button></div></div>
-<div class="control"><label for="sep">波束の間隔 d <output id="sepv"></output></label><input id="sep" type="range" min=".35" max="3.6" step=".01" value="1.6"></div>
-<div class="control"><label for="phase">相対位相 φ <output id="phasev"></output></label><input id="phase" type="range" min="0" max="360" step="1" value="0"><div class="buttons"><button class="action" id="plus">同位相 0°</button><button class="action" id="minus">逆位相 180°</button></div></div>
-<div class="control"><label for="iso">等値面しきい値 <output id="isov"></output></label><input id="iso" type="range" min=".05" max=".85" step=".01" value=".28"></div>
-<div class="buttons"><button class="action" id="play" aria-pressed="true">位相アニメーション ON</button><button class="action" id="reset">視点リセット</button></div>
-<div class="buttons"><button class="action" id="sample">観測 × 100</button><button class="action" id="clear">観測点を消去</button></div><div class="measure" id="measure">観測点 0</div>
-</div></section></div><p class="note">モデル：幅 σ=0.9 の正規化ガウス波束。表示値は共通の規格化定数 A=(πσ²)⁻³⁄⁴ を除いた相対振幅・相対密度です。表示面は確率密度または振幅の等値面であり、粒子の輪郭・軌道ではありません。単位を省いた教材用モデルで、時間変化は共通位相の回転のみ（波束の拡散やシュレーディンガー方程式の時間発展は解いていません）。観測点は独立に同じ状態を準備した試行の位置標本です。</p></main>
+:root{color-scheme:dark;font-family:system-ui,sans-serif;background:#080e18;color:#e5f3ff}*{box-sizing:border-box}body{margin:0;overflow-x:hidden}main{max-width:1400px;margin:auto;padding:16px 20px 24px}header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}h1{font-size:clamp(23px,4vw,38px);margin:0;line-height:1.1;letter-spacing:.06em}h1 small{display:block;font-size:11px;color:#76d7ce;letter-spacing:.2em;margin-bottom:5px}#status{font-size:11px;color:#9ae6cf}#arena{position:relative;border:1px solid #355065;border-radius:16px;overflow:hidden;aspect-ratio:16/9;min-height:300px;background:#091321;touch-action:none}#gpu,#overlay{position:absolute;inset:0;width:100%;height:100%;display:block}#overlay{pointer-events:none}.hud{position:absolute;inset:13px 13px auto;display:flex;justify-content:space-between;align-items:start;gap:8px;pointer-events:none}.hudbox{background:#091422c7;border:1px solid #416073;border-radius:10px;padding:8px 12px;backdrop-filter:blur(8px)}.hudbox b{display:block;font-size:clamp(18px,3vw,28px);line-height:1.15;font-variant-numeric:tabular-nums}.hudbox small{font-size:10px;letter-spacing:.14em;color:#9fbad0}.hudright{text-align:right}.message{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);max-width:85%;width:max-content;text-align:center;color:#efffff;background:#091422cf;border:1px solid #4e7181;padding:8px 15px;border-radius:24px;font-size:13px;pointer-events:none}.message.good{border-color:#70f0b1;color:#a9ffcc}.message.bad{border-color:#f4a77d;color:#ffd0b6}.mission{display:grid;grid-template-columns:minmax(0,1fr) minmax(270px,.8fr);gap:12px;margin-top:12px}.panel{background:#111d2b;border:1px solid #293e52;border-radius:13px;padding:14px 17px}.tag{font-size:11px;color:#8cdbd2;letter-spacing:.16em}.panel h2{font-size:20px;line-height:1.3;margin:4px 0 6px}.panel p{font-size:13px;margin:6px 0;color:#c4d5e5;line-height:1.6}.formula{color:#8ee9df!important;font-family:monospace;font-size:13px!important}.phasehead{display:flex;justify-content:space-between;align-items:center;gap:5px;font-size:13px}.phasehead strong{font-size:19px;color:#f4ecad;font-variant-numeric:tabular-nums}input[type=range]{width:100%;accent-color:#8ce4d2;margin:10px 0}button{font:inherit;color:#e5f4ff;background:#20374c;border:1px solid #47657c;border-radius:8px;padding:7px 12px;cursor:pointer;font-size:13px}button:hover,button[aria-pressed=true]{background:#285b5b;border-color:#8ae7d5}button:disabled{opacity:.45;cursor:default}button.primary{flex:1;background:#a4e9cc;color:#102d29;border-color:#a4e9cc;font-weight:700;font-size:15px;padding:10px}button.primary:hover{background:#d2ffe9}.buttons{display:flex;gap:7px;flex-wrap:wrap;align-items:center}.meter{height:8px;background:#29394b;border-radius:10px;overflow:hidden;margin:9px 0 3px}.meter>div{height:100%;width:0%;background:#79e9cf;transition:width .1s}.meterlabel{display:flex;justify-content:space-between;color:#a8bed0;font-size:11px}.foot{font-size:11px;color:#91a9bf;margin:12px 0;line-height:1.6}.stagebuttons{display:flex;gap:5px;margin-top:9px}.stagebuttons button{flex:1;font-size:11px;padding:6px 4px}#error{position:absolute;inset:35% 10% auto;background:#4d2430;padding:18px;border-radius:12px;text-align:center;display:none;z-index:5}#error.show{display:block}#complete{position:absolute;inset:0;display:none;place-items:center;background:#07101bc9;z-index:4}#complete.show{display:grid}#complete>div{background:#182d3d;border:1px solid #7aebce;border-radius:16px;text-align:center;padding:24px;max-width:90%}#complete h2{margin:0 0 8px;font-size:30px}#complete p{color:#c3d9e5}button:focus-visible{outline:2px solid white;outline-offset:3px}@media(max-width:760px){main{padding:10px}.mission{grid-template-columns:1fr}.hud{inset:8px 8px auto}.hudbox{padding:6px 8px}.message{font-size:11px;bottom:8px}.panel{padding:12px}#arena{aspect-ratio:1.25;min-height:300px}}
+</style></head><body><main><header><h1><small>QUANTUM ARCADE / WEBGPU</small>QUANTUM EYES</h1><div id="status" data-state="script-start">GPU 初期化中</div></header>
+<div id="arena"><canvas id="gpu" aria-label="跳ね回る目玉メタボールの3Dゲーム"></canvas><canvas id="overlay"></canvas><div class="hud"><div class="hudbox"><small>MISSION <span id="missionNo">01</span></small><b id="progress">0 / 3</b><small id="timer">00.0 s</small></div><div class="hudbox hudright"><small>SCORE / COMBO</small><b id="score">0000</b><small id="combo">COMBO ×0</small></div></div><div class="message" id="message">ドラッグで緑の目玉を誘導。2つの波を近づけよう。</div><div id="error" role="alert"></div><div id="complete"><div><div class="tag">ALL MISSIONS CLEAR</div><h2>量子の眼を解放！</h2><p id="finalScore"></p><button id="again" class="primary">もう一度遊ぶ</button></div></div></div>
+<div class="mission"><section class="panel"><div class="tag" id="tag"></div><h2 id="title"></h2><p id="explain"></p><p class="formula" id="formula"></p><p id="goal"></p><div class="stagebuttons"><button data-stage="0">01 強め合い</button><button data-stage="1">02 打ち消し</button><button data-stage="2">03 観測</button></div></section><section class="panel"><div class="phasehead"><label for="phase">相対位相 φ</label><strong id="phaseValue">0°</strong></div><input type="range" id="phase" min="0" max="360" step="1" value="0"><div class="buttons"><button id="zero">0° 同位相</button><button id="pi">180° 逆位相</button><button id="pause" aria-pressed="false">一時停止</button><button id="reset">リセット</button></div><div class="meter"><div id="meter"></div></div><div class="meterlabel"><span id="meterName">中央の相対密度</span><span id="meterValue">0.00</span></div><div class="buttons" style="margin-top:10px"><button id="pulse" class="primary">波をロック！ / Space</button></div></section></div><div class="foot">操作：画面を押してドラッグすると緑の目玉がそこへ向かって飛ぶ。矢印 / WASD でも操作可能。Space でロックまたは観測。両眼は壁と床で跳ね返る。<br>物理モデル：規格化した2つのガウス波束を複素振幅として合成。液体の外形は |ψ|² の等値面、眼と跳ねる運動は教材用の演出（粒子の軌道や厳密な時間発展ではない）。位相は表面色と虹彩にも反映。観測は同じ状態を独立に準備した試行の位置サンプル。</div></main>
 <script type="module">
-const $=id=>document.getElementById(id);
-const status=$('status'),stage=$('stage'),gpu=$('gpu'),dots=$('dots'),plot=$('plot');
-const ci=new URLSearchParams(location.search).has('ci');
-const lessons=[
-{title:'波動関数は、空間に広がる情報',body:'量子状態は、位置ごとに複素数を持つ関数 ψ(x,y,z) で表せます。目の前のメタボールは、その大きさが一定になる場所を囲む等値面です。粒子そのものの形ではありません。',eq:'ψ(r) = A exp(−|r|² / 2σ²) · exp(iθ)',tip:'しきい値を下げると、より小さな振幅まで見えるようになります。',pair:false,mode:1,sep:1.6,phase:0,iso:.28},
-{title:'振幅を二乗すると確率密度',body:'ψ の絶対値は振幅。位置の測定確率を得るには、その二乗 |ψ|² を使います。狭い領域の確率は密度をその体積で積分した値です。',eq:'ρ(r) = |ψ(r)|²　　∫ρ(r) d³r = 1',tip:'同じしきい値で振幅と密度を切り替え、裾の広がりの違いを断面グラフでも確認してください。',pair:false,mode:1,sep:1.6,phase:0,iso:.28},
-{title:'位相は色として見える',body:'波動関数には大きさだけでなく複素平面上の角度があります。色はその角度を示します。全体の位相が同じだけ回転しても、確率密度は変わりません。',eq:'ψ = |ψ| exp(iθ)　　|exp(iθ)|² = 1',tip:'位相アニメーションを ON/OFF。色が変わっても形が変わらないことに注目。相対位相は次の眼で扱います。',pair:false,mode:1,sep:1.6,phase:0,iso:.28},
-{title:'波を足すと干渉が起きる',body:'2つの波束を重ねます。同位相では中央の振幅が強まり、逆位相では中央の波が打ち消し合います。単純なメタボールの加算と異なり、振幅を複素数として足した結果を描きます。',eq:'ψ = (g₁ + exp(iφ)g₂) exp(iθ) / N\n|ψ|² ∝ g₁² + g₂² + 2g₁g₂ cos φ',tip:'同位相／逆位相を切り替え、間隔を 1.6 前後に。180°では中央断面に節が現れます。',pair:true,mode:1,sep:1.6,phase:0,iso:.17},
-{title:'観測すると、位置は点になる',body:'同じ波動関数を持つ粒子を繰り返し準備し、位置を測定する思考実験です。1回の位置はランダムですが、多数の点を重ねると確率密度の分布が現れます。',eq:'P(r ∈ V) = ∫ᵥ |ψ(r)|² d³r',tip:'観測 × 100 を何度か押して分布を確認。逆位相の節の近くには点が少なくなります。点は1粒子の軌跡ではありません。',pair:true,mode:1,sep:1.6,phase:180,iso:.17}
+const $=id=>document.getElementById(id),canvas=$('gpu'),arena=$('arena'),overlay=$('overlay'),ci=new URLSearchParams(location.search).has('ci');
+const stages=[
+{tag:'01 / CONSTRUCTIVE',title:'波を重ねて強め合え！',explain:'目玉を接近させ、位相をそろえると、波束の間が明るくつながります。液体の融合は確率密度の等値面がつながる現象です。',formula:'ψ = (g₁ + eⁱᵠg₂) / N　　ρ = |ψ|²',goal:'距離 2.1 以下・位相 0° ± 30° でロック。3回成功でクリア。',phase:75},
+{tag:'02 / DESTRUCTIVE',title:'逆位相で節を作れ！',explain:'相対位相が180°なら、等しい振幅が出会う場所で互いに打ち消し合います。近づいているのに波の間には暗い節が残ります。',formula:'ρ = (g₁² + g₂² + 2g₁g₂ cos φ) / N²',goal:'距離 2.1 以下・位相 180° ± 30° でロック。3回成功でクリア。',phase:90},
+{tag:'03 / BORN RULE',title:'観測点を検出器に集めろ！',explain:'1回の観測は1点ですが、何度も同じ状態を準備して観測すると確率密度の分布になります。緑の波を金色の検出器に入れ、64回観測してみよう。',formula:'P(V) = ∫ᵥ |ψ(r)|² d³r',goal:'金色の検出器に緑の眼を近づけて観測。64点のうち12点以上が検出器内なら成功。3回成功でクリア。',phase:180}
 ];
-const state={lesson:0,pair:false,mode:1,sep:1.6,phase:0,iso:.28,animate:!matchMedia('(prefers-reduced-motion: reduce)').matches,yaw:.28,pitch:.12,distance:8,time:0,points:[]};
-let dirty=true,plotDirty=true,last=0,backend=null;
-function setStatus(s,t=s){status.dataset.state=s;status.textContent=t}
-function fail(e){setStatus('error','WebGPU エラー');$('error').classList.add('show');$('error').textContent=String(e);console.error(e)}
-const eyeSVG='<svg viewBox="0 0 44 30" aria-hidden="true"><path d="M1 15Q22 -7 43 15Q22 37 1 15Z" fill="#e1f4f2" stroke="#7adfda" stroke-width="1.5"/><g class="iris"><circle cx="22" cy="15" r="9" fill="#469fa6"/><circle cx="22" cy="15" r="5.5" fill="#0b1729"/><circle cx="19" cy="12" r="2.2" fill="white"/></g></svg>';
-document.querySelectorAll('.eyeart').forEach(el=>el.innerHTML=eyeSVG);
-function clearPoints(){state.points=[];dirty=true;updateMeasure()}
-function updateMeasure(){$('measure').textContent='観測点 '+state.points.length.toLocaleString()+'　中央 x=0 の相対密度 '+fieldAt([0,0,0]).toFixed(4)}
-function refresh(){const l=lessons[state.lesson];$('num').textContent='EYE '+String(state.lesson+1).padStart(2,'0')+' / 05';$('title').textContent=l.title;$('body').textContent=l.body;$('eq').textContent=l.eq;$('eq').style.whiteSpace='pre-line';$('tip').textContent=l.tip;for(const k of ['sep','phase','iso']){$(k).value=state[k]}$('sep').disabled=!state.pair;$('phase').disabled=!state.pair;$('plus').disabled=!state.pair;$('minus').disabled=!state.pair;$('sepv').textContent=state.pair?state.sep.toFixed(2):'単一波束';$('phasev').textContent=state.pair?state.phase+'°':'—';$('isov').textContent=state.iso.toFixed(2);$('amp').setAttribute('aria-pressed',String(state.mode===0));$('density').setAttribute('aria-pressed',String(state.mode===1));$('play').setAttribute('aria-pressed',String(state.animate));$('play').textContent='位相アニメーション '+(state.animate?'ON':'OFF');document.querySelectorAll('.eye').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.lesson===state.lesson)));updateMeasure();dirty=plotDirty=true}
-function selectLesson(i){Object.assign(state,lessons[i],{lesson:i});clearPoints();refresh()}
-document.querySelectorAll('.eye').forEach(b=>b.onclick=()=>selectLesson(+b.dataset.lesson));
-function setPhase(v){state.phase=v;clearPoints();refresh()}
-for(const k of ['sep','phase','iso'])$(k).oninput=e=>{state[k]=+e.target.value;if(k!=='iso')clearPoints();refresh()};
-$('plus').onclick=()=>setPhase(0);$('minus').onclick=()=>setPhase(180);
-$('amp').onclick=()=>{state.mode=0;refresh()};$('density').onclick=()=>{state.mode=1;refresh()};
-$('play').onclick=()=>{state.animate=!state.animate;refresh()};
-$('reset').onclick=()=>{state.yaw=.28;state.pitch=.12;state.distance=8;dirty=true};
-$('clear').onclick=clearPoints;
-let drag=null;
-stage.addEventListener('pointerdown',e=>{if(e.target.closest('button'))return;drag=[e.clientX,e.clientY];stage.setPointerCapture(e.pointerId)});
-stage.addEventListener('pointermove',e=>{if(drag){state.yaw-=(e.clientX-drag[0])*.008;state.pitch=Math.max(-1.35,Math.min(1.35,state.pitch+(e.clientY-drag[1])*.008));drag=[e.clientX,e.clientY];dirty=true}for(const b of document.querySelectorAll('.eye')){const r=b.querySelector('svg').getBoundingClientRect(),dx=e.clientX-r.left-r.width/2,dy=e.clientY-r.top-r.height/2,d=Math.hypot(dx,dy)||1;b.querySelector('.iris').style.transform='translate('+dx/d*3+'px,'+dy/d*2+'px)'}});
-for(const evt of ['pointerup','pointercancel','lostpointercapture'])stage.addEventListener(evt,()=>drag=null);
-stage.addEventListener('wheel',e=>{e.preventDefault();state.distance=Math.max(5,Math.min(13,state.distance*Math.exp(e.deltaY*.001)));dirty=true},{passive:false});
-const sigma=.9;
-function gauss(p,c){return Math.exp(-((p[0]-c)**2+p[1]**2+p[2]**2)/(2*sigma*sigma))}
-function fieldAt(p){const a=gauss(p,state.pair?-state.sep/2:0);if(!state.pair)return a*a;const b=gauss(p,state.sep/2),cos=Math.cos(state.phase*Math.PI/180),ov=Math.exp(-(state.sep**2)/(4*sigma*sigma));return Math.max(0,(a*a+b*b+2*a*b*cos)/(2+2*ov*cos))}
-function normalRandom(){return Math.sqrt(-2*Math.log(Math.max(1e-12,Math.random())))*Math.cos(2*Math.PI*Math.random())}
-function samplePoints(n){for(let i=0;i<n&&state.points.length<6000;i++){for(let j=0;j<10000;j++){let c=state.pair?(Math.random()<.5?-state.sep/2:state.sep/2):0,p=[normalRandom()*sigma/Math.SQRT2+c,normalRandom()*sigma/Math.SQRT2,normalRandom()*sigma/Math.SQRT2];if(state.pair){const a=gauss(p,-state.sep/2),b=gauss(p,state.sep/2),prob=(a*a+b*b+2*a*b*Math.cos(state.phase*Math.PI/180))/(2*(a*a+b*b));if(Math.random()>prob)continue}state.points.push(p);break}}dirty=true;updateMeasure()}
-$('sample').onclick=()=>samplePoints(100);
-const dot=(a,b)=>a.reduce((s,v,i)=>s+v*b[i],0);
-function camera(){const y=state.yaw,p=state.pitch,cp=Math.cos(p),pos=[Math.sin(y)*cp*state.distance,Math.sin(p)*state.distance,Math.cos(y)*cp*state.distance],right=[Math.cos(y),0,-Math.sin(y)],up=[-Math.sin(y)*Math.sin(p),cp,-Math.cos(y)*Math.sin(p)],forward=pos.map(v=>-v/state.distance);return {pos,right,up,forward}}
-function resize(){const r=stage.getBoundingClientRect(),d=Math.min(devicePixelRatio,1.25),scale=Math.min(d,720/r.width,540/r.height);gpu.width=Math.max(1,Math.round(r.width*scale));gpu.height=Math.max(1,Math.round(r.height*scale));dots.width=Math.round(r.width*d);dots.height=Math.round(r.height*d);dirty=plotDirty=true}
-new ResizeObserver(resize).observe(stage);resize();
-function drawDots(){const ctx=dots.getContext('2d'),w=dots.width,h=dots.height,c=camera();ctx.clearRect(0,0,w,h);ctx.fillStyle='#fff3c9';ctx.shadowColor='#ffd795';ctx.shadowBlur=4;ctx.globalAlpha=.72;for(const p of state.points){const q=p.map((v,i)=>v-c.pos[i]),z=dot(q,c.forward);if(z<=0)continue;const x=w/2+dot(q,c.right)/z*1.7*h/2,y=h/2-dot(q,c.up)/z*1.7*h/2;ctx.beginPath();ctx.arc(x,y,1.65,0,Math.PI*2);ctx.fill()}ctx.globalAlpha=1}
-function drawPlot(){const r=plot.getBoundingClientRect(),d=Math.min(devicePixelRatio,2);plot.width=Math.max(1,Math.round(r.width*d));plot.height=Math.max(1,Math.round(r.height*d));const g=plot.getContext('2d'),w=plot.width,h=plot.height,L=30*d,R=w-12*d,T=9*d,B=h-23*d,x=v=>L+(v+4.5)/9*(R-L),y=v=>B-v*(B-T)/1.3;g.clearRect(0,0,w,h);g.font=10*d+'px system-ui';g.lineWidth=d;g.strokeStyle='#293e54';g.fillStyle='#8da4be';for(const v of [0,.5,1]){g.beginPath();g.moveTo(L,y(v));g.lineTo(R,y(v));g.stroke();g.fillText(String(v),3*d,y(v)+3*d)}for(const v of [-4,-2,0,2,4]){g.beginPath();g.moveTo(x(v),T);g.lineTo(x(v),B);g.stroke();g.fillText(String(v),x(v)-5*d,B+15*d)}g.strokeStyle='#70859d';g.setLineDash([4*d,4*d]);g.beginPath();g.moveTo(L,y(state.iso));g.lineTo(R,y(state.iso));g.stroke();g.setLineDash([]);for(const mode of [0,1]){g.strokeStyle=mode?'#f8c47b':'#82d4ff';g.lineWidth=2*d;g.beginPath();for(let i=0;i<=360;i++){const v=-4.5+9*i/360,f=fieldAt([v,0,0]),py=y(mode?f:Math.sqrt(f));i?g.lineTo(x(v),py):g.moveTo(x(v),py)}g.stroke()}}
-const wgsl=`
-struct Uniforms { camPos:vec4<f32>, camRight:vec4<f32>, camUp:vec4<f32>, camForward:vec4<f32>, waveParams:vec4<f32>, screenParams:vec4<f32> }
-@group(0) @binding(0) var<uniform> uniforms:Uniforms;
+const S={stage:0,phase:75,time:0,elapsed:0,score:0,combo:0,progress:0,paused:false,done:false,goal:[-1.55,1.8,0],balls:[],points:[],flash:0,flashKind:0,cooldown:0,drag:null,keys:new Set(),lastResult:null};
+const sigma=.87,iso=.19,TAU=Math.PI*2;
+const add=(a,b)=>a.map((v,i)=>v+b[i]),sub=(a,b)=>a.map((v,i)=>v-b[i]),mul=(a,s)=>a.map(v=>v*s),dot=(a,b)=>a.reduce((v,x,i)=>v+x*b[i],0),len=a=>Math.hypot(...a),clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const cam=[0,3.25,10.5],look=[0,1.9,0],forward=mul(sub(look,cam),1/len(sub(look,cam))),right=[1,0,0],up=[0,-forward[2],forward[1]],focal=1.65;
+const rand=(a,b)=>a+(b-a)*Math.random();
+function resetBalls(){S.balls=[{p:[-2.15,2.0,.12],v:[1.65,1.15,-.32],kick:0},{p:[2.15,2.35,-.15],v:[-1.3,1.55,.28],kick:0}];S.points=[];S.drag=null}
+function setMessage(text,kind=''){const m=$('message');m.textContent=text;m.className='message '+kind}
+function status(s,t=s){$('status').dataset.state=s;$('status').textContent=t}
+function fail(e){status('error','WebGPU ERROR');$('error').classList.add('show');$('error').textContent=String(e);console.error(e)}
+function phaseRad(){return S.phase*Math.PI/180}
+function gauss(p,c){const q=sub(p,c);return Math.exp(-dot(q,q)/(2*sigma*sigma))}
+function densityAt(p){const a=gauss(p,S.balls[0].p),b=gauss(p,S.balls[1].p),d=len(sub(S.balls[0].p,S.balls[1].p)),c=Math.cos(phaseRad()),n=Math.max(.000001,2+2*Math.exp(-d*d/(4*sigma*sigma))*c);return Math.max(0,(a*a+b*b+2*a*b*c)/n)}
+function distance(){return len(sub(S.balls[0].p,S.balls[1].p))}
+function midpoint(){return mul(add(S.balls[0].p,S.balls[1].p),.5)}
+function chooseStage(i,keep=false){if(!keep){S.score=0;S.combo=0;S.elapsed=0}S.next=false;S.stage=i;S.phase=stages[i].phase;S.progress=0;S.cooldown=0;S.flash=0;S.done=false;S.paused=false;S.lastResult=null;S.goal=[-1.55,1.8,0];resetBalls();$('complete').classList.remove('show');$('tag').textContent=stages[i].tag;$('title').textContent=stages[i].title;$('explain').textContent=stages[i].explain;$('formula').textContent=stages[i].formula;$('goal').textContent=stages[i].goal;$('pulse').textContent=i===2?'64回観測する / Space':'波をロック！ / Space';document.querySelectorAll('[data-stage]').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.stage===i)));setMessage(i===2?'緑の目玉を金色の検出器へ誘導。':'緑の目玉を誘導して、2つの波を接近させよう。');refresh()}
+function refresh(){ $('missionNo').textContent=String(S.stage+1).padStart(2,'0');$('progress').textContent=S.progress+' / 3';$('score').textContent=String(S.score).padStart(4,'0');$('combo').textContent='COMBO ×'+S.combo;$('timer').textContent=S.elapsed.toFixed(1)+' s';$('phase').value=S.phase;$('phaseValue').textContent=S.phase+'°';$('pause').textContent=S.paused?'再開':'一時停止';$('pause').setAttribute('aria-pressed',String(S.paused));$('pulse').disabled=S.paused||S.done||S.cooldown>0;const d=distance(),rho=densityAt(midpoint());$('meterName').textContent=S.stage===2?'検出器までの距離':'中央の相対密度 / 波束間距離';$('meterValue').textContent=S.stage===2?len(sub(S.balls[0].p,S.goal)).toFixed(2):rho.toFixed(3)+' / '+d.toFixed(2);$('meter').style.width=(S.stage===2?Math.max(0,1-len(sub(S.balls[0].p,S.goal))/4):Math.min(1,rho))*100+'%'}
+function setPhase(v){S.phase=+v;S.points=[];refresh()}
+$('phase').oninput=e=>setPhase(e.target.value);$('zero').onclick=()=>setPhase(0);$('pi').onclick=()=>setPhase(180);$('pause').onclick=()=>{S.paused=!S.paused;refresh()};$('reset').onclick=()=>chooseStage(0);$('again').onclick=()=>chooseStage(0);document.querySelectorAll('[data-stage]').forEach(b=>b.onclick=()=>chooseStage(+b.dataset.stage));
+function gaussian(){return Math.sqrt(-2*Math.log(Math.max(1e-12,Math.random())))*Math.cos(TAU*Math.random())}
+function sample(n){const pts=[],c=Math.cos(phaseRad());for(let i=0;i<n;i++){for(let j=0;j<10000;j++){const p=add(S.balls[Math.random()<.5?0:1].p,[gaussian()*sigma/Math.SQRT2,gaussian()*sigma/Math.SQRT2,gaussian()*sigma/Math.SQRT2]);const a=gauss(p,S.balls[0].p),b=gauss(p,S.balls[1].p),accept=(a*a+b*b+2*a*b*c)/(2*(a*a+b*b));if(Math.random()<=accept){pts.push(p);break}}}return pts}
+function pulse(){if(S.paused||S.done||S.cooldown>0)return false;let ok=false,msg='';const d=distance(),c=Math.cos(phaseRad());if(S.stage===2){S.points=sample(64);const hits=S.points.filter(p=>len(sub(p,S.goal))<=1.05).length;ok=hits>=12;msg=(ok?'検出成功！ ':'もう一度！ ')+hits+' / 64 点が検出器内';S.lastResult={hits,points:S.points.length}}else{ok=d<=2.1&&(S.stage===0?c>=Math.cos(Math.PI/6):c<=-Math.cos(Math.PI/6));msg=ok?(S.stage===0?'強め合い成功！ 波がつながった。':'打ち消し成功！ 中央に節ができた。'):d>2.1?'もう少し接近させよう！':S.stage===0?'位相を 0° に合わせよう！':'位相を 180° に合わせよう！';S.lastResult={distance:d,density:densityAt(midpoint())}}
+ S.cooldown=ok?1.15:.5;S.flash=.75;S.flashKind=ok?1:-1;setMessage(msg,ok?'good':'bad');if(ok){S.combo++;S.progress++;S.score+=100+25*(S.combo-1);S.balls.forEach((b,i)=>{b.kick=1;b.v[0]+=(i?1:-1)*1.8;b.v[1]+=1.5});if(S.stage===2&&S.progress<3)S.goal=[-S.goal[0],rand(1.35,2.5),0];if(S.progress>=3){if(S.stage===2){S.done=true;$('finalScore').textContent='SCORE '+S.score+' / '+S.elapsed.toFixed(1)+' 秒';$('complete').classList.add('show')}else{setMessage('MISSION CLEAR! 次の実験へ…','good');S.next=true}}}else{S.combo=0}refresh();return ok}
+$('pulse').onclick=pulse;
+function step(dt){if(S.paused||S.done)return;S.time+=dt;S.elapsed+=dt;S.flash=Math.max(0,S.flash-dt);S.cooldown=Math.max(0,S.cooldown-dt);if(S.next&&S.cooldown<=0){S.next=false;chooseStage(S.stage+1,true);return}const a=S.balls[0],b=S.balls[1];for(let i=0;i<2;i++){const ball=S.balls[i];let accel=[0,-2.15,0];if(i===0){if(S.drag){const delta=sub(S.drag,ball.p);accel=add(accel,sub(mul(delta,9),mul(ball.v,3.1)))}else{const k=S.keys;let dx=+(k.has('ArrowRight')||k.has('d'))-+(k.has('ArrowLeft')||k.has('a')),dy=+(k.has('ArrowUp')||k.has('w'))-+(k.has('ArrowDown')||k.has('s'));accel[0]+=dx*8;accel[1]+=dy*8;if(dx||dy){accel[0]-=ball.v[0]*1.15;accel[1]-=ball.v[1]*.55}}}else{accel[0]+=.3*Math.sin(S.time*.9);accel[2]+=.4*Math.sin(S.time*.7)}ball.v=add(ball.v,mul(accel,dt));const speed=len(ball.v);if(speed>5.5)ball.v=mul(ball.v,5.5/speed);ball.p=add(ball.p,mul(ball.v,dt));const bounds=[[-3.15,3.15],[.82,3.6],[-.85,.85]];for(let j=0;j<3;j++){const [lo,hi]=bounds[j];if(ball.p[j]<lo){ball.p[j]=lo;ball.v[j]=Math.abs(ball.v[j])*(j===1?.94:1);if(j===1)ball.v[j]=Math.max(ball.v[j],2.5);ball.kick=1}if(ball.p[j]>hi){ball.p[j]=hi;ball.v[j]=-Math.abs(ball.v[j]);ball.kick=1}}ball.kick=Math.max(0,ball.kick-dt*3)}
+ const delta=sub(b.p,a.p),d=len(delta);if(d<.55){const n=mul(delta,1/Math.max(.001,d)),push=(.55-d)*4;a.v=sub(a.v,mul(n,push));b.v=add(b.v,mul(n,push))}refresh()}
+function rayPoint(e){const r=arena.getBoundingClientRect(),sx=(2*(e.clientX-r.left)-r.width)/r.height,sy=(r.height-2*(e.clientY-r.top))/r.height,dir=add(add(mul(forward,focal),mul(right,sx)),mul(up,sy)),t=-cam[2]/dir[2],p=add(cam,mul(dir,t));return [clamp(p[0],-3.15,3.15),clamp(p[1],.82,3.6),0]}
+arena.addEventListener('pointerdown',e=>{if(e.target!==canvas)return;S.drag=rayPoint(e);arena.setPointerCapture(e.pointerId)});arena.addEventListener('pointermove',e=>{if(S.drag)S.drag=rayPoint(e)});for(const ev of ['pointerup','pointercancel','lostpointercapture'])arena.addEventListener(ev,()=>S.drag=null);
+window.addEventListener('keydown',e=>{if(e.target instanceof HTMLInputElement||e.target instanceof HTMLButtonElement)return;if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','w','a','s','d',' '].includes(e.key)){e.preventDefault();if(e.key===' '&&!e.repeat)pulse();else S.keys.add(e.key)}});window.addEventListener('keyup',e=>S.keys.delete(e.key));window.addEventListener('blur',()=>{S.keys.clear();S.drag=null});
+function project(p,w,h){const q=sub(p,cam),z=dot(q,forward);return [w/2+dot(q,right)/z*focal*h/2,h/2-dot(q,up)/z*focal*h/2,z]}
+function drawOverlay(){const g=overlay.getContext('2d'),w=overlay.width,h=overlay.height;g.clearRect(0,0,w,h);if(S.stage===2){const p=project(S.goal,w,h),r=1.05*focal*h/(2*p[2]);g.strokeStyle='#ffcf73';g.lineWidth=2;g.setLineDash([6,6]);g.beginPath();g.arc(p[0],p[1],r,0,TAU);g.stroke();g.setLineDash([]);g.fillStyle='#ffe3a1';g.font='11px system-ui';g.textAlign='center';g.fillText('DETECTOR',p[0],p[1]-r-8);for(const q of S.points){const v=project(q,w,h);g.fillStyle=len(sub(q,S.goal))<=1.05?'#ffe28c':'#b8eaff';g.beginPath();g.arc(v[0],v[1],2.4,0,TAU);g.fill()}}if(S.drag){const p=project(S.drag,w,h);g.strokeStyle='#96f4cd';g.lineWidth=1.5;g.beginPath();g.arc(p[0],p[1],9,0,TAU);g.stroke()}if(S.flash>0){const p=project(midpoint(),w,h),r=20+100*(1-S.flash/.75);g.strokeStyle=S.flashKind>0?'rgba(137,255,188,'+S.flash+')':'rgba(255,165,112,'+S.flash+')';g.lineWidth=2;g.beginPath();g.arc(p[0],p[1],r,0,TAU);g.stroke()}}
+let gpuRender=null,last=0;
+function resize(){const r=arena.getBoundingClientRect(),scale=Math.min(devicePixelRatio,1,780/r.width,540/r.height);canvas.width=Math.max(1,Math.round(r.width*scale));canvas.height=Math.max(1,Math.round(r.height*scale));overlay.width=Math.max(1,Math.round(r.width));overlay.height=Math.max(1,Math.round(r.height))}
+new ResizeObserver(resize).observe(arena);resize();
+const shader=`
+struct Globals { camPos:vec4<f32>, camForward:vec4<f32>, camUp:vec4<f32>, ballA:vec4<f32>, ballB:vec4<f32>, waveData:vec4<f32>, screenData:vec4<f32>, gazeData:vec4<f32> }
+@group(0) @binding(0) var<uniform> globals:Globals;
 @vertex fn vsMain(@builtin(vertex_index) vertexId:u32)->@builtin(position) vec4<f32>{
-  let vertices=array<vec2<f32>,3>(vec2<f32>(-1.,-1.),vec2<f32>(3.,-1.),vec2<f32>(-1.,3.));
-  return vec4<f32>(vertices[vertexId],0.,1.);
-}
-fn waveAt(samplePos:vec3<f32>)->vec2<f32>{
-  let pairFlag=uniforms.waveParams.w>0.5;
-  let separation=uniforms.waveParams.x;
-  let relativePhase=uniforms.waveParams.y;
-  let shift=select(0.,separation*0.5,pairFlag);
-  let offsetA=samplePos+vec3<f32>(shift,0.,0.);
-  let offsetB=samplePos-vec3<f32>(shift,0.,0.);
-  let gaussianA=exp(-dot(offsetA,offsetA)/1.62);
-  let gaussianB=exp(-dot(offsetB,offsetB)/1.62);
-  var complexWave=vec2<f32>(gaussianA,0.);
-  if(pairFlag){
-    let overlapFactor=exp(-separation*separation/3.24);
-    let normFactor=sqrt(max(0.00001,2.+2.*overlapFactor*cos(relativePhase)));
-    complexWave=(complexWave+gaussianB*vec2<f32>(cos(relativePhase),sin(relativePhase)))/normFactor;
-  }
-  let commonPhase=samplePos.x*1.8-uniforms.screenParams.z;
-  let phaseRot=vec2<f32>(cos(commonPhase),sin(commonPhase));
-  return vec2<f32>(complexWave.x*phaseRot.x-complexWave.y*phaseRot.y,complexWave.x*phaseRot.y+complexWave.y*phaseRot.x);
+ let positions=array<vec2<f32>,3>(vec2<f32>(-1.,-1.),vec2<f32>(3.,-1.),vec2<f32>(-1.,3.));
+ return vec4<f32>(positions[vertexId],0.,1.);
 }
 fn densityAt(samplePos:vec3<f32>)->f32{
-  let separation=uniforms.waveParams.x;
-  let pairFlag=uniforms.waveParams.w>0.5;
-  let shift=select(0.,separation*0.5,pairFlag);
-  let offsetA=samplePos+vec3<f32>(shift,0.,0.);
-  let gaussianA=exp(-dot(offsetA,offsetA)/1.62);
-  if(!pairFlag){return gaussianA*gaussianA;}
-  let offsetB=samplePos-vec3<f32>(shift,0.,0.);
-  let gaussianB=exp(-dot(offsetB,offsetB)/1.62);
-  let phaseCos=cos(uniforms.waveParams.y);
-  let overlapFactor=exp(-separation*separation/3.24);
-  let normSquared=max(0.00001,2.+2.*overlapFactor*phaseCos);
-  return max(0.,(gaussianA*gaussianA+gaussianB*gaussianB+2.*gaussianA*gaussianB*phaseCos)/normSquared);
+ let offA=samplePos-globals.ballA.xyz;let offB=samplePos-globals.ballB.xyz;
+ let gaussianA=exp(-dot(offA,offA)/1.5138);let gaussianB=exp(-dot(offB,offB)/1.5138);
+ let phaseCos=globals.waveData.y;let separation=globals.ballA.xyz-globals.ballB.xyz;
+ let overlapFactor=exp(-dot(separation,separation)/3.0276);
+ let normSquared=max(0.000001,2.+2.*overlapFactor*phaseCos);
+ return max(0.,(gaussianA*gaussianA+gaussianB*gaussianB+2.*gaussianA*gaussianB*phaseCos)/normSquared);
 }
-fn implicitField(samplePos:vec3<f32>)->f32{
-  let densityValue=densityAt(samplePos);
-  return select(sqrt(densityValue),densityValue,uniforms.screenParams.w>0.5)-uniforms.waveParams.z;
+fn eyeCenter(ballPos:vec3<f32>,sideSign:f32)->vec3<f32>{
+ let towardCam=normalize(globals.camPos.xyz-ballPos);
+ let separation=length(globals.ballA.xyz-globals.ballB.xyz);
+ let sideOffset=sideSign*0.24*(1.-clamp(separation/2.5,0.,1.));
+ return ballPos+towardCam*0.85+vec3<f32>(sideOffset,0.12,0.);
 }
-fn normalAt(samplePos:vec3<f32>)->vec3<f32>{
-  let eps=0.008;
-  let gradientVec=vec3<f32>(implicitField(samplePos+vec3<f32>(eps,0.,0.))-implicitField(samplePos-vec3<f32>(eps,0.,0.)),implicitField(samplePos+vec3<f32>(0.,eps,0.))-implicitField(samplePos-vec3<f32>(0.,eps,0.)),implicitField(samplePos+vec3<f32>(0.,0.,eps))-implicitField(samplePos-vec3<f32>(0.,0.,eps)));
-  return -gradientVec/max(length(gradientVec),0.000001);
+fn eyeField(samplePos:vec3<f32>,centerPos:vec3<f32>)->f32{return 0.53-length(samplePos-centerPos);}
+fn fieldAt(samplePos:vec3<f32>,centerA:vec3<f32>,centerB:vec3<f32>)->f32{
+ return max(densityAt(samplePos)-globals.waveData.z,max(eyeField(samplePos,centerA),eyeField(samplePos,centerB)));
 }
-fn phaseColor(phaseAngle:f32)->vec3<f32>{
-  return vec3<f32>(0.55)+0.43*cos(vec3<f32>(phaseAngle,phaseAngle-2.0944,phaseAngle+2.0944));
+fn waveNormal(samplePos:vec3<f32>)->vec3<f32>{
+ let eps=0.009;
+ let grad=vec3<f32>(densityAt(samplePos+vec3<f32>(eps,0.,0.))-densityAt(samplePos-vec3<f32>(eps,0.,0.)),densityAt(samplePos+vec3<f32>(0.,eps,0.))-densityAt(samplePos-vec3<f32>(0.,eps,0.)),densityAt(samplePos+vec3<f32>(0.,0.,eps))-densityAt(samplePos-vec3<f32>(0.,0.,eps)));
+ return -grad/max(length(grad),0.000001);
+}
+fn phasePalette(phaseAngle:f32)->vec3<f32>{return vec3<f32>(0.48)+0.42*cos(vec3<f32>(phaseAngle,phaseAngle-2.0944,phaseAngle+2.0944));}
+fn shadeSurface(hitPos:vec3<f32>,rayDir:vec3<f32>,centerA:vec3<f32>,centerB:vec3<f32>)->vec3<f32>{
+ let eyeA=eyeField(hitPos,centerA);let eyeB=eyeField(hitPos,centerB);let isEye=max(eyeA,eyeB)>densityAt(hitPos)-globals.waveData.z-0.004;
+ let secondEye=eyeB>eyeA;
+ let eyePos=select(centerA,centerB,secondEye);
+ let lightDir=normalize(vec3<f32>(-0.55,0.85,0.65));let fillDir=normalize(vec3<f32>(0.8,0.35,-0.3));
+ var surfaceNormal=waveNormal(hitPos);
+ var baseColor=vec3<f32>(0.1,0.8,0.65);
+ var glossPower=48.;
+ if(isEye){
+  surfaceNormal=normalize(hitPos-eyePos);
+  let facing=normalize(globals.camPos.xyz-eyePos);
+  let aimVec=normalize(facing+vec3<f32>(globals.gazeData.x,globals.gazeData.y,0.)*0.23);
+  let eyeRight=normalize(cross(vec3<f32>(0.,1.,0.),aimVec));
+  let eyeUp=cross(aimVec,eyeRight);
+  let irisUv=vec2<f32>(dot(surfaceNormal,eyeRight),dot(surfaceNormal,eyeUp));
+  let irisRadius=length(irisUv);
+  let irisAngle=atan2(irisUv.y,irisUv.x);
+  let irisPhase=select(globals.waveData.x,globals.waveData.x+globals.waveData.w,secondEye);
+  let irisColor=select(vec3<f32>(0.12,0.72,0.53),vec3<f32>(0.29,0.42,0.96),secondEye);
+  baseColor=vec3<f32>(0.87,0.91,0.88);
+  let veinPattern=pow(abs(sin(irisAngle*17.+sin(irisRadius*35.)*1.8)),18.)*smoothstep(0.57,0.96,irisRadius);
+  baseColor=baseColor-vec3<f32>(0.02,0.15,0.12)*veinPattern;
+  if(dot(surfaceNormal,aimVec)>0. && irisRadius<0.64){
+   let fibers=0.52+0.3*sin(irisAngle*49.+sin(irisRadius*28.)*3.+irisPhase)+0.13*sin(irisAngle*91.-irisRadius*17.);
+   let outerRing=smoothstep(0.53,0.64,irisRadius);
+   let pupilRadius=0.25+0.035*sin(globals.waveData.x*1.3)+globals.screenData.z*0.05;
+   baseColor=irisColor*(0.45+fibers)+phasePalette(irisPhase)*0.22;
+   baseColor=mix(baseColor,vec3<f32>(0.025,0.045,0.06),outerRing);
+   if(irisRadius<pupilRadius){baseColor=vec3<f32>(0.007,0.012,0.019);}
+  }
+  glossPower=90.;
+ }else{
+  let offA=hitPos-globals.ballA.xyz;let offB=hitPos-globals.ballB.xyz;
+  let ga=exp(-dot(offA,offA)/1.5138);let gb=exp(-dot(offB,offB)/1.5138);
+  let complexWave=vec2<f32>(ga+gb*globals.waveData.y,gb*sin(globals.waveData.w));
+  let phaseAngle=atan2(complexWave.y,complexWave.x)+globals.waveData.x+hitPos.x*1.4;
+  let blendWeight=gb/max(ga+gb,0.00001);
+  let tint=mix(vec3<f32>(0.055,0.75,0.52),vec3<f32>(0.27,0.25,0.95),blendWeight);
+  baseColor=tint*0.60+phasePalette(phaseAngle)*0.45;
+  let bands=0.5+0.5*sin(phaseAngle*6.+hitPos.y*4.);
+  baseColor=baseColor*(0.86+0.14*bands);
+ }
+ let diffuse=max(dot(surfaceNormal,lightDir),0.);let fill=max(dot(surfaceNormal,fillDir),0.);
+ let rim=pow(1.-max(dot(surfaceNormal,-rayDir),0.),3.);
+ let halfDir=normalize(lightDir-rayDir);let specular=pow(max(dot(surfaceNormal,halfDir),0.),glossPower);
+ let specColor=vec3<f32>(0.95,0.99,1.)*specular*select(0.85,1.25,isEye);
+ return baseColor*(0.27+0.77*diffuse+0.21*fill)+vec3<f32>(0.23,0.55,0.64)*rim*select(0.9,0.24,isEye)+specColor;
+}
+struct RayHit { hitT:f32, hitFlag:u32 }
+fn marchScene(rayOrigin:vec3<f32>,rayDir:vec3<f32>,limitT:f32,centerA:vec3<f32>,centerB:vec3<f32>)->RayHit{
+ let centerPos=(globals.ballA.xyz+globals.ballB.xyz)*0.5;
+ let radius=length(globals.ballA.xyz-globals.ballB.xyz)*0.5+1.9;
+ let relativeOrigin=rayOrigin-centerPos;let rayB=dot(relativeOrigin,rayDir);
+ let discriminant=rayB*rayB-dot(relativeOrigin,relativeOrigin)+radius*radius;
+ if(discriminant<0.){return RayHit(0.,0u);}
+ let rootDisc=sqrt(discriminant);var rayT=max(0.002,-rayB-rootDisc);let endT=min(limitT,-rayB+rootDisc);
+ if(rayT>=endT){return RayHit(0.,0u);}
+ var prevT=rayT;var prevField=fieldAt(rayOrigin+rayDir*rayT,centerA,centerB);
+ for(var stepIndex=0u;stepIndex<164u;stepIndex+=1u){
+  rayT=min(endT,rayT+0.072);
+  let nextField=fieldAt(rayOrigin+rayDir*rayT,centerA,centerB);
+  if(nextField>=0. && prevField<0.){
+   var lowT=prevT;var highT=rayT;
+   for(var refineIndex=0u;refineIndex<7u;refineIndex+=1u){
+    let midT=(lowT+highT)*0.5;
+    if(fieldAt(rayOrigin+rayDir*midT,centerA,centerB)>=0.){highT=midT;}else{lowT=midT;}
+   }
+   return RayHit((lowT+highT)*0.5,1u);
+  }
+  if(rayT>=endT){break;}
+  prevT=rayT;prevField=nextField;
+ }
+ return RayHit(0.,0u);
 }
 @fragment fn fsMain(@builtin(position) pixelPos:vec4<f32>)->@location(0) vec4<f32>{
-  let screenSize=uniforms.screenParams.xy;
-  let screenUv=vec2<f32>((2.*pixelPos.x-screenSize.x)/screenSize.y,(screenSize.y-2.*pixelPos.y)/screenSize.y);
-  let rayOrigin=uniforms.camPos.xyz;
-  let rayDir=normalize(uniforms.camForward.xyz*1.7+uniforms.camRight.xyz*screenUv.x+uniforms.camUp.xyz*screenUv.y);
-  let rayB=dot(rayOrigin,rayDir);
-  let discriminant=rayB*rayB-dot(rayOrigin,rayOrigin)+20.25;
-  let backgroundColor=vec3<f32>(0.021,0.036,0.067)+vec3<f32>(0.035,0.065,0.095)*exp(-dot(screenUv,screenUv)*0.9);
-  if(discriminant<0.){return vec4<f32>(backgroundColor,1.);}
-  let rootDisc=sqrt(discriminant);
-  var rayT=max(0.,-rayB-rootDisc);
-  let endT=-rayB+rootDisc;
-  var prevT=rayT;
-  var prevField=implicitField(rayOrigin+rayDir*rayT);
-  var hitFlag=false;
-  for(var stepIndex=0u;stepIndex<180u;stepIndex+=1u){
-    rayT=min(endT,rayT+0.055);
-    let nextField=implicitField(rayOrigin+rayDir*rayT);
-    if(nextField>=0. && prevField<0.){
-      var lowT=prevT;
-      var highT=rayT;
-      for(var refineIndex=0u;refineIndex<9u;refineIndex+=1u){
-        let midT=(lowT+highT)*0.5;
-        if(implicitField(rayOrigin+rayDir*midT)>=0.){highT=midT;}else{lowT=midT;}
-      }
-      rayT=(lowT+highT)*0.5;
-      hitFlag=true;
-      break;
-    }
-    if(rayT>=endT){break;}
-    prevT=rayT;prevField=nextField;
+ let screenSize=globals.screenData.xy;
+ let uvPos=vec2<f32>((2.*pixelPos.x-screenSize.x)/screenSize.y,(screenSize.y-2.*pixelPos.y)/screenSize.y);
+ let rayOrigin=globals.camPos.xyz;let rayDir=normalize(globals.camForward.xyz*1.65+vec3<f32>(uvPos.x,0.,0.)+globals.camUp.xyz*uvPos.y);
+ let centerA=eyeCenter(globals.ballA.xyz,-1.);let centerB=eyeCenter(globals.ballB.xyz,1.);
+ var floorT=100.;
+ if(rayDir.y< -0.0001){floorT=-rayOrigin.y/rayDir.y;}
+ let firstHit=marchScene(rayOrigin,rayDir,floorT,centerA,centerB);
+ let vignette=exp(-dot(uvPos,uvPos)*0.55);
+ var finalColor=vec3<f32>(0.018,0.035,0.065)+vec3<f32>(0.052,0.085,0.12)*vignette;
+ if(firstHit.hitFlag==1u){
+  finalColor=shadeSurface(rayOrigin+rayDir*firstHit.hitT,rayDir,centerA,centerB);
+ }else if(floorT<75.){
+  let floorPos=rayOrigin+rayDir*floorT;
+  let gridPos=abs(fract(floorPos.xz*0.5+vec2<f32>(0.5))-vec2<f32>(0.5));
+  let gridLine=1.-smoothstep(0.012,0.026,min(gridPos.x,gridPos.y));
+  let floorFade=exp(-length(floorPos.xz)*0.12);
+  let shadowA=exp(-dot(floorPos.xz-globals.ballA.xz,floorPos.xz-globals.ballA.xz)/1.4)*exp(-globals.ballA.y*0.35);
+  let shadowB=exp(-dot(floorPos.xz-globals.ballB.xz,floorPos.xz-globals.ballB.xz)/1.4)*exp(-globals.ballB.y*0.35);
+  finalColor=(vec3<f32>(0.042,0.068,0.095)+gridLine*vec3<f32>(0.045,0.075,0.085))*floorFade*(1.-0.65*max(shadowA,shadowB));
+  finalColor+=vec3<f32>(0.035,0.17,0.12)*shadowA+vec3<f32>(0.06,0.07,0.2)*shadowB;
+  if(length(floorPos.xz)<6.5){
+   let reflectionDir=reflect(rayDir,vec3<f32>(0.,1.,0.));
+   let reflectionOrigin=floorPos+vec3<f32>(0.,0.003,0.);
+   let reflectedHit=marchScene(reflectionOrigin,reflectionDir,20.,centerA,centerB);
+   if(reflectedHit.hitFlag==1u){
+    let reflectionColor=shadeSurface(reflectionOrigin+reflectionDir*reflectedHit.hitT,reflectionDir,centerA,centerB);
+    finalColor+=reflectionColor*0.24*floorFade;
+   }
   }
-  if(!hitFlag){return vec4<f32>(backgroundColor,1.);}
-  let hitPos=rayOrigin+rayDir*rayT;
-  let surfaceNormal=normalAt(hitPos);
-  let complexWave=waveAt(hitPos);
-  let phaseAngle=atan2(complexWave.y,complexWave.x);
-  let hueColor=phaseColor(phaseAngle);
-  let lightDir=normalize(vec3<f32>(-0.6,0.9,0.8));
-  let diffuseLight=max(dot(surfaceNormal,lightDir),0.);
-  let viewFacing=max(dot(surfaceNormal,-rayDir),0.);
-  let rimLight=pow(1.-viewFacing,3.);
-  let halfDir=normalize(lightDir-rayDir);
-  let specularLight=pow(max(dot(surfaceNormal,halfDir),0.),38.);
-  let contourLight=0.5+0.5*cos(phaseAngle*4.);
-  let surfaceColor=hueColor*(0.32+0.7*diffuseLight+0.08*contourLight)+vec3<f32>(0.34,0.65,0.8)*rimLight+vec3<f32>(0.85)*specularLight*0.65;
-  return vec4<f32>(clamp(surfaceColor,vec3<f32>(0.),vec3<f32>(1.)),1.);
+ }
+ finalColor=pow(clamp(finalColor,vec3<f32>(0.),vec3<f32>(1.)),vec3<f32>(0.82));
+ return vec4<f32>(finalColor,1.);
 }
 `;
-function uniformData(w,h){const c=camera();return new Float32Array([...c.pos,0,...c.right,0,...c.up,0,...c.forward,0,state.sep,state.phase*Math.PI/180,state.iso,+state.pair,w,h,state.time,state.mode])}
-async function init(){
- if(!navigator.gpu)throw Error('WebGPU 非対応です。HTTPS の Chrome / Edge などで開いてください。');
- setStatus('request-adapter');const adapter=await navigator.gpu.requestAdapter();if(!adapter)throw Error('GPU adapter を取得できません');
- setStatus('request-device');const device=await adapter.requestDevice();device.lost.then(info=>fail('device.lost: '+info.reason+' '+info.message));device.addEventListener('uncapturederror',e=>fail(e.error.message));
- const format=navigator.gpu.getPreferredCanvasFormat(),context=ci?null:gpu.getContext('webgpu');
- if(!ci){if(!context)throw Error('WebGPU canvas context を取得できません');context.configure({device,format,alphaMode:'opaque'})}
- setStatus('shader-compilation-info');const module=device.createShaderModule({code:wgsl});const info=await module.getCompilationInfo();const errors=info.messages.filter(m=>m.type==='error');if(errors.length)throw Error(errors.map(m=>m.lineNum+': '+m.message).join('\n'));
- setStatus('create-pipeline');device.pushErrorScope('validation');
- const pipeline=await device.createRenderPipelineAsync({layout:'auto',vertex:{module,entryPoint:'vsMain'},fragment:{module,entryPoint:'fsMain',targets:[{format}]},primitive:{topology:'triangle-list'}});
- const uniformBuffer=device.createBuffer({size:96,usage:GPUBufferUsage.UNIFORM|GPUBufferUsage.COPY_DST});
- const bindGroup=device.createBindGroup({layout:pipeline.getBindGroupLayout(0),entries:[{binding:0,resource:{buffer:uniformBuffer}}]});
- const validation=await device.popErrorScope();if(validation)throw Error(validation.message);
- function encode(texture,w,h,readBuffer=null){device.queue.writeBuffer(uniformBuffer,0,uniformData(w,h));const encoder=device.createCommandEncoder();const pass=encoder.beginRenderPass({colorAttachments:[{view:texture.createView(),loadOp:'clear',storeOp:'store',clearValue:{r:0,g:0,b:0,a:1}}]});pass.setPipeline(pipeline);pass.setBindGroup(0,bindGroup);pass.draw(3);pass.end();if(readBuffer)encoder.copyTextureToBuffer({texture},{buffer:readBuffer,bytesPerRow:w*4},{width:w,height:h,depthOrArrayLayers:1});device.queue.submit([encoder.finish()])}
- async function renderTest(){const w=192,h=144,texture=device.createTexture({size:[w,h],format,usage:GPUTextureUsage.RENDER_ATTACHMENT|GPUTextureUsage.COPY_SRC}),buffer=device.createBuffer({size:w*h*4,usage:GPUBufferUsage.COPY_DST|GPUBufferUsage.MAP_READ});device.pushErrorScope('validation');try{encode(texture,w,h,buffer);const error=await device.popErrorScope();if(error)throw Error(error.message);await device.queue.onSubmittedWorkDone();await buffer.mapAsync(GPUMapMode.READ);const bytes=new Uint8Array(buffer.getMappedRange());let hash=2166136261,bright=0;for(let i=0;i<bytes.length;i+=4){for(let j=0;j<3;j++)hash=Math.imul(hash^bytes[i+j],16777619);if(Math.max(bytes[i],bytes[i+1],bytes[i+2])>95)bright++}const center=(Math.floor(h/2)*w+Math.floor(w/2))*4;const result={hash:hash>>>0,bright,center:[bytes[center],bytes[center+1],bytes[center+2]],density:fieldAt([0,0,0])};buffer.unmap();return result}finally{buffer.destroy();texture.destroy()}}
- backend={draw(){if(context)encode(context.getCurrentTexture(),gpu.width,gpu.height)},renderTest};
- setStatus('validation-scope');if(ci){await renderTest()}else{device.pushErrorScope('validation');backend.draw();const err=await device.popErrorScope();if(err)throw Error(err.message)}
- setStatus('submitted-work-wait');await device.queue.onSubmittedWorkDone();setStatus('ok','WebGPU • ready');dirty=true;
+function uniforms(w,h){const gaze=S.drag?sub(S.drag,S.balls[0].p):[0,0,0];return new Float32Array([...cam,0,...forward,0,...up,0,...S.balls[0].p,S.balls[0].kick,...S.balls[1].p,S.balls[1].kick,S.time,Math.cos(phaseRad()),iso,phaseRad(),w,h,S.flash,0,clamp(gaze[0],-1,1),clamp(gaze[1],-1,1),0,0])}
+async function init(){if(!navigator.gpu)throw Error('WebGPU対応ブラウザで開いてください。');status('request-adapter');const adapter=await navigator.gpu.requestAdapter();if(!adapter)throw Error('GPU adapter unavailable');status('request-device');const device=await adapter.requestDevice();device.lost.then(i=>fail('device.lost '+i.reason+' '+i.message));device.addEventListener('uncapturederror',e=>fail(e.error.message));const format=navigator.gpu.getPreferredCanvasFormat(),ctx=ci?null:canvas.getContext('webgpu');if(!ci){if(!ctx)throw Error('canvas context unavailable');ctx.configure({device,format,alphaMode:'opaque'})}
+ status('shader-compilation-info');const module=device.createShaderModule({code:shader}),info=await module.getCompilationInfo();const errors=info.messages.filter(m=>m.type==='error');if(errors.length)throw Error(errors.map(m=>m.lineNum+': '+m.message).join('\n'));status('create-pipeline');device.pushErrorScope('validation');const pipeline=await device.createRenderPipelineAsync({layout:'auto',vertex:{module,entryPoint:'vsMain'},fragment:{module,entryPoint:'fsMain',targets:[{format}]},primitive:{topology:'triangle-list'}});const buffer=device.createBuffer({size:128,usage:GPUBufferUsage.UNIFORM|GPUBufferUsage.COPY_DST});const group=device.createBindGroup({layout:pipeline.getBindGroupLayout(0),entries:[{binding:0,resource:{buffer}}]});const err=await device.popErrorScope();if(err)throw Error(err.message);
+ function draw(texture,w,h,out=null){device.queue.writeBuffer(buffer,0,uniforms(w,h));const encoder=device.createCommandEncoder();const pass=encoder.beginRenderPass({colorAttachments:[{view:texture.createView(),loadOp:'clear',storeOp:'store',clearValue:{r:0,g:0,b:0,a:1}}]});pass.setPipeline(pipeline);pass.setBindGroup(0,group);pass.draw(3);pass.end();if(out)encoder.copyTextureToBuffer({texture},{buffer:out,bytesPerRow:w*4},{width:w,height:h,depthOrArrayLayers:1});device.queue.submit([encoder.finish()])}
+ async function renderTest(){const w=256,h=144,texture=device.createTexture({size:[w,h],format,usage:GPUTextureUsage.RENDER_ATTACHMENT|GPUTextureUsage.COPY_SRC}),out=device.createBuffer({size:w*h*4,usage:GPUBufferUsage.COPY_DST|GPUBufferUsage.MAP_READ});device.pushErrorScope('validation');try{draw(texture,w,h,out);const validation=await device.popErrorScope();if(validation)throw Error(validation.message);await device.queue.onSubmittedWorkDone();await out.mapAsync(GPUMapMode.READ);const bytes=new Uint8Array(out.getMappedRange());let hash=2166136261,bright=0,white=0;for(let i=0;i<bytes.length;i+=4){const rgb=[bytes[i],bytes[i+1],bytes[i+2]];for(const v of rgb)hash=Math.imul(hash^v,16777619);if(Math.max(...rgb)>110)bright++;if(Math.min(...rgb)>155)white++}out.unmap();return {hash:hash>>>0,bright,white,density:densityAt(midpoint())}}finally{out.destroy();texture.destroy()}}
+ gpuRender={draw(){if(ctx)draw(ctx.getCurrentTexture(),canvas.width,canvas.height)},renderTest};status('validation-scope');if(ci)await renderTest();else{device.pushErrorScope('validation');gpuRender.draw();const validation=await device.popErrorScope();if(validation)throw Error(validation.message)}status('submitted-work-wait');await device.queue.onSubmittedWorkDone();status('ok','WEBGPU • LIVE');
 }
-window.waveLab={state,selectLesson,setPhase,fieldAt,samplePoints,renderTest:()=>backend.renderTest()};
-function frame(now){const dt=last?Math.min(.05,(now-last)/1000):0;last=now;if(state.animate&&!ci&&backend){state.time=(state.time+dt*.65)%(Math.PI*2);dirty=true}if(plotDirty){drawPlot();plotDirty=false}if(dirty){if(backend&&!ci)backend.draw();drawDots();dirty=false}requestAnimationFrame(frame)}
-selectLesson(0);requestAnimationFrame(frame);init().catch(fail);
+window.waveLab={state:S,chooseStage,setPhase,densityAt,pulse,step,renderTest:()=>gpuRender.renderTest(),sample,resetBalls};
+function frame(now){const dt=last?Math.min(.033,(now-last)/1000):0;last=now;if(gpuRender&&!ci){step(dt);gpuRender.draw();drawOverlay()}requestAnimationFrame(frame)}
+chooseStage(0);requestAnimationFrame(frame);init().catch(fail);
 </script></body></html>
