@@ -1,0 +1,27 @@
+name: Ocular Globe WebGPU CI
+on:
+  push:
+    paths:
+      - 'ocular-globe/**'
+      - '.github/workflows/ocular-globe-ci.yml'
+  workflow_dispatch:
+jobs:
+  webgpu-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: browser-actions/setup-chrome@v1
+        id: chrome
+        with:
+          chrome-version: stable
+      - run: npm install --no-save --no-package-lock puppeteer-core@24
+      - name: Start HTTP server
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/ocular-server.log 2>&1 &
+          sleep 2
+          curl -fsS http://127.0.0.1:8765/ocular-globe/ -o /dev/null
+      - name: Validate WebGPU and physics
+        env:
+          CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
+        run: node ocular-globe/tests/webgpu-smoke.cjs
