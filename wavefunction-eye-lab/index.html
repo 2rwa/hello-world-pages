@@ -61,7 +61,7 @@ function samplePoints(n){for(let i=0;i<n&&state.points.length<6000;i++){for(let 
 $('sample').onclick=()=>samplePoints(100);
 const dot=(a,b)=>a.reduce((s,v,i)=>s+v*b[i],0);
 function camera(){const y=state.yaw,p=state.pitch,cp=Math.cos(p),pos=[Math.sin(y)*cp*state.distance,Math.sin(p)*state.distance,Math.cos(y)*cp*state.distance],right=[Math.cos(y),0,-Math.sin(y)],up=[-Math.sin(y)*Math.sin(p),cp,-Math.cos(y)*Math.sin(p)],forward=pos.map(v=>-v/state.distance);return {pos,right,up,forward}}
-function resize(){const r=stage.getBoundingClientRect(),d=Math.min(devicePixelRatio,1.25),scale=Math.min(d,850/r.width,650/r.height);gpu.width=Math.max(1,Math.round(r.width*scale));gpu.height=Math.max(1,Math.round(r.height*scale));dots.width=Math.round(r.width*d);dots.height=Math.round(r.height*d);dirty=plotDirty=true}
+function resize(){const r=stage.getBoundingClientRect(),d=Math.min(devicePixelRatio,1.25),scale=Math.min(d,720/r.width,540/r.height);gpu.width=Math.max(1,Math.round(r.width*scale));gpu.height=Math.max(1,Math.round(r.height*scale));dots.width=Math.round(r.width*d);dots.height=Math.round(r.height*d);dirty=plotDirty=true}
 new ResizeObserver(resize).observe(stage);resize();
 function drawDots(){const ctx=dots.getContext('2d'),w=dots.width,h=dots.height,c=camera();ctx.clearRect(0,0,w,h);ctx.fillStyle='#fff3c9';ctx.shadowColor='#ffd795';ctx.shadowBlur=4;ctx.globalAlpha=.72;for(const p of state.points){const q=p.map((v,i)=>v-c.pos[i]),z=dot(q,c.forward);if(z<=0)continue;const x=w/2+dot(q,c.right)/z*1.7*h/2,y=h/2-dot(q,c.up)/z*1.7*h/2;ctx.beginPath();ctx.arc(x,y,1.65,0,Math.PI*2);ctx.fill()}ctx.globalAlpha=1}
 function drawPlot(){const r=plot.getBoundingClientRect(),d=Math.min(devicePixelRatio,2);plot.width=Math.max(1,Math.round(r.width*d));plot.height=Math.max(1,Math.round(r.height*d));const g=plot.getContext('2d'),w=plot.width,h=plot.height,L=30*d,R=w-12*d,T=9*d,B=h-23*d,x=v=>L+(v+4.5)/9*(R-L),y=v=>B-v*(B-T)/1.3;g.clearRect(0,0,w,h);g.font=10*d+'px system-ui';g.lineWidth=d;g.strokeStyle='#293e54';g.fillStyle='#8da4be';for(const v of [0,.5,1]){g.beginPath();g.moveTo(L,y(v));g.lineTo(R,y(v));g.stroke();g.fillText(String(v),3*d,y(v)+3*d)}for(const v of [-4,-2,0,2,4]){g.beginPath();g.moveTo(x(v),T);g.lineTo(x(v),B);g.stroke();g.fillText(String(v),x(v)-5*d,B+15*d)}g.strokeStyle='#70859d';g.setLineDash([4*d,4*d]);g.beginPath();g.moveTo(L,y(state.iso));g.lineTo(R,y(state.iso));g.stroke();g.setLineDash([]);for(const mode of [0,1]){g.strokeStyle=mode?'#f8c47b':'#82d4ff';g.lineWidth=2*d;g.beginPath();for(let i=0;i<=360;i++){const v=-4.5+9*i/360,f=fieldAt([v,0,0]),py=y(mode?f:Math.sqrt(f));i?g.lineTo(x(v),py):g.moveTo(x(v),py)}g.stroke()}}
@@ -92,8 +92,18 @@ fn waveAt(samplePos:vec3<f32>)->vec2<f32>{
   return vec2<f32>(complexWave.x*phaseRot.x-complexWave.y*phaseRot.y,complexWave.x*phaseRot.y+complexWave.y*phaseRot.x);
 }
 fn densityAt(samplePos:vec3<f32>)->f32{
-  let complexWave=waveAt(samplePos);
-  return dot(complexWave,complexWave);
+  let separation=uniforms.waveParams.x;
+  let pairFlag=uniforms.waveParams.w>0.5;
+  let shift=select(0.,separation*0.5,pairFlag);
+  let offsetA=samplePos+vec3<f32>(shift,0.,0.);
+  let gaussianA=exp(-dot(offsetA,offsetA)/1.62);
+  if(!pairFlag){return gaussianA*gaussianA;}
+  let offsetB=samplePos-vec3<f32>(shift,0.,0.);
+  let gaussianB=exp(-dot(offsetB,offsetB)/1.62);
+  let phaseCos=cos(uniforms.waveParams.y);
+  let overlapFactor=exp(-separation*separation/3.24);
+  let normSquared=max(0.00001,2.+2.*overlapFactor*phaseCos);
+  return max(0.,(gaussianA*gaussianA+gaussianB*gaussianB+2.*gaussianA*gaussianB*phaseCos)/normSquared);
 }
 fn implicitField(samplePos:vec3<f32>)->f32{
   let densityValue=densityAt(samplePos);
@@ -105,7 +115,7 @@ fn normalAt(samplePos:vec3<f32>)->vec3<f32>{
   return -gradientVec/max(length(gradientVec),0.000001);
 }
 fn phaseColor(phaseAngle:f32)->vec3<f32>{
-  return 0.55+0.43*cos(vec3<f32>(phaseAngle,phaseAngle-2.0944,phaseAngle+2.0944));
+  return vec3<f32>(0.55)+0.43*cos(vec3<f32>(phaseAngle,phaseAngle-2.0944,phaseAngle+2.0944));
 }
 @fragment fn fsMain(@builtin(position) pixelPos:vec4<f32>)->@location(0) vec4<f32>{
   let screenSize=uniforms.screenParams.xy;
