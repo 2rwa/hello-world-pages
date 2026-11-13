@@ -18,7 +18,7 @@
 <div class="control"><label for="iso">等値面しきい値 <output id="isov"></output></label><input id="iso" type="range" min=".05" max=".85" step=".01" value=".28"></div>
 <div class="buttons"><button class="action" id="play" aria-pressed="true">位相アニメーション ON</button><button class="action" id="reset">視点リセット</button></div>
 <div class="buttons"><button class="action" id="sample">観測 × 100</button><button class="action" id="clear">観測点を消去</button></div><div class="measure" id="measure">観測点 0</div>
-</div></section></div><p class="note">モデル：幅 σ=0.9 の正規化ガウス波束。表示面は確率密度または振幅の等値面であり、粒子の輪郭・軌道ではありません。単位を省いた教材用モデルで、時間変化は共通位相の回転のみ（波束の拡散やシュレーディンガー方程式の時間発展は解いていません）。観測点は独立に同じ状態を準備した試行の位置標本です。</p></main>
+</div></section></div><p class="note">モデル：幅 σ=0.9 の正規化ガウス波束。表示値は共通の規格化定数 A=(πσ²)⁻³⁄⁴ を除いた相対振幅・相対密度です。表示面は確率密度または振幅の等値面であり、粒子の輪郭・軌道ではありません。単位を省いた教材用モデルで、時間変化は共通位相の回転のみ（波束の拡散やシュレーディンガー方程式の時間発展は解いていません）。観測点は独立に同じ状態を準備した試行の位置標本です。</p></main>
 <script type="module">
 const $=id=>document.getElementById(id);
 const status=$('status'),stage=$('stage'),gpu=$('gpu'),dots=$('dots'),plot=$('plot');
@@ -55,7 +55,7 @@ for(const evt of ['pointerup','pointercancel','lostpointercapture'])stage.addEve
 stage.addEventListener('wheel',e=>{e.preventDefault();state.distance=Math.max(5,Math.min(13,state.distance*Math.exp(e.deltaY*.001)));dirty=true},{passive:false});
 const sigma=.9;
 function gauss(p,c){return Math.exp(-((p[0]-c)**2+p[1]**2+p[2]**2)/(2*sigma*sigma))}
-function fieldAt(p){const a=gauss(p,state.pair?-state.sep/2:0);if(!state.pair)return a*a;const b=gauss(p,state.sep/2),cos=Math.cos(state.phase*Math.PI/180),ov=Math.exp(-state.sep**2/(4*sigma*sigma));return Math.max(0,(a*a+b*b+2*a*b*cos)/(2+2*ov*cos))}
+function fieldAt(p){const a=gauss(p,state.pair?-state.sep/2:0);if(!state.pair)return a*a;const b=gauss(p,state.sep/2),cos=Math.cos(state.phase*Math.PI/180),ov=Math.exp(-(state.sep**2)/(4*sigma*sigma));return Math.max(0,(a*a+b*b+2*a*b*cos)/(2+2*ov*cos))}
 function normalRandom(){return Math.sqrt(-2*Math.log(Math.max(1e-12,Math.random())))*Math.cos(2*Math.PI*Math.random())}
 function samplePoints(n){for(let i=0;i<n&&state.points.length<6000;i++){for(let j=0;j<10000;j++){let c=state.pair?(Math.random()<.5?-state.sep/2:state.sep/2):0,p=[normalRandom()*sigma/Math.SQRT2+c,normalRandom()*sigma/Math.SQRT2,normalRandom()*sigma/Math.SQRT2];if(state.pair){const a=gauss(p,-state.sep/2),b=gauss(p,state.sep/2),prob=(a*a+b*b+2*a*b*Math.cos(state.phase*Math.PI/180))/(2*(a*a+b*b));if(Math.random()>prob)continue}state.points.push(p);break}}dirty=true;updateMeasure()}
 $('sample').onclick=()=>samplePoints(100);
