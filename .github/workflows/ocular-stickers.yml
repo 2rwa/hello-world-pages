@@ -22,6 +22,7 @@ jobs:
         run: |
           node --input-type=module --check < ocular-stickers/main.js
           node --input-type=module --check < ocular-stickers/effects.js
+          node --input-type=module --check < ocular-stickers/tears.js
           node --input-type=module --check < ocular-stickers/shader.js
           python -m py_compile ocular-stickers/test.py
       - name: Run WebGPU readback and APNG test

@@ -19,6 +19,25 @@ with sync_playwright() as p:
     assert page.locator('#choices button').count()==16
     page.locator('#choices button').nth(8).click()
     assert page.locator('#choices button').nth(8).get_attribute('aria-pressed')=='true'
+    # Tear slider is per-sticker, changes the actual GPU silhouette and resets.
+    page.locator('#choices button').nth(10).click()
+    assert page.locator('#tearPreset').inner_text()=='1.73×'
+    page.locator('#tearAmount').fill('75')
+    assert page.locator('#tearValue').inner_text()=='75%'
+    low=page.evaluate('''async ()=>{const s=ocularSticker;await s.render(10,0);const a=s.eyeCanvas.getContext('2d').getImageData(0,0,270,270).data;let n=0;for(let j=3;j<a.length;j+=4)n+=a[j]>0;return [s.motion(10,0).tear,n]}''')
+    page.locator('#tearAmount').fill('125')
+    high=page.evaluate('''async ()=>{const s=ocularSticker;await s.render(10,0);const a=s.eyeCanvas.getContext('2d').getImageData(0,0,270,270).data;let n=0;for(let j=3;j<a.length;j+=4)n+=a[j]>0;return [s.motion(10,0).tear,n]}''')
+    assert high[0]>low[0] and high[1]!=low[1],(low,high)
+    page.locator('#choices button').nth(8).click()
+    assert page.locator('#tearAmount').input_value()=='100'
+    page.locator('#choices button').nth(10).click()
+    assert page.locator('#tearAmount').input_value()=='125'
+    page.locator('#tearReset').click()
+    assert page.locator('#tearAmount').input_value()=='100'
+    assert page.evaluate('''()=>{const s=ocularSticker;return s.motion(10,0).tear>s.motion(13,0).tear&&s.motion(11,0).tear>s.motion(14,0).tear}''')
+    # Validate analytic framing of every frame at both slider extremes.
+    assert page.evaluate('''()=>{const s=ocularSticker;for(let i=0;i<16;i++){for(const v of [75,100,125]){s.tearAmounts[i]=v;const d=s.cameraDistance(i);for(let k=0;k<20;k++){const [x0,y0,x1,y1]=s.projectedBounds(s.motion(i,k),d);if(x0<12||y0<62||x1>258||y1>258)return false;}}s.tearAmounts[i]=100;}return true}''')
+    page.locator('#choices button').nth(8).click()
     # CI has no animation loop; render explicitly using the production compositor.
     overlay=page.evaluate('''async ()=>{const s=ocularSticker; const m=await s.render(8,5);const c=document.querySelector('#preview');const ctx=c.getContext('2d');const e=document.querySelector('#effects');e.checked=true;s.composite(8,m);const a=ctx.getImageData(0,0,270,270).data;e.checked=false;s.composite(8,m);const b=ctx.getImageData(0,0,270,270).data;e.checked=true;s.composite(8,m);let n=0;for(let i=0;i<a.length;i+=4)if(a[i]!==b[i]||a[i+1]!==b[i+1]||a[i+2]!==b[i+2]||a[i+3]!==b[i+3])n++;return n}''')
     assert overlay>100,overlay
@@ -52,5 +71,5 @@ with sync_playwright() as p:
             im=Image.open(io.BytesIO(z.read(name)))
             assert im.size==size and len(z.read(name))<=1000000
             assert im.n_frames==(20 if name=='main.png' else 1)
-    (out/'report.json').write_text(json.dumps({'overlay_changed_pixels':overlay,'stickers':results},indent=2))
+    (out/'report.json').write_text(json.dumps({'overlay_changed_pixels':overlay,'tear_slider_low':low,'tear_slider_high':high,'stickers':results},indent=2))
     browser.close()
