@@ -1,0 +1,31 @@
+name: Ocular sticker WebGPU
+on:
+  push:
+    paths:
+      - 'ocular-stickers/**'
+      - '.github/workflows/ocular-stickers.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install playwright pillow
+      - name: Run WebGPU readback and APNG test
+        run: |
+          google-chrome --version
+          python -m http.server 8000 > server.log 2>&1 &
+          python ocular-stickers/test.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ocular-sticker-test
+          path: |
+            ocular-stickers/test-output/
+            server.log
