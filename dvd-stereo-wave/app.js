@@ -5,6 +5,7 @@ const ci=new URLSearchParams(location.search).has('ci');
 let gpu,busy=false,last=null;
 const read=()=>({mode:$('mode').value,sep:+$('sep').value,offset:+$('offset').value,disparity:+$('disparity').value,lambda:+$('lambda').value,pitch:+$('pitch').value,distance:+$('distance').value});
 function labels(){
+ const limit=Math.min(12,N/2-W/2-(+$('sep').value)/2);$('offset').min=-limit;$('offset').max=limit;$('offset').value=Math.max(-limit,Math.min(limit,+$('offset').value));
  const p=read();$('sepOut').value=p.sep+' Fourier bins';$('offsetOut').value=p.offset+' bins';$('dispOut').value=p.disparity+' px';$('lambdaOut').value=p.lambda+' nm';$('pitchOut').value=p.pitch.toFixed(3)+' µm';$('distanceOut').value=p.distance.toFixed(2)+' m';
 }
 function paint(id,values,size,scale=1,style='gray',frames=[]){
