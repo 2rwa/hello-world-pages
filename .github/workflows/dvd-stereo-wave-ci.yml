@@ -1,0 +1,34 @@
+name: DVD Stereo Wave WebGPU CI
+on:
+  push:
+    paths:
+      - 'dvd-stereo-wave/**'
+      - '.github/workflows/dvd-stereo-wave-ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  swiftshader:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: browser-actions/setup-chrome@v2
+        id: chrome
+        with:
+          chrome-version: stable
+      - run: npm install --no-save puppeteer-core@24
+      - run: |
+          python3 -m http.server 8000 > /tmp/dvd-stereo-http.log 2>&1 &
+          sleep 2
+      - name: GPU compute, numerical oracle, canvas readback
+        env:
+          CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
+          WEBGPU_FLAGS: "--enable-unsafe-webgpu --enable-features=Vulkan --use-vulkan=swiftshader --disable-vulkan-fallback-to-gl-for-testing --use-webgpu-adapter=swiftshader --enable-webgpu-developer-features --enable-dawn-features=allow_unsafe_apis --disable-dawn-features=use_dxc --use-gpu-in-tests --enable-unsafe-swiftshader --no-sandbox"
+        run: node dvd-stereo-wave/ci-test.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dvd-stereo-wave
+          path: dvd-stereo-wave.png
+          if-no-files-found: ignore

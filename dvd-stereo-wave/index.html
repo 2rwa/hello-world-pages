@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DVD Wave Optics | 二視点実験</title>
+<style>
+:root{color-scheme:dark;--bg:#10151c;--panel:#19222c;--line:#344450;--text:#e7eef4;--muted:#a4b4c2;--accent:#74dec9}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.6 system-ui,sans-serif}main{max-width:1150px;margin:auto;padding:24px}h1{font-size:clamp(24px,4vw,38px);line-height:1.2;margin:8px 0}h2{font-size:18px;margin:0 0 12px}p{margin:8px 0;color:var(--muted)}.eyebrow{font-size:12px;letter-spacing:2px;color:var(--accent)}.controls,.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;margin:16px 0}.controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}label{display:flex;flex-direction:column;gap:4px;color:var(--muted);font-size:13px}select,button{background:#253541;color:var(--text);border:1px solid #496171;border-radius:6px;padding:9px;font:inherit}button{cursor:pointer;background:#246455}button:disabled{opacity:.5}input[type=range]{width:100%;accent-color:var(--accent)}output{color:var(--accent);font-variant-numeric:tabular-nums}.views,.plots{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.views .panel,.plots .panel{margin:0}canvas{width:100%;height:auto;display:block;background:#080c11;image-rendering:pixelated;border-radius:6px}.pair{display:grid;grid-template-columns:1fr 1fr;gap:8px}.cap{font-size:12px;color:var(--muted);margin:4px 0}.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-top:12px}.metric{padding:10px;border:1px solid var(--line);border-radius:8px}.metric b{display:block;color:var(--accent);font-size:20px;font-variant-numeric:tabular-nums}.metric span{font-size:12px;color:var(--muted)}#status{white-space:pre-wrap;color:var(--accent);font-size:13px}details{margin:16px 0;color:var(--muted)}a{color:var(--accent)}@media(max-width:650px){main{padding:12px}.views,.plots{grid-template-columns:1fr}}
+</style></head><body><main><div class="eyebrow">OPTICAL DISC ETCHING LAB / PHASE 2</div><h1>二視点・波動光学シミュレーター</h1><p>一枚の散乱面から、異なる方向に左右の像を再生する。物理素子の自由度を切り替え、像の分離と共役像を比較。</p>
+<section class="controls">
+<label>散乱素子モデル<select id="mode"><option value="complex">理想複素振幅（上限）</option><option value="phase">連続位相</option><option value="phase4" selected>4段階位相</option><option value="binary">二値振幅</option></select></label>
+<label>左右の中心間隔 <output id="sepOut"></output><input id="sep" type="range" min="26" max="88" step="2" value="64"></label>
+<label>共通キャリア偏移 <output id="offsetOut"></output><input id="offset" type="range" min="-12" max="12" value="0"></label>
+<label>前景の視差 <output id="dispOut"></output><input id="disparity" type="range" min="0" max="6" value="4"></label>
+<label>波長 <output id="lambdaOut"></output><input id="lambda" type="range" min="450" max="650" value="532"></label>
+<label>散乱素子間隔 <output id="pitchOut"></output><input id="pitch" type="range" min="2.133" max="39.0625" step="0.001" value="2.133"></label>
+<label>観測面距離（フーリエレンズ焦点距離）<output id="distanceOut"></output><input id="distance" type="range" min="0.1" max="2" step="0.05" value="0.5"></label>
+<label>表示露光<select id="exposure"><option value="linear">線形</option><option value="sqrt" selected>平方根</option><option value="log">対数</option></select></label>
+<label>再計算<button id="run" disabled>GPUで設計・再生</button></label>
+</section>
+<div id="status" role="status">script-start</div>
+<section class="views">
+<div class="panel"><h2>左の観測窓</h2><div class="pair"><div><canvas id="targetL" width="128" height="128"></canvas><div class="cap">目標</div></div><div><canvas id="viewL" width="128" height="128"></canvas><div class="cap">GPU再生</div></div></div></div>
+<div class="panel"><h2>右の観測窓</h2><div class="pair"><div><canvas id="targetR" width="128" height="128"></canvas><div class="cap">目標</div></div><div><canvas id="viewR" width="128" height="128"></canvas><div class="cap">GPU再生</div></div></div></div>
+</section>
+<div class="metrics" id="metrics"></div>
+<section class="plots" style="margin-top:16px">
+<div class="panel"><h2>散乱面：振幅 / 位相</h2><div class="pair"><div><canvas id="amplitude" width="128" height="128"></canvas><div class="cap">振幅（黒～白）</div></div><div><canvas id="phase" width="128" height="128"></canvas><div class="cap">位相（色相）</div></div></div></div>
+<div class="panel"><h2>フーリエ面全体</h2><canvas id="spectrum" width="128" height="128"></canvas><div class="cap">左右の枠は観測窓。中央は0次光。明るさは左右共通の基準。</div></div>
+</section>
+<details open><summary>モデルと制約</summary><p id="geometry"></p><p>128×128の仮想散乱セル。目標スペクトルから逆DFTで複素面を設計し、選択した自由度に量子化して順DFTで再生。GPUで二次元複素DFTを実行する。単一波長、スカラー、正入射、理想フーリエレンズ。二視点画像は同じ二層物体の左右平行投影。これは二つの角度窓に形成する像で、直接空中立体像や実物の眼の光学系ではない。</p><p>クロストークは片側だけを設計した場合の反対窓へのエネルギー比。両側同時設計とは別に計算する。複素振幅モデルは上限で、DVD-Rの実現可能な位相状態ではない。実マーク・EFMPlus・非payload領域・螺旋・光学定数・校正誤差は次段階で導入。実機記録なし。</p><p><a href="https://github.com/2rwa/optical-disc-etching-lab">実験リポジトリ</a></p></details>
+</main><script type="module" src="app.js"></script></body></html>
